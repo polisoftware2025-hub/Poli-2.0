@@ -1,11 +1,11 @@
 'use server';
 
 /**
- * @fileOverview An AI agent that suggests relevant content and navigation links based on user activity.
+ * @fileOverview Un agente de IA que sugiere contenido relevante y enlaces de navegación basados en la actividad del usuario.
  *
- * - suggestContent - A function that suggests content based on user activity.
- * - SuggestContentInput - The input type for the suggestContent function.
- * - SuggestContentOutput - The return type for the suggestContent function.
+ * - suggestContent - Una función que sugiere contenido basado en la actividad del usuario.
+ * - SuggestContentInput - El tipo de entrada para la función suggestContent.
+ * - SuggestContentOutput - El tipo de retorno para la función suggestContent.
  */
 
 import {ai} from '@/ai/genkit';
@@ -15,17 +15,17 @@ const SuggestContentInputSchema = z.object({
   userActivity: z
     .string()
     .describe(
-      'A description of the user\'s recent activity on the platform.'
+      'Una descripción de la actividad reciente del usuario en la plataforma.'
     ),
   contentTypes: z
     .string()
     .describe(
-      'The types of content available on the platform e.g. documentation, blog posts, videos, etc. separated by commas.'
+      'Los tipos de contenido disponibles en la plataforma, por ejemplo, documentación, publicaciones de blog, videos, etc., separados por comas.'
     ),
   navigationLinks: z
     .string()
     .describe(
-      'A comma separated list of navigation links available on the platform.'
+      'Una lista separada por comas de los enlaces de navegación disponibles en la plataforma.'
     ),
 });
 export type SuggestContentInput = z.infer<typeof SuggestContentInputSchema>;
@@ -34,12 +34,12 @@ const SuggestContentOutputSchema = z.object({
   suggestedContent: z
     .string()
     .describe(
-      'A comma-separated list of suggested content based on user activity.'
+      'Una lista separada por comas de contenido sugerido basado en la actividad del usuario.'
     ),
   suggestedLinks: z
     .string()
     .describe(
-      'A comma-separated list of suggested navigation links based on user activity.'
+      'Una lista separada por comas de enlaces de navegación sugeridos basados en la actividad del usuario.'
     ),
 });
 export type SuggestContentOutput = z.infer<typeof SuggestContentOutputSchema>;
@@ -52,17 +52,17 @@ const prompt = ai.definePrompt({
   name: 'suggestContentPrompt',
   input: {schema: SuggestContentInputSchema},
   output: {schema: SuggestContentOutputSchema},
-  prompt: `You are an AI assistant designed to suggest relevant content and navigation links based on user activity on a platform.
+  prompt: `Eres un asistente de IA diseñado para sugerir contenido relevante y enlaces de navegación basados en la actividad del usuario en una plataforma.
 
-You have access to the following information:
-- User Activity: {{{userActivity}}}
-- Content Types: {{{contentTypes}}}
-- Navigation Links: {{{navigationLinks}}}
+Tienes acceso a la siguiente información:
+- Actividad del usuario: {{{userActivity}}}
+- Tipos de contenido: {{{contentTypes}}}
+- Enlaces de navegación: {{{navigationLinks}}}
 
-Based on the user's recent activity, suggest relevant content and navigation links.  Give your response as comma separated lists.
+Basado en la actividad reciente del usuario, sugiere contenido relevante y enlaces de navegación. Da tu respuesta como listas separadas por comas.
 
-Suggested Content: 
-Suggested Links:`,
+Contenido Sugerido:
+Enlaces Sugeridos:`,
 });
 
 const suggestContentFlow = ai.defineFlow(

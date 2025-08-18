@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SidebarGroup, SidebarGroupContent } from "@/components/ui/sidebar";
+import { SidebarGroup } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -22,13 +22,13 @@ type Suggestions = {
 
 export function AiSuggestions() {
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
-  const [activity, setActivity] = useState("Just logged in");
+  const [activity, setActivity] = useState("Acaba de iniciar sesión");
   const [isPending, startTransition] = useTransition();
 
   const activities = [
-    { label: "Viewed Projects", value: "Looking at project management board" },
-    { label: "Checked Tasks", value: "Reviewing personal to-do list and tasks" },
-    { label: "Updated Settings", value: "Changed profile and notification settings" },
+    { label: "Vio Proyectos", value: "Viendo el tablero de gestión de proyectos" },
+    { label: "Revisó Tareas", value: "Revisando la lista de tareas pendientes" },
+    { label: "Actualizó Ajustes", value: "Cambió la configuración de perfil y notificaciones" },
   ];
 
   const handleSuggestion = (newActivity: string) => {
@@ -36,7 +36,7 @@ export function AiSuggestions() {
     startTransition(async () => {
       const result = await suggestContent({
         userActivity: newActivity,
-        contentTypes: "Documentation, Blog Posts, Community Q&A",
+        contentTypes: "Documentación, Publicaciones de blog, Preguntas y respuestas de la comunidad",
         navigationLinks: "/,/projects,/tasks,/settings",
       });
       setSuggestions({
@@ -47,7 +47,7 @@ export function AiSuggestions() {
   };
 
   React.useEffect(() => {
-    handleSuggestion("Just logged in");
+    handleSuggestion("Acaba de iniciar sesión");
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -61,10 +61,10 @@ export function AiSuggestions() {
           <div className="group-data-[collapsible=icon]:hidden">
             <CardTitle className="flex items-center gap-2 text-base">
               <Sparkles className="size-4 text-primary" />
-              For You
+              Para Ti
             </CardTitle>
             <CardDescription className="text-xs">
-              Suggestions based on your activity:{" "}
+              Sugerencias basadas en tu actividad:{" "}
               <span className="font-semibold text-primary">{activity}</span>
             </CardDescription>
           </div>
@@ -72,7 +72,7 @@ export function AiSuggestions() {
         <CardContent className="p-0 group-data-[collapsible=icon]:hidden">
           <div className="mt-2 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
-              Simulate Activity:
+              Simular Actividad:
             </p>
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               {activities.map((act) => (
@@ -111,18 +111,18 @@ export function AiSuggestions() {
             {!isPending && suggestions && (
               <>
                 <div>
-                  <h4 className="text-sm font-semibold">Suggested Content</h4>
+                  <h4 className="text-sm font-semibold">Contenido Sugerido</h4>
                   <ul className="mt-1 list-none space-y-1 text-sm text-muted-foreground">
                     {suggestions.content.map((item, i) => item && <li key={i}>- {item}</li>)}
                   </ul>
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold">Suggested Links</h4>
+                  <h4 className="text-sm font-semibold">Enlaces Sugeridos</h4>
                   <ul className="mt-1 list-none space-y-1">
                     {suggestions.links.map((link, i) => (
                       link && <li key={i}>
                         <Link href={link} className="flex items-center gap-1 text-sm text-primary hover:underline">
-                          Go to {link === '/' ? 'Dashboard' : link.replace('/', '')} <ArrowRight className="size-3" />
+                          Ir a {link === '/' ? 'Panel' : link.replace('/', '')} <ArrowRight className="size-3" />
                         </Link>
                       </li>
                     ))}
@@ -136,5 +136,3 @@ export function AiSuggestions() {
     </SidebarGroup>
   );
 }
-
-    

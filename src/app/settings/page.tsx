@@ -24,67 +24,67 @@ import { Settings } from "lucide-react";
 export default function SettingsPage() {
   return (
     <SidebarInset>
-      <PageHeader title="Settings" />
+      <PageHeader title="Configuración" />
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         <div className="flex items-center gap-2">
           <Settings className="h-6 w-6" />
-          <h1 className="text-lg font-semibold md:text-2xl">Settings</h1>
+          <h1 className="text-lg font-semibold md:text-2xl">Configuración</h1>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Profile</CardTitle>
+              <CardTitle>Perfil</CardTitle>
               <CardDescription>
-                Update your personal information.
+                Actualiza tu información personal.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">Nombre</Label>
                 <Input id="name" defaultValue="Alex Doe" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Correo Electrónico</Label>
                 <Input id="email" type="email" defaultValue="alex@example.com" />
               </div>
             </CardContent>
             <CardFooter>
-              <Button>Save Changes</Button>
+              <Button>Guardar Cambios</Button>
             </CardFooter>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Preferences</CardTitle>
+              <CardTitle>Preferencias</CardTitle>
               <CardDescription>
-                Customize your application experience.
+                Personaliza tu experiencia en la aplicación.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="theme">Theme</Label>
+                <Label htmlFor="theme">Tema</Label>
                 <Select defaultValue="system">
                   <SelectTrigger id="theme">
-                    <SelectValue placeholder="Select theme" />
+                    <SelectValue placeholder="Seleccionar tema" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="light">Light</SelectItem>
-                    <SelectItem value="dark">Dark</SelectItem>
-                    <SelectItem value="system">System</SelectItem>
+                    <SelectItem value="light">Claro</SelectItem>
+                    <SelectItem value="dark">Oscuro</SelectItem>
+                    <SelectItem value="system">Sistema</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center justify-between rounded-md border p-4">
                 <Label htmlFor="email-notifications" className="flex flex-col space-y-1">
-                  <span>Email Notifications</span>
+                  <span>Notificaciones por Correo</span>
                   <span className="text-xs font-normal text-muted-foreground">
-                    Receive updates and summaries via email.
+                    Recibe actualizaciones y resúmenes por correo.
                   </span>
                 </Label>
                 <Switch id="email-notifications" defaultChecked />
               </div>
             </CardContent>
              <CardFooter>
-              <Button>Save Preferences</Button>
+              <Button>Guardar Preferencias</Button>
             </CardFooter>
           </Card>
         </div>

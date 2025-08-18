@@ -15,10 +15,10 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 const navigationItems = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/projects", label: "Projects", icon: KanbanSquare },
-  { href: "/tasks", label: "Tasks", icon: CheckSquare },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", label: "Panel", icon: LayoutDashboard },
+  { href: "/projects", label: "Proyectos", icon: KanbanSquare },
+  { href: "/tasks", label: "Tareas", icon: CheckSquare },
+  { href: "/settings", label: "Configuración", icon: Settings },
 ];
 
 export function Nav() {

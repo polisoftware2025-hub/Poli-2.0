@@ -7,27 +7,27 @@ import { CheckSquare, PlusCircle } from "lucide-react";
 
 export default function TasksPage() {
   const tasks = [
-    { id: "task1", label: "Finalize Q3 report", done: false },
-    { id: "task2", label: "Schedule team meeting", done: false },
-    { id: "task3", label: "Onboard new designer", done: true },
-    { id: "task4", label: "Review project proposal", done: false },
-    { id: "task5", label: "Submit expense report", done: true },
+    { id: "task1", label: "Finalizar informe del tercer trimestre", done: false },
+    { id: "task2", label: "Programar reunión de equipo", done: false },
+    { id: "task3", label: "Incorporar nuevo diseñador", done: true },
+    { id: "task4", label: "Revisar propuesta de proyecto", done: false },
+    { id: "task5", label: "Enviar informe de gastos", done: true },
   ];
 
   return (
     <SidebarInset>
-      <PageHeader title="Tasks" />
+      <PageHeader title="Tareas" />
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-6 w-6" />
-          <h1 className="text-lg font-semibold md:text-2xl">My Tasks</h1>
+          <h1 className="text-lg font-semibold md:text-2xl">Mis Tareas</h1>
         </div>
         <Card className="flex-1">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>To-Do List</CardTitle>
+            <CardTitle>Lista de Tareas</CardTitle>
             <Button size="sm">
               <PlusCircle className="mr-2 h-4 w-4" />
-              Add Task
+              Añadir Tarea
             </Button>
           </CardHeader>
           <CardContent>
