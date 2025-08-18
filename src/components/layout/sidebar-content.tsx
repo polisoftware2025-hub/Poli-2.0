@@ -5,20 +5,11 @@ import {
   Sidebar,
   SidebarContent as Content,
   SidebarHeader,
-  SidebarSeparator,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Nav } from "@/components/layout/nav";
-import { AiSuggestions } from "@/components/ai/ai-suggestions";
-import { useEffect, useState } from "react";
 
 export function SidebarContent() {
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
@@ -47,8 +38,6 @@ export function SidebarContent() {
       <Content>
         <Nav />
       </Content>
-      <SidebarSeparator />
-      {isClient && <AiSuggestions />}
     </Sidebar>
   );
 }
