@@ -1,9 +1,11 @@
+
 "use client";
 
 import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarMenuSkeleton,
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -19,9 +21,9 @@ export function Nav() {
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    setIsClient(true);
     const savedLanguage = localStorage.getItem("language") || "es";
     setLanguage(savedLanguage);
+    setIsClient(true);
   }, []);
 
   const getNavigationItems = (lang: string) => [
@@ -29,6 +31,15 @@ export function Nav() {
     { href: "/settings", label: lang === 'en' ? "Settings" : "Configuración", icon: Settings },
   ];
   
+  if (!isClient) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuSkeleton showIcon />
+        <SidebarMenuSkeleton showIcon />
+      </SidebarMenu>
+    );
+  }
+
   const navigationItems = getNavigationItems(language);
 
   return (
@@ -42,7 +53,7 @@ export function Nav() {
           >
             <Link href={item.href}>
               <item.icon />
-              {isClient ? <span>{item.label}</span> : <span />}
+              <span>{item.label}</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
