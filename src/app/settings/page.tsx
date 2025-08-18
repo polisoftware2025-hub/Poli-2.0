@@ -130,7 +130,7 @@ export default function SettingsPage() {
           <Settings className="h-6 w-6" />
           <h1 className="text-lg font-semibold md:text-2xl">{t("Configuración")}</h1>
         </div>
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="flex flex-col gap-6">
           <Card>
             <CardHeader>
               <CardTitle>{t("Perfil")}</CardTitle>
