@@ -22,7 +22,7 @@ import {
 import { SidebarInset } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import { Settings } from "lucide-react";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function SettingsPage() {
   const [name, setName] = useState("Alex Doe");
