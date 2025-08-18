@@ -20,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Settings } from "lucide-react";
 import { useState, useEffect } from "react";
