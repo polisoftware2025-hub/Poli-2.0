@@ -1,5 +1,4 @@
 import {
-  PocketKnife,
   Sidebar,
   SidebarContent as Content,
   SidebarHeader,
@@ -12,8 +11,8 @@ import { AiSuggestions } from "@/components/ai/ai-suggestions";
 export function SidebarContent() {
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader>
-        <div className="flex items-center gap-2">
+      <SidebarHeader className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
+        <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
            <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 24 24"
@@ -31,7 +30,7 @@ export function SidebarContent() {
             </svg>
           <span className="text-lg font-semibold">Poli 2.0</span>
         </div>
-        <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
+        <SidebarTrigger />
       </SidebarHeader>
       <Content>
         <Nav />
@@ -41,3 +40,5 @@ export function SidebarContent() {
     </Sidebar>
   );
 }
+
+    

@@ -53,19 +53,24 @@ export function AiSuggestions() {
 
   return (
     <SidebarGroup>
-      <Card className="border-0 shadow-none">
-        <CardHeader className="p-2">
-          <CardTitle className="flex items-center gap-2 text-base">
+      <Card className="border-0 shadow-none group-data-[collapsible=icon]:bg-transparent">
+        <CardHeader className="p-0 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+          <CardTitle className="hidden items-center gap-2 text-base group-data-[collapsible=icon]:flex">
             <Sparkles className="size-4 text-primary" />
-            For You
           </CardTitle>
-          <CardDescription className="text-xs">
-            Suggestions based on your activity:{" "}
-            <span className="font-semibold text-primary">{activity}</span>
-          </CardDescription>
+          <div className="group-data-[collapsible=icon]:hidden">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Sparkles className="size-4 text-primary" />
+              For You
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Suggestions based on your activity:{" "}
+              <span className="font-semibold text-primary">{activity}</span>
+            </CardDescription>
+          </div>
         </CardHeader>
-        <CardContent className="p-2">
-          <div className="mb-2 space-y-2">
+        <CardContent className="p-0 group-data-[collapsible=icon]:hidden">
+          <div className="mt-2 space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
               Simulate Activity:
             </p>
@@ -131,3 +136,5 @@ export function AiSuggestions() {
     </SidebarGroup>
   );
 }
+
+    
