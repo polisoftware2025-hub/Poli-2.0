@@ -73,6 +73,18 @@ export default function SettingsPage() {
                   </SelectContent>
                 </Select>
               </div>
+               <div className="space-y-2">
+                <Label htmlFor="language">Idioma</Label>
+                <Select defaultValue="es">
+                  <SelectTrigger id="language">
+                    <SelectValue placeholder="Idioma" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="es">Español</SelectItem>
+                    <SelectItem value="en">Inglés</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center justify-between rounded-md border p-4">
                 <Label htmlFor="email-notifications" className="flex flex-col space-y-1">
                   <span>Notificaciones por Correo</span>

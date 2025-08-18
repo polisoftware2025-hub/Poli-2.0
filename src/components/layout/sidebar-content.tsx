@@ -7,15 +7,14 @@ import {
 } from "@/components/ui/sidebar";
 import { Nav } from "@/components/layout/nav";
 import { AiSuggestions } from "@/components/ai/ai-suggestions";
-import { LanguageSwitcher } from "./language-switcher";
 
 export function SidebarContent() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
         <div className="flex items-center gap-2">
-          <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
            <div className="flex items-center gap-2">
+            <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -40,8 +39,6 @@ export function SidebarContent() {
       </Content>
       <SidebarSeparator />
       <AiSuggestions />
-      <SidebarSeparator />
-      <LanguageSwitcher />
     </Sidebar>
   );
 }
