@@ -30,7 +30,7 @@ export function SidebarContent() {
             </svg>
           <span className="text-lg font-semibold">Poli 2.0</span>
         </div>
-        <SidebarTrigger />
+        <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
       </SidebarHeader>
       <Content>
         <Nav />
@@ -40,5 +40,3 @@ export function SidebarContent() {
     </Sidebar>
   );
 }
-
-    
