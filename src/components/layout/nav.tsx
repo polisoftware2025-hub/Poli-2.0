@@ -13,16 +13,25 @@ import {
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
-const navigationItems = [
-  { href: "/", label: "Panel", icon: LayoutDashboard },
-  { href: "/projects", label: "Proyectos", icon: KanbanSquare },
-  { href: "/tasks", label: "Tareas", icon: CheckSquare },
-  { href: "/settings", label: "Configuración", icon: Settings },
+const getNavigationItems = (language: string) => [
+  { href: "/", label: language === 'en' ? "Dashboard" : "Panel", icon: LayoutDashboard },
+  { href: "/projects", label: language === 'en' ? "Projects" : "Proyectos", icon: KanbanSquare },
+  { href: "/tasks", label: language === 'en' ? "Tasks" : "Tareas", icon: CheckSquare },
+  { href: "/settings", label: language === 'en' ? "Settings" : "Configuración", icon: Settings },
 ];
 
 export function Nav() {
   const pathname = usePathname();
+  const [language, setLanguage] = useState("es");
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem("language") || "es";
+    setLanguage(savedLanguage);
+  }, []);
+
+  const navigationItems = getNavigationItems(language);
 
   return (
     <SidebarMenu>
