@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "Poli 2.0",
-  description: "Una aplicación con sugerencias basadas en IA y una interfaz personalizable.",
+  description: "Una aplicación con sugerencias de IA y una interfaz personalizable.",
 };
 
 export default function RootLayout({

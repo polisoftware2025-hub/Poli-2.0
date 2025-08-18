@@ -40,6 +40,8 @@ export default function SettingsPage() {
     setTheme(savedTheme);
     setLanguage(savedLanguage);
 
+    document.documentElement.lang = savedLanguage;
+
     if (
       savedTheme === "dark" ||
       (savedTheme === "system" &&
@@ -52,6 +54,8 @@ export default function SettingsPage() {
   }, []);
 
   const handleSavePreferences = () => {
+    const currentLanguage = localStorage.getItem("language") || "es";
+    
     localStorage.setItem("theme", theme);
     localStorage.setItem("language", language);
 
@@ -66,99 +70,126 @@ export default function SettingsPage() {
     }
 
     toast({
-      title: "Preferencias guardadas",
-      description: "Tu tema e idioma han sido actualizados.",
+      title: language === "es" ? "Preferencias guardadas" : "Preferences saved",
+      description: language === "es" ? "Tu tema e idioma han sido actualizados." : "Your theme and language have been updated.",
     });
 
-    // For now, we just show a toast. A real app would reload or re-render content.
-    if (language !== (localStorage.getItem("language") || "es")) {
-       console.log("Idioma cambiado, refrescando la página...");
+    if (language !== currentLanguage) {
+       console.log("Language changed, reloading page...");
        window.location.reload();
     }
   };
   
   const handleSaveChanges = () => {
     toast({
-      title: "Cambios guardados",
-      description: "Tu perfil ha sido actualizado.",
+      title: language === 'es' ? "Cambios guardados" : "Changes saved",
+      description: language === 'es' ? "Tu perfil ha sido actualizado." : "Your profile has been updated.",
     });
   };
+  
+  const t = (text: string) => {
+    if (language === 'en') {
+      const translations: {[key: string]: string} = {
+        "Configuración": "Settings",
+        "Perfil": "Profile",
+        "Actualiza tu información personal.": "Update your personal information.",
+        "Nombre": "Name",
+        "Correo Electrónico": "Email",
+        "Guardar Cambios": "Save Changes",
+        "Preferencias": "Preferences",
+        "Personaliza tu experiencia en la aplicación.": "Customize your application experience.",
+        "Tema": "Theme",
+        "Seleccionar tema": "Select theme",
+        "Claro": "Light",
+        "Oscuro": "Dark",
+        "Sistema": "System",
+        "Idioma": "Language",
+        "Español": "Spanish",
+        "Inglés": "English",
+        "Notificaciones por Correo": "Email Notifications",
+        "Recibe actualizaciones y resúmenes por correo.": "Receive updates and summaries by email.",
+        "Guardar Preferencias": "Save Preferences",
+      };
+      return translations[text] || text;
+    }
+    return text;
+  }
 
   return (
     <SidebarInset>
-      <PageHeader title="Configuración" />
+      <PageHeader title={t("Configuración")} />
       <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
         <div className="flex items-center gap-2">
           <Settings className="h-6 w-6" />
-          <h1 className="text-lg font-semibold md:text-2xl">Configuración</h1>
+          <h1 className="text-lg font-semibold md:text-2xl">{t("Configuración")}</h1>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Perfil</CardTitle>
+              <CardTitle>{t("Perfil")}</CardTitle>
               <CardDescription>
-                Actualiza tu información personal.
+                {t("Actualiza tu información personal.")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Nombre</Label>
+                <Label htmlFor="name">{t("Nombre")}</Label>
                 <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="email">Correo Electrónico</Label>
+                <Label htmlFor="email">{t("Correo Electrónico")}</Label>
                 <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={handleSaveChanges}>Guardar Cambios</Button>
+              <Button onClick={handleSaveChanges}>{t("Guardar Cambios")}</Button>
             </CardFooter>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Preferencias</CardTitle>
+              <CardTitle>{t("Preferencias")}</CardTitle>
               <CardDescription>
-                Personaliza tu experiencia en la aplicación.
+                {t("Personaliza tu experiencia en la aplicación.")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="theme">Tema</Label>
+                <Label htmlFor="theme">{t("Tema")}</Label>
                 <Select value={theme} onValueChange={setTheme}>
                   <SelectTrigger id="theme">
-                    <SelectValue placeholder="Seleccionar tema" />
+                    <SelectValue placeholder={t("Seleccionar tema")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="light">Claro</SelectItem>
-                    <SelectItem value="dark">Oscuro</SelectItem>
-                    <SelectItem value="system">Sistema</SelectItem>
+                    <SelectItem value="light">{t("Claro")}</SelectItem>
+                    <SelectItem value="dark">{t("Oscuro")}</SelectItem>
+                    <SelectItem value="system">{t("Sistema")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
                <div className="space-y-2">
-                <Label htmlFor="language">Idioma</Label>
+                <Label htmlFor="language">{t("Idioma")}</Label>
                 <Select value={language} onValueChange={setLanguage}>
                   <SelectTrigger id="language">
-                    <SelectValue placeholder="Idioma" />
+                    <SelectValue placeholder="Language" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="es">Español</SelectItem>
-                    <SelectItem value="en">Inglés</SelectItem>
+                    <SelectItem value="es">{t("Español")}</SelectItem>
+                    <SelectItem value="en">{t("Inglés")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center justify-between rounded-md border p-4">
                 <Label htmlFor="email-notifications" className="flex flex-col space-y-1">
-                  <span>Notificaciones por Correo</span>
+                  <span>{t("Notificaciones por Correo")}</span>
                   <span className="text-xs font-normal text-muted-foreground">
-                    Recibe actualizaciones y resúmenes por correo.
+                    {t("Recibe actualizaciones y resúmenes por correo.")}
                   </span>
                 </Label>
                 <Switch id="email-notifications" checked={emailNotifications} onCheckedChange={setEmailNotifications} />
               </div>
             </CardContent>
              <CardFooter>
-              <Button onClick={handleSavePreferences}>Guardar Preferencias</Button>
+              <Button onClick={handleSavePreferences}>{t("Guardar Preferencias")}</Button>
             </CardFooter>
           </Card>
         </div>
