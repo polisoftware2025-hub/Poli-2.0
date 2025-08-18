@@ -22,7 +22,7 @@ type Suggestions = {
 
 export function AiSuggestions() {
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
-  const [activity, setActivity] = useState("Acaba de iniciar sesión");
+  const [activity, setActivity] = useState("");
   const [isPending, startTransition] = useTransition();
   const [language, setLanguage] = useState("es");
 
@@ -105,14 +105,14 @@ export function AiSuggestions() {
     <SidebarGroup>
       <Card className="border-0 shadow-none group-data-[collapsible=icon]:bg-transparent">
         <CardHeader className="p-0 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
-          <CardTitle className="hidden items-center gap-2 text-base group-data-[collapsible=icon]:flex">
+          <div className="hidden items-center gap-2 text-base font-semibold group-data-[collapsible=icon]:flex">
             <Sparkles className="size-4 text-primary" />
-          </CardTitle>
+          </div>
           <div className="group-data-[collapsible=icon]:hidden">
-            <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex items-center gap-2 text-base font-semibold">
               <Sparkles className="size-4 text-primary" />
               {t("Para Ti")}
-            </CardTitle>
+            </div>
             <CardDescription className="text-xs">
               {t("Sugerencias basadas en tu actividad:")}{" "}
               <span className="font-semibold text-primary">{t(activity)}</span>
