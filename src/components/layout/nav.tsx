@@ -14,7 +14,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const getNavigationItems = (language: string) => [
-  { href: "/", label: language === 'en' ? "Dashboard" : "Panel", icon: LayoutDashboard },
+  { href: "/", label: language === 'en' ? "Dashboard" : "Inicio", icon: LayoutDashboard },
   { href: "/settings", label: language === 'en' ? "Settings" : "Configuración", icon: Settings },
 ];
 
