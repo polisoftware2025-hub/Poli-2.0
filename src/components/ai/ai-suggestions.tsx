@@ -1,3 +1,4 @@
+
 "use client";
 
 import { suggestContent } from "@/ai/flows/suggest-content";
@@ -29,11 +30,13 @@ export function AiSuggestions() {
   useEffect(() => {
     const savedLanguage = localStorage.getItem("language") || "es";
     setLanguage(savedLanguage);
-    const initialActivity = savedLanguage === 'en' ? "Just logged in" : "Acaba de iniciar sesión";
-    setActivity(initialActivity);
+  }, []);
+
+  useEffect(() => {
+    const initialActivity = language === 'en' ? "Just logged in" : "Acaba de iniciar sesión";
     handleSuggestion(initialActivity);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [language]);
   
   const t = (text: string) => {
     if (language === 'en') {
@@ -113,10 +116,10 @@ export function AiSuggestions() {
               <Sparkles className="size-4 text-primary" />
               {t("Para Ti")}
             </div>
-            <CardDescription className="text-xs">
+            <p className="text-xs text-muted-foreground">
               {t("Sugerencias basadas en tu actividad:")}{" "}
-              <span className="font-semibold text-primary">{t(activity)}</span>
-            </CardDescription>
+              <span className="font-semibold text-primary">{activity}</span>
+            </p>
           </div>
         </CardHeader>
         <CardContent className="p-0 group-data-[collapsible=icon]:hidden">
