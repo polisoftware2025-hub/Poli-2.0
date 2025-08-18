@@ -22,7 +22,7 @@ type Suggestions = {
 
 export function AiSuggestions() {
   const [suggestions, setSuggestions] = useState<Suggestions | null>(null);
-  const [activity, setActivity] = useState("");
+  const [activity, setActivity] = useState("Acaba de iniciar sesión");
   const [isPending, startTransition] = useTransition();
   const [language, setLanguage] = useState("es");
 
@@ -51,9 +51,9 @@ export function AiSuggestions() {
         "Enlaces Sugeridos": "Suggested Links",
         "Ir a": "Go to",
         "Panel": "Dashboard",
-        "proyectos": "projects",
-        "tareas": "tasks",
-        "configuración": "settings",
+        "Proyectos": "Projects",
+        "Tareas": "Tasks",
+        "Configuración": "Settings",
         "Acaba de iniciar sesión": "Just logged in",
       };
       return translations[text] || text;
@@ -115,7 +115,7 @@ export function AiSuggestions() {
             </CardTitle>
             <CardDescription className="text-xs">
               {t("Sugerencias basadas en tu actividad:")}{" "}
-              <span className="font-semibold text-primary">{activity}</span>
+              <span className="font-semibold text-primary">{t(activity)}</span>
             </CardDescription>
           </div>
         </CardHeader>
