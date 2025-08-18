@@ -28,8 +28,14 @@ import { useState, useEffect } from "react";
 export default function SettingsPage() {
   const [name, setName] = useState("Alex Doe");
   const [email, setEmail] = useState("alex@example.com");
-  const [theme, setTheme] = useState("system");
+
+  // State for applied settings
   const [language, setLanguage] = useState("es");
+  
+  // Temporary state for selections
+  const [selectedTheme, setSelectedTheme] = useState("system");
+  const [selectedLanguage, setSelectedLanguage] = useState("es");
+
   const [emailNotifications, setEmailNotifications] = useState(true);
 
   const { toast } = useToast();
@@ -37,8 +43,11 @@ export default function SettingsPage() {
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "system";
     const savedLanguage = localStorage.getItem("language") || "es";
-    setTheme(savedTheme);
+    
+    // Set both applied and selected states on load
     setLanguage(savedLanguage);
+    setSelectedLanguage(savedLanguage);
+    setSelectedTheme(savedTheme);
 
     document.documentElement.lang = savedLanguage;
 
@@ -56,12 +65,15 @@ export default function SettingsPage() {
   const handleSavePreferences = () => {
     const currentLanguage = localStorage.getItem("language") || "es";
     
-    localStorage.setItem("theme", theme);
-    localStorage.setItem("language", language);
+    localStorage.setItem("theme", selectedTheme);
+    localStorage.setItem("language", selectedLanguage);
+
+    setLanguage(selectedLanguage);
+    document.documentElement.lang = selectedLanguage;
 
     if (
-      theme === "dark" ||
-      (theme === "system" &&
+      selectedTheme === "dark" ||
+      (selectedTheme === "system" &&
         window.matchMedia("(prefers-color-scheme: dark)").matches)
     ) {
       document.documentElement.classList.add("dark");
@@ -70,11 +82,11 @@ export default function SettingsPage() {
     }
 
     toast({
-      title: language === "es" ? "Preferencias guardadas" : "Preferences saved",
-      description: language === "es" ? "Tu tema e idioma han sido actualizados." : "Your theme and language have been updated.",
+      title: selectedLanguage === "es" ? "Preferencias guardadas" : "Preferences saved",
+      description: selectedLanguage === "es" ? "Tu tema e idioma han sido actualizados." : "Your theme and language have been updated.",
     });
 
-    if (language !== currentLanguage) {
+    if (selectedLanguage !== currentLanguage) {
        console.log("Language changed, reloading page...");
        window.location.reload();
     }
@@ -155,7 +167,7 @@ export default function SettingsPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="theme">{t("Tema")}</Label>
-                <Select value={theme} onValueChange={setTheme}>
+                <Select value={selectedTheme} onValueChange={setSelectedTheme}>
                   <SelectTrigger id="theme">
                     <SelectValue placeholder={t("Seleccionar tema")} />
                   </SelectTrigger>
@@ -168,7 +180,7 @@ export default function SettingsPage() {
               </div>
                <div className="space-y-2">
                 <Label htmlFor="language">{t("Idioma")}</Label>
-                <Select value={language} onValueChange={setLanguage}>
+                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
                   <SelectTrigger id="language">
                     <SelectValue placeholder="Language" />
                   </SelectTrigger>
