@@ -7,14 +7,15 @@ import {
 } from "@/components/ui/sidebar";
 import { Nav } from "@/components/layout/nav";
 import { AiSuggestions } from "@/components/ai/ai-suggestions";
+import { LanguageSwitcher } from "./language-switcher";
 
 export function SidebarContent() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
         <div className="flex items-center gap-2">
-           <SidebarTrigger />
-           <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+          <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
+           <div className="flex items-center gap-2">
             <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -30,7 +31,7 @@ export function SidebarContent() {
                 <path d="m14.29 14.73 3.62 1.45a2.13 2.13 0 0 0 2.8-1.58l1.2-4.24a2.13 2.13 0 0 0-1.5-2.2l-4.22-1.2a2.13 2.13 0 0 0-2.53 1.25l-1.45 3.62" />
                 <path d="m15.5 12.5-4.22-1.2" />
               </svg>
-            <span className="text-lg font-semibold">Poli 2.0</span>
+            <span className="text-lg font-semibold group-data-[collapsible=icon]:hidden">Poli 2.0</span>
           </div>
         </div>
       </SidebarHeader>
@@ -39,6 +40,8 @@ export function SidebarContent() {
       </Content>
       <SidebarSeparator />
       <AiSuggestions />
+      <SidebarSeparator />
+      <LanguageSwitcher />
     </Sidebar>
   );
 }
