@@ -13,20 +13,22 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const getNavigationItems = (language: string) => [
-  { href: "/", label: language === 'en' ? "Dashboard" : "Inicio", icon: LayoutDashboard },
-  { href: "/settings", label: language === 'en' ? "Settings" : "Configuración", icon: Settings },
-];
-
 export function Nav() {
   const pathname = usePathname();
   const [language, setLanguage] = useState("es");
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const savedLanguage = localStorage.getItem("language") || "es";
     setLanguage(savedLanguage);
   }, []);
 
+  const getNavigationItems = (lang: string) => [
+    { href: "/", label: lang === 'en' ? "Dashboard" : "Inicio", icon: LayoutDashboard },
+    { href: "/settings", label: lang === 'en' ? "Settings" : "Configuración", icon: Settings },
+  ];
+  
   const navigationItems = getNavigationItems(language);
 
   return (
@@ -40,7 +42,7 @@ export function Nav() {
           >
             <Link href={item.href}>
               <item.icon />
-              <span>{item.label}</span>
+              {isClient ? <span>{item.label}</span> : <span />}
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
