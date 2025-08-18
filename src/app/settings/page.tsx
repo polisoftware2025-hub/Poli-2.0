@@ -36,8 +36,6 @@ export default function SettingsPage() {
   const [selectedTheme, setSelectedTheme] = useState("system");
   const [selectedLanguage, setSelectedLanguage] = useState("es");
 
-  const [emailNotifications, setEmailNotifications] = useState(true);
-
   const { toast } = useToast();
 
   useEffect(() => {
@@ -118,8 +116,6 @@ export default function SettingsPage() {
         "Idioma": "Language",
         "Español": "Spanish",
         "Inglés": "English",
-        "Notificaciones por Correo": "Email Notifications",
-        "Recibe actualizaciones y resúmenes por correo.": "Receive updates and summaries by email.",
         "Guardar Preferencias": "Save Preferences",
       };
       return translations[text] || text;
@@ -189,15 +185,6 @@ export default function SettingsPage() {
                     <SelectItem value="en">{t("Inglés")}</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="flex items-center justify-between rounded-md border p-4">
-                <Label htmlFor="email-notifications" className="flex flex-col space-y-1">
-                  <span>{t("Notificaciones por Correo")}</span>
-                  <span className="text-xs font-normal text-muted-foreground">
-                    {t("Recibe actualizaciones y resúmenes por correo.")}
-                  </span>
-                </Label>
-                <Switch id="email-notifications" checked={emailNotifications} onCheckedChange={setEmailNotifications} />
               </div>
             </CardContent>
              <CardFooter>
