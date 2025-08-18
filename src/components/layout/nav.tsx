@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
-  KanbanSquare,
   Settings,
   CheckSquare,
 } from "lucide-react";
@@ -17,7 +16,6 @@ import { useEffect, useState } from "react";
 
 const getNavigationItems = (language: string) => [
   { href: "/", label: language === 'en' ? "Dashboard" : "Panel", icon: LayoutDashboard },
-  { href: "/projects", label: language === 'en' ? "Projects" : "Proyectos", icon: KanbanSquare },
   { href: "/tasks", label: language === 'en' ? "Tasks" : "Tareas", icon: CheckSquare },
   { href: "/settings", label: language === 'en' ? "Settings" : "Configuración", icon: Settings },
 ];
