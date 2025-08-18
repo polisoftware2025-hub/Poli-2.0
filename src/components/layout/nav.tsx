@@ -8,7 +8,6 @@ import {
 import {
   LayoutDashboard,
   Settings,
-  CheckSquare,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -16,7 +15,6 @@ import { useEffect, useState } from "react";
 
 const getNavigationItems = (language: string) => [
   { href: "/", label: language === 'en' ? "Dashboard" : "Panel", icon: LayoutDashboard },
-  { href: "/tasks", label: language === 'en' ? "Tasks" : "Tareas", icon: CheckSquare },
   { href: "/settings", label: language === 'en' ? "Settings" : "Configuración", icon: Settings },
 ];
 
