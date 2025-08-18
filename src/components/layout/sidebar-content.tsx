@@ -11,7 +11,7 @@ import { AiSuggestions } from "@/components/ai/ai-suggestions";
 export function SidebarContent() {
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="flex items-center justify-between group-data-[collapsible=icon]:justify-center">
+      <SidebarHeader className="flex items-center justify-between group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
         <div className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
            <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -30,7 +30,7 @@ export function SidebarContent() {
             </svg>
           <span className="text-lg font-semibold">Poli 2.0</span>
         </div>
-        <SidebarTrigger className="group-data-[collapsible=icon]:hidden" />
+        <SidebarTrigger />
       </SidebarHeader>
       <Content>
         <Nav />
