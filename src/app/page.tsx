@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -89,13 +90,13 @@ export default function HomePage() {
                 asChild
                 className="rounded-full bg-[#0066cc] px-8 py-6 text-lg font-semibold text-white transition-transform hover:scale-105 hover:bg-[#005bb5]"
               >
-                <Link href="#inicio-sesion">Iniciar Sesión</Link>
+                <a href="#inicio">Iniciar Sesión</a>
               </Button>
               <Button
                 asChild
                 className="rounded-full bg-[#28a745] px-8 py-6 text-lg font-semibold text-white transition-transform hover:scale-105 hover:bg-[#218838]"
               >
-                <Link href="#inscripcion">Inscribirse</Link>
+                <a href="#inscripcion">Inscribirse</a>
               </Button>
             </div>
           </section>
