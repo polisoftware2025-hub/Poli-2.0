@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ export default function HomePage() {
       description:
         "Prepara expertos en el control financiero y la normativa contable.",
       image: "https://placehold.co/600x400.png",
-      imageHint: "accounting finance",
+      imageHint: "public accounting",
     },
     {
       title: "Mercadeo y Publicidad",
@@ -165,7 +166,7 @@ export default function HomePage() {
         >
           <div className="absolute inset-0 z-0">
             <Image
-              src="https://placehold.co/1920x1080"
+              src="https://placehold.co/1920x1080.png"
               alt="Estudiantes en campus universitario"
               layout="fill"
               objectFit="cover"
@@ -217,36 +218,40 @@ export default function HomePage() {
             <h2 className="text-center font-poppins text-3xl font-bold text-gray-800">
               Nuestros Programas Académicos
             </h2>
-            <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2">
               {programs.map((program, index) => (
                 <Card
                   key={index}
-                  className="overflow-hidden rounded-lg bg-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+                  className="flex flex-col md:flex-row overflow-hidden rounded-lg bg-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
                 >
-                  <CardHeader className="p-0">
+                  <div className="md:w-1/3">
                     <Image
                       src={program.image}
                       alt={`Imagen de ${program.title}`}
                       width={600}
                       height={400}
-                      className="h-48 w-full object-cover"
+                      className="h-full w-full object-cover"
                       data-ai-hint={program.imageHint}
                     />
-                    <CardTitle className="p-6 pb-2 font-poppins text-xl font-bold text-gray-800">
-                      {program.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{program.description}</p>
-                  </CardContent>
-                  <CardFooter>
-                    <Button
-                      style={{ backgroundColor: "#004aad" }}
-                      className="w-full rounded-md py-3 font-semibold text-white transition-opacity hover:opacity-90"
-                    >
-                      Ver más
-                    </Button>
-                  </CardFooter>
+                  </div>
+                  <div className="flex flex-1 flex-col p-6 md:w-2/3">
+                    <CardHeader className="p-0">
+                      <CardTitle className="font-poppins text-xl font-bold text-gray-800">
+                        {program.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1 p-0 pt-2">
+                      <p className="text-gray-600">{program.description}</p>
+                    </CardContent>
+                    <CardFooter className="p-0 pt-4">
+                      <Button
+                        style={{ backgroundColor: "#004aad" }}
+                        className="w-full rounded-md py-3 font-semibold text-white transition-opacity hover:opacity-90 md:w-auto md:px-6"
+                      >
+                        Ver más
+                      </Button>
+                    </CardFooter>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -276,3 +281,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
