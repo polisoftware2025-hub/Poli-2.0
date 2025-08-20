@@ -191,7 +191,7 @@ export default function HomePage() {
           id="inicio"
           className="relative flex h-screen w-full items-center justify-center text-center text-white"
         >
-          <div className="absolute inset-0 z-0 bg-[#002147]/60">
+          <div className="absolute inset-0 z-0">
             <Image
               src="https://placehold.co/1920x1080.png"
               alt="Estudiantes en campus universitario"
@@ -200,8 +200,9 @@ export default function HomePage() {
               className="z-[-1]"
               data-ai-hint="university students campus"
             />
+             <div className="absolute inset-0 z-10 bg-[#002147]/60" />
           </div>
-          <div className="relative z-10 flex flex-col items-center p-6">
+          <div className="relative z-20 flex flex-col items-center p-6">
             <h1 className="font-poppins text-5xl font-bold md:text-7xl">
               Somos Politécnico Internacional
             </h1>
@@ -328,5 +329,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
