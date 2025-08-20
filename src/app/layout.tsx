@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { SidebarContent } from "@/components/layout/sidebar-content";
-import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Poli 2.0",
-  description: "Una aplicación con sugerencias de IA y una interfaz personalizable.",
+  title: "Politécnico Internacional",
+  description: "Proyecto Universitario",
 };
 
 export default function RootLayout({
@@ -15,21 +12,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
+    <html lang="es" className="!scroll-smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
           rel="stylesheet"
-        ></link>
+        />
       </head>
-      <body className="font-body antialiased">
-        <SidebarProvider>
-          <SidebarContent />
-          {children}
-        </SidebarProvider>
-        <Toaster />
+      <body className="font-roboto antialiased">
+        {children}
       </body>
     </html>
   );
