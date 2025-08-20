@@ -1,8 +1,13 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { GraduationCap, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -16,6 +21,78 @@ export default function HomePage() {
     { href: "#inscripcion", label: "Inscripción" },
     { href: "#programas", label: "Programas" },
     { href: "#contacto", label: "Contacto" },
+  ];
+
+  const programs = [
+    {
+      title: "Administración de Empresas",
+      description:
+        "Forma líderes con visión estratégica para gestionar organizaciones.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "business management",
+    },
+    {
+      title: "Contaduría Pública",
+      description:
+        "Prepara expertos en el control financiero y la normativa contable.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "accounting finance",
+    },
+    {
+      title: "Mercadeo y Publicidad",
+      description:
+        "Desarrolla estrategias creativas para posicionar marcas y productos.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "marketing advertising",
+    },
+    {
+      title: "Ingeniería de Sistemas",
+      description:
+        "Crea soluciones tecnológicas innovadoras para optimizar procesos.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "systems engineering",
+    },
+    {
+      title: "Gastronomía",
+      description: "Fusiona arte y técnica culinaria para crear experiencias únicas.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "gastronomy cooking",
+    },
+    {
+      title: "Hotelería y Turismo",
+      description:
+        "Gestiona servicios de hospitalidad con estándares internacionales.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "hotel tourism",
+    },
+    {
+      title: "Derecho",
+      description:
+        "Forma profesionales con sólidos principios éticos y jurídicos.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "law justice",
+    },
+    {
+      title: "Psicología",
+      description:
+        "Comprende el comportamiento humano para promover el bienestar.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "psychology wellness",
+    },
+    {
+      title: "Enfermería",
+      description:
+        "Cuidado integral de la salud con vocación de servicio y humanismo.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "nursing healthcare",
+    },
+    {
+      title: "Comunicación Social",
+      description:
+        "Forma comunicadores estratégicos para medios y organizaciones.",
+      image: "https://placehold.co/600x400.png",
+      imageHint: "social communication",
+    },
   ];
 
   return (
@@ -133,17 +210,55 @@ export default function HomePage() {
             </Card>
           </div>
         </section>
-        
-        {/* Empty Programs Section */}
-        <section id="programas" className="py-20 bg-gray-50">
-           <div className="container mx-auto px-6 text-center">
-              <h2 className="font-poppins text-3xl font-bold text-gray-800">Nuestros Programas</h2>
-              <p className="mt-4 text-gray-600">Próximamente más información sobre nuestra oferta académica.</p>
+
+        {/* Programs Section */}
+        <section id="programas" className="bg-gray-50 py-20">
+          <div className="container mx-auto px-6">
+            <h2 className="text-center font-poppins text-3xl font-bold text-gray-800">
+              Nuestros Programas Académicos
+            </h2>
+            <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+              {programs.map((program, index) => (
+                <Card
+                  key={index}
+                  className="overflow-hidden rounded-lg bg-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
+                >
+                  <CardHeader className="p-0">
+                    <Image
+                      src={program.image}
+                      alt={`Imagen de ${program.title}`}
+                      width={600}
+                      height={400}
+                      className="h-48 w-full object-cover"
+                      data-ai-hint={program.imageHint}
+                    />
+                    <CardTitle className="p-6 pb-2 font-poppins text-xl font-bold text-gray-800">
+                      {program.title}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600">{program.description}</p>
+                  </CardContent>
+                  <CardFooter>
+                    <Button
+                      style={{ backgroundColor: "#004aad" }}
+                      className="w-full rounded-md py-3 font-semibold text-white transition-opacity hover:opacity-90"
+                    >
+                      Ver más
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
             </div>
+          </div>
         </section>
 
         {/* CTA Section */}
-        <section id="contacto" style={{ backgroundColor: "#002147" }} className="py-20">
+        <section
+          id="contacto"
+          style={{ backgroundColor: "#002147" }}
+          className="py-20"
+        >
           <div className="container mx-auto px-6 text-center text-white">
             <h3 className="font-poppins text-3xl font-bold">
               ¿Quieres más información? Escríbenos.
