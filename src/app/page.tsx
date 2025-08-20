@@ -9,13 +9,23 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 import { GraduationCap, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
@@ -29,72 +39,92 @@ export default function HomePage() {
       title: "Administración de Empresas",
       description:
         "Forma líderes con visión estratégica para gestionar organizaciones.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "business management",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "business students",
     },
     {
       title: "Contaduría Pública",
       description:
         "Prepara expertos en el control financiero y la normativa contable.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "public accounting",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "accounting finance",
     },
     {
       title: "Mercadeo y Publicidad",
       description:
         "Desarrolla estrategias creativas para posicionar marcas y productos.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "marketing advertising",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "marketing team",
     },
     {
       title: "Ingeniería de Sistemas",
       description:
         "Crea soluciones tecnológicas innovadoras para optimizar procesos.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "systems engineering",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "software development",
     },
     {
       title: "Gastronomía",
       description: "Fusiona arte y técnica culinaria para crear experiencias únicas.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "gastronomy cooking",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "chef cooking",
     },
     {
       title: "Hotelería y Turismo",
       description:
         "Gestiona servicios de hospitalidad con estándares internacionales.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "hotel tourism",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "luxury hotel",
     },
     {
       title: "Derecho",
       description:
         "Forma profesionales con sólidos principios éticos y jurídicos.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "law justice",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "law books courtroom",
     },
     {
       title: "Psicología",
       description:
         "Comprende el comportamiento humano para promover el bienestar.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "psychology wellness",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "therapy session",
     },
     {
       title: "Enfermería",
       description:
         "Cuidado integral de la salud con vocación de servicio y humanismo.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "nursing healthcare",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "nurses hospital",
     },
     {
       title: "Comunicación Social",
       description:
         "Forma comunicadores estratégicos para medios y organizaciones.",
-      image: "https://placehold.co/600x400.png",
-      imageHint: "social communication",
+      image: "https://placehold.co/1200x600.png",
+      imageHint: "media broadcast",
     },
   ];
+
+  useEffect(() => {
+    if (!carouselApi) {
+      return;
+    }
+
+    const onSelect = () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    };
+
+    carouselApi.on("select", onSelect);
+    return () => {
+      carouselApi.off("select", onSelect);
+    };
+  }, [carouselApi]);
+
+  const scrollToSlide = (index: number) => {
+    carouselApi?.scrollTo(index);
+  };
+
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 font-roboto">
@@ -215,48 +245,72 @@ export default function HomePage() {
         {/* Programs Section */}
         <section id="programas" className="bg-gray-50 py-20">
           <div className="container mx-auto px-6">
-            <h2 className="text-center font-poppins text-3xl font-bold text-gray-800">
+            <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-12">
               Nuestros Programas Académicos
             </h2>
-            <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-2">
-              {programs.map((program, index) => (
-                <Card
+            <Carousel setApi={setCarouselApi} className="w-full">
+              <CarouselContent>
+                {programs.map((program, index) => (
+                  <CarouselItem key={index}>
+                    <div className="relative h-[500px] w-full overflow-hidden rounded-lg">
+                      <Image
+                        src={program.image}
+                        alt={`Imagen de ${program.title}`}
+                        layout="fill"
+                        objectFit="cover"
+                        className="brightness-50"
+                        data-ai-hint={program.imageHint}
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                        <div className="w-full max-w-2xl rounded-lg bg-black/50 p-8 text-center text-white backdrop-blur-sm">
+                          <h3 className="font-poppins text-4xl font-bold">
+                            {program.title}
+                          </h3>
+                          <p className="mt-4 text-lg">
+                            {program.description}
+                          </p>
+                          <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
+                            <Button
+                              style={{ backgroundColor: "#004aad" }}
+                              className="px-8 py-3 font-semibold text-white transition-transform hover:scale-105"
+                            >
+                              Inscribirme
+                            </Button>
+                            <Button
+                              variant="outline"
+                              style={{
+                                borderColor: "#2ecc71",
+                                color: "#2ecc71",
+                              }}
+                              className="bg-transparent px-8 py-3 font-semibold transition-colors hover:bg-[#2ecc71] hover:text-white"
+                            >
+                              Ver más
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 transform text-white bg-black/30 hover:bg-black/50 border-none" />
+              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 transform text-white bg-black/30 hover:bg-black/50 border-none" />
+            </Carousel>
+             <div className="mt-4 flex justify-center gap-2">
+              {programs.map((_, index) => (
+                <button
                   key={index}
-                  className="flex flex-col md:flex-row overflow-hidden rounded-lg bg-white shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2"
-                >
-                  <div className="md:w-1/3">
-                    <Image
-                      src={program.image}
-                      alt={`Imagen de ${program.title}`}
-                      width={600}
-                      height={400}
-                      className="h-full w-full object-cover"
-                      data-ai-hint={program.imageHint}
-                    />
-                  </div>
-                  <div className="flex flex-1 flex-col p-6 md:w-2/3">
-                    <CardHeader className="p-0">
-                      <CardTitle className="font-poppins text-xl font-bold text-gray-800">
-                        {program.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-1 p-0 pt-2">
-                      <p className="text-gray-600">{program.description}</p>
-                    </CardContent>
-                    <CardFooter className="p-0 pt-4">
-                      <Button
-                        style={{ backgroundColor: "#004aad" }}
-                        className="w-full rounded-md py-3 font-semibold text-white transition-opacity hover:opacity-90 md:w-auto md:px-6"
-                      >
-                        Ver más
-                      </Button>
-                    </CardFooter>
-                  </div>
-                </Card>
+                  onClick={() => scrollToSlide(index)}
+                  className={`h-3 w-3 rounded-full transition-colors ${
+                    currentSlide === index ? "bg-[#004aad]" : "bg-gray-300"
+                  }`}
+                  aria-label={`Ir al programa ${index + 1}`}
+                />
               ))}
             </div>
           </div>
         </section>
+
 
         {/* CTA Section */}
         <section
@@ -281,5 +335,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
