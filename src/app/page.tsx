@@ -193,7 +193,7 @@ export default function HomePage() {
         >
           <div className="absolute inset-0 z-0">
             <Image
-              src="https://placehold.co/1920x1080.png"
+              src="/hero-background.jpg"
               alt="Estudiantes en campus universitario"
               fill
               style={{objectFit: 'cover'}}
