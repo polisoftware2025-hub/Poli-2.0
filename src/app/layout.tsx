@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
-  title: "Politécnico Internacional",
-  description: "Proyecto Universitario",
+  title: "Poli 2.0",
+  description: "Una aplicación para gestionar proyectos, tareas y configuraciones.",
 };
 
 export default function RootLayout({
@@ -23,6 +24,7 @@ export default function RootLayout({
       </head>
       <body className="font-roboto antialiased">
         {children}
+        <Toaster />
       </body>
     </html>
   );
