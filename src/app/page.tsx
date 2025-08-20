@@ -274,12 +274,8 @@ export default function HomePage() {
                               Inscribirme
                             </Button>
                             <Button
-                              variant="outline"
-                              style={{
-                                borderColor: "#2ecc71",
-                                color: "#2ecc71",
-                              }}
-                              className="bg-transparent px-8 py-3 font-semibold transition-colors hover:bg-[#2ecc71] hover:text-white"
+                              style={{ backgroundColor: "#2ecc71" }}
+                              className="rounded-md px-5 py-2.5 font-semibold text-white transition-colors duration-300 hover:bg-[#27ae60] active:bg-[#219150] focus:bg-[#219150]"
                             >
                               Ver más
                             </Button>
