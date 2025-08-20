@@ -191,7 +191,7 @@ export default function HomePage() {
           id="inicio"
           className="relative flex h-screen w-full items-center justify-center text-center text-white"
         >
-          <div className="absolute inset-0 z-0 bg-black/40">
+          <div className="absolute inset-0 z-0 bg-[#002147]/60">
             <Image
               src="https://placehold.co/1920x1080.png"
               alt="Estudiantes en campus universitario"
