@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import {
   Carousel,
@@ -194,13 +191,13 @@ export default function HomePage() {
           id="inicio"
           className="relative flex h-screen w-full items-center justify-center text-center text-white"
         >
-          <div className="absolute inset-0 z-0">
+          <div className="absolute inset-0 z-0 bg-black/40">
             <Image
               src="https://placehold.co/1920x1080.png"
               alt="Estudiantes en campus universitario"
-              layout="fill"
-              objectFit="cover"
-              className="brightness-50"
+              fill
+              style={{objectFit: 'cover'}}
+              className="z-[-1]"
               data-ai-hint="university students campus"
             />
           </div>
@@ -214,13 +211,13 @@ export default function HomePage() {
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Button
                 style={{ backgroundColor: "#004aad" }}
-                className="rounded-full px-8 py-6 text-lg font-semibold text-white transition-transform hover:scale-105"
+                className="rounded-full px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
               >
                 Inicia Sesión
               </Button>
               <Button
                 style={{ backgroundColor: "#2ecc71" }}
-                className="rounded-full px-8 py-6 text-lg font-semibold text-white transition-transform hover:scale-105"
+                className="rounded-full px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600"
               >
                 Conoce Nuestros Programas
               </Button>
@@ -256,8 +253,8 @@ export default function HomePage() {
                       <Image
                         src={program.image}
                         alt={`Imagen de ${program.title}`}
-                        layout="fill"
-                        objectFit="cover"
+                        fill
+                        style={{objectFit: 'cover'}}
                         className="brightness-50"
                         data-ai-hint={program.imageHint}
                       />
