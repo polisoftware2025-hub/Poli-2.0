@@ -80,7 +80,14 @@ const step5Schema = z.object({
   transcript: z.any().refine(file => file?.length == 1, 'Se requiere el certificado de notas.'),
 });
 
-const allStepsSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema).merge(step5Schema);
+const allStepsSchema = z.object({
+  ...step1Schema.shape,
+  ...step2Schema.shape,
+  ...step3Schema.shape,
+  ...step4Schema.shape,
+  ...step5Schema.shape,
+});
+
 type AllStepsData = z.infer<typeof allStepsSchema>;
 
 
@@ -91,12 +98,12 @@ export default function RegisterPage() {
   const router = useRouter();
 
   const steps = [
-    { number: 1, title: "Datos Personales", icon: User, fields: ["firstName", "lastName", "birthDate", "gender"], schema: step1Schema },
-    { number: 2, title: "Datos de Contacto", icon: Phone, fields: ["phone", "address", "city", "country"], schema: step2Schema },
-    { number: 3, title: "Datos Académicos", icon: BookOpen, fields: ["program", "lastInstitution"], schema: step3Schema },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, fields: ["email", "password", "confirmPassword"], schema: step4Schema },
-    { number: 5, title: "Documentos", icon: FileText, fields: ["document", "transcript"], schema: step5Schema },
-    { number: 6, title: "Confirmación", icon: CheckCircle, fields: [], schema: z.object({}) },
+    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema },
+    { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema },
+    { number: 3, title: "Datos Académicos", icon: BookOpen, schema: step3Schema },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema },
+    { number: 5, title: "Documentos", icon: FileText, schema: step5Schema },
+    { number: 6, title: "Confirmación", icon: CheckCircle, schema: z.object({}) },
   ];
 
   const methods = useForm<AllStepsData>({
@@ -128,8 +135,9 @@ export default function RegisterPage() {
     const currentStepInfo = steps[currentStep - 1];
     const currentSchema = currentStepInfo.schema;
     
-    // Clear previous errors for the current fields before re-validating
-    currentStepInfo.fields.forEach(field => clearErrors(field as keyof AllStepsData));
+    // Manually clear previous errors for the current step's fields
+    const fields = Object.keys(currentSchema.shape);
+    fields.forEach(field => clearErrors(field as keyof AllStepsData));
   
     const fieldValues = getValues();
     const result = await currentSchema.safeParseAsync(fieldValues);
