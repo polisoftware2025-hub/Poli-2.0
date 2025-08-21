@@ -18,6 +18,9 @@ import { GraduationCap, Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -117,6 +120,14 @@ export default function HomePage() {
       carouselApi.off("select", onSelect);
     };
   }, [carouselApi]);
+  
+  useEffect(() => {
+    AOS.init({
+      duration: 1000,
+      once: true,
+      easing: 'ease-in-out',
+    });
+  }, []);
 
   const scrollToSlide = (index: number) => {
     carouselApi?.scrollTo(index);
@@ -235,7 +246,7 @@ export default function HomePage() {
 
         {/* Welcome Section */}
         <section id="inscripcion" className="bg-white py-20">
-          <div className="container mx-auto max-w-4xl px-6">
+          <div className="container mx-auto max-w-4xl px-6" data-aos="fade-up">
             <Card className="rounded-xl bg-white p-8 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
               <CardContent className="p-0">
                 <p className="text-center font-poppins text-xl text-gray-700">
@@ -249,7 +260,7 @@ export default function HomePage() {
 
         {/* Programs Section */}
         <section id="programas" className="bg-gray-50 py-20">
-          <div className="container mx-auto px-6">
+          <div className="container mx-auto px-6" data-aos="fade-up" data-aos-delay="200">
             <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-12">
               Nuestros Programas Académicos
             </h2>
@@ -319,7 +330,7 @@ export default function HomePage() {
           style={{ backgroundColor: "#002147" }}
           className="py-20"
         >
-          <div className="container mx-auto px-6 text-center text-white">
+          <div className="container mx-auto px-6 text-center text-white" data-aos="fade-up">
             <h3 className="font-poppins text-3xl font-bold">
               ¿Quieres más información? Escríbenos.
             </h3>
@@ -336,3 +347,4 @@ export default function HomePage() {
     </div>
   );
 }
+
