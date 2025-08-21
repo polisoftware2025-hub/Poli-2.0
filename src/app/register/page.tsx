@@ -33,6 +33,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   FormField,
   FormItem,
@@ -108,6 +109,7 @@ export default function RegisterPage() {
 
   const methods = useForm<AllStepsData>({
     mode: "onChange",
+    resolver: zodResolver(allStepsSchema),
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -127,16 +129,18 @@ export default function RegisterPage() {
     },
   });
 
-  const { handleSubmit, getValues, setError, clearErrors } = methods;
+  const { handleSubmit, getValues, setError, clearErrors, trigger } = methods;
 
   const CurrentStepIcon = steps[currentStep - 1].icon;
 
   const nextStep = async () => {
-    const currentStepInfo = steps[currentStep - 1];
-    const currentSchema = currentStepInfo.schema;
+    if (currentStep >= totalSteps) {
+        return;
+    }
+    const currentSchema = steps[currentStep - 1].schema;
     
     // Manually clear previous errors for the current step's fields
-    const fields = Object.keys(currentSchema.shape);
+    const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
     fields.forEach(field => clearErrors(field as keyof AllStepsData));
   
     const fieldValues = getValues();
