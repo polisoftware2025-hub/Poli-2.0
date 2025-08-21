@@ -32,7 +32,7 @@ import {
   CalendarIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, FormProvider, useFormContext, Controller } from "react-hook-form";
 import * as z from "zod";
 import {
@@ -119,6 +119,8 @@ export default function RegisterPage() {
   const totalSteps = 7;
   const { toast } = useToast();
   const router = useRouter();
+  const auth = getAuth(app);
+
 
   const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema },
@@ -166,12 +168,11 @@ export default function RegisterPage() {
 
   const nextStep = async () => {
     if (currentStep >= totalSteps) {
-        return;
+      return;
     }
+
     const currentSchema = steps[currentStep - 1].schema;
-    
-    // Manually clear previous errors for the current step's fields
-    if ((currentSchema as z.ZodObject<any>).shape) {
+    if ((currentSchema as any).shape) {
       const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
       fields.forEach(field => clearErrors(field as keyof AllStepsData));
     }
@@ -202,7 +203,6 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: AllStepsData) => {
     try {
-      const auth = getAuth(app);
       await createUserWithEmailAndPassword(auth, data.correoPersonal, data.password);
       toast({
         title: "¡Registro exitoso!",
@@ -594,8 +594,15 @@ const Step3 = () => {
 };
 
 const Step4 = () => {
-  const { control, watch } = useFormContext();
+  const { control, watch, setValue } = useFormContext();
   const numeroIdentificacion = watch('numeroIdentificacion');
+  const usuario = watch('usuario');
+
+  useEffect(() => {
+    if (numeroIdentificacion && !usuario) {
+      setValue('usuario', numeroIdentificacion);
+    }
+  }, [numeroIdentificacion, usuario, setValue]);
   
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -603,7 +610,7 @@ const Step4 = () => {
           <FormItem>
             <FormLabel>Usuario</FormLabel>
             <FormControl>
-              <Input placeholder="Tu usuario" {...field} defaultValue={numeroIdentificacion} />
+              <Input placeholder="Tu usuario" {...field} />
             </FormControl>
              <p className="text-xs text-muted-foreground">Sugerido: {numeroIdentificacion}</p>
             <FormMessage />
