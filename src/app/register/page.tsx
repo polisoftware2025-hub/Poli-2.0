@@ -28,12 +28,12 @@ import {
   FileText,
   CheckCircle,
   ArrowLeft,
+  CreditCard,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   FormField,
   FormItem,
@@ -47,12 +47,17 @@ import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { app } from "@/lib/firebase";
 
 const step1Schema = z.object({
-  firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50, { message: "El nombre no puede tener más de 50 caracteres." }),
-  lastName: z.string().min(2, { message: "El apellido debe tener al menos 2 caracteres." }).max(50, { message: "El apellido no puede tener más de 50 caracteres." }),
+  firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50),
+  segundoNombre: z.string().optional(),
+  lastName: z.string().min(2, { message: "El primer apellido debe tener al menos 2 caracteres." }),
+  segundoApellido: z.string().min(2, { message: "El segundo apellido debe tener al menos 2 caracteres." }),
+  tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
+  numeroIdentificacion: z.string().min(5, { message: "El número de identificación debe tener al menos 5 caracteres." }),
+  gender: z.string({ required_error: "Por favor, selecciona un género." }),
   birthDate: z.string().refine((date) => !isNaN(new Date(date).getTime()), {
     message: "Por favor, introduce una fecha válida.",
   }),
-  gender: z.string({ required_error: "Por favor, selecciona un género." }),
+  nacionalidad: z.string().min(2, { message: "La nacionalidad es obligatoria." }),
 });
 
 const step2Schema = z.object({
@@ -60,15 +65,18 @@ const step2Schema = z.object({
   address: z.string().min(5, { message: "La dirección debe tener al menos 5 caracteres." }),
   city: z.string().min(2, { message: "La ciudad debe tener al menos 2 caracteres." }),
   country: z.string().min(2, { message: "El país debe tener al menos 2 caracteres." }),
+  correoPersonal: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
+  correoInstitucional: z.string().email().optional(),
 });
 
 const step3Schema = z.object({
-  program: z.string({ required_error: "Por favor, selecciona un programa." }),
-  lastInstitution: z.string().min(3, { message: "El nombre de la institución debe tener al menos 3 caracteres." }),
+  program: z.string({ required_error: "Por favor, selecciona una carrera." }),
+  periodoIngreso: z.string({ required_error: "Por favor, selecciona un periodo de ingreso." }),
+  jornada: z.string().optional(),
 });
 
 const step4Schema = z.object({
-  email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
+  usuario: z.string().min(4, { message: "El usuario debe tener al menos 4 caracteres." }),
   password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -77,6 +85,11 @@ const step4Schema = z.object({
 });
 
 const step5Schema = z.object({
+  metodoPago: z.string({ required_error: "Por favor, selecciona un método de pago." }),
+  estadoPago: z.string({ required_error: "Por favor, selecciona el estado del pago." }),
+});
+
+const step6Schema = z.object({
   document: z.any().refine(file => file?.length == 1, 'Se requiere el documento de identidad.'),
   transcript: z.any().refine(file => file?.length == 1, 'Se requiere el certificado de notas.'),
 });
@@ -87,6 +100,7 @@ const allStepsSchema = z.object({
   ...step3Schema.shape,
   ...step4Schema.shape,
   ...step5Schema.shape,
+  ...step6Schema.shape,
 });
 
 type AllStepsData = z.infer<typeof allStepsSchema>;
@@ -94,7 +108,7 @@ type AllStepsData = z.infer<typeof allStepsSchema>;
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 7;
   const { toast } = useToast();
   const router = useRouter();
 
@@ -103,26 +117,37 @@ export default function RegisterPage() {
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema },
     { number: 3, title: "Datos Académicos", icon: BookOpen, schema: step3Schema },
     { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema },
-    { number: 5, title: "Documentos", icon: FileText, schema: step5Schema },
-    { number: 6, title: "Confirmación", icon: CheckCircle, schema: z.object({}) },
+    { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema },
+    { number: 6, title: "Documentos", icon: FileText, schema: step6Schema },
+    { number: 7, title: "Confirmación", icon: CheckCircle, schema: z.object({}) },
   ];
 
   const methods = useForm<AllStepsData>({
     mode: "onChange",
     defaultValues: {
       firstName: "",
+      segundoNombre: "",
       lastName: "",
-      birthDate: "",
+      segundoApellido: "",
+      tipoIdentificacion: undefined,
+      numeroIdentificacion: "",
       gender: undefined,
+      birthDate: "",
+      nacionalidad: "",
       phone: "",
       address: "",
       city: "",
       country: "",
+      correoPersonal: "",
+      correoInstitucional: "",
       program: undefined,
-      lastInstitution: "",
-      email: "",
+      periodoIngreso: undefined,
+      jornada: undefined,
+      usuario: "",
       password: "",
       confirmPassword: "",
+      metodoPago: undefined,
+      estadoPago: undefined,
       document: undefined,
       transcript: undefined,
     },
@@ -171,7 +196,7 @@ export default function RegisterPage() {
   const onSubmit = async (data: AllStepsData) => {
     try {
       const auth = getAuth(app);
-      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      await createUserWithEmailAndPassword(auth, data.correoPersonal, data.password);
       toast({
         title: "¡Registro exitoso!",
         description: "Tu cuenta ha sido creada. Serás redirigido.",
@@ -249,6 +274,7 @@ export default function RegisterPage() {
                 {currentStep === 4 && <Step4 />}
                 {currentStep === 5 && <Step5 />}
                 {currentStep === 6 && <Step6 />}
+                {currentStep === 7 && <Step7 />}
             </CardContent>
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
               <Button
@@ -288,7 +314,7 @@ const Step1 = () => {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="firstName" render={({ field }) => (
           <FormItem>
-            <FormLabel>Nombres</FormLabel>
+            <FormLabel>Primer Nombre</FormLabel>
             <FormControl>
               <Input placeholder="John" {...field} />
             </FormControl>
@@ -296,11 +322,61 @@ const Step1 = () => {
           </FormItem>
         )}
       />
+       <FormField control={control} name="segundoNombre" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Segundo Nombre (Opcional)</FormLabel>
+            <FormControl>
+              <Input placeholder="Fitzgerald" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
       <FormField control={control} name="lastName" render={({ field }) => (
           <FormItem>
-            <FormLabel>Apellidos</FormLabel>
+            <FormLabel>Primer Apellido</FormLabel>
             <FormControl>
               <Input placeholder="Doe" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="segundoApellido" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Segundo Apellido</FormLabel>
+            <FormControl>
+              <Input placeholder="Smith" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+       <FormField control={control} name="tipoIdentificacion" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Tipo de Identificación</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un tipo" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="cc">Cédula de Ciudadanía</SelectItem>
+                <SelectItem value="ti">Tarjeta de Identidad</SelectItem>
+                <SelectItem value="ce">Cédula de Extranjería</SelectItem>
+                <SelectItem value="passport">Pasaporte</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+       <FormField control={control} name="numeroIdentificacion" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Número de Identificación</FormLabel>
+            <FormControl>
+              <Input placeholder="123456789" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -335,6 +411,16 @@ const Step1 = () => {
           </FormItem>
         )}
       />
+      <FormField control={control} name="nacionalidad" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nacionalidad</FormLabel>
+            <FormControl>
+              <Input placeholder="Colombiano" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };
@@ -345,7 +431,7 @@ const Step2 = () => {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="phone" render={({ field }) => (
           <FormItem>
-            <FormLabel>Teléfono</FormLabel>
+            <FormLabel>Teléfono / Celular</FormLabel>
             <FormControl>
               <Input placeholder="+57 300 123 4567" {...field} />
             </FormControl>
@@ -354,10 +440,10 @@ const Step2 = () => {
         )}
       />
       <FormField control={control} name="address" render={({ field }) => (
-          <FormItem>
+          <FormItem className="md:col-span-2">
             <FormLabel>Dirección de Residencia</FormLabel>
             <FormControl>
-              <Input placeholder="Calle 123 #45-67" {...field} />
+              <Input placeholder="Calle 123 #45-67, Apto 101" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -383,6 +469,26 @@ const Step2 = () => {
           </FormItem>
         )}
       />
+      <FormField control={control} name="correoPersonal" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Correo Personal</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="tu.correo@example.com" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="correoInstitucional" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Correo Institucional (Opcional)</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="nombre.apellido@pol.edu.co" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };
@@ -393,11 +499,11 @@ const Step3 = () => {
     <div className="space-y-6">
       <FormField control={control} name="program" render={({ field }) => (
           <FormItem>
-            <FormLabel>Programa de Interés</FormLabel>
+            <FormLabel>Carrera</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un programa" />
+                  <SelectValue placeholder="Selecciona una carrera" />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -405,18 +511,48 @@ const Step3 = () => {
                 <SelectItem value="cont">Contaduría Pública</SelectItem>
                 <SelectItem value="mkt">Mercadeo y Publicidad</SelectItem>
                 <SelectItem value="sis">Ingeniería de Sistemas</SelectItem>
+                <SelectItem value="gastro">Gastronomía</SelectItem>
+                <SelectItem value="tur">Hotelería y Turismo</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
           </FormItem>
         )}
       />
-      <FormField control={control} name="lastInstitution" render={({ field }) => (
+       <FormField control={control} name="periodoIngreso" render={({ field }) => (
           <FormItem>
-            <FormLabel>Última Institución Educativa</FormLabel>
-            <FormControl>
-              <Input placeholder="Nombre del colegio o universidad" {...field} />
-            </FormControl>
+            <FormLabel>Periodo Académico de Ingreso</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un periodo" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="2024-1">2024 - 1</SelectItem>
+                <SelectItem value="2024-2">2024 - 2</SelectItem>
+                <SelectItem value="2025-1">2025 - 1</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="jornada" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Jornada (Opcional)</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una jornada" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="diurna">Diurna</SelectItem>
+                <SelectItem value="nocturna">Nocturna</SelectItem>
+                <SelectItem value="findesemana">Fin de Semana</SelectItem>
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
@@ -426,19 +562,23 @@ const Step3 = () => {
 };
 
 const Step4 = () => {
-  const { control } = useFormContext();
+  const { control, watch } = useFormContext();
+  const numeroIdentificacion = watch('numeroIdentificacion');
+  
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <FormField control={control} name="email" render={({ field }) => (
+      <FormField control={control} name="usuario" render={({ field }) => (
           <FormItem>
-            <FormLabel>Correo Electrónico</FormLabel>
+            <FormLabel>Usuario</FormLabel>
             <FormControl>
-              <Input type="email" placeholder="tu.correo@example.com" {...field} />
+              <Input placeholder="Tu usuario" {...field} defaultValue={numeroIdentificacion} />
             </FormControl>
+             <p className="text-xs text-muted-foreground">Sugerido: {numeroIdentificacion}</p>
             <FormMessage />
           </FormItem>
         )}
       />
+       <div></div>
       <FormField control={control} name="password" render={({ field }) => (
           <FormItem>
             <FormLabel>Contraseña</FormLabel>
@@ -466,6 +606,57 @@ const Step4 = () => {
 const Step5 = () => {
   const { control } = useFormContext();
   return (
+    <div className="space-y-6">
+      <FormField control={control} name="metodoPago" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Método de Pago</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un método de pago" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="pse">PSE</SelectItem>
+                <SelectItem value="tc">Tarjeta de Crédito</SelectItem>
+                <SelectItem value="efectivo">Efectivo</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <div className="space-y-2">
+        <Label>Valor de la Inscripción</Label>
+        <Input value="$150,000 COP" disabled className="bg-gray-100"/>
+        <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
+      </div>
+      <FormField control={control} name="estadoPago" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Estado del Pago</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona el estado del pago" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="pagado">Pagado</SelectItem>
+                <SelectItem value="rechazado">Rechazado</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  )
+}
+
+const Step6 = () => {
+  const { control } = useFormContext();
+  return (
       <div className="space-y-4">
           <FormField control={control} name="document" render={({ field: { onChange, value, ...rest }}) => (
               <FormItem>
@@ -489,7 +680,7 @@ const Step5 = () => {
   );
 }
 
-const Step6 = () => (
+const Step7 = () => (
     <div className="text-center flex flex-col items-center gap-4 py-8">
         <CheckCircle className="h-16 w-16 text-green-500" />
         <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>
