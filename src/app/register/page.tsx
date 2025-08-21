@@ -29,10 +29,11 @@ import {
   CheckCircle,
   ArrowLeft,
   CreditCard,
+  CalendarIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useForm, FormProvider, useFormContext } from "react-hook-form";
+import { useForm, FormProvider, useFormContext, Controller } from "react-hook-form";
 import * as z from "zod";
 import {
   FormField,
@@ -45,6 +46,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { app } from "@/lib/firebase";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 const step1Schema = z.object({
   firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50),
@@ -161,7 +166,6 @@ export default function RegisterPage() {
     }
     const currentSchema = steps[currentStep - 1].schema;
     
-    // Manually clear previous errors for the current step's fields
     if ((currentSchema as z.ZodObject<any>).shape) {
       const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
       fields.forEach(field => clearErrors(field as keyof AllStepsData));
@@ -380,12 +384,43 @@ const Step1 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="birthDate" render={({ field }) => (
-          <FormItem>
+      <FormField
+        control={control}
+        name="birthDate"
+        render={({ field }) => (
+          <FormItem className="flex flex-col">
             <FormLabel>Fecha de Nacimiento</FormLabel>
-            <FormControl>
-              <Input type="date" {...field} />
-            </FormControl>
+            <Popover>
+              <PopoverTrigger asChild>
+                <FormControl>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full pl-3 text-left font-normal",
+                      !field.value && "text-muted-foreground"
+                    )}
+                  >
+                    {field.value ? (
+                      format(new Date(field.value), "PPP")
+                    ) : (
+                      <span>Selecciona una fecha</span>
+                    )}
+                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                  </Button>
+                </FormControl>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={field.value ? new Date(field.value) : undefined}
+                  onSelect={(date) => field.onChange(date?.toISOString())}
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("1900-01-01")
+                  }
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
             <FormMessage />
           </FormItem>
         )}
@@ -675,5 +710,3 @@ const Step7 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
-    
