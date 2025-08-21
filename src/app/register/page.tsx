@@ -129,7 +129,7 @@ export default function RegisterPage() {
     },
   });
 
-  const { handleSubmit, getValues, setError, clearErrors, trigger } = methods;
+  const { handleSubmit, getValues, setError, clearErrors } = methods;
 
   const CurrentStepIcon = steps[currentStep - 1].icon;
 
@@ -140,8 +140,10 @@ export default function RegisterPage() {
     const currentSchema = steps[currentStep - 1].schema;
     
     // Manually clear previous errors for the current step's fields
-    const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
-    fields.forEach(field => clearErrors(field as keyof AllStepsData));
+    if ((currentSchema as z.ZodObject<any>).shape) {
+      const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
+      fields.forEach(field => clearErrors(field as keyof AllStepsData));
+    }
   
     const fieldValues = getValues();
     const result = await currentSchema.safeParseAsync(fieldValues);
