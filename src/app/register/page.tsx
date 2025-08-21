@@ -76,6 +76,7 @@ const step2Schema = z.object({
 });
 
 const step3Schema = z.object({
+  rol: z.string({ required_error: "Por favor, selecciona un rol." }),
   program: z.string({ required_error: "Por favor, selecciona una carrera." }),
   periodoIngreso: z.string({ required_error: "Por favor, selecciona un periodo de ingreso." }),
   jornada: z.string().optional(),
@@ -141,6 +142,7 @@ export default function RegisterPage() {
       city: "",
       country: "",
       correoPersonal: "",
+      rol: "estudiante",
       program: undefined,
       periodoIngreso: undefined,
       jornada: undefined,
@@ -498,6 +500,23 @@ const Step3 = () => {
   const { control } = useFormContext();
   return (
     <div className="space-y-6">
+      <FormField control={control} name="rol" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Rol</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un rol" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="estudiante">Estudiante</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
       <FormField control={control} name="program" render={({ field }) => (
           <FormItem>
             <FormLabel>Carrera</FormLabel>
@@ -635,8 +654,8 @@ const Step5 = () => {
         )}
       />
       <div className="space-y-2">
-        <Label>Valor de la Inscripción</Label>
-        <Input value="$150,000 COP" disabled className="bg-gray-100"/>
+        <Label htmlFor="valorInscripcion">Valor de la Inscripción</Label>
+        <Input id="valorInscripcion" value="$150,000 COP" disabled className="bg-gray-100"/>
         <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
       </div>
     </div>
@@ -650,5 +669,7 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
+
+    
 
     
