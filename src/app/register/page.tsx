@@ -238,16 +238,16 @@ export default function RegisterPage() {
 
   return (
     <FormProvider {...methods}>
-      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 font-roboto">
+      <div className="relative flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 pt-16 font-roboto sm:p-6">
         <div className="absolute top-4 left-4 z-10">
-            <Link 
-              href="/" 
-              className="flex items-center gap-2 rounded-full border bg-white px-4 py-2 text-sm text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md active:scale-95"
-            >
-              <ArrowLeft className="h-4 w-4"/>
-              <span className="hidden sm:inline">Volver</span>
-            </Link>
-          </div>
+          <Link
+            href="/"
+            className="flex items-center gap-2 rounded-full border bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md active:scale-95 sm:px-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
+          </Link>
+        </div>
         <Card className="w-full max-w-2xl rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
           <CardHeader className="text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#002147]">
