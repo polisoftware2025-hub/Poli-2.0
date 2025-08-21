@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -42,15 +41,15 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { app } from "@/lib/firebase";
 
 const step1Schema = z.object({
   firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50, { message: "El nombre no puede tener más de 50 caracteres." }),
   lastName: z.string().min(2, { message: "El apellido debe tener al menos 2 caracteres." }).max(50, { message: "El apellido no puede tener más de 50 caracteres." }),
-  birthDate: z.string().refine((date) => new Date(date).toString() !== "Invalid Date", {
+  birthDate: z.string().refine((date) => !isNaN(new Date(date).getTime()), {
     message: "Por favor, introduce una fecha válida.",
   }),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
@@ -83,6 +82,7 @@ const step5Schema = z.object({
 });
 
 const allStepsSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema).merge(step5Schema);
+type AllStepsData = z.infer<typeof allStepsSchema>;
 
 
 export default function RegisterPage() {
@@ -91,8 +91,8 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const methods = useForm<z.infer<typeof allStepsSchema>>({
-    resolver: zodResolver(allStepsSchema),
+  const methods = useForm<AllStepsData>({
+    // No resolver here to handle validation manually per step
     mode: "onChange",
     defaultValues: {
       firstName: "",
@@ -109,11 +109,11 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
       document: undefined,
-      transcript: undefined
+      transcript: undefined,
     },
   });
-  
-  const { trigger, handleSubmit, getValues, setError, clearErrors } = methods;
+
+  const { handleSubmit, getValues, setError, clearErrors } = methods;
 
   const steps = [
     { number: 1, title: "Datos Personales", icon: User, fields: ["firstName", "lastName", "birthDate", "gender"], schema: step1Schema },
@@ -125,11 +125,11 @@ export default function RegisterPage() {
   ];
 
   const CurrentStepIcon = steps[currentStep - 1].icon;
-  
+
   const nextStep = async () => {
     const currentStepInfo = steps[currentStep - 1];
     const currentSchema = currentStepInfo.schema;
-    const currentFields = currentStepInfo.fields as (keyof z.infer<typeof allStepsSchema>)[];
+    const currentFields = currentStepInfo.fields as (keyof AllStepsData)[];
 
     // Clear previous errors for the current fields before re-validating
     currentFields.forEach(field => clearErrors(field));
@@ -157,8 +157,9 @@ export default function RegisterPage() {
     }
   };
 
-  const onSubmit = async (data: z.infer<typeof allStepsSchema>) => {
+  const onSubmit = async (data: AllStepsData) => {
     try {
+      const auth = getAuth(app);
       await createUserWithEmailAndPassword(auth, data.email, data.password);
       toast({
         title: "¡Registro exitoso!",
@@ -169,10 +170,33 @@ export default function RegisterPage() {
       toast({
         variant: "destructive",
         title: "Error en el registro",
-        description: "El correo electrónico ya está en uso o la contraseña es inválida.",
+        description:
+          error.code === "auth/email-already-in-use"
+            ? "El correo electrónico ya está en uso."
+            : "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
       });
     }
   };
+  
+  const handleFinalSubmit = async () => {
+    const result = await allStepsSchema.safeParseAsync(getValues());
+    if (result.success) {
+      onSubmit(result.data);
+    } else {
+       toast({
+        variant: "destructive",
+        title: "Error de Validación",
+        description: "Por favor, revisa todos los pasos y corrige los errores.",
+      });
+      result.error.errors.forEach((err) => {
+        setError(err.path[0] as any, {
+          type: "manual",
+          message: err.message,
+        });
+      });
+    }
+  }
+
 
   const progress = (currentStep / totalSteps) * 100;
 
@@ -233,7 +257,7 @@ export default function RegisterPage() {
                   Siguiente
                 </Button>
               ) : (
-                <Button type="submit" className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
+                <Button type="button" onClick={handleFinalSubmit} className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
                   Finalizar Registro
                 </Button>
               )}
@@ -460,3 +484,5 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
+
+    
