@@ -109,7 +109,6 @@ export default function RegisterPage() {
 
   const methods = useForm<AllStepsData>({
     mode: "onChange",
-    resolver: zodResolver(allStepsSchema),
     defaultValues: {
       firstName: "",
       lastName: "",

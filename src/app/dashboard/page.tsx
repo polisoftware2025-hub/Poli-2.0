@@ -1,14 +1,16 @@
 "use client";
 
-import { auth } from "@/lib/firebase";
-import { useRouter } from "next/navigation";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, LogOut } from "lucide-react";
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { getAuth } from "firebase/auth";
+import { app } from "@/lib/firebase";
 
 export default function DashboardPage() {
+  const auth = getAuth(app);
   const [user, loading] = useAuthState(auth);
   const router = useRouter();
 
