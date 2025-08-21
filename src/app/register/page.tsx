@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -32,138 +31,104 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { useForm, FormProvider } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
-const Step1 = () => (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-    <div className="space-y-2">
-      <Label htmlFor="firstName">Nombres</Label>
-      <Input id="firstName" placeholder="John" />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="lastName">Apellidos</Label>
-      <Input id="lastName" placeholder="Doe" />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="birthDate">Fecha de Nacimiento</Label>
-      <Input id="birthDate" type="date" />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="gender">Género</Label>
-      <Select>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecciona tu género" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="male">Masculino</SelectItem>
-          <SelectItem value="female">Femenino</SelectItem>
-          <SelectItem value="other">Otro</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-  </div>
-);
+const step1Schema = z.object({
+  firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50, { message: "El nombre no puede tener más de 50 caracteres." }),
+  lastName: z.string().min(2, { message: "El apellido debe tener al menos 2 caracteres." }).max(50, { message: "El apellido no puede tener más de 50 caracteres." }),
+  birthDate: z.string().refine((date) => new Date(date).toString() !== "Invalid Date", {
+    message: "Por favor, introduce una fecha válida.",
+  }),
+  gender: z.string({ required_error: "Por favor, selecciona un género." }),
+});
 
-const Step2 = () => (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-    <div className="space-y-2">
-      <Label htmlFor="phone">Teléfono</Label>
-      <Input id="phone" placeholder="+57 300 123 4567" />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="address">Dirección de Residencia</Label>
-      <Input id="address" placeholder="Calle 123 #45-67" />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="city">Ciudad</Label>
-      <Input id="city" placeholder="Bogotá D.C." />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="country">País</Label>
-      <Input id="country" placeholder="Colombia" />
-    </div>
-  </div>
-);
+const step2Schema = z.object({
+  phone: z.string().min(7, { message: "El teléfono debe tener al menos 7 dígitos." }).regex(/^\+?[0-9\s-]{7,20}$/, { message: "Número de teléfono inválido." }),
+  address: z.string().min(5, { message: "La dirección debe tener al menos 5 caracteres." }),
+  city: z.string().min(2, { message: "La ciudad debe tener al menos 2 caracteres." }),
+  country: z.string().min(2, { message: "El país debe tener al menos 2 caracteres." }),
+});
 
-const Step3 = () => (
-  <div className="space-y-6">
-    <div className="space-y-2">
-      <Label htmlFor="program">Programa de Interés</Label>
-      <Select>
-        <SelectTrigger>
-          <SelectValue placeholder="Selecciona un programa" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="adm">Administración de Empresas</SelectItem>
-          <SelectItem value="cont">Contaduría Pública</SelectItem>
-          <SelectItem value="mkt">Mercadeo y Publicidad</SelectItem>
-          <SelectItem value="sis">Ingeniería de Sistemas</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="lastInstitution">Última Institución Educativa</Label>
-      <Input id="lastInstitution" placeholder="Nombre del colegio o universidad" />
-    </div>
-  </div>
-);
+const step3Schema = z.object({
+  program: z.string({ required_error: "Por favor, selecciona un programa." }),
+  lastInstitution: z.string().min(3, { message: "El nombre de la institución debe tener al menos 3 caracteres." }),
+});
 
-const Step4 = () => (
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-    <div className="space-y-2">
-      <Label htmlFor="email">Correo Electrónico</Label>
-      <Input id="email" type="email" placeholder="tu.correo@example.com" />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="password">Contraseña</Label>
-      <Input id="password" type="password" placeholder="••••••••" />
-    </div>
-    <div className="space-y-2">
-      <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
-      <Input id="confirmPassword" type="password" placeholder="••••••••" />
-    </div>
-  </div>
-);
+const step4Schema = z.object({
+  email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
+  password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden.",
+  path: ["confirmPassword"],
+});
 
-const Step5 = () => (
-    <div className="space-y-4">
-        <div className="space-y-2">
-            <Label htmlFor="document">Copia del Documento de Identidad</Label>
-            <Input id="document" type="file" className="file:text-gray-600 file:font-poppins" />
-        </div>
-        <div className="space-y-2">
-            <Label htmlFor="transcript">Certificado de Notas</Label>
-            <Input id="transcript" type="file" className="file:text-gray-600 file:font-poppins" />
-        </div>
-    </div>
-);
+const step5Schema = z.object({
+  document: z.any().refine(file => file?.length == 1, 'Se requiere el documento de identidad.'),
+  transcript: z.any().refine(file => file?.length == 1, 'Se requiere el certificado de notas.'),
+});
 
-const Step6 = () => (
-    <div className="text-center flex flex-col items-center gap-4 py-8">
-        <CheckCircle className="h-16 w-16 text-green-500" />
-        <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>
-        <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
-    </div>
-);
+const combinedSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema).merge(step5Schema);
 
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const methods = useForm({
+    resolver: zodResolver(combinedSchema),
+    mode: "onChange",
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      birthDate: "",
+      gender: undefined,
+      phone: "",
+      address: "",
+      city: "",
+      country: "",
+      program: undefined,
+      lastInstitution: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      document: undefined,
+      transcript: undefined
+    },
+  });
+  
+  const { trigger, handleSubmit, formState: { errors } } = methods;
 
   const steps = [
-    { number: 1, title: "Datos Personales", icon: User },
-    { number: 2, title: "Datos de Contacto", icon: Phone },
-    { number: 3, title: "Datos Académicos", icon: BookOpen },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound },
-    { number: 5, title: "Documentos", icon: FileText },
-    { number: 6, title: "Confirmación", icon: CheckCircle },
+    { number: 1, title: "Datos Personales", icon: User, fields: ["firstName", "lastName", "birthDate", "gender"] },
+    { number: 2, title: "Datos de Contacto", icon: Phone, fields: ["phone", "address", "city", "country"] },
+    { number: 3, title: "Datos Académicos", icon: BookOpen, fields: ["program", "lastInstitution"] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, fields: ["email", "password", "confirmPassword"] },
+    { number: 5, title: "Documentos", icon: FileText, fields: ["document", "transcript"] },
+    { number: 6, title: "Confirmación", icon: CheckCircle, fields: [] },
   ];
 
   const CurrentStepIcon = steps[currentStep - 1].icon;
-
-
-  const nextStep = () => {
-    if (currentStep < totalSteps) {
+  
+  const nextStep = async () => {
+    const currentFields = steps[currentStep - 1].fields;
+    const isValid = await trigger(currentFields as any);
+    if (isValid && currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
     }
   };
@@ -174,69 +139,306 @@ export default function RegisterPage() {
     }
   };
 
+  const onSubmit = async (data: z.infer<typeof combinedSchema>) => {
+    try {
+      await createUserWithEmailAndPassword(auth, data.email, data.password);
+      toast({
+        title: "¡Registro exitoso!",
+        description: "Tu cuenta ha sido creada. Serás redirigido.",
+      });
+      router.push("/dashboard");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error en el registro",
+        description: error.message,
+      });
+    }
+  };
+
   const progress = (currentStep / totalSteps) * 100;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 font-roboto">
-      <div className="absolute top-4 left-4">
-        <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-          <ArrowLeft className="h-5 w-5"/>
-          Volver
-        </Link>
-      </div>
-      <Card className="w-full max-w-2xl rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
-        <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#002147]">
-                <GraduationCap className="h-8 w-8 text-white" />
-            </div>
-            <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
-                Formulario de Registro
-            </CardTitle>
-            <CardDescription className="font-poppins text-gray-600">
-                Sigue los pasos para completar tu inscripción.
-            </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <div className="mb-6 space-y-4">
-              <Progress value={progress} className="w-full h-2 bg-gray-200" />
-              <div className="flex items-center justify-center gap-2 text-lg font-semibold text-[#004aad]">
-                  <CurrentStepIcon className="h-6 w-6"/>
-                  <span>Paso {currentStep}: {steps[currentStep - 1].title}</span>
+    <FormProvider {...methods}>
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 font-roboto">
+        <div className="absolute top-4 left-4">
+          <Link href="/" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+            <ArrowLeft className="h-5 w-5"/>
+            Volver
+          </Link>
+        </div>
+        <Card className="w-full max-w-2xl rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+          <CardHeader className="text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#002147]">
+                  <GraduationCap className="h-8 w-8 text-white" />
               </div>
-          </div>
-          
-          <form className="space-y-6">
-            {currentStep === 1 && <Step1 />}
-            {currentStep === 2 && <Step2 />}
-            {currentStep === 3 && <Step3 />}
-            {currentStep === 4 && <Step4 />}
-            {currentStep === 5 && <Step5 />}
-            {currentStep === 6 && <Step6 />}
+              <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
+                  Formulario de Registro
+              </CardTitle>
+              <CardDescription className="font-poppins text-gray-600">
+                  Sigue los pasos para completar tu inscripción.
+              </CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit(onSubmit)}>
+            <CardContent className="p-6">
+              <div className="mb-6 space-y-4">
+                  <Progress value={progress} className="w-full h-2 bg-gray-200" />
+                  <div className="flex items-center justify-center gap-2 text-lg font-semibold text-[#004aad]">
+                      <CurrentStepIcon className="h-6 w-6"/>
+                      <span>Paso {currentStep}: {steps[currentStep - 1].title}</span>
+                  </div>
+              </div>
+              
+                {currentStep === 1 && <Step1 />}
+                {currentStep === 2 && <Step2 />}
+                {currentStep === 3 && <Step3 />}
+                {currentStep === 4 && <Step4 />}
+                {currentStep === 5 && <Step5 />}
+                {currentStep === 6 && <Step6 />}
+            </CardContent>
+            <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                disabled={currentStep === 1}
+                className="rounded-full px-6 py-3"
+              >
+                Anterior
+              </Button>
+              {currentStep < totalSteps ? (
+                <Button
+                  type="button"
+                  onClick={nextStep}
+                  className="rounded-full bg-[#004aad] px-6 py-3 text-white transition-transform hover:scale-105 hover:bg-blue-700"
+                >
+                  Siguiente
+                </Button>
+              ) : (
+                <Button type="submit" className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
+                  Finalizar Registro
+                </Button>
+              )}
+            </CardFooter>
           </form>
-        </CardContent>
-        <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
-          <Button
-            variant="outline"
-            onClick={prevStep}
-            disabled={currentStep === 1}
-            className="rounded-full px-6 py-3"
-          >
-            Anterior
-          </Button>
-          {currentStep < totalSteps ? (
-            <Button
-              onClick={nextStep}
-              className="rounded-full bg-[#004aad] px-6 py-3 text-white transition-transform hover:scale-105 hover:bg-blue-700"
-            >
-              Siguiente
-            </Button>
-          ) : (
-            <Button className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
-              Finalizar Registro
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </FormProvider>
   );
 }
+
+
+const Step1 = () => {
+  const { control } = useFormContext();
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <FormField control={control} name="firstName" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Nombres</FormLabel>
+            <FormControl>
+              <Input placeholder="John" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="lastName" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Apellidos</FormLabel>
+            <FormControl>
+              <Input placeholder="Doe" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="birthDate" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Fecha de Nacimiento</FormLabel>
+            <FormControl>
+              <Input type="date" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="gender" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Género</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona tu género" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="male">Masculino</SelectItem>
+                <SelectItem value="female">Femenino</SelectItem>
+                <SelectItem value="other">Otro</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+};
+
+const Step2 = () => {
+  const { control } = useFormContext();
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <FormField control={control} name="phone" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Teléfono</FormLabel>
+            <FormControl>
+              <Input placeholder="+57 300 123 4567" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="address" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Dirección de Residencia</FormLabel>
+            <FormControl>
+              <Input placeholder="Calle 123 #45-67" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="city" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Ciudad</FormLabel>
+            <FormControl>
+              <Input placeholder="Bogotá D.C." {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="country" render={({ field }) => (
+          <FormItem>
+            <FormLabel>País</FormLabel>
+            <FormControl>
+              <Input placeholder="Colombia" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+};
+
+const Step3 = () => {
+  const { control } = useFormContext();
+  return (
+    <div className="space-y-6">
+      <FormField control={control} name="program" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Programa de Interés</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un programa" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                <SelectItem value="adm">Administración de Empresas</SelectItem>
+                <SelectItem value="cont">Contaduría Pública</SelectItem>
+                <SelectItem value="mkt">Mercadeo y Publicidad</SelectItem>
+                <SelectItem value="sis">Ingeniería de Sistemas</SelectItem>
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="lastInstitution" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Última Institución Educativa</FormLabel>
+            <FormControl>
+              <Input placeholder="Nombre del colegio o universidad" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+};
+
+const Step4 = () => {
+  const { control } = useFormContext();
+  return (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <FormField control={control} name="email" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Correo Electrónico</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="tu.correo@example.com" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="password" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Contraseña</FormLabel>
+            <FormControl>
+              <Input type="password" placeholder="••••••••" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="confirmPassword" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Confirmar Contraseña</FormLabel>
+            <FormControl>
+              <Input type="password" placeholder="••••••••" {...field} />
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
+  );
+};
+
+const Step5 = () => {
+  const { control } = useFormContext();
+  return (
+      <div className="space-y-4">
+          <FormField control={control} name="document" render={({ field: { onChange, value, ...rest }}) => (
+              <FormItem>
+                  <FormLabel>Copia del Documento de Identidad</FormLabel>
+                  <FormControl>
+                      <Input type="file" onChange={(e) => onChange(e.target.files)} {...rest} className="file:text-gray-600 file:font-poppins" />
+                  </FormControl>
+                  <FormMessage />
+              </FormItem>
+          )} />
+          <FormField control={control} name="transcript" render={({ field: { onChange, value, ...rest } }) => (
+              <FormItem>
+                  <FormLabel>Certificado de Notas</FormLabel>
+                   <FormControl>
+                      <Input type="file" onChange={(e) => onChange(e.target.files)} {...rest} className="file:text-gray-600 file:font-poppins" />
+                  </FormControl>
+                  <FormMessage />
+              </FormItem>
+          )} />
+      </div>
+  );
+}
+
+const Step6 = () => (
+    <div className="text-center flex flex-col items-center gap-4 py-8">
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>
+        <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
+    </div>
+);
