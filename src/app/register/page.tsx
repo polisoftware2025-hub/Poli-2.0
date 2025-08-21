@@ -50,6 +50,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const step1Schema = z.object({
   firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50),
@@ -98,6 +99,9 @@ const step6Schema = z.object({
   transcript: z.any().refine(file => file?.length == 1, 'Se requiere el certificado de notas.'),
 });
 
+const step7Schema = z.object({});
+
+
 const allStepsSchema = z.object({
   ...step1Schema.shape,
   ...step2Schema.shape,
@@ -123,7 +127,7 @@ export default function RegisterPage() {
     { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema },
     { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema },
     { number: 6, title: "Documentos", icon: FileText, schema: step6Schema },
-    { number: 7, title: "Confirmación", icon: CheckCircle, schema: z.object({}) },
+    { number: 7, title: "Confirmación", icon: CheckCircle, schema: step7Schema },
   ];
 
   const methods = useForm<AllStepsData>({
@@ -166,6 +170,7 @@ export default function RegisterPage() {
     }
     const currentSchema = steps[currentStep - 1].schema;
     
+    // Manually clear previous errors for the current step's fields
     if ((currentSchema as z.ZodObject<any>).shape) {
       const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
       fields.forEach(field => clearErrors(field as keyof AllStepsData));
@@ -401,7 +406,7 @@ const Step1 = () => {
                     )}
                   >
                     {field.value ? (
-                      format(new Date(field.value), "PPP")
+                      format(new Date(field.value), "PPP", { locale: es })
                     ) : (
                       <span>Selecciona una fecha</span>
                     )}
@@ -412,11 +417,15 @@ const Step1 = () => {
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
+                  locale={es}
                   selected={field.value ? new Date(field.value) : undefined}
                   onSelect={(date) => field.onChange(date?.toISOString())}
                   disabled={(date) =>
                     date > new Date() || date < new Date("1900-01-01")
                   }
+                  captionLayout="dropdown-buttons"
+                  fromYear={new Date().getFullYear() - 100}
+                  toYear={new Date().getFullYear()}
                   initialFocus
                 />
               </PopoverContent>
@@ -710,3 +719,5 @@ const Step7 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
+
+    
