@@ -11,7 +11,6 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -94,12 +93,7 @@ const step5Schema = z.object({
   estadoPago: z.string({ required_error: "Por favor, selecciona el estado del pago." }),
 });
 
-const step6Schema = z.object({
-  document: z.any().refine(file => file?.length == 1, 'Se requiere el documento de identidad.'),
-  transcript: z.any().refine(file => file?.length == 1, 'Se requiere el certificado de notas.'),
-});
-
-const step7Schema = z.object({});
+const step6Schema = z.object({});
 
 
 const allStepsSchema = z.object({
@@ -108,7 +102,6 @@ const allStepsSchema = z.object({
   ...step3Schema.shape,
   ...step4Schema.shape,
   ...step5Schema.shape,
-  ...step6Schema.shape,
 });
 
 type AllStepsData = z.infer<typeof allStepsSchema>;
@@ -116,7 +109,7 @@ type AllStepsData = z.infer<typeof allStepsSchema>;
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 7;
+  const totalSteps = 6;
   const { toast } = useToast();
   const router = useRouter();
   
@@ -128,8 +121,7 @@ export default function RegisterPage() {
     { number: 3, title: "Datos Académicos", icon: BookOpen, schema: step3Schema },
     { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema },
     { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema },
-    { number: 6, title: "Documentos", icon: FileText, schema: step6Schema },
-    { number: 7, title: "Confirmación", icon: CheckCircle, schema: step7Schema },
+    { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema },
   ];
 
   const methods = useForm<z.infer<typeof allStepsSchema>>({
@@ -156,8 +148,6 @@ export default function RegisterPage() {
       confirmPassword: "",
       metodoPago: undefined,
       estadoPago: undefined,
-      document: undefined,
-      transcript: undefined,
     },
   });
 
@@ -283,7 +273,6 @@ export default function RegisterPage() {
                 {currentStep === 4 && <Step4 />}
                 {currentStep === 5 && <Step5 />}
                 {currentStep === 6 && <Step6 />}
-                {currentStep === 7 && <Step7 />}
             </CardContent>
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
               <Button
@@ -658,7 +647,7 @@ const Step5 = () => {
         )}
       />
       <div className="space-y-2">
-        <Label>Valor de la Inscripción</Label>
+        <FormLabel>Valor de la Inscripción</FormLabel>
         <Input value="$150,000 COP" disabled className="bg-gray-100"/>
         <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
       </div>
@@ -685,36 +674,12 @@ const Step5 = () => {
   )
 }
 
-const Step6 = () => {
-  const { control } = useFormContext();
-  return (
-      <div className="space-y-4">
-          <FormField control={control} name="document" render={({ field: { onChange, value, ...rest }}) => (
-              <FormItem>
-                  <FormLabel>Copia del Documento de Identidad</FormLabel>
-                  <FormControl>
-                      <Input type="file" onChange={(e) => onChange(e.target.files)} {...rest} className="file:text-gray-600 file:font-poppins" />
-                  </FormControl>
-                  <FormMessage />
-              </FormItem>
-          )} />
-          <FormField control={control} name="transcript" render={({ field: { onChange, value, ...rest } }) => (
-              <FormItem>
-                  <FormLabel>Certificado de Notas</FormLabel>
-                   <FormControl>
-                      <Input type="file" onChange={(e) => onChange(e.target.files)} {...rest} className="file:text-gray-600 file:font-poppins" />
-                  </FormControl>
-                  <FormMessage />
-              </FormItem>
-          )} />
-      </div>
-  );
-}
-
-const Step7 = () => (
+const Step6 = () => (
     <div className="text-center flex flex-col items-center gap-4 py-8">
         <CheckCircle className="h-16 w-16 text-green-500" />
         <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
+
+    
