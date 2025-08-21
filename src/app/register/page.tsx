@@ -32,7 +32,6 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import {
   FormField,
@@ -41,7 +40,7 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { app } from "@/lib/firebase";
@@ -91,8 +90,16 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
 
+  const steps = [
+    { number: 1, title: "Datos Personales", icon: User, fields: ["firstName", "lastName", "birthDate", "gender"], schema: step1Schema },
+    { number: 2, title: "Datos de Contacto", icon: Phone, fields: ["phone", "address", "city", "country"], schema: step2Schema },
+    { number: 3, title: "Datos Académicos", icon: BookOpen, fields: ["program", "lastInstitution"], schema: step3Schema },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, fields: ["email", "password", "confirmPassword"], schema: step4Schema },
+    { number: 5, title: "Documentos", icon: FileText, fields: ["document", "transcript"], schema: step5Schema },
+    { number: 6, title: "Confirmación", icon: CheckCircle, fields: [], schema: z.object({}) },
+  ];
+
   const methods = useForm<AllStepsData>({
-    // No resolver here to handle validation manually per step
     mode: "onChange",
     defaultValues: {
       firstName: "",
@@ -115,28 +122,18 @@ export default function RegisterPage() {
 
   const { handleSubmit, getValues, setError, clearErrors } = methods;
 
-  const steps = [
-    { number: 1, title: "Datos Personales", icon: User, fields: ["firstName", "lastName", "birthDate", "gender"], schema: step1Schema },
-    { number: 2, title: "Datos de Contacto", icon: Phone, fields: ["phone", "address", "city", "country"], schema: step2Schema },
-    { number: 3, title: "Datos Académicos", icon: BookOpen, fields: ["program", "lastInstitution"], schema: step3Schema },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, fields: ["email", "password", "confirmPassword"], schema: step4Schema },
-    { number: 5, title: "Documentos", icon: FileText, fields: ["document", "transcript"], schema: step5Schema },
-    { number: 6, title: "Confirmación", icon: CheckCircle, fields: [], schema: z.object({}) },
-  ];
-
   const CurrentStepIcon = steps[currentStep - 1].icon;
 
   const nextStep = async () => {
     const currentStepInfo = steps[currentStep - 1];
     const currentSchema = currentStepInfo.schema;
-    const currentFields = currentStepInfo.fields as (keyof AllStepsData)[];
-
+    
     // Clear previous errors for the current fields before re-validating
-    currentFields.forEach(field => clearErrors(field));
-
+    currentStepInfo.fields.forEach(field => clearErrors(field as keyof AllStepsData));
+  
     const fieldValues = getValues();
     const result = await currentSchema.safeParseAsync(fieldValues);
-
+  
     if (result.success) {
       if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
@@ -150,6 +147,7 @@ export default function RegisterPage() {
       });
     }
   };
+  
 
   const prevStep = () => {
     if (currentStep > 1) {
@@ -189,7 +187,8 @@ export default function RegisterPage() {
         description: "Por favor, revisa todos los pasos y corrige los errores.",
       });
       result.error.errors.forEach((err) => {
-        setError(err.path[0] as any, {
+        const fieldName = err.path[0] as keyof AllStepsData;
+        setError(fieldName, {
           type: "manual",
           message: err.message,
         });
