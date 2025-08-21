@@ -11,6 +11,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -119,7 +120,7 @@ export default function RegisterPage() {
   const totalSteps = 7;
   const { toast } = useToast();
   const router = useRouter();
-  const auth = getAuth(app);
+  
 
 
   const steps = [
@@ -170,13 +171,15 @@ export default function RegisterPage() {
     if (currentStep >= totalSteps) {
       return;
     }
-
+  
     const currentSchema = steps[currentStep - 1].schema;
-    if ((currentSchema as any).shape) {
+  
+    // Manually clear previous errors for the current step's fields
+    if ((currentSchema as z.ZodObject<any>).shape) {
       const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
       fields.forEach(field => clearErrors(field as keyof AllStepsData));
     }
-  
+    
     const fieldValues = getValues();
     const result = await currentSchema.safeParseAsync(fieldValues);
   
@@ -203,6 +206,7 @@ export default function RegisterPage() {
 
   const onSubmit = async (data: AllStepsData) => {
     try {
+      const auth = getAuth(app);
       await createUserWithEmailAndPassword(auth, data.correoPersonal, data.password);
       toast({
         title: "¡Registro exitoso!",
