@@ -221,7 +221,7 @@ export default function HomePage() {
           </div>
           <div className="relative z-20 flex flex-col items-center p-6">
             <h1 className="font-poppins text-5xl font-bold md:text-7xl">
-              Somos Politécnico Internacional
+              Somos Politécnico 2.0
             </h1>
             <p className="mt-4 text-lg md:text-xl">
               Tu futuro profesional comienza aquí.

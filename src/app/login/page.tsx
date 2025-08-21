@@ -88,7 +88,7 @@ export default function LoginPage() {
                 </button>
               </div>
                 <Link
-                  href="#"
+                  href="/forgot-password"
                   className="block pt-2 text-right font-poppins text-sm text-[#004aad] hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
