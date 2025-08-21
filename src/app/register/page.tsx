@@ -34,7 +34,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,6 +54,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Label } from "@/components/ui/label";
+
 
 const step1Schema = z.object({
   firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50),
@@ -384,7 +386,7 @@ const Step1 = () => {
         control={control}
         name="birthDate"
         render={({ field }) => (
-          <FormItem className="flex flex-col">
+          <FormItem className="flex flex-col justify-end">
             <FormLabel>Fecha de Nacimiento</FormLabel>
             <Popover>
               <PopoverTrigger asChild>
@@ -493,7 +495,7 @@ const Step2 = () => {
         )}
       />
       <FormField control={control} name="correoPersonal" render={({ field }) => (
-          <FormItem>
+          <FormItem className="md:col-span-2">
             <FormLabel>Correo Personal</FormLabel>
             <FormControl>
               <Input type="email" placeholder="tu.correo@example.com" {...field} />
@@ -647,7 +649,7 @@ const Step5 = () => {
         )}
       />
       <div className="space-y-2">
-        <FormLabel>Valor de la Inscripción</FormLabel>
+        <Label>Valor de la Inscripción</Label>
         <Input value="$150,000 COP" disabled className="bg-gray-100"/>
         <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
       </div>
