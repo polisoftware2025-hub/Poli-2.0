@@ -57,7 +57,6 @@ const step1Schema = z.object({
   birthDate: z.string().refine((date) => !isNaN(new Date(date).getTime()), {
     message: "Por favor, introduce una fecha válida.",
   }),
-  nacionalidad: z.string().min(2, { message: "La nacionalidad es obligatoria." }),
 });
 
 const step2Schema = z.object({
@@ -133,7 +132,6 @@ export default function RegisterPage() {
       numeroIdentificacion: "",
       gender: undefined,
       birthDate: "",
-      nacionalidad: "",
       phone: "",
       address: "",
       city: "",
@@ -407,16 +405,6 @@ const Step1 = () => {
                 <SelectItem value="other">Otro</SelectItem>
               </SelectContent>
             </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField control={control} name="nacionalidad" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Nacionalidad</FormLabel>
-            <FormControl>
-              <Input placeholder="Colombiano" {...field} />
-            </FormControl>
             <FormMessage />
           </FormItem>
         )}
