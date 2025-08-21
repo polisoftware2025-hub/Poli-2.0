@@ -146,6 +146,9 @@ export default function HomePage() {
                 {link.label}
               </Link>
             ))}
+             <Button asChild variant="outline" className="rounded-full border-[#004aad] text-[#004aad] transition-transform hover:scale-105 hover:bg-[#004aad] hover:text-white">
+                <Link href="/register">Regístrate</Link>
+            </Button>
           </nav>
 
           {/* Mobile Navigation Button */}
@@ -179,6 +182,9 @@ export default function HomePage() {
                   {link.label}
                 </Link>
               ))}
+               <Button asChild variant="outline" className="rounded-full border-[#004aad] text-[#004aad] transition-transform hover:scale-105 hover:bg-[#004aad] hover:text-white">
+                    <Link href="/register">Regístrate</Link>
+                </Button>
             </nav>
           </div>
         )}
