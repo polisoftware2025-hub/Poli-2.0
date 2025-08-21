@@ -2,67 +2,117 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, useDayPicker, useNavigation } from "react-day-picker"
 import { es } from "date-fns/locale"
+import { format } from "date-fns"
+
+import { cn } from "@/lib/utils"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
 function Calendar({
   className,
+  classNames,
   showOutsideDays = true,
   ...props
 }: CalendarProps) {
   return (
     <DayPicker
-      locale={es} // calendario en español
       showOutsideDays={showOutsideDays}
-      captionLayout="dropdown" // selector intuitivo de mes y año
-      fromYear={1950}
-      toYear={2050}
-      className={`p-4 bg-white dark:bg-gray-900 rounded-xl shadow border ${className}`}
+      className={cn("p-3", className)}
       classNames={{
-        months: "flex flex-col sm:flex-row gap-6",
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
-        caption: "flex justify-center items-center gap-2 relative",
-        caption_label: "text-sm font-semibold text-gray-700 dark:text-gray-200",
-        nav: "flex items-center gap-1",
+        caption: "flex justify-center pt-1 relative items-center",
+        caption_label: "text-sm font-medium",
+        caption_dropdowns: "flex justify-center gap-2",
+        nav: "space-x-1 flex items-center",
         nav_button:
-          "h-8 w-8 flex items-center justify-center rounded-full border border-gray-300 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition",
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
         nav_button_previous: "absolute left-1",
         nav_button_next: "absolute right-1",
-        dropdown:
-          "border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-md px-2 py-1 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500",
         table: "w-full border-collapse space-y-1",
         head_row: "flex",
         head_cell:
-          "text-gray-500 dark:text-gray-400 w-9 font-medium text-[0.8rem] text-center",
+          "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
         row: "flex w-full mt-2",
-        cell: "h-9 w-9 text-center text-sm relative",
-        day: "h-9 w-9 flex items-center justify-center rounded-md text-gray-800 dark:text-gray-200 hover:bg-blue-100 dark:hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500",
+        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        day: "h-9 w-9 p-0 font-normal aria-selected:opacity-100",
         day_selected:
-          "bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700 rounded-md",
-        day_today:
-          "bg-blue-100 dark:bg-blue-800 text-blue-700 dark:text-blue-200 font-bold rounded-md border border-blue-500",
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+        day_today: "bg-accent text-accent-foreground",
         day_outside:
-          "text-gray-400 dark:text-gray-600 aria-selected:bg-blue-200 aria-selected:text-gray-600",
-        day_disabled:
-          "text-gray-300 dark:text-gray-600 line-through opacity-50",
-        day_range_middle: "bg-blue-200 dark:bg-blue-700 text-blue-900",
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+        day_disabled: "text-muted-foreground opacity-50",
+        day_range_middle:
+          "aria-selected:bg-accent aria-selected:text-accent-foreground",
         day_hidden: "invisible",
+        ...classNames,
       }}
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft
-            className={`h-5 w-5 ${className}`}
-            {...props}
-          />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight
-            className={`h-5 w-5 ${className}`}
-            {...props}
-          />
-        ),
+        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
+        Dropdown: (dropdownProps) => {
+          const { fromDate, fromMonth, fromYear, toDate, toMonth, toYear } = useDayPicker();
+          const { goToMonth, month } = useNavigation();
+        
+          if (dropdownProps.name === "months") {
+            const months = Array.from({ length: 12 }, (_, i) => new Date(2000, i, 1));
+            return (
+              <Select
+                onValueChange={(value) => {
+                  const newDate = new Date(month);
+                  newDate.setMonth(parseInt(value));
+                  goToMonth(newDate);
+                }}
+                value={month.getMonth().toString()}
+              >
+                <SelectTrigger className="w-[120px] text-sm py-1 h-8 focus:ring-0 focus:ring-offset-0 border-none shadow-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {months.map((m, i) => (
+                     <SelectItem key={i} value={i.toString()}>
+                      {format(m, "MMMM", { locale: es })}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          }
+        
+          if (dropdownProps.name === "years") {
+            const startYear = fromYear || new Date().getFullYear() - 100;
+            const endYear = toYear || new Date().getFullYear();
+            const years = Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+            
+            return (
+              <Select
+                onValueChange={(value) => {
+                  const newDate = new Date(month);
+                  newDate.setFullYear(parseInt(value));
+                  goToMonth(newDate);
+                }}
+                value={month.getFullYear().toString()}
+              >
+                 <SelectTrigger className="w-[80px] text-sm py-1 h-8 focus:ring-0 focus:ring-offset-0 border-none shadow-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map((year) => (
+                    <SelectItem key={year} value={year.toString()}>
+                      {year}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            );
+          }
+        
+          return null;
+        }
+        
       }}
       {...props}
     />
