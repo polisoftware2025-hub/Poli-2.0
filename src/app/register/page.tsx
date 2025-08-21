@@ -34,8 +34,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { useForm, FormProvider, useFormContext, Controller } from "react-hook-form";
+import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   FormField,
   FormItem,
@@ -61,9 +62,7 @@ const step1Schema = z.object({
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
   numeroIdentificacion: z.string().min(5, { message: "El número de identificación debe tener al menos 5 caracteres." }),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
-  birthDate: z.string().refine((date) => !isNaN(new Date(date).getTime()), {
-    message: "Por favor, introduce una fecha válida.",
-  }),
+  birthDate: z.date({ required_error: "Por favor, introduce una fecha válida." }),
 });
 
 const step2Schema = z.object({
@@ -133,7 +132,8 @@ export default function RegisterPage() {
     { number: 7, title: "Confirmación", icon: CheckCircle, schema: step7Schema },
   ];
 
-  const methods = useForm<AllStepsData>({
+  const methods = useForm<z.infer<typeof allStepsSchema>>({
+    resolver: zodResolver(allStepsSchema),
     mode: "onChange",
     defaultValues: {
       firstName: "",
@@ -143,7 +143,7 @@ export default function RegisterPage() {
       tipoIdentificacion: undefined,
       numeroIdentificacion: "",
       gender: undefined,
-      birthDate: "",
+      birthDate: undefined,
       phone: "",
       address: "",
       city: "",
@@ -410,7 +410,7 @@ const Step1 = () => {
                     )}
                   >
                     {field.value ? (
-                      format(new Date(field.value), "PPP", { locale: es })
+                      format(field.value, "PPP", { locale: es })
                     ) : (
                       <span>Selecciona una fecha</span>
                     )}
@@ -422,8 +422,8 @@ const Step1 = () => {
                 <Calendar
                   mode="single"
                   locale={es}
-                  selected={field.value ? new Date(field.value) : undefined}
-                  onSelect={(date) => field.onChange(date?.toISOString())}
+                  selected={field.value}
+                  onSelect={field.onChange}
                   disabled={(date) =>
                     date > new Date() || date < new Date("1900-01-01")
                   }
@@ -476,7 +476,7 @@ const Step2 = () => {
         )}
       />
       <FormField control={control} name="address" render={({ field }) => (
-          <FormItem className="md:col-span-2">
+          <FormItem>
             <FormLabel>Dirección de Residencia</FormLabel>
             <FormControl>
               <Input placeholder="Calle 123 #45-67, Apto 101" {...field} />
@@ -511,6 +511,17 @@ const Step2 = () => {
             <FormControl>
               <Input type="email" placeholder="tu.correo@example.com" {...field} />
             </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      <FormField control={control} name="correoInstitucional" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Correo Institucional (Opcional)</FormLabel>
+            <FormControl>
+              <Input type="email" placeholder="nombre.apellido@pol.edu.co" {...field} />
+            </FormControl>
+             <p className="text-xs text-muted-foreground">Se puede autogenerar.</p>
             <FormMessage />
           </FormItem>
         )}
@@ -590,16 +601,29 @@ const Step3 = () => {
 const Step4 = () => {
   const { control, watch, setValue } = useFormContext();
   const numeroIdentificacion = watch('numeroIdentificacion');
-  const usuario = watch('usuario');
 
   useEffect(() => {
-    if (numeroIdentificacion && !usuario) {
-      setValue('usuario', numeroIdentificacion);
+    if (numeroIdentificacion) {
+      setValue('usuario', numeroIdentificacion, { shouldValidate: true });
     }
-  }, [numeroIdentificacion, usuario, setValue]);
+  }, [numeroIdentificacion, setValue]);
   
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <FormField
+          control={control}
+          name="usuario"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Usuario</FormLabel>
+              <FormControl>
+                <Input placeholder="Tu número de identificación" {...field} />
+              </FormControl>
+              <p className="text-xs text-muted-foreground">Sugerido: tu número de identificación.</p>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
        <div></div>
       <FormField control={control} name="password" render={({ field }) => (
           <FormItem>
