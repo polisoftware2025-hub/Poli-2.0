@@ -82,8 +82,7 @@ const step5Schema = z.object({
   transcript: z.any().refine(file => file?.length == 1, 'Se requiere el certificado de notas.'),
 });
 
-const allSchemas = [step1Schema, step2Schema, step3Schema, step4Schema, step5Schema];
-const combinedSchema = allSchemas.reduce((acc, schema) => acc.merge(schema), z.object({}));
+const allStepsSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema).merge(step5Schema);
 
 
 export default function RegisterPage() {
@@ -92,8 +91,8 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const methods = useForm({
-    resolver: zodResolver(combinedSchema),
+  const methods = useForm<z.infer<typeof allStepsSchema>>({
+    resolver: zodResolver(allStepsSchema),
     mode: "onChange",
     defaultValues: {
       firstName: "",
@@ -114,7 +113,7 @@ export default function RegisterPage() {
     },
   });
   
-  const { trigger, handleSubmit, getValues } = methods;
+  const { trigger, handleSubmit, getValues, setError, clearErrors } = methods;
 
   const steps = [
     { number: 1, title: "Datos Personales", icon: User, fields: ["firstName", "lastName", "birthDate", "gender"], schema: step1Schema },
@@ -122,25 +121,33 @@ export default function RegisterPage() {
     { number: 3, title: "Datos Académicos", icon: BookOpen, fields: ["program", "lastInstitution"], schema: step3Schema },
     { number: 4, title: "Datos de Acceso", icon: KeyRound, fields: ["email", "password", "confirmPassword"], schema: step4Schema },
     { number: 5, title: "Documentos", icon: FileText, fields: ["document", "transcript"], schema: step5Schema },
-    { number: 6, title: "Confirmación", icon: CheckCircle, fields: [] },
+    { number: 6, title: "Confirmación", icon: CheckCircle, fields: [], schema: z.object({}) },
   ];
 
   const CurrentStepIcon = steps[currentStep - 1].icon;
   
   const nextStep = async () => {
     const currentStepInfo = steps[currentStep - 1];
-    if (!currentStepInfo.fields) {
-      setCurrentStep(currentStep + 1);
-      return;
-    }
-  
-    const currentFields = currentStepInfo.fields as (keyof z.infer<typeof combinedSchema>)[];
-    const output = await trigger(currentFields, { shouldFocus: true });
-  
-    if (!output) return;
-  
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    const currentSchema = currentStepInfo.schema;
+    const currentFields = currentStepInfo.fields as (keyof z.infer<typeof allStepsSchema>)[];
+
+    // Clear previous errors for the current fields before re-validating
+    currentFields.forEach(field => clearErrors(field));
+
+    const fieldValues = getValues();
+    const result = await currentSchema.safeParseAsync(fieldValues);
+
+    if (result.success) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      }
+    } else {
+      result.error.errors.forEach((err) => {
+        setError(err.path[0] as any, {
+          type: "manual",
+          message: err.message,
+        });
+      });
     }
   };
 
@@ -150,7 +157,7 @@ export default function RegisterPage() {
     }
   };
 
-  const onSubmit = async (data: z.infer<typeof combinedSchema>) => {
+  const onSubmit = async (data: z.infer<typeof allStepsSchema>) => {
     try {
       await createUserWithEmailAndPassword(auth, data.email, data.password);
       toast({
@@ -453,5 +460,3 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
-    
