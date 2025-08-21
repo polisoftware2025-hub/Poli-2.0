@@ -126,7 +126,6 @@ export default function RegisterPage() {
   ];
 
   const methods = useForm<z.infer<typeof allStepsSchema>>({
-    resolver: zodResolver(allStepsSchema),
     mode: "onChange",
     defaultValues: {
       firstName: "",
@@ -152,7 +151,7 @@ export default function RegisterPage() {
     },
   });
 
-  const { handleSubmit, getValues, setError, clearErrors, trigger } = methods;
+  const { getValues, setError, trigger } = methods;
 
   const CurrentStepIcon = steps[currentStep - 1].icon;
 
@@ -182,31 +181,27 @@ export default function RegisterPage() {
     }
   };
 
-  const onSubmit = async (data: AllStepsData) => {
-    try {
-      const auth = getAuth(app);
-      await createUserWithEmailAndPassword(auth, data.correoPersonal, data.password);
-      toast({
-        title: "¡Registro exitoso!",
-        description: "Tu cuenta ha sido creada. Serás redirigido.",
-      });
-      router.push("/dashboard");
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error en el registro",
-        description:
-          error.code === "auth/email-already-in-use"
-            ? "El correo electrónico ya está en uso."
-            : "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
-      });
-    }
-  };
-  
   const handleFinalSubmit = async () => {
     const result = await allStepsSchema.safeParseAsync(getValues());
     if (result.success) {
-      await onSubmit(result.data);
+      try {
+        const auth = getAuth(app);
+        await createUserWithEmailAndPassword(auth, result.data.correoPersonal, result.data.password);
+        toast({
+          title: "¡Registro exitoso!",
+          description: "Tu cuenta ha sido creada. Serás redirigido.",
+        });
+        router.push("/dashboard");
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error en el registro",
+          description:
+            error.code === "auth/email-already-in-use"
+              ? "El correo electrónico ya está en uso."
+              : "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
+        });
+      }
     } else {
        toast({
         variant: "destructive",
@@ -250,7 +245,6 @@ export default function RegisterPage() {
                   Sigue los pasos para completar tu inscripción.
               </CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit(onSubmit)}>
             <CardContent className="p-6">
               <div className="mb-6 space-y-4">
                   <Progress value={progress} className="w-full h-2 bg-gray-200" />
@@ -291,7 +285,6 @@ export default function RegisterPage() {
                 </Button>
               )}
             </CardFooter>
-          </form>
         </Card>
       </div>
     </FormProvider>
@@ -673,3 +666,4 @@ const Step6 = () => (
     
 
     
+
