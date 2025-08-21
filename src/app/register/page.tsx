@@ -515,16 +515,6 @@ const Step2 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="correoInstitucional" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Correo Institucional (Opcional)</FormLabel>
-            <FormControl>
-              <Input type="email" placeholder="nombre.apellido@pol.edu.co" {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 };
@@ -610,17 +600,6 @@ const Step4 = () => {
   
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <FormField control={control} name="usuario" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Usuario</FormLabel>
-            <FormControl>
-              <Input placeholder="Tu usuario" {...field} />
-            </FormControl>
-             <p className="text-xs text-muted-foreground">Sugerido: {numeroIdentificacion}</p>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
        <div></div>
       <FormField control={control} name="password" render={({ field }) => (
           <FormItem>
