@@ -92,7 +92,6 @@ const step4Schema = z.object({
 
 const step5Schema = z.object({
   metodoPago: z.string({ required_error: "Por favor, selecciona un método de pago." }),
-  estadoPago: z.string({ required_error: "Por favor, selecciona el estado del pago." }),
 });
 
 const step6Schema = z.object({});
@@ -149,7 +148,6 @@ export default function RegisterPage() {
       password: "",
       confirmPassword: "",
       metodoPago: undefined,
-      estadoPago: undefined,
     },
   });
 
@@ -416,9 +414,6 @@ const Step1 = () => {
                   disabled={(date) =>
                     date > new Date() || date < new Date("1900-01-01")
                   }
-                  captionLayout="dropdown-buttons"
-                  fromYear={new Date().getFullYear() - 100}
-                  toYear={new Date().getFullYear()}
                   initialFocus
                 />
               </PopoverContent>
@@ -653,25 +648,6 @@ const Step5 = () => {
         <Input value="$150,000 COP" disabled className="bg-gray-100"/>
         <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
       </div>
-      <FormField control={control} name="estadoPago" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Estado del Pago</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona el estado del pago" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="pendiente">Pendiente</SelectItem>
-                <SelectItem value="pagado">Pagado</SelectItem>
-                <SelectItem value="rechazado">Rechazado</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   )
 }
