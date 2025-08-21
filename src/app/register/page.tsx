@@ -156,6 +156,12 @@ export default function RegisterPage() {
 
   const nextStep = async () => {
     const currentSchema = steps[currentStep - 1].schema;
+    if (!(currentSchema as z.ZodObject<any>).shape) {
+        if (currentStep < totalSteps) {
+            setCurrentStep(currentStep + 1);
+        }
+        return;
+    }
     const fieldsToValidate = Object.keys(
       (currentSchema as z.ZodObject<any>).shape
     ) as (keyof AllStepsData)[];
