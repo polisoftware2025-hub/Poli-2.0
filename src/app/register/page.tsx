@@ -31,9 +31,11 @@ import {
   ArrowLeft,
   CreditCard,
   CalendarIcon,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,7 +82,6 @@ const step3Schema = z.object({
 });
 
 const step4Schema = z.object({
-  usuario: z.string().min(4, { message: "El usuario debe tener al menos 4 caracteres." }),
   password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
@@ -151,7 +152,6 @@ export default function RegisterPage() {
       program: undefined,
       periodoIngreso: undefined,
       jornada: undefined,
-      usuario: "",
       password: "",
       confirmPassword: "",
       metodoPago: undefined,
@@ -586,38 +586,27 @@ const Step3 = () => {
 };
 
 const Step4 = () => {
-  const { control, watch, setValue } = useFormContext();
-  const numeroIdentificacion = watch('numeroIdentificacion');
+  const { control } = useFormContext();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  useEffect(() => {
-    if (numeroIdentificacion) {
-      setValue('usuario', numeroIdentificacion, { shouldValidate: true });
-    }
-  }, [numeroIdentificacion, setValue]);
-  
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <FormField
-          control={control}
-          name="usuario"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Usuario</FormLabel>
-              <FormControl>
-                <Input placeholder="Tu número de identificación" {...field} />
-              </FormControl>
-              <p className="text-xs text-muted-foreground">Sugerido: tu número de identificación.</p>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-       <div></div>
       <FormField control={control} name="password" render={({ field }) => (
           <FormItem>
             <FormLabel>Contraseña</FormLabel>
-            <FormControl>
-              <Input type="password" placeholder="••••••••" {...field} />
-            </FormControl>
+            <div className="relative">
+              <FormControl>
+                <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+              </FormControl>
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
             <FormMessage />
           </FormItem>
         )}
@@ -625,9 +614,18 @@ const Step4 = () => {
       <FormField control={control} name="confirmPassword" render={({ field }) => (
           <FormItem>
             <FormLabel>Confirmar Contraseña</FormLabel>
-            <FormControl>
-              <Input type="password" placeholder="••••••••" {...field} />
-            </FormControl>
+            <div className="relative">
+              <FormControl>
+                <Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+              </FormControl>
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+              >
+                {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
             <FormMessage />
           </FormItem>
         )}
