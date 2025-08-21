@@ -293,8 +293,7 @@ export default function HomePage() {
                               Inscribirme
                             </Button>
                             <Button
-                              style={{ backgroundColor: "#2ecc71" }}
-                              className="px-8 py-3 font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-[#27ae60] active:bg-[#219150]"
+                              className="px-8 py-3 font-semibold text-white shadow-lg transition-transform hover:scale-105 bg-[#2ecc71] hover:bg-[#27ae60] active:bg-[#219150]"
                             >
                               Ver más
                             </Button>
@@ -348,3 +347,4 @@ export default function HomePage() {
   );
 }
 
+    
