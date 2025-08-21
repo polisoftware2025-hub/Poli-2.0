@@ -71,7 +71,6 @@ const step2Schema = z.object({
   city: z.string().min(2, { message: "La ciudad debe tener al menos 2 caracteres." }),
   country: z.string().min(2, { message: "El país debe tener al menos 2 caracteres." }),
   correoPersonal: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
-  correoInstitucional: z.string().email().optional(),
 });
 
 const step3Schema = z.object({
@@ -149,7 +148,6 @@ export default function RegisterPage() {
       city: "",
       country: "",
       correoPersonal: "",
-      correoInstitucional: "",
       program: undefined,
       periodoIngreso: undefined,
       jornada: undefined,
@@ -515,17 +513,6 @@ const Step2 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="correoInstitucional" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Correo Institucional (Opcional)</FormLabel>
-            <FormControl>
-              <Input type="email" placeholder="nombre.apellido@pol.edu.co" {...field} />
-            </FormControl>
-             <p className="text-xs text-muted-foreground">Se puede autogenerar.</p>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 };
@@ -733,5 +720,3 @@ const Step7 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
-    
