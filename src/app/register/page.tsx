@@ -25,7 +25,6 @@ import {
   Phone,
   BookOpen,
   KeyRound,
-  FileText,
   CheckCircle,
   ArrowLeft,
   CreditCard,
@@ -34,7 +33,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -151,37 +150,20 @@ export default function RegisterPage() {
     },
   });
 
-  const { handleSubmit, getValues, setError, clearErrors } = methods;
+  const { handleSubmit, getValues, setError, clearErrors, trigger } = methods;
 
   const CurrentStepIcon = steps[currentStep - 1].icon;
 
   const nextStep = async () => {
-    if (currentStep >= totalSteps) {
-      return;
-    }
-  
     const currentSchema = steps[currentStep - 1].schema;
+    const fieldsToValidate = Object.keys(
+      (currentSchema as z.ZodObject<any>).shape
+    ) as (keyof AllStepsData)[];
   
-    // Manually clear previous errors for the current step's fields
-    if ((currentSchema as z.ZodObject<any>).shape) {
-      const fields = Object.keys((currentSchema as z.ZodObject<any>).shape);
-      fields.forEach(field => clearErrors(field as keyof AllStepsData));
-    }
-    
-    const fieldValues = getValues();
-    const result = await currentSchema.safeParseAsync(fieldValues);
+    const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
   
-    if (result.success) {
-      if (currentStep < totalSteps) {
-        setCurrentStep(currentStep + 1);
-      }
-    } else {
-      result.error.errors.forEach((err) => {
-        setError(err.path[0] as any, {
-          type: "manual",
-          message: err.message,
-        });
-      });
+    if (isValid && currentStep < totalSteps) {
+      setCurrentStep(currentStep + 1);
     }
   };
   
@@ -216,7 +198,7 @@ export default function RegisterPage() {
   const handleFinalSubmit = async () => {
     const result = await allStepsSchema.safeParseAsync(getValues());
     if (result.success) {
-      onSubmit(result.data);
+      await onSubmit(result.data);
     } else {
        toast({
         variant: "destructive",
