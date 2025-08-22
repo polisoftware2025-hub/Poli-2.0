@@ -537,7 +537,10 @@ const Step3 = () => {
   const { control } = useFormContext();
   return (
     <div className="space-y-6">
-      <FormField control={control} name="rol" render={({ field }) => (
+      <FormField
+        control={control}
+        name="rol"
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Rol</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -554,7 +557,10 @@ const Step3 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="program" render={({ field }) => (
+      <FormField
+        control={control}
+        name="program"
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Carrera</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -576,7 +582,10 @@ const Step3 = () => {
           </FormItem>
         )}
       />
-       <FormField control={control} name="periodoIngreso" render={({ field }) => (
+      <FormField
+        control={control}
+        name="periodoIngreso"
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Periodo Académico de Ingreso</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -595,7 +604,10 @@ const Step3 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="jornada" render={({ field }) => (
+      <FormField
+        control={control}
+        name="jornada"
+        render={({ field }) => (
           <FormItem>
             <FormLabel>Jornada (Opcional)</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
