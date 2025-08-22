@@ -58,6 +58,8 @@ import { Label } from "@/components/ui/label";
 
 const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
 const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
+const cityCountryValidation = z.string({ required_error: "Por favor, selecciona una opción." }).min(1, "Por favor, selecciona una opción.");
+
 
 const step1Schema = z.object({
   firstName: nameValidation,
@@ -65,7 +67,7 @@ const step1Schema = z.object({
   lastName: lastNameValidation,
   segundoApellido: lastNameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
-  numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
+  numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio.").max(15, "El número de identificación no puede tener más de 15 caracteres.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
   birthDate: z.date({ required_error: "Por favor, introduce una fecha válida." }),
 }).refine(data => {
@@ -88,8 +90,8 @@ const step2Schema = z.object({
     .refine(val => !/^[#.,-]/.test(val), { message: "La dirección no puede empezar con un carácter especial." })
     .refine(val => val.includes('#'), { message: "La dirección debe contener el símbolo '#' para indicar el número." })
     .refine(val => !/\s{2,}/.test(val), { message: "No se permiten múltiples espacios consecutivos." }),
-  country: z.string({ required_error: "Por favor, selecciona un país." }).min(1, "Por favor, selecciona un país."),
-  city: z.string({ required_error: "Por favor, selecciona una ciudad." }).min(1, "Por favor, selecciona una ciudad."),
+  country: cityCountryValidation,
+  city: cityCountryValidation,
   correoPersonal: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
 });
 
@@ -784,5 +786,6 @@ const Step6 = () => (
     
 
     
+
 
 
