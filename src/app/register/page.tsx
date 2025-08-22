@@ -47,7 +47,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -183,6 +183,13 @@ export default function RegisterPage() {
       setCurrentStep(currentStep - 1);
     }
   };
+  
+  const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string } } = {
+    'cc': { id: 'cc', descripcion: 'Cédula de Ciudadanía' },
+    'ti': { id: 'ti', descripcion: 'Tarjeta de Identidad' },
+    'ce': { id: 'ce', descripcion: 'Cédula de Extranjería' },
+    'passport': { id: 'passport', descripcion: 'Pasaporte' },
+  };
 
   const handleFinalSubmit = async () => {
     const allData = getValues();
@@ -196,16 +203,39 @@ export default function RegisterPage() {
         
         const db = getFirestore(app);
         
-        const studentData = {
-          ...result.data,
-          uid: user.uid,
+        const domain = result.data.correoPersonal.split('@')[1];
+        const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@${domain}`;
+
+        const usuarioData = {
+          nombre1: result.data.firstName,
+          nombre2: result.data.segundoNombre || "",
+          apellido1: result.data.lastName,
+          apellido2: result.data.segundoApellido,
+          tipoIdentificacion: tipoIdentificacionMap[result.data.tipoIdentificacion],
+          identificacion: result.data.numeroIdentificacion,
+          genero: result.data.gender,
+          telefono: result.data.phone,
+          direccion: result.data.address,
+          ciudad: result.data.city,
+          pais: result.data.country,
+          correo: result.data.correoPersonal,
+          correoInstitucional: correoInstitucional,
+          contrasena: "ENCRYPTED", // Placeholder for encrypted password
+          rol: { id: "estudiante", descripcion: "Estudiante" },
+          estaInscrito: true,
+          fechaCreacion: serverTimestamp(),
         };
         
-        delete (studentData as any).password;
-        delete (studentData as any).confirmPassword;
+        await setDoc(doc(db, "usuarios", user.uid), usuarioData);
+        
+        const estudianteData = {
+          usuarioId: user.uid,
+          estado: 'activo',
+          fechaCreacion: serverTimestamp(),
+        };
 
-        await setDoc(doc(db, "students", user.uid), studentData);
-
+        await setDoc(doc(db, "estudiantes", user.uid), estudianteData);
+        
         toast({
           title: "¡Registro exitoso!",
           description: "Tu cuenta ha sido creada. Serás redirigido.",
@@ -430,7 +460,7 @@ const Step1 = () => {
       <FormField control={control} name="gender" render={({ field }) => (
           <FormItem className="flex flex-col justify-end">
             <FormLabel>Género</FormLabel>
-            <Select onValuechange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona tu género" />
@@ -558,7 +588,7 @@ const Step3 = () => {
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un periodo" />
-                </SelectTrigger>
+                </Trigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="2024-1">2024 - 1</SelectItem>
@@ -577,7 +607,7 @@ const Step3 = () => {
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona una jornada" />
-                </SelectTrigger>
+                </Trigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="diurna">Diurna</SelectItem>
@@ -681,9 +711,5 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
-    
-
-    
 
     
