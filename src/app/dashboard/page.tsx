@@ -8,19 +8,23 @@ import Link from "next/link";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>('estudiante@example.com');
 
-  // Since auth is removed, we'll use a placeholder user.
-  // You should replace this with logic to fetch user data from Firestore.
-  const user = {
-    email: 'estudiante@example.com'
-  }
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+    if (storedEmail) {
+      setUserEmail(storedEmail);
+    }
+  }, []);
+  
 
   const handleLogout = async () => {
-    // Since auth is removed, just redirect to home.
+    localStorage.removeItem('userEmail');
     router.push("/");
   };
   
@@ -50,19 +54,19 @@ export default function DashboardPage() {
                 </Button>
 
                 <div className="flex items-center gap-2">
-                    <span className="hidden text-sm font-medium text-gray-700 sm:block">{user.email}</span>
+                    <span className="hidden text-sm font-medium text-gray-700 sm:block">{userEmail}</span>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
+                                    <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-56" align="end" forceMount>
                             <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-1">
-                                    <p className="text-sm font-medium leading-none">{user.email}</p>
+                                    <p className="text-sm font-medium leading-none">{userEmail}</p>
                                     <p className="text-xs leading-none text-muted-foreground">
                                         Estudiante
                                     </p>
@@ -125,7 +129,7 @@ export default function DashboardPage() {
                      </CardDescription>
                  </CardHeader>
                  <CardContent>
-                     <p className="text-gray-700">Has iniciado sesión como: <span className="font-semibold text-[#004aad]">{user.email}</span></p>
+                     <p className="text-gray-700">Has iniciado sesión como: <span className="font-semibold text-[#004aad]">{userEmail}</span></p>
                  </CardContent>
              </Card>
          </div>

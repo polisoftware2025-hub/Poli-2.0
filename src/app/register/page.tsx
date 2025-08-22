@@ -198,13 +198,10 @@ export default function RegisterPage() {
       try {
         const db = getFirestore(app);
         
-        // As per the screenshot, data is nested under a specific document in Politecnico.
-        // The exact ID is not clear, using a placeholder. Replace with your actual document ID.
         const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
         
-        // 1. Create document in 'usuarios' subcollection
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
-        const newUserDocRef = doc(usuariosCollectionRef); // Firestore generates a unique ID
+        const newUserDocRef = doc(usuariosCollectionRef);
 
         const domain = result.data.correoPersonal.split('@')[1];
         const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@${domain}`;
@@ -223,7 +220,7 @@ export default function RegisterPage() {
           pais: result.data.country,
           correo: result.data.correoPersonal,
           correoInstitucional: correoInstitucional,
-          contrasena: "ENCRYPTED_PASSWORD_PLACEHOLDER", // Storing plain text passwords is a security risk.
+          contrasena: "ENCRYPTED_PASSWORD_PLACEHOLDER",
           rol: { id: "estudiante", descripcion: "Estudiante" },
           estaInscrito: true,
           fechaCreacion: serverTimestamp(),
@@ -231,9 +228,8 @@ export default function RegisterPage() {
         
         await setDoc(newUserDocRef, usuarioData);
         
-        // 2. Create document in 'estudiantes' subcollection referencing the new userId
         const estudiantesCollectionRef = collection(politecnicoDocRef, "estudiantes");
-        const estudianteDocRef = doc(estudiantesCollectionRef, newUserDocRef.id); // Use the same ID as the user
+        const estudianteDocRef = doc(estudiantesCollectionRef, newUserDocRef.id);
         
         const estudianteData = {
           usuarioId: newUserDocRef.id,
@@ -247,7 +243,10 @@ export default function RegisterPage() {
           title: "¡Registro exitoso!",
           description: "Tu cuenta ha sido creada. Serás redirigido.",
         });
+
+        localStorage.setItem('userEmail', result.data.correoPersonal);
         router.push("/dashboard");
+
       } catch (error: any) {
         console.error("Error during registration: ", error);
         toast({
