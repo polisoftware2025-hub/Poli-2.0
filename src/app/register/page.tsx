@@ -97,16 +97,12 @@ const step5Schema = z.object({
 const step6Schema = z.object({});
 
 
-const allStepsSchema = z.object({
-  ...step1Schema.shape,
-  ...step2Schema.shape,
-  ...step3Schema.shape,
-  ...step4Schema.shape,
-  ...step5Schema.shape,
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Las contraseñas no coinciden.",
-  path: ["confirmPassword"],
-});
+const allStepsSchema = step1Schema
+  .merge(step2Schema)
+  .merge(step3Schema)
+  .merge(step4Schema)
+  .merge(step5Schema);
+
 
 type AllStepsData = z.infer<typeof allStepsSchema>;
 
