@@ -72,7 +72,6 @@ export default function DashboardPage() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src={`https://i.pravatar.cc/150?u=${user.email}`} alt="Avatar de usuario" />
                                     <AvatarFallback>{getInitials(user.email)}</AvatarFallback>
                                 </Avatar>
                             </Button>
