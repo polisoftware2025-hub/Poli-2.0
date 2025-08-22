@@ -143,7 +143,7 @@ export default function HomePage() {
           <Link href="#inicio" className="flex items-center gap-2">
             <GraduationCap className="h-8 w-8 text-[#002147]" />
             <span className="font-poppins text-xl font-bold text-[#002147]">
-              Poli Intl.
+              Poli 2.0
             </span>
           </Link>
 

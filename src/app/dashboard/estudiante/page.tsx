@@ -53,7 +53,7 @@ export default function StudentDashboardPage() {
                 <Link href="/" className="flex items-center gap-2">
                     <GraduationCap className="h-8 w-8 text-[#002147]" />
                     <span className="hidden font-poppins text-xl font-bold text-[#002147] sm:block">
-                    Poli Intl. (Estudiante)
+                    Poli 2.0 (Estudiante)
                     </span>
                 </Link>
             </div>
