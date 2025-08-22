@@ -97,9 +97,18 @@ const step5Schema = z.object({
 const step6Schema = z.object({});
 
 
-const allStepsSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema).merge(step5Schema);
-type AllStepsData = z.infer<typeof allStepsSchema>;
+const allStepsSchema = z.object({
+  ...step1Schema.shape,
+  ...step2Schema.shape,
+  ...step3Schema.shape,
+  ...step4Schema.shape,
+  ...step5Schema.shape,
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden.",
+  path: ["confirmPassword"],
+});
 
+type AllStepsData = z.infer<typeof allStepsSchema>;
 
 const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
@@ -151,6 +160,12 @@ export default function RegisterPage() {
 
   const nextStep = async () => {
     const fields = steps[currentStep - 1].fields;
+    if (fields.length === 0) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      }
+      return;
+    }
     const isValid = await trigger(fields, { shouldFocus: true });
   
     if (isValid) {
@@ -397,7 +412,7 @@ const Step1 = () => {
         )}
       />
       <FormField control={control} name="gender" render={({ field }) => (
-          <FormItem>
+          <FormItem className="flex flex-col justify-end">
             <FormLabel>Género</FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
