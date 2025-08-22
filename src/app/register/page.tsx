@@ -56,22 +56,35 @@ import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
 
 
+const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
+
 const step1Schema = z.object({
-  firstName: z.string().min(2, { message: "El nombre debe tener al menos 2 caracteres." }).max(50),
-  segundoNombre: z.string().optional(),
-  lastName: z.string().min(2, { message: "El primer apellido debe tener al menos 2 caracteres." }),
-  segundoApellido: z.string().min(2, { message: "El segundo apellido debe tener al menos 2 caracteres." }),
+  firstName: nameValidation,
+  segundoNombre: nameValidation.optional().or(z.literal('')),
+  lastName: nameValidation,
+  segundoApellido: nameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
-  numeroIdentificacion: z.string().min(5, { message: "El número de identificación debe tener al menos 5 caracteres." }),
+  numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio."),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
   birthDate: z.date({ required_error: "Por favor, introduce una fecha válida." }),
+}).refine(data => {
+    if (data.tipoIdentificacion === 'cc') {
+        return /^\d{7,10}$/.test(data.numeroIdentificacion);
+    }
+    if (data.tipoIdentificacion === 'passport') {
+        return /^[A-Z0-9]{6,9}$/.test(data.numeroIdentificacion);
+    }
+    return true;
+}, {
+    message: "Número de identificación no válido para el tipo seleccionado.",
+    path: ["numeroIdentificacion"],
 });
 
 const step2Schema = z.object({
-  phone: z.string().min(7, { message: "El teléfono debe tener al menos 7 dígitos." }).regex(/^\+?[0-9\s-]{7,20}$/, { message: "Número de teléfono inválido." }),
-  address: z.string().min(5, { message: "La dirección debe tener al menos 5 caracteres." }),
-  city: z.string().min(2, { message: "La ciudad debe tener al menos 2 caracteres." }),
-  country: z.string().min(2, { message: "El país debe tener al menos 2 caracteres." }),
+  phone: z.string().regex(/^\d{7,15}$/, "Debe ser un número de teléfono válido entre 7 y 15 dígitos."),
+  address: z.string().min(5, "La dirección debe tener al menos 5 caracteres.").regex(/^[a-zA-Z0-9\s#.,-]+$/, "La dirección contiene caracteres inválidos.").refine(val => !/^[#.,-]/.test(val), { message: "La dirección no puede empezar con un carácter especial." }),
+  city: z.string().min(2).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios."),
+  country: z.string().min(2).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios."),
   correoPersonal: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
 });
 
@@ -83,7 +96,11 @@ const step3Schema = z.object({
 });
 
 const step4Schema = z.object({
-  password: z.string().min(8, { message: "La contraseña debe tener al menos 8 caracteres." }),
+  password: z.string().min(8, "Mínimo 8 caracteres.")
+    .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
+    .regex(/[a-z]/, "Debe contener al menos una minúscula.")
+    .regex(/[0-9]/, "Debe contener al menos un número.")
+    .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
@@ -204,8 +221,7 @@ export default function RegisterPage() {
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
         const newUserDocRef = doc(usuariosCollectionRef);
 
-        const domain = result.data.correoPersonal.split('@')[1] || 'poliedu.co';
-        const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@${domain}`;
+        const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@poli.edu.co`;
 
         const usuarioData = {
           nombre1: result.data.firstName,
@@ -473,9 +489,9 @@ const Step1 = () => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="male">Masculino</SelectItem>
-                <SelectItem value="female">Femenino</SelectItem>
-                <SelectItem value="other">Otro</SelectItem>
+                <SelectItem value="M">Masculino</SelectItem>
+                <SelectItem value="F">Femenino</SelectItem>
+                <SelectItem value="Otro">Otro</SelectItem>
               </SelectContent>
             </Select>
             <FormMessage />
@@ -494,7 +510,7 @@ const Step2 = () => {
           <FormItem>
             <FormLabel>Teléfono / Celular</FormLabel>
             <FormControl>
-              <Input placeholder="+57 300 123 4567" {...field} />
+              <Input placeholder="3001234567" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
