@@ -14,7 +14,7 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GraduationCap, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -173,6 +173,7 @@ export default function HomePage() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="w-64 bg-[#002147] p-6 text-white">
+                <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
                 <nav className="flex flex-col items-start space-y-6 pt-8">
                   {navLinks.map((link) => (
                     <Link
@@ -199,14 +200,6 @@ export default function HomePage() {
           className="relative flex h-screen w-full items-center justify-center text-center text-white"
         >
           <div className="absolute inset-0 z-0">
-            <Image
-              src="/images/portada.avif"
-              alt="Estudiantes en campus universitario"
-              fill
-              style={{objectFit: 'cover'}}
-              className="z-[-1]"
-              data-ai-hint="university students campus"
-            />
              <div className="absolute inset-0 z-10 bg-[#002147]/60" />
           </div>
           <div className="relative z-20 flex flex-col items-center p-6">
