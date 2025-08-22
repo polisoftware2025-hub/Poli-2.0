@@ -39,7 +39,7 @@ export default function HomePage() {
       title: "Administración de Empresas",
       description:
         "Forma líderes con visión estratégica para gestionar organizaciones.",
-      image: "/carousel/business-students.jpg",
+      image: "/Administacion-de-Empresas.jpg",
       imageHint: "business students",
     },
     {
@@ -210,7 +210,7 @@ export default function HomePage() {
         >
           <div className="absolute inset-0 z-0">
             <Image
-              src="/hero-background.jpg"
+              src="/portada.avif"
               alt="Estudiantes en campus universitario"
               fill
               style={{objectFit: 'cover'}}
@@ -346,5 +346,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
