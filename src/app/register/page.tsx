@@ -198,13 +198,16 @@ export default function RegisterPage() {
       try {
         const db = getFirestore(app);
         
+        // As per the screenshot, data is nested under a specific document in Politecnico.
+        // The exact ID is not clear, using a placeholder. Replace with your actual document ID.
+        const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
+        
+        // 1. Create document in 'usuarios' subcollection
+        const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
+        const newUserDocRef = doc(usuariosCollectionRef); // Firestore generates a unique ID
+
         const domain = result.data.correoPersonal.split('@')[1];
         const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@${domain}`;
-
-        const politecnicoDocRef = doc(db, "Politecnico", " यरਉ");
-        
-        const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
-        const newUserDocRef = doc(usuariosCollectionRef);
 
         const usuarioData = {
           nombre1: result.data.firstName,
@@ -220,7 +223,7 @@ export default function RegisterPage() {
           pais: result.data.country,
           correo: result.data.correoPersonal,
           correoInstitucional: correoInstitucional,
-          contrasena: "ENCRYPTED", // Placeholder for encrypted password
+          contrasena: "ENCRYPTED_PASSWORD_PLACEHOLDER", // Storing plain text passwords is a security risk.
           rol: { id: "estudiante", descripcion: "Estudiante" },
           estaInscrito: true,
           fechaCreacion: serverTimestamp(),
@@ -228,14 +231,17 @@ export default function RegisterPage() {
         
         await setDoc(newUserDocRef, usuarioData);
         
+        // 2. Create document in 'estudiantes' subcollection referencing the new userId
+        const estudiantesCollectionRef = collection(politecnicoDocRef, "estudiantes");
+        const estudianteDocRef = doc(estudiantesCollectionRef, newUserDocRef.id); // Use the same ID as the user
+        
         const estudianteData = {
           usuarioId: newUserDocRef.id,
           estado: 'activo',
           fechaCreacion: serverTimestamp(),
         };
 
-        const estudiantesCollectionRef = collection(politecnicoDocRef, "estudiantes");
-        await setDoc(doc(estudiantesCollectionRef, newUserDocRef.id), estudianteData);
+        await setDoc(estudianteDocRef, estudianteData);
         
         toast({
           title: "¡Registro exitoso!",
@@ -725,5 +731,5 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
+    
     
