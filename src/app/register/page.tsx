@@ -113,26 +113,24 @@ const step5Schema = z.object({
 
 const step6Schema = z.object({});
 
-
 const allStepsSchema = z.object({
-  ...step1Schema.shape,
+  ...step1Schema._def.schema.shape,
   ...step2Schema.shape,
   ...step3Schema.shape,
-  ...step4Schema.shape,
+  ...step4Schema._def.schema.shape,
   ...step5Schema.shape
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
 });
 
-
 type AllStepsData = z.infer<typeof allStepsSchema>;
 
 const steps = [
-    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
+    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys((step1Schema._def as any).schema.shape) as (keyof AllStepsData)[] },
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
     { number: 3, title: "Datos Académicos", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as (keyof AllStepsData)[] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys((step4Schema._def as any).schema.shape) as (keyof AllStepsData)[] },
     { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema, fields: Object.keys(step5Schema.shape) as (keyof AllStepsData)[] },
     { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
   ];
@@ -184,7 +182,7 @@ export default function RegisterPage() {
       }
       return;
     }
-    const isValid = await trigger(fields, { shouldFocus: true });
+    const isValid = await trigger(fields as any, { shouldFocus: true });
   
     if (isValid) {
       if (currentStep < totalSteps) {
