@@ -14,7 +14,8 @@ import {
   CarouselPrevious,
   type CarouselApi,
 } from "@/components/ui/carousel";
-import { GraduationCap, Menu, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { GraduationCap, Menu } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -161,38 +162,33 @@ export default function HomePage() {
 
           {/* Mobile Navigation Button */}
           <div className="md:hidden">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setMenuOpen(!isMenuOpen)}
-              aria-label="Toggle Menu"
-            >
-              {isMenuOpen ? (
-                <X className="h-6 w-6" />
-              ) : (
-                <Menu className="h-6 w-6" />
-              )}
-            </Button>
+            <Sheet open={isMenuOpen} onOpenChange={setMenuOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Toggle Menu"
+                >
+                  <Menu className="h-6 w-6" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-64 bg-[#002147] p-6 text-white">
+                <nav className="flex flex-col items-start space-y-6 pt-8">
+                  {navLinks.map((link) => (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMenuOpen(false)}
+                      className="font-poppins text-lg font-medium transition-colors hover:text-gray-300"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </nav>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
-
-        {/* Mobile Navigation Menu */}
-        {isMenuOpen && (
-          <div className="bg-white md:hidden">
-            <nav className="flex flex-col items-center space-y-4 p-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="font-poppins text-base font-medium text-gray-700 transition-colors hover:text-[#004aad]"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        )}
       </header>
 
       {/* Main Content */}
