@@ -27,7 +27,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="font-roboto antialiased">
+      <body className="font-roboto antialiased" suppressHydrationWarning>
         {children}
         <Toaster />
       </body>

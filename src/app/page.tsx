@@ -157,9 +157,6 @@ export default function HomePage() {
                 {link.label}
               </Link>
             ))}
-             <Button asChild variant="outline" className="rounded-full border-[#004aad] text-[#004aad] transition-transform hover:scale-105 hover:bg-[#004aad] hover:text-white">
-                <Link href="/register">Regístrate</Link>
-            </Button>
           </nav>
 
           {/* Mobile Navigation Button */}
@@ -193,9 +190,6 @@ export default function HomePage() {
                   {link.label}
                 </Link>
               ))}
-               <Button asChild variant="outline" className="rounded-full border-[#004aad] text-[#004aad] transition-transform hover:scale-105 hover:bg-[#004aad] hover:text-white">
-                    <Link href="/register">Regístrate</Link>
-                </Button>
             </nav>
           </div>
         )}
@@ -246,13 +240,16 @@ export default function HomePage() {
 
         {/* Welcome Section */}
         <section id="inscripcion" className="bg-white py-20">
-          <div className="container mx-auto max-w-4xl px-6" data-aos="fade-up">
+          <div className="container mx-auto max-w-4xl px-6 text-center" data-aos="fade-up">
             <Card className="rounded-xl bg-white p-8 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
               <CardContent className="p-0">
-                <p className="text-center font-poppins text-xl text-gray-700">
+                <p className="font-poppins text-xl text-gray-700">
                   El Politécnico Internacional forma profesionales con calidad
                   y compromiso, preparados para los retos del mundo actual.
                 </p>
+                  <Button asChild size="lg" className="mt-6 rounded-full bg-[#004aad] px-10 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700">
+                      <Link href="/register">Inscríbete</Link>
+                  </Button>
               </CardContent>
             </Card>
           </div>
