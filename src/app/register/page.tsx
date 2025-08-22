@@ -430,7 +430,7 @@ const Step1 = () => {
       <FormField control={control} name="gender" render={({ field }) => (
           <FormItem className="flex flex-col justify-end">
             <FormLabel>Género</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValuechange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona tu género" />
@@ -681,6 +681,8 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
+
+    
 
     
 
