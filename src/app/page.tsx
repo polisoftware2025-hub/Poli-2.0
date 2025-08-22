@@ -172,7 +172,7 @@ export default function HomePage() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 bg-[#002147] p-6 text-white">
+              <SheetContent side="left" className="w-64 bg-primary p-6 text-primary-foreground">
                 <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
                 <nav className="flex flex-col items-start space-y-6 pt-8">
                   {navLinks.map((link) => (
