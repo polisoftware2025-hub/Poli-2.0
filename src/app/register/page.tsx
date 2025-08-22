@@ -201,8 +201,10 @@ export default function RegisterPage() {
         const domain = result.data.correoPersonal.split('@')[1];
         const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@${domain}`;
 
-        const usuariosCollectionRef = collection(db, "usuarios");
-        const newUserRef = doc(usuariosCollectionRef);
+        const politecnicoDocRef = doc(db, "Politecnico", " यरਉ");
+        
+        const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
+        const newUserDocRef = doc(usuariosCollectionRef);
 
         const usuarioData = {
           nombre1: result.data.firstName,
@@ -224,15 +226,16 @@ export default function RegisterPage() {
           fechaCreacion: serverTimestamp(),
         };
         
-        await setDoc(newUserRef, usuarioData);
+        await setDoc(newUserDocRef, usuarioData);
         
         const estudianteData = {
-          usuarioId: newUserRef.id,
+          usuarioId: newUserDocRef.id,
           estado: 'activo',
           fechaCreacion: serverTimestamp(),
         };
 
-        await setDoc(doc(db, "estudiantes", newUserRef.id), estudianteData);
+        const estudiantesCollectionRef = collection(politecnicoDocRef, "estudiantes");
+        await setDoc(doc(estudiantesCollectionRef, newUserDocRef.id), estudianteData);
         
         toast({
           title: "¡Registro exitoso!",
@@ -240,6 +243,7 @@ export default function RegisterPage() {
         });
         router.push("/dashboard");
       } catch (error: any) {
+        console.error("Error during registration: ", error);
         toast({
           variant: "destructive",
           title: "Error en el registro",
@@ -557,6 +561,7 @@ const Step3 = () => {
           </FormItem>
         )}
       />
+
       <FormField
         control={control}
         name="program"
@@ -582,6 +587,7 @@ const Step3 = () => {
           </FormItem>
         )}
       />
+
       <FormField
         control={control}
         name="periodoIngreso"
@@ -592,7 +598,7 @@ const Step3 = () => {
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un periodo" />
-                </Trigger>
+                </SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="2024-1">2024 - 1</SelectItem>
@@ -604,6 +610,7 @@ const Step3 = () => {
           </FormItem>
         )}
       />
+
       <FormField
         control={control}
         name="jornada"
@@ -614,7 +621,7 @@ const Step3 = () => {
               <FormControl>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona una jornada" />
-                </Trigger>
+                </SelectTrigger>
               </FormControl>
               <SelectContent>
                 <SelectItem value="diurna">Diurna</SelectItem>
@@ -718,3 +725,5 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
+
+    
