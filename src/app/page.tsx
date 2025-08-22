@@ -39,69 +39,69 @@ export default function HomePage() {
       title: "Administración de Empresas",
       description:
         "Forma líderes con visión estratégica para gestionar organizaciones.",
-      image: "/Administacion-de-Empresas.jpg",
+      image: "/images/Administacion-de-Empresas.jpg",
       imageHint: "business students",
     },
     {
       title: "Contaduría Pública",
       description:
         "Prepara expertos en el control financiero y la normativa contable.",
-      image: "/carousel/accounting-finance.jpg",
+      image: "/images/carousel/accounting-finance.jpg",
       imageHint: "accounting finance",
     },
     {
       title: "Mercadeo y Publicidad",
       description:
         "Desarrolla estrategias creativas para posicionar marcas y productos.",
-      image: "/carousel/marketing-team.jpg",
+      image: "/images/carousel/marketing-team.jpg",
       imageHint: "marketing team",
     },
     {
       title: "Ingeniería de Sistemas",
       description:
         "Crea soluciones tecnológicas innovadoras para optimizar procesos.",
-      image: "/carousel/software-development.jpg",
+      image: "/images/carousel/software-development.jpg",
       imageHint: "software development",
     },
     {
       title: "Gastronomía",
       description: "Fusiona arte y técnica culinaria para crear experiencias únicas.",
-      image: "/carousel/chef-cooking.jpg",
+      image: "/images/carousel/chef-cooking.jpg",
       imageHint: "chef cooking",
     },
     {
       title: "Hotelería y Turismo",
       description:
         "Gestiona servicios de hospitalidad con estándares internacionales.",
-      image: "/carousel/luxury-hotel.jpg",
+      image: "/images/carousel/luxury-hotel.jpg",
       imageHint: "luxury hotel",
     },
     {
       title: "Derecho",
       description:
         "Forma profesionales con sólidos principios éticos y jurídicos.",
-      image: "/carousel/law-books-courtroom.jpg",
+      image: "/images/carousel/law-books-courtroom.jpg",
       imageHint: "law books courtroom",
     },
     {
       title: "Psicología",
       description:
         "Comprende el comportamiento humano para promover el bienestar.",
-      image: "/carousel/therapy-session.jpg",
+      image: "/images/carousel/therapy-session.jpg",
       imageHint: "therapy session",
     },
     {
       title: "Enfermería",
       description:
         "Cuidado integral de la salud con vocación de servicio y humanismo.",
-      image: "/carousel/nurses-hospital.jpg",
+      image: "/images/carousel/nurses-hospital.jpg",
       imageHint: "nurses hospital",
     },
     {
       title: "Comunicación Social",
       description:
         "Forma comunicadores estratégicos para medios y organizaciones.",
-      image: "/carousel/media-broadcast.jpg",
+      image: "/images/carousel/media-broadcast.jpg",
       imageHint: "media broadcast",
     },
   ];
@@ -210,7 +210,7 @@ export default function HomePage() {
         >
           <div className="absolute inset-0 z-0">
             <Image
-              src="/portada.avif"
+              src="/images/portada.avif"
               alt="Estudiantes en campus universitario"
               fill
               style={{objectFit: 'cover'}}
