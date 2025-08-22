@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { useForm, FormProvider, useFormContext } from "react-hook-form";
+import { useForm, FormProvider, useFormContext, useWatch } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -84,8 +84,8 @@ const step1Schema = z.object({
 const step2Schema = z.object({
   phone: z.string().regex(/^\d{7,15}$/, "Debe ser un número de teléfono válido entre 7 y 15 dígitos."),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres.").regex(/^[a-zA-Z0-9\s#.,-]+$/, "La dirección contiene caracteres inválidos.").refine(val => !/^[#.,-]/.test(val), { message: "La dirección no puede empezar con un carácter especial." }),
-  city: z.string().min(2, "Debe tener al menos 2 caracteres").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios."),
-  country: z.string().min(2, "Debe tener al menos 2 caracteres").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios."),
+  country: z.string({ required_error: "Por favor, selecciona un país." }),
+  city: z.string({ required_error: "Por favor, selecciona una ciudad." }),
   correoPersonal: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
 });
 
@@ -158,8 +158,8 @@ export default function RegisterPage() {
       birthDate: undefined,
       phone: "",
       address: "",
-      city: "",
-      country: "",
+      city: undefined,
+      country: undefined,
       correoPersonal: "",
       rol: "estudiante",
       program: undefined,
@@ -214,7 +214,6 @@ export default function RegisterPage() {
       try {
         const db = getFirestore(app);
         
-        // This is a placeholder ID. You should replace it with the actual ID of your "Politecnico" document.
         const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
         
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
@@ -501,8 +500,19 @@ const Step1 = () => {
   );
 };
 
+const locations = {
+  "Colombia": ["Bogotá", "Medellín", "Cali", "Barranquilla"],
+  "España": ["Madrid", "Barcelona", "Valencia", "Sevilla"],
+  "México": ["Ciudad de México", "Guadalajara", "Monterrey"],
+};
+
 const Step2 = () => {
-  const { control } = useFormContext();
+  const { control, setValue } = useFormContext();
+  const selectedCountry = useWatch({ control, name: "country" });
+
+  const countries = Object.keys(locations);
+  const cities = selectedCountry ? locations[selectedCountry as keyof typeof locations] : [];
+
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="phone" render={({ field }) => (
@@ -525,26 +535,45 @@ const Step2 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="city" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Ciudad</FormLabel>
-            <FormControl>
-              <Input placeholder="Bogotá D.C." {...field} />
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
       <FormField control={control} name="country" render={({ field }) => (
-          <FormItem>
-            <FormLabel>País</FormLabel>
+        <FormItem>
+          <FormLabel>País</FormLabel>
+          <Select onValueChange={(value) => {
+            field.onChange(value);
+            setValue("city", "", { shouldValidate: true });
+          }} defaultValue={field.value}>
             <FormControl>
-              <Input placeholder="Colombia" {...field} />
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un país" />
+              </SelectTrigger>
             </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+            <SelectContent>
+              {countries.map(country => (
+                <SelectItem key={country} value={country}>{country}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )} />
+      <FormField control={control} name="city" render={({ field }) => (
+        <FormItem>
+          <FormLabel>Ciudad</FormLabel>
+          <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCountry}>
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue placeholder={selectedCountry ? "Selecciona una ciudad" : "Selecciona un país primero"} />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {cities.map(city => (
+                <SelectItem key={city} value={city}>{city}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <FormMessage />
+        </FormItem>
+      )} />
       <FormField control={control} name="correoPersonal" render={({ field }) => (
           <FormItem className="md:col-span-2">
             <FormLabel>Correo Personal</FormLabel>
@@ -751,3 +780,4 @@ const Step6 = () => (
     
 
     
+
