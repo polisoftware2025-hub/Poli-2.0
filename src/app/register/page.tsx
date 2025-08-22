@@ -96,7 +96,6 @@ const step2Schema = z.object({
 });
 
 const step3Schema = z.object({
-  rol: z.string({ required_error: "Por favor, selecciona un rol." }),
   program: z.string({ required_error: "Por favor, selecciona una carrera." }),
   periodoIngreso: z.string({ required_error: "Por favor, selecciona un periodo de ingreso." }),
   jornada: z.string().optional(),
@@ -131,7 +130,7 @@ const allStepsSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AllStepsData = z.infer<typeof allStepsSchema>;
+type AllStepsData = z.infer<typeof allStepsSchema> & { rol: string };
 
 const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys((step1Schema._def as any).schema.shape) as (keyof AllStepsData)[] },
@@ -600,27 +599,6 @@ const Step3 = () => {
     <div className="space-y-6">
       <FormField
         control={control}
-        name="rol"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Rol</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un rol" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="estudiante">Estudiante</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-      <FormField
-        control={control}
         name="program"
         render={({ field }) => (
           <FormItem>
@@ -789,3 +767,6 @@ const Step6 = () => (
 
 
 
+
+
+    
