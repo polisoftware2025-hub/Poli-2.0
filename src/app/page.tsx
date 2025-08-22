@@ -172,9 +172,15 @@ export default function HomePage() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 bg-background p-6 text-foreground">
+              <SheetContent side="left" className="w-64 bg-background p-4 text-foreground">
                 <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
-                <nav className="flex flex-col items-start space-y-6 pt-8">
+                 <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <GraduationCap className="h-6 w-6 text-[#002147]" />
+                        <span className="font-poppins text-lg font-bold text-[#002147]">Poli 2.0</span>
+                    </div>
+                </div>
+                <nav className="flex flex-col items-start space-y-4">
                   {navLinks.map((link) => (
                     <Link
                       key={link.href}
