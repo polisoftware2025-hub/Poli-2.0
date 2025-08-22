@@ -56,13 +56,13 @@ import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
 
 
-const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
+const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
 
 const step1Schema = z.object({
   firstName: nameValidation,
-  segundoNombre: nameValidation.optional().or(z.literal('')),
-  lastName: nameValidation,
-  segundoApellido: nameValidation,
+  segundoNombre: z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.").optional().or(z.literal('')),
+  lastName: z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios."),
+  segundoApellido: z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios."),
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
   numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio."),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
@@ -746,5 +746,5 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
+    
     
