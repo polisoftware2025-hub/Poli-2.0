@@ -47,6 +47,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
+import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -185,7 +186,21 @@ export default function RegisterPage() {
     if (result.success) {
       try {
         const auth = getAuth(app);
-        await createUserWithEmailAndPassword(auth, result.data.correoPersonal, result.data.password);
+        const userCredential = await createUserWithEmailAndPassword(auth, result.data.correoPersonal, result.data.password);
+        const user = userCredential.user;
+        
+        const db = getFirestore(app);
+        
+        const studentData = {
+          ...result.data,
+          uid: user.uid,
+        };
+        
+        delete (studentData as any).password;
+        delete (studentData as any).confirmPassword;
+
+        await setDoc(doc(db, "students", user.uid), studentData);
+
         toast({
           title: "¡Registro exitoso!",
           description: "Tu cuenta ha sido creada. Serás redirigido.",
