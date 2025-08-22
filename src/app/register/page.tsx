@@ -46,8 +46,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, getAuth } from "firebase/auth";
-import { getFirestore, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, doc, setDoc, collection, serverTimestamp } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -197,14 +196,13 @@ export default function RegisterPage() {
     
     if (result.success) {
       try {
-        const auth = getAuth(app);
-        const userCredential = await createUserWithEmailAndPassword(auth, result.data.correoPersonal, result.data.password);
-        const user = userCredential.user;
-        
         const db = getFirestore(app);
         
         const domain = result.data.correoPersonal.split('@')[1];
         const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@${domain}`;
+
+        const usuariosCollectionRef = collection(db, "usuarios");
+        const newUserRef = doc(usuariosCollectionRef);
 
         const usuarioData = {
           nombre1: result.data.firstName,
@@ -226,15 +224,15 @@ export default function RegisterPage() {
           fechaCreacion: serverTimestamp(),
         };
         
-        await setDoc(doc(db, "usuarios", user.uid), usuarioData);
+        await setDoc(newUserRef, usuarioData);
         
         const estudianteData = {
-          usuarioId: user.uid,
+          usuarioId: newUserRef.id,
           estado: 'activo',
           fechaCreacion: serverTimestamp(),
         };
 
-        await setDoc(doc(db, "estudiantes", user.uid), estudianteData);
+        await setDoc(doc(db, "estudiantes", newUserRef.id), estudianteData);
         
         toast({
           title: "¡Registro exitoso!",
@@ -245,10 +243,7 @@ export default function RegisterPage() {
         toast({
           variant: "destructive",
           title: "Error en el registro",
-          description:
-            error.code === "auth/email-already-in-use"
-              ? "El correo electrónico ya está en uso."
-              : "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
+          description: "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
         });
       }
     } else {

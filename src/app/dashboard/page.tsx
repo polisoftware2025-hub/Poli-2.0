@@ -1,46 +1,29 @@
 
 "use client";
 
-import { useAuthState } from "react-firebase-hooks/auth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, LogOut, Bell, ChevronRight, User, BarChart2, Settings, LifeBuoy } from "lucide-react";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { getAuth } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import { GraduationCap, LogOut, Bell, ChevronRight, User, BarChart2, Settings } from "lucide-react";
 import Link from "next/link";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
+
 
 export default function DashboardPage() {
-  const auth = getAuth(app);
-  const [user, loading] = useAuthState(auth);
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-  
+  // Since auth is removed, we'll use a placeholder user.
+  // You should replace this with logic to fetch user data from Firestore.
+  const user = {
+    email: 'estudiante@example.com'
+  }
+
   const handleLogout = async () => {
-    await auth.signOut();
+    // Since auth is removed, just redirect to home.
     router.push("/");
   };
   
-  if (loading) {
-    return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-100">
-            <p className="text-gray-600">Cargando...</p>
-        </div>
-    )
-  }
-
-  if (!user) {
-    return null;
-  }
-
   const getInitials = (email: string | null | undefined) => {
     if (!email) return 'U';
     return email.substring(0, 2).toUpperCase();
@@ -150,3 +133,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

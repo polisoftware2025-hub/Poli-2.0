@@ -26,8 +26,6 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword, getAuth } from "firebase/auth";
-import { app } from "@/lib/firebase";
 
 
 const loginSchema = z.object({
@@ -50,21 +48,15 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    try {
-      const auth = getAuth(app);
-      await signInWithEmailAndPassword(auth, values.email, values.password);
-      toast({
-        title: "Inicio de sesión exitoso",
-        description: "Bienvenido de nuevo.",
-      });
-      router.push("/dashboard");
-    } catch (error: any) {
-       toast({
-        variant: "destructive",
-        title: "Error de inicio de sesión",
-        description: "Credenciales incorrectas. Por favor, inténtalo de nuevo.",
-      });
-    }
+    // NOTE: Firebase Auth is removed. 
+    // You'll need to implement your own logic to find a user by email 
+    // and verify their password.
+    console.log("Login values:", values);
+    toast({
+      title: "Inicio de sesión exitoso",
+      description: "Bienvenido de nuevo.",
+    });
+    router.push("/dashboard");
   };
 
   return (
