@@ -48,10 +48,13 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    // NOTE: Firebase Auth is removed. 
+    // NOTE: This is a mock login.
     // You'll need to implement your own logic to find a user by email 
-    // and verify their password.
+    // and verify their password against your Firestore database.
     console.log("Login values:", values);
+    
+    localStorage.setItem('userEmail', values.email);
+
     toast({
       title: "Inicio de sesión exitoso",
       description: "Bienvenido de nuevo.",
@@ -158,5 +161,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

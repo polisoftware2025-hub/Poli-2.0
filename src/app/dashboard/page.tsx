@@ -20,9 +20,9 @@ export default function DashboardPage() {
     if (storedEmail) {
       setUserEmail(storedEmail);
     } else {
-        setUserEmail('estudiante@example.com');
+      router.push('/login');
     }
-  }, []);
+  }, [router]);
   
 
   const handleLogout = async () => {
@@ -33,6 +33,14 @@ export default function DashboardPage() {
   const getInitials = (email: string | null | undefined) => {
     if (!email) return 'U';
     return email.substring(0, 2).toUpperCase();
+  }
+
+  if (!userEmail) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <p>Cargando...</p>
+      </div>
+    )
   }
 
   return (
@@ -56,7 +64,7 @@ export default function DashboardPage() {
                 </Button>
 
                 <div className="flex items-center gap-2">
-                    <span className="hidden text-sm font-medium text-gray-700 sm:block">{userEmail || "Cargando..."}</span>
+                    <span className="hidden text-sm font-medium text-gray-700 sm:block">{userEmail}</span>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -131,7 +139,7 @@ export default function DashboardPage() {
                      </CardDescription>
                  </CardHeader>
                  <CardContent>
-                     <p className="text-gray-700">Has iniciado sesión como: <span className="font-semibold text-[#004aad]">{userEmail || "..."}</span></p>
+                     <p className="text-gray-700">Has iniciado sesión como: <span className="font-semibold text-[#004aad]">{userEmail}</span></p>
                  </CardContent>
              </Card>
          </div>
@@ -139,5 +147,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

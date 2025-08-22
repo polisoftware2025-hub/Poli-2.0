@@ -198,6 +198,7 @@ export default function RegisterPage() {
       try {
         const db = getFirestore(app);
         
+        // This is a placeholder ID. You should replace it with the actual ID of your "Politecnico" document.
         const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
         
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
@@ -220,7 +221,7 @@ export default function RegisterPage() {
           pais: result.data.country,
           correo: result.data.correoPersonal,
           correoInstitucional: correoInstitucional,
-          contrasena: "ENCRYPTED_PASSWORD_PLACEHOLDER",
+          contrasena: "ENCRYPTED_PASSWORD_PLACEHOLDER", // Remember to handle password encryption
           rol: { id: "estudiante", descripcion: "Estudiante" },
           estaInscrito: true,
           fechaCreacion: serverTimestamp(),
@@ -730,5 +731,3 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-    
-    
