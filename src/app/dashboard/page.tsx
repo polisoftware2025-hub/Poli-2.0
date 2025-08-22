@@ -13,12 +13,14 @@ import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>('estudiante@example.com');
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
     if (storedEmail) {
       setUserEmail(storedEmail);
+    } else {
+        setUserEmail('estudiante@example.com');
     }
   }, []);
   
@@ -54,7 +56,7 @@ export default function DashboardPage() {
                 </Button>
 
                 <div className="flex items-center gap-2">
-                    <span className="hidden text-sm font-medium text-gray-700 sm:block">{userEmail}</span>
+                    <span className="hidden text-sm font-medium text-gray-700 sm:block">{userEmail || "Cargando..."}</span>
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -129,7 +131,7 @@ export default function DashboardPage() {
                      </CardDescription>
                  </CardHeader>
                  <CardContent>
-                     <p className="text-gray-700">Has iniciado sesión como: <span className="font-semibold text-[#004aad]">{userEmail}</span></p>
+                     <p className="text-gray-700">Has iniciado sesión como: <span className="font-semibold text-[#004aad]">{userEmail || "..."}</span></p>
                  </CardContent>
              </Card>
          </div>
