@@ -204,7 +204,7 @@ export default function RegisterPage() {
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
         const newUserDocRef = doc(usuariosCollectionRef);
 
-        const domain = result.data.correoPersonal.split('@')[1];
+        const domain = result.data.correoPersonal.split('@')[1] || 'poliedu.co';
         const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@${domain}`;
 
         const usuarioData = {
@@ -246,6 +246,7 @@ export default function RegisterPage() {
         });
 
         localStorage.setItem('userEmail', result.data.correoPersonal);
+        localStorage.setItem('userRole', 'estudiante');
         router.push("/dashboard");
 
       } catch (error: any) {
@@ -721,8 +722,8 @@ const Step5 = () => {
         <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const Step6 = () => (
     <div className="text-center flex flex-col items-center gap-4 py-8">

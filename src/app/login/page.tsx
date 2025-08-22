@@ -48,16 +48,24 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    // NOTE: This is a mock login.
-    // You'll need to implement your own logic to find a user by email 
-    // and verify their password against your Firestore database.
+    // NOTE: This is a mock login that simulates roles based on email.
     console.log("Login values:", values);
     
+    let role = 'estudiante'; // Default role
+    if (values.email.startsWith('admin@')) {
+      role = 'admin';
+    } else if (values.email.startsWith('gestor@')) {
+      role = 'gestor';
+    } else if (values.email.startsWith('docente@')) {
+      role = 'docente';
+    }
+
     localStorage.setItem('userEmail', values.email);
+    localStorage.setItem('userRole', role);
 
     toast({
       title: "Inicio de sesión exitoso",
-      description: "Bienvenido de nuevo.",
+      description: `Bienvenido de nuevo. Rol: ${role}`,
     });
     router.push("/dashboard");
   };
@@ -156,6 +164,13 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
+          <div className="mt-4 text-center text-xs text-gray-500">
+            <p className="font-bold">Emails de prueba para roles:</p>
+            <p>admin@example.com</p>
+            <p>gestor@example.com</p>
+            <p>docente@example.com</p>
+            <p>Cualquier otro: estudiante</p>
+          </div>
         </CardContent>
       </Card>
     </div>
