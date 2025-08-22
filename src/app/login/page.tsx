@@ -164,12 +164,14 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
-          <div className="mt-4 text-center text-xs text-gray-500">
-            <p className="font-bold">Emails de prueba para roles:</p>
-            <p>admin@example.com</p>
-            <p>gestor@example.com</p>
-            <p>docente@example.com</p>
-            <p>Cualquier otro: estudiante</p>
+          <div className="mt-6 rounded-lg bg-blue-50 p-4 text-center text-xs text-blue-800">
+            <p className="font-bold">Utiliza estos correos para probar los diferentes roles:</p>
+            <ul className="mt-2 list-inside list-disc text-left">
+              <li><span className="font-semibold">Administrador:</span> admin@example.com</li>
+              <li><span className="font-semibold">Gestor:</span> gestor@example.com</li>
+              <li><span className="font-semibold">Docente:</span> docente@example.com</li>
+              <li><span className="font-semibold">Estudiante:</span> (cualquier otro correo)</li>
+            </ul>
           </div>
         </CardContent>
       </Card>
