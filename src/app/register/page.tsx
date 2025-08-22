@@ -58,7 +58,7 @@ import { Label } from "@/components/ui/label";
 
 const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
 const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
-const cityCountryValidation = z.string({ required_error: "Por favor, selecciona una opción." }).min(1, "Por favor, selecciona una opción.");
+const cityCountryValidation = z.string({ required_error: "Por favor, selecciona una opción." }).min(2, "Debe tener al menos 2 caracteres");
 
 
 const step1Schema = z.object({
@@ -119,6 +119,7 @@ const step5Schema = z.object({
 
 const step6Schema = z.object({});
 
+
 const allStepsSchema = z.object({
   ...step1Schema._def.schema.shape,
   ...step2Schema.shape,
@@ -130,7 +131,7 @@ const allStepsSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AllStepsData = z.infer<typeof allStepsSchema> & { rol: string };
+type AllStepsData = z.infer<typeof allStepsSchema>;
 
 const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys((step1Schema._def as any).schema.shape) as (keyof AllStepsData)[] },
@@ -166,7 +167,6 @@ export default function RegisterPage() {
       city: undefined,
       country: undefined,
       correoPersonal: "",
-      rol: "estudiante",
       program: undefined,
       periodoIngreso: undefined,
       jornada: undefined,
@@ -595,6 +595,45 @@ const Step2 = () => {
 
 const Step3 = () => {
   const { control } = useFormContext();
+
+  const getAvailablePeriods = () => {
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth(); // 0-11
+
+    const periods = [];
+    let year = currentYear;
+    let semester = currentMonth < 6 ? 1 : 2; // 1st semester: Jan-Jun, 2nd: Jul-Dec
+
+    // Rule: if we are past the first two months of the semester, don't show it.
+    // Semester 1 (Jan-Jun, months 0-5). Hide if current month is March (2) or later.
+    // Semester 2 (Jul-Dec, months 6-11). Hide if current month is September (8) or later.
+    if (semester === 1 && currentMonth >= 2) {
+      semester = 2; // Move to next semester
+    } else if (semester === 2 && currentMonth >= 8) {
+      semester = 1; // Move to next year's first semester
+      year += 1;
+    }
+    
+    // Generate 3 future periods
+    for (let i = 0; i < 3; i++) {
+        const periodValue = `${year}-${semester}`;
+        const periodLabel = `${year} - ${semester}`;
+        periods.push({ value: periodValue, label: periodLabel });
+
+        if (semester === 1) {
+            semester = 2;
+        } else {
+            semester = 1;
+            year += 1;
+        }
+    }
+
+    return periods;
+  };
+
+  const availablePeriods = getAvailablePeriods();
+
   return (
     <div className="space-y-6">
       <FormField
@@ -636,9 +675,9 @@ const Step3 = () => {
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="2024-1">2024 - 1</SelectItem>
-                <SelectItem value="2024-2">2024 - 2</SelectItem>
-                <SelectItem value="2025-1">2025 - 1</SelectItem>
+                {availablePeriods.map(period => (
+                    <SelectItem key={period.value} value={period.value}>{period.label}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FormMessage />
