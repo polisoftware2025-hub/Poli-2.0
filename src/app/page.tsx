@@ -172,7 +172,7 @@ export default function HomePage() {
                   <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 bg-[#ABD0BC] p-6 text-primary-foreground">
+              <SheetContent side="left" className="w-64 bg-background p-6 text-foreground">
                 <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
                 <nav className="flex flex-col items-start space-y-6 pt-8">
                   {navLinks.map((link) => (
@@ -180,7 +180,7 @@ export default function HomePage() {
                       key={link.href}
                       href={link.href}
                       onClick={() => setMenuOpen(false)}
-                      className="font-poppins text-lg font-medium transition-colors hover:text-gray-300"
+                      className="font-poppins text-lg font-medium transition-colors hover:text-primary"
                     >
                       {link.label}
                     </Link>
