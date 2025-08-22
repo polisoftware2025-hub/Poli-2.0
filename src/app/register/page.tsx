@@ -706,5 +706,3 @@ const Step6 = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
-    
