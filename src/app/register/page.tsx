@@ -33,7 +33,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useForm, FormProvider, useFormContext } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -97,16 +97,18 @@ const step5Schema = z.object({
 const step6Schema = z.object({});
 
 
-const allStepsSchema = z.object({
-  ...step1Schema.shape,
-  ...step2Schema.shape,
-  ...step3Schema.shape,
-  ...step4Schema.shape,
-  ...step5Schema.shape,
-});
-
+const allStepsSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema).merge(step5Schema);
 type AllStepsData = z.infer<typeof allStepsSchema>;
 
+
+const steps = [
+    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
+    { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
+    { number: 3, title: "Datos Académicos", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys(step4Schema.shape) as (keyof AllStepsData)[] },
+    { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema, fields: Object.keys(step5Schema.shape) as (keyof AllStepsData)[] },
+    { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
+  ];
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
@@ -114,18 +116,10 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
   
+  const currentSchema = useMemo(() => steps[currentStep - 1].schema, [currentStep]);
 
-
-  const steps = [
-    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema },
-    { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema },
-    { number: 3, title: "Datos Académicos", icon: BookOpen, schema: step3Schema },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema },
-    { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema },
-    { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema },
-  ];
-
-  const methods = useForm<z.infer<typeof allStepsSchema>>({
+  const methods = useForm<AllStepsData>({
+    resolver: zodResolver(currentSchema),
     mode: "onChange",
     defaultValues: {
       firstName: "",
@@ -156,21 +150,13 @@ export default function RegisterPage() {
   const CurrentStepIcon = steps[currentStep - 1].icon;
 
   const nextStep = async () => {
-    const currentSchema = steps[currentStep - 1].schema;
-    if (!(currentSchema as z.ZodObject<any>).shape) {
-        if (currentStep < totalSteps) {
-            setCurrentStep(currentStep + 1);
-        }
-        return;
-    }
-    const fieldsToValidate = Object.keys(
-      (currentSchema as z.ZodObject<any>).shape
-    ) as (keyof AllStepsData)[];
+    const fields = steps[currentStep - 1].fields;
+    const isValid = await trigger(fields, { shouldFocus: true });
   
-    const isValid = await trigger(fieldsToValidate, { shouldFocus: true });
-  
-    if (isValid && currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
+    if (isValid) {
+      if (currentStep < totalSteps) {
+        setCurrentStep(currentStep + 1);
+      }
     }
   };
   
@@ -182,7 +168,9 @@ export default function RegisterPage() {
   };
 
   const handleFinalSubmit = async () => {
-    const result = await allStepsSchema.safeParseAsync(getValues());
+    const allData = getValues();
+    const result = await allStepsSchema.safeParseAsync(allData);
+    
     if (result.success) {
       try {
         const auth = getAuth(app);
@@ -664,6 +652,3 @@ const Step6 = () => (
 );
 
     
-
-    
-
