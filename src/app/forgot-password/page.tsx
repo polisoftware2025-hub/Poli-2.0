@@ -25,10 +25,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
-import { app } from "@/lib/firebase";
 import { useState } from "react";
-import { sendVerificationCode } from "@/ai/flows/send-verification-code";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
@@ -36,7 +33,6 @@ const forgotPasswordSchema = z.object({
 
 export default function ForgotPasswordPage() {
   const { toast } = useToast();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
@@ -49,52 +45,35 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
     setIsLoading(true);
     try {
-      const db = getFirestore(app);
-      const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
-      const q = query(usuariosRef, where("correo", "==", values.email));
-      const querySnapshot = await getDocs(q);
+      const response = await fetch('/api/request-reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
+      });
 
-      if (querySnapshot.empty) {
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Solicitud Enviada",
+          description: data.message,
+        });
+        form.reset();
+      } else {
         toast({
           variant: "destructive",
-          title: "Correo no encontrado",
-          description: "El correo electrónico ingresado no está registrado.",
+          title: "Error",
+          description: data.message,
         });
-      } else {
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        const user = querySnapshot.docs[0].data();
-        const userName = user.nombre1 || "usuario";
-
-        const emailContent = await sendVerificationCode({
-          email: values.email,
-          code: verificationCode,
-          name: userName,
-        });
-
-        console.log("----- SIMULACIÓN DE ENVÍO DE CORREO -----");
-        console.log(`Destinatario: ${values.email}`);
-        console.log("Contenido del Correo (HTML):");
-        console.log(emailContent);
-        console.log("-----------------------------------------");
-        
-        localStorage.setItem('verificationData', JSON.stringify({
-          email: values.email,
-          code: verificationCode,
-          timestamp: Date.now()
-        }));
-
-        toast({
-          title: "Código enviado",
-          description: "Hemos enviado un código de verificación a tu correo.",
-        });
-        router.push("/verify-code");
       }
     } catch (error) {
-      console.error("Error al verificar el correo:", error);
+      console.error("Error al solicitar el reseteo:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Ocurrió un error al intentar verificar tu correo. Inténtalo de nuevo.",
+        description: "Ocurrió un error al intentar procesar tu solicitud. Inténtalo de nuevo.",
       });
     } finally {
       setIsLoading(false);
@@ -118,7 +97,7 @@ export default function ForgotPasswordPage() {
             ¿Olvidaste tu Contraseña?
           </CardTitle>
           <CardDescription className="font-poppins text-gray-600">
-            No te preocupes, te enviaremos un código para que puedas restablecerla.
+            No te preocupes, te enviaremos un enlace para que puedas restablecerla.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -135,7 +114,7 @@ export default function ForgotPasswordPage() {
                         <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
                         <Input
                           type="email"
-                          placeholder="Ingresa tu correo electrónico"
+                          placeholder="Ingresa tu correo electrónico registrado"
                           className="rounded-lg border-gray-300 py-6 pl-10 focus:border-[#004aad] focus:ring-[#004aad]"
                           {...field}
                         />
@@ -150,7 +129,7 @@ export default function ForgotPasswordPage() {
                 disabled={isLoading}
                 className="w-full rounded-full bg-[#004aad] py-6 text-base font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
               >
-                {isLoading ? "Enviando..." : "Enviar Código"}
+                {isLoading ? "Enviando..." : "Enviar Enlace de Recuperación"}
               </Button>
             </form>
           </Form>

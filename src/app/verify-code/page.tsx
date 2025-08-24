@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const verifyCodeSchema = z.object({
   code: z.string().min(6, "El código debe tener 6 dígitos.").max(6, "El código debe tener 6 dígitos."),
@@ -37,6 +37,18 @@ export default function VerifyCodePage() {
   const { toast } = useToast();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [verificationEmail, setVerificationEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+     const storedData = localStorage.getItem('verificationData');
+     if (storedData) {
+       setVerificationEmail(JSON.parse(storedData).email);
+     } else {
+        // Si no hay datos, no debería estar en esta página.
+        router.replace('/forgot-password');
+     }
+  }, [router]);
+
 
   const form = useForm<z.infer<typeof verifyCodeSchema>>({
     resolver: zodResolver(verifyCodeSchema),
@@ -59,7 +71,13 @@ export default function VerifyCodePage() {
         return;
       }
       
-      const { code, timestamp } = JSON.parse(storedData);
+      const { code, timestamp, email } = JSON.parse(storedData);
+
+      if (email !== verificationEmail) {
+         toast({ variant: "destructive", title: "Error", description: "El correo de verificación ha cambiado." });
+         router.push("/forgot-password");
+         return;
+      }
       
       const timeElapsed = (Date.now() - timestamp) / (1000 * 60);
 
@@ -79,7 +97,9 @@ export default function VerifyCodePage() {
           title: "Código verificado",
           description: "Tu código ha sido verificado correctamente.",
         });
-        router.push("/reset-password");
+        // Remove temp data and proceed to reset password page
+        localStorage.removeItem('verificationData');
+        router.push(`/reset-password?email=${encodeURIComponent(email)}`);
       } else {
         toast({
           variant: "destructive",
@@ -115,7 +135,10 @@ export default function VerifyCodePage() {
             Verificación de Código
           </CardTitle>
           <CardDescription className="font-poppins text-gray-600">
-            Revisa tu correo, hemos enviado un código de 6 dígitos.
+            {verificationEmail 
+              ? <>Revisa tu correo <span className="font-semibold">{verificationEmail}</span>, hemos enviado un código de 6 dígitos.</>
+              : "Cargando..."
+            }
           </CardDescription>
         </CardHeader>
         <CardContent>
