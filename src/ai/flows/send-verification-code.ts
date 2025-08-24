@@ -29,6 +29,7 @@ const verificationCodePrompt = ai.definePrompt({
   name: 'verificationCodePrompt',
   input: { schema: SendVerificationCodeInputSchema },
   output: { format: 'text' },
+  model: 'googleai/gemini-2.0-flash',
   prompt: `
     Generate an HTML email for a password reset request.
 
@@ -47,7 +48,6 @@ const verificationCodePrompt = ai.definePrompt({
     Example of a placeholder logo: https://placehold.co/150x50/002147/FFFFFF?text=Poli+2.0
   `,
   config: {
-    model: 'googleai/gemini-2.0-flash',
     temperature: 0.3,
   },
 });
