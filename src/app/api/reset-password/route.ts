@@ -3,6 +3,7 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, updateDoc, doc } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import { z } from "zod";
 
 const passwordSchema = z.object({
   password: z.string().min(8, "Mínimo 8 caracteres.")
