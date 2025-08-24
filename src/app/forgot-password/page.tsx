@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
 import { app } from "@/lib/firebase";
 import { useState } from "react";
+import { sendVerificationCode } from "@/ai/flows/send-verification-code";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
@@ -60,6 +61,28 @@ export default function ForgotPasswordPage() {
           description: "El correo electrónico ingresado no está registrado.",
         });
       } else {
+        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const user = querySnapshot.docs[0].data();
+        const userName = user.nombre1 || "usuario";
+
+        const emailContent = await sendVerificationCode({
+          email: values.email,
+          code: verificationCode,
+          name: userName,
+        });
+
+        console.log("----- SIMULACIÓN DE ENVÍO DE CORREO -----");
+        console.log(`Destinatario: ${values.email}`);
+        console.log("Contenido del Correo (HTML):");
+        console.log(emailContent);
+        console.log("-----------------------------------------");
+        
+        localStorage.setItem('verificationData', JSON.stringify({
+          email: values.email,
+          code: verificationCode,
+          timestamp: Date.now()
+        }));
+
         toast({
           title: "Código enviado",
           description: "Hemos enviado un código de verificación a tu correo.",
