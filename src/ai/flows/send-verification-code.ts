@@ -10,7 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const SendVerificationCodeInputSchema = z.object({
+const SendVerificationCodeInputSchema = z.object({
   email: z.string().email().describe('The recipient\'s email address.'),
   name: z.string().describe('The name of the recipient.'),
   code: z.string().length(6).describe('The 6-digit verification code.'),
