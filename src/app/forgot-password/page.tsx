@@ -10,11 +10,74 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, GraduationCap } from "lucide-react";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { getFirestore, collection, query, where, getDocs } from "firebase/firestore";
+import { app } from "@/lib/firebase";
+import { useState } from "react";
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
+});
 
 export default function ForgotPasswordPage() {
+  const { toast } = useToast();
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<z.infer<typeof forgotPasswordSchema>>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
+    setIsLoading(true);
+    try {
+      const db = getFirestore(app);
+      const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+      const q = query(usuariosRef, where("correo", "==", values.email));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        toast({
+          variant: "destructive",
+          title: "Correo no encontrado",
+          description: "El correo electrónico ingresado no está registrado.",
+        });
+      } else {
+        toast({
+          title: "Código enviado",
+          description: "Hemos enviado un código de verificación a tu correo.",
+        });
+        router.push("/verify-code");
+      }
+    } catch (error) {
+      console.error("Error al verificar el correo:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Ocurrió un error al intentar verificar tu correo. Inténtalo de nuevo.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 font-roboto">
       <div className="absolute top-4 left-4">
@@ -36,33 +99,38 @@ export default function ForgotPasswordPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-6">
-            <div className="space-y-2">
-              <Label
-                htmlFor="email"
-                className="font-poppins font-medium text-gray-700"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Correo Electrónico</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                        <Input
+                          type="email"
+                          placeholder="Ingresa tu correo electrónico"
+                          className="rounded-lg border-gray-300 py-6 pl-10 focus:border-[#004aad] focus:ring-[#004aad]"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="w-full rounded-full bg-[#004aad] py-6 text-base font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
               >
-                Correo Electrónico
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Ingresa tu correo electrónico"
-                  required
-                  className="rounded-lg border-gray-300 py-6 pl-10 focus:border-[#004aad] focus:ring-[#004aad]"
-                />
-              </div>
-            </div>
-            <Button
-              type="submit"
-              asChild
-              className="w-full rounded-full bg-[#004aad] py-6 text-base font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
-            >
-              <Link href="/verify-code">Enviar Código</Link>
-            </Button>
-          </form>
+                {isLoading ? "Enviando..." : "Enviar Código"}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
