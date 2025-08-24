@@ -38,7 +38,9 @@ export async function POST(req: Request) {
       usado: false,
     });
     
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+    const protocol = req.headers.get('x-forwarded-proto') || 'http';
+    const host = req.headers.get('host');
+    const resetLink = `${protocol}://${host}/reset-password?token=${token}`;
 
     try {
         await transporter.sendMail({
