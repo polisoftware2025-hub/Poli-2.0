@@ -16,7 +16,7 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
 
 function DayContent({ date, ...props }: DayProps) {
     const isMarked = (props.displayMonth.getMonth() === date.getMonth()) && 
-                     (props.selected || (props.modifiers.marked && !props.modifiers.selected));
+                     (props.selected || (props.modifiers?.marked && !props.modifiers?.selected));
     
     return (
         <div className="relative h-full w-full flex items-center justify-center">
