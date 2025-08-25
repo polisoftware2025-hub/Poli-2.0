@@ -144,7 +144,7 @@ export default function DashboardLayout({
     <SidebarProvider>
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
-          <SidebarHeader className="relative flex items-center justify-between">
+          <SidebarHeader className="flex items-center justify-between gap-2">
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start gap-2 px-2 h-12">
@@ -186,11 +186,9 @@ export default function DashboardLayout({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <div className="absolute top-1 right-1">
-                <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
-                    <X/>
-                </SidebarTrigger>
-            </div>
+            <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden shrink-0">
+                <X/>
+            </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
