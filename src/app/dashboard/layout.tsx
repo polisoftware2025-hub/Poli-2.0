@@ -288,6 +288,9 @@ export default function DashboardLayout({
            </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
+        <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
+            © {new Date().getFullYear()} Politécnico Internacional. Todos los derechos reservados.
+        </footer>
       </SidebarInset>
     </SidebarProvider>
   );
