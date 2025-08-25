@@ -36,6 +36,18 @@ const initialCourses = [
     image: "https://placehold.co/600x400.png",
     imageHint: "abstract geometric",
   },
+  {
+    title: "CALCULO DIFERENCIAL",
+    progress: 85,
+    image: "https://placehold.co/600x400.png",
+    imageHint: "mathematics equations",
+  },
+  {
+    title: "BASE DE DATOS",
+    progress: 25,
+    image: "https://placehold.co/600x400.png",
+    imageHint: "database servers",
+  },
 ];
 
 const todoItems = [
