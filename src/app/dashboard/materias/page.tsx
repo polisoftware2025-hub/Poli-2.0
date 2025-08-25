@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { BookCopy, Search, MoreVertical, LayoutGrid, List } from "lucide-react";
 import Image from "next/image";
+import { PageHeader } from "@/components/page-header";
 
 const coursesData = [
   {
@@ -61,12 +62,11 @@ export default function CoursesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-2">
-        <BookCopy className="h-6 w-6 text-primary" />
-        <h1 className="font-poppins text-3xl font-bold text-gray-800">
-          Mis Cursos
-        </h1>
-      </div>
+      <PageHeader
+        title="Mis Cursos"
+        description="Gestiona y accede a todas tus materias inscritas."
+        icon={<BookCopy className="h-8 w-8 text-primary" />}
+      />
       
       <Card>
         <CardContent className="p-4 md:p-6">
@@ -176,4 +176,3 @@ export default function CoursesPage() {
     </div>
   );
 }
-

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,26 +18,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Bell, Palette, User, Settings } from "lucide-react";
+import { Bell, Palette, User, Settings as SettingsIcon } from "lucide-react";
+import { PageHeader } from "@/components/page-header";
 
 export default function SettingsPage() {
   return (
     <div className="flex flex-col gap-8">
-       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <Settings className="h-8 w-8 text-primary" />
-            <div>
-              <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
-                Configuración
-              </CardTitle>
-              <CardDescription className="font-poppins text-gray-600">
-                Gestiona las preferencias de tu cuenta y notificaciones.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-       </Card>
+       <PageHeader
+        title="Configuración"
+        description="Gestiona las preferencias de tu cuenta y notificaciones."
+        icon={<SettingsIcon className="h-8 w-8 text-primary" />}
+      />
 
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
         <Card>

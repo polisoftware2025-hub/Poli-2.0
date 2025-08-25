@@ -5,9 +5,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { User, Shield, Briefcase } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { PageHeader } from "@/components/page-header";
 
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -38,22 +36,14 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Mi Perfil"
+        description="Visualiza y actualiza tu información personal."
+        icon={<User className="h-8 w-8 text-primary" />}
+      />
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <User className="h-8 w-8 text-primary" />
-            <div>
-              <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
-                Mi Perfil
-              </CardTitle>
-              <CardDescription className="font-poppins text-gray-600">
-                Visualiza y actualiza tu información personal.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
         <CardContent>
-          <Tabs defaultValue="personal">
+          <Tabs defaultValue="personal" className="pt-6">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="personal">
                 <User className="mr-2 h-4 w-4" />

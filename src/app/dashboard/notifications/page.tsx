@@ -2,10 +2,11 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Bell, Archive } from "lucide-react"
+import { PageHeader } from "@/components/page-header"
 
 const allNotifications = [
     { id: '1', title: "¡Pago Liberado!", description: "Tu pago de la matrícula ha sido procesado exitosamente.", time: "hace 10 minutos", read: false },
@@ -19,21 +20,11 @@ const allNotifications = [
 export default function NotificationsPage() {
   return (
     <div className="flex flex-col gap-8">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-4">
-            <Bell className="h-8 w-8 text-primary" />
-            <div>
-              <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
-                Notificaciones
-              </CardTitle>
-              <CardDescription className="font-poppins text-gray-600">
-                Gestiona y revisa todas tus alertas y notificaciones.
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
+      <PageHeader 
+        title="Notificaciones"
+        description="Gestiona y revisa todas tus alertas y notificaciones."
+        icon={<Bell className="h-8 w-8 text-primary" />}
+      />
 
       <Card>
         <CardContent className="p-0">
@@ -93,5 +84,3 @@ export default function NotificationsPage() {
     </div>
   )
 }
-
-    
