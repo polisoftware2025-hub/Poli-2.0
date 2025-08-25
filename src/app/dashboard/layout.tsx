@@ -144,10 +144,18 @@ export default function DashboardLayout({
     <SidebarProvider>
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
-          <SidebarHeader className="flex items-start justify-between p-3">
+          <SidebarHeader className="flex flex-col items-start p-3 gap-2">
+            <div className="flex items-center justify-between w-full">
+              <span className="font-poppins text-xl font-bold text-primary-foreground">
+                  Poli 2.0
+              </span>
+              <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden shrink-0">
+                  <X/>
+              </SidebarTrigger>
+            </div>
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex-1 justify-start gap-2 px-2 h-12 text-left">
+                <Button variant="ghost" className="w-full justify-start gap-2 px-2 h-12 text-left">
                    <Avatar className="h-9 w-9 bg-primary-foreground text-primary">
                     <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
                   </Avatar>
@@ -186,9 +194,6 @@ export default function DashboardLayout({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden shrink-0 mt-2">
-                <X/>
-            </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
@@ -218,7 +223,9 @@ export default function DashboardLayout({
       <SidebarInset>
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
            <div className="flex items-center gap-4">
-               <SidebarTrigger className="text-card-foreground"/>
+               <SidebarTrigger>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+               </SidebarTrigger>
            </div>
             
            <div className="flex flex-1 items-center justify-center">
@@ -284,5 +291,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
