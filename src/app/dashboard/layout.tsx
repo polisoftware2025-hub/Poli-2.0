@@ -144,14 +144,14 @@ export default function DashboardLayout({
     <SidebarProvider>
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
-          <SidebarHeader className="flex items-center justify-between gap-2">
+          <SidebarHeader className="flex items-start justify-between p-3">
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2 px-2 h-12">
+                <Button variant="ghost" className="flex-1 justify-start gap-2 px-2 h-12 text-left">
                    <Avatar className="h-9 w-9 bg-primary-foreground text-primary">
                     <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start text-left truncate">
+                  <div className="flex flex-col truncate">
                     <span className="text-sm font-semibold text-primary-foreground">{userEmail}</span>
                      <span className="text-xs text-primary-foreground/80">{roleNames[userRole]}</span>
                   </div>
@@ -186,7 +186,7 @@ export default function DashboardLayout({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden shrink-0">
+            <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden shrink-0 mt-2">
                 <X/>
             </SidebarTrigger>
           </SidebarHeader>
