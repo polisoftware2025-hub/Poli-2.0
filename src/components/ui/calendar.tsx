@@ -4,7 +4,7 @@ import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { DayPicker } from "react-day-picker"
 import { es } from "date-fns/locale"
-import { addYears, format, getYear, setMonth, setYear } from "date-fns"
+import { addMonths, format, getYear, setMonth, setYear } from "date-fns"
 
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
@@ -47,8 +47,7 @@ function Calendar({
 
   const handlePrevClick = () => {
     if (view === "day") {
-      const newDate = addYears(currentDate, -1)
-      setCurrentDate(newDate)
+      setCurrentDate((prev) => addMonths(prev, -1));
     }
     if (view === "year") {
       setYearRange((prev) => ({ start: prev.start - 12, end: prev.end - 12 }))
@@ -57,8 +56,7 @@ function Calendar({
 
   const handleNextClick = () => {
     if (view === "day") {
-      const newDate = addYears(currentDate, 1)
-      setCurrentDate(newDate)
+       setCurrentDate((prev) => addMonths(prev, 1));
     }
     if (view === "year") {
       setYearRange((prev) => ({ start: prev.start + 12, end: prev.end + 12 }))
@@ -117,21 +115,19 @@ function Calendar({
       className={cn("p-3 bg-card rounded-md border w-full", className)}
     >
       <div className="flex justify-between items-center mb-2">
-        {(view === "year" || view === "day") && (
-          <Button variant="outline" size="icon" onClick={handlePrevClick} className="h-7 w-7">
+        <Button variant="outline" size="icon" onClick={handlePrevClick} className="h-7 w-7">
             <ChevronLeft className="h-4 w-4" />
-          </Button>
-        )}
+        </Button>
+
         <Button variant="ghost" onClick={handleHeaderClick} className="flex-1 text-center font-semibold">
            {view === "day" && format(currentDate, "MMMM yyyy", { locale: es })}
            {view === "month" && format(currentDate, "yyyy", { locale: es })}
            {view === "year" && `${yearRange.start} - ${yearRange.end}`}
         </Button>
-        {(view === "year" || view === "day") && (
-          <Button variant="outline" size="icon" onClick={handleNextClick} className="h-7 w-7">
+
+        <Button variant="outline" size="icon" onClick={handleNextClick} className="h-7 w-7">
             <ChevronRight className="h-4 w-4" />
-          </Button>
-        )}
+        </Button>
       </div>
 
       {view === "day" && (

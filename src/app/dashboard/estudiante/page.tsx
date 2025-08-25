@@ -163,49 +163,48 @@ export default function StudentDashboardPage() {
             </div>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-4">
-                <div className="flex items-center gap-3">
-                    <CheckSquare className="h-6 w-6 text-primary"/>
-                    <h2 className="font-poppins text-2xl font-bold text-gray-800">Lista de Tareas Pendientes</h2>
-                </div>
-                <Card>
-                    <CardContent className="space-y-4 p-6">
-                       {todoItems.map((item) => (
-                           <div key={item.id} className="flex items-start gap-4">
-                                <Checkbox id={item.id} checked={item.completed} className="mt-1"/>
-                                <div className="grid gap-1.5">
-                                    <label htmlFor={item.id} className={`font-medium ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
-                                        {item.label}
-                                    </label>
-                                    <div className="flex items-center gap-2">
-                                         <Badge variant={item.completed ? "secondary" : "outline"} className="text-xs">{item.course}</Badge>
-                                         <p className="text-xs text-muted-foreground">{new Date(item.dueDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                    </div>
+        <div className="space-y-4">
+            <div className="flex items-center gap-3">
+                <CheckSquare className="h-6 w-6 text-primary"/>
+                <h2 className="font-poppins text-2xl font-bold text-gray-800">Lista de Tareas Pendientes</h2>
+            </div>
+            <Card>
+                <CardContent className="space-y-4 p-6">
+                    {todoItems.map((item) => (
+                        <div key={item.id} className="flex items-start gap-4">
+                            <Checkbox id={item.id} checked={item.completed} className="mt-1"/>
+                            <div className="grid gap-1.5">
+                                <label htmlFor={item.id} className={`font-medium ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
+                                    {item.label}
+                                </label>
+                                <div className="flex items-center gap-2">
+                                        <Badge variant={item.completed ? "secondary" : "outline"} className="text-xs">{item.course}</Badge>
+                                        <p className="text-xs text-muted-foreground">{new Date(item.dueDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                                 </div>
-                           </div>
-                       ))}
-                       <Button variant="outline" className="w-full mt-4">
-                            Ver todas las tareas
-                       </Button>
-                    </CardContent>
-                </Card>
+                            </div>
+                        </div>
+                    ))}
+                    <Button variant="outline" className="w-full mt-4">
+                        Ver todas las tareas
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="space-y-4">
+            <div className="flex items-center gap-3">
+                <CalendarIcon className="h-6 w-6 text-primary"/>
+                <h2 className="font-poppins text-2xl font-bold text-gray-800">Calendario</h2>
             </div>
-            <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                    <CalendarIcon className="h-6 w-6 text-primary"/>
-                    <h2 className="font-poppins text-2xl font-bold text-gray-800">Calendario</h2>
-                </div>
-                <Card>
-                    <CardContent className="p-2">
-                        <Calendar
-                            mode="single"
-                            selected={new Date()}
-                            className="w-full"
-                        />
-                    </CardContent>
-                </Card>
-            </div>
+            <Card>
+                <CardContent className="p-2">
+                    <Calendar
+                        mode="single"
+                        selected={new Date()}
+                        className="w-full"
+                    />
+                </CardContent>
+            </Card>
         </div>
       </div>
     </div>
