@@ -113,8 +113,8 @@ export default function StudentDashboardPage() {
           </Button>
       </div>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+      <div className="space-y-8">
+        <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="font-poppins text-2xl font-bold text-gray-800">Mis Materias Actuales</h2>
                 <Button variant="ghost" asChild>
@@ -124,7 +124,7 @@ export default function StudentDashboardPage() {
                     </Link>
                 </Button>
             </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {initialCourses.map((course, index) => (
                 <Card key={index} className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                 <CardContent className="p-0">
@@ -151,7 +151,7 @@ export default function StudentDashboardPage() {
             </div>
         </div>
         
-        <div className="lg:col-span-1">
+        <div>
             <Card>
                 <CardHeader>
                     <div className="flex items-center gap-3">
