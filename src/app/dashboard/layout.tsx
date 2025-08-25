@@ -116,7 +116,7 @@ export default function DashboardLayout({
     <SidebarProvider>
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
-          <SidebarHeader className="flex items-center justify-between">
+          <SidebarHeader className="relative flex items-center justify-between">
              <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="w-full justify-start gap-2 px-2 h-12">
@@ -129,7 +129,7 @@ export default function DashboardLayout({
                   </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end" forceMount>
+              <DropdownMenuContent className="w-56" align="start" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">{userEmail}</p>
@@ -154,9 +154,11 @@ export default function DashboardLayout({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
-                <X/>
-             </SidebarTrigger>
+            <div className="absolute top-1 right-1">
+                <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
+                    <X/>
+                </SidebarTrigger>
+            </div>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
