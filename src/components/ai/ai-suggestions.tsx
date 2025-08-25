@@ -50,7 +50,6 @@ export function AiSuggestions() {
         "Revisando la lista de tareas pendientes": "Reviewing the to-do list",
         "Actualizó Ajustes": "Updated Settings",
         "Cambió la configuración de perfil y notificaciones": "Changed profile and notification settings",
-        "Contenido Sugerido": "Suggested Content",
         "Enlaces Sugeridos": "Suggested Links",
         "Ir a": "Go to",
         "Panel": "Dashboard",
@@ -122,18 +121,18 @@ export function AiSuggestions() {
             </p>
           </div>
         </CardHeader>
-        <CardContent className="p-0 group-data-[collapsible=icon]:hidden">
-          <div className="mt-2 space-y-2">
+        <CardContent className="space-y-4 p-0 pt-4 group-data-[collapsible=icon]:hidden">
+          <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
               {t("Simular Actividad:")}
             </p>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
               {activities.map((act) => (
                 <Button
                   key={act.value}
                   variant="outline"
                   size="sm"
-                  className="h-auto whitespace-normal text-xs"
+                  className="h-auto w-full justify-start whitespace-normal text-xs"
                   onClick={() => handleSuggestion(act.value)}
                   disabled={isPending}
                 >
@@ -142,16 +141,10 @@ export function AiSuggestions() {
               ))}
             </div>
           </div>
-          <div className="mt-4 space-y-4">
+         
+          <div className="space-y-4">
             {isPending && (
-              <>
-                <div>
-                  <Skeleton className="h-4 w-24" />
-                  <div className="mt-2 space-y-2">
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-4/5" />
-                  </div>
-                </div>
+              <div className="space-y-4">
                 <div>
                   <Skeleton className="h-4 w-20" />
                   <div className="mt-2 space-y-2">
@@ -159,29 +152,21 @@ export function AiSuggestions() {
                     <Skeleton className="h-5 w-2/3" />
                   </div>
                 </div>
-              </>
+              </div>
             )}
             {!isPending && suggestions && (
-              <>
-                <div>
-                  <h4 className="text-sm font-semibold">{t("Contenido Sugerido")}</h4>
-                  <ul className="mt-1 list-none space-y-1 text-sm text-muted-foreground">
-                    {suggestions.content.map((item, i) => item && <li key={i}>- {item}</li>)}
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold">{t("Enlaces Sugeridos")}</h4>
-                  <ul className="mt-1 list-none space-y-1">
-                    {suggestions.links.map((link, i) => (
-                      link && <li key={i}>
-                        <Link href={link} className="flex items-center gap-1 text-sm text-primary hover:underline">
-                          {t("Ir a")} {linkLabel(link)} <ArrowRight className="size-3" />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </>
+              <div>
+                <h4 className="text-sm font-semibold">{t("Enlaces Sugeridos")}</h4>
+                <ul className="mt-2 list-none space-y-1">
+                  {suggestions.links.map((link, i) => (
+                    link && <li key={i}>
+                      <Link href={link} className="flex items-center gap-1 text-sm text-primary hover:underline">
+                        {t("Ir a")} {linkLabel(link)} <ArrowRight className="size-3" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
           </div>
         </CardContent>
