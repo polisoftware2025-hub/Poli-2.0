@@ -57,11 +57,20 @@ const todoItems = [
     { id: "task4", label: "Taller de Pruebas de Software", dueDate: "2024-08-25", course: "Pruebas y Mant.", completed: false },
 ]
 
+const calendarEvents = [
+    { date: new Date("2024-08-15"), title: "Cuestionario de Cálculo", course: "Cálculo Diferencial" },
+    { date: new Date("2024-08-20"), title: "Entrega de Prototipo IA", course: "Inteligencia Artificial" },
+    { date: new Date("2024-08-22"), title: "Examen Parcial de Base de Datos", course: "Base de Datos" },
+    { date: new Date("2024-08-25"), title: "Taller de Pruebas de Software", course: "Pruebas y Mant." },
+    { date: new Date("2024-09-02"), title: "Presentación Final", course: "Lógica de Programación" },
+];
+
 export default function StudentDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
-
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
     const userRole = localStorage.getItem('userRole');
@@ -82,6 +91,12 @@ export default function StudentDashboardPage() {
       </div>
     )
   }
+
+  const eventsForSelectedDay = selectedDate
+    ? calendarEvents.filter(
+        (event) => event.date.toDateString() === selectedDate.toDateString()
+      )
+    : [];
 
   return (
     <div className="flex flex-col gap-8">
@@ -194,15 +209,42 @@ export default function StudentDashboardPage() {
         <div className="space-y-4">
             <div className="flex items-center gap-3">
                 <CalendarIcon className="h-6 w-6 text-primary"/>
-                <h2 className="font-poppins text-2xl font-bold text-gray-800">Calendario</h2>
+                <h2 className="font-poppins text-2xl font-bold text-gray-800">Calendario Académico</h2>
             </div>
             <Card>
-                <CardContent className="p-2">
-                    <Calendar
-                        mode="single"
-                        selected={new Date()}
-                        className="w-full"
-                    />
+                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-2">
+                         <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            className="p-0"
+                            markedDays={calendarEvents.map(e => e.date)}
+                        />
+                    </div>
+                    <div className="border-l border-border pl-6">
+                        <h3 className="font-semibold text-lg mb-4">
+                            Actividades para {selectedDate ? selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'el día seleccionado'}
+                        </h3>
+                        {eventsForSelectedDay.length > 0 ? (
+                             <ul className="space-y-4">
+                                {eventsForSelectedDay.map((event, index) => (
+                                    <li key={index} className="p-4 rounded-lg bg-primary/5 border border-primary/10">
+                                        <p className="font-semibold">{event.title}</p>
+                                        <p className="text-sm text-muted-foreground">{event.course}</p>
+                                        <Button variant="link" className="p-0 h-auto mt-2 text-primary">
+                                            Ir a la entrega
+                                            <ArrowRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <div className="text-center text-muted-foreground py-8">
+                                <p>No hay actividades programadas para este día.</p>
+                            </div>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -210,3 +252,5 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
+    

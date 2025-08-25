@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { DayPicker } from "react-day-picker"
+import { DayPicker, DayProps } from "react-day-picker"
 import { es } from "date-fns/locale"
 import { addMonths, format, getYear, setMonth, setYear } from "date-fns"
 
@@ -10,12 +10,29 @@ import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 import { Button } from "./button"
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+    markedDays?: Date[];
+};
+
+function DayContent({ date, ...props }: DayProps) {
+    const isMarked = (props.displayMonth.getMonth() === date.getMonth()) && 
+                     (props.selected || (props.modifiers.marked && !props.modifiers.selected));
+    
+    return (
+        <div className="relative h-full w-full flex items-center justify-center">
+            <span>{format(date, "d")}</span>
+            {isMarked && (
+                <div className="absolute bottom-1 h-1 w-1 rounded-full bg-red-500" />
+            )}
+        </div>
+    );
+}
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  markedDays,
   ...props
 }: CalendarProps) {
   const [view, setView] = React.useState<"day" | "month" | "year">("day")
@@ -46,19 +63,21 @@ function Calendar({
   }
 
   const handlePrevClick = () => {
-    if (view === "day") {
-      setCurrentDate((prev) => addMonths(prev, -1));
-    }
-    if (view === "year") {
+    if (view === 'day') {
+      setCurrentDate(prev => addMonths(prev, -1));
+    } else if (view === 'month') {
+      setCurrentDate(prev => addMonths(prev, -12));
+    } else if (view === "year") {
       setYearRange((prev) => ({ start: prev.start - 12, end: prev.end - 12 }))
     }
   }
 
   const handleNextClick = () => {
-    if (view === "day") {
-       setCurrentDate((prev) => addMonths(prev, 1));
-    }
-    if (view === "year") {
+     if (view === 'day') {
+      setCurrentDate(prev => addMonths(prev, 1));
+    } else if (view === 'month') {
+      setCurrentDate(prev => addMonths(prev, 12));
+    } else if (view === "year") {
       setYearRange((prev) => ({ start: prev.start + 12, end: prev.end + 12 }))
     }
   }
@@ -109,6 +128,16 @@ function Calendar({
       </div>
     )
   }
+  
+  const modifiers = {
+    ...props.modifiers,
+    marked: markedDays || [],
+  };
+
+  const modifiersClassNames = {
+    ...props.modifiersClassNames,
+    marked: 'font-bold',
+  }
 
   return (
     <div
@@ -137,6 +166,11 @@ function Calendar({
           onMonthChange={setCurrentDate}
           showOutsideDays={showOutsideDays}
           className="p-0"
+          modifiers={modifiers}
+          modifiersClassNames={modifiersClassNames}
+          components={{
+            DayContent: DayContent
+          }}
           classNames={{
             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
             month: "space-y-4",
@@ -146,7 +180,7 @@ function Calendar({
             head_row: "flex",
             head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
             row: "flex w-full mt-2",
-            cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+            cell: "h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20",
             day: cn(
               buttonVariants({ variant: "ghost" }),
               "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
@@ -170,3 +204,5 @@ function Calendar({
 Calendar.displayName = "Calendar"
 
 export { Calendar }
+
+    
