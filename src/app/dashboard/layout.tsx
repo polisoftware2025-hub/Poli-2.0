@@ -148,7 +148,7 @@ export default function DashboardLayout({
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-             {menuItems.filter(item => item.roles.includes(userRole)).map((item) => (
+             {menuItems.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
