@@ -14,15 +14,11 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
@@ -33,12 +29,10 @@ import {
   Calendar,
   GraduationCap,
   Home,
-  LayoutGrid,
   Library,
   LogOut,
   Newspaper,
   Settings,
-  Shield,
   User,
 } from "lucide-react";
 import Link from "next/link";
@@ -114,33 +108,6 @@ export default function DashboardLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2">
-            <SidebarTrigger />
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-             {menuItems.filter(item => item.roles.includes(userRole)).map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  tooltip={{
-                    children: item.label,
-                    className: "group-data-[collapsible=icon]:flex hidden",
-                  }}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-          <AiSuggestions />
-        </SidebarContent>
-        <SidebarFooter>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="w-full justify-start gap-2 px-2 text-left h-auto">
@@ -178,10 +145,33 @@ export default function DashboardLayout({
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </SidebarFooter>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+             {menuItems.filter(item => item.roles.includes(userRole)).map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === item.href}
+                  tooltip={{
+                    children: item.label,
+                    className: "group-data-[collapsible=icon]:flex hidden",
+                  }}
+                >
+                  <Link href={item.href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+          <AiSuggestions />
+        </SidebarContent>
       </Sidebar>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-end gap-4 border-b bg-background px-4 sm:px-6">
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
+           <SidebarTrigger />
            <Link href="/" className="flex items-center gap-2">
             <GraduationCap className="h-8 w-8 text-[#002147]" />
             <span className="font-poppins text-xl font-bold text-[#002147]">
