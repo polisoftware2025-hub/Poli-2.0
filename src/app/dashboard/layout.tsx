@@ -106,80 +106,83 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <Sidebar>
-        <SidebarHeader>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="w-full justify-start gap-2 px-2 text-left h-auto">
-                 <Avatar className="h-8 w-8">
-                  <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-                    <span className="text-sm font-medium">{userEmail}</span>
-                    <span className="text-xs text-muted-foreground">{roleNames[userRole]}</span>
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
-              <DropdownMenuLabel className="font-normal">
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium leading-none">{userEmail}</p>
-                  <p className="text-xs leading-none text-muted-foreground">
-                    {roleNames[userRole]}
-                  </p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Configuración</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Cerrar Sesión</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-             {menuItems.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={pathname === item.href}
-                  tooltip={{
-                    children: item.label,
-                    className: "group-data-[collapsible=icon]:flex hidden",
-                  }}
-                >
-                  <Link href={item.href}>
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
-          <AiSuggestions />
-        </SidebarContent>
-      </Sidebar>
+      <div className="bg-primary text-primary-foreground">
+        <Sidebar>
+          <SidebarHeader>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full justify-start gap-2 px-2 text-left h-auto hover:bg-primary/80 focus-visible:ring-offset-primary">
+                   <Avatar className="h-8 w-8 bg-primary-foreground text-primary">
+                    <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col group-data-[collapsible=icon]:hidden text-primary-foreground">
+                      <span className="text-sm font-medium">{userEmail}</span>
+                      <span className="text-xs text-primary-foreground/80">{roleNames[userRole]}</span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{userEmail}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {roleNames[userRole]}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Perfil</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configuración</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+               {menuItems.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    className="text-primary-foreground hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+                    tooltip={{
+                      children: item.label,
+                      className: "group-data-[collapsible=icon]:flex hidden",
+                    }}
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+            <AiSuggestions />
+          </SidebarContent>
+        </Sidebar>
+      </div>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background px-4 sm:px-6">
-           <SidebarTrigger />
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-card px-4 sm:px-6">
+           <SidebarTrigger className="text-card-foreground"/>
            <Link href="/" className="flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-[#002147]" />
-            <span className="font-poppins text-xl font-bold text-[#002147]">
+            <GraduationCap className="h-8 w-8 text-primary" />
+            <span className="font-poppins text-xl font-bold text-primary">
               Poli 2.0
             </span>
           </Link>
         </header>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
