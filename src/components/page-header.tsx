@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Home, ChevronRight } from "lucide-react";
+import { ArrowLeft, Home, ChevronRight, Bell } from "lucide-react";
 import React from "react";
 
 const Breadcrumbs = () => {
@@ -23,6 +23,13 @@ const Breadcrumbs = () => {
       'docente': 'Docente',
       'estudiante': 'Estudiante',
       'gestor': 'Gestor',
+      'calificaciones': 'Calificaciones',
+      'horarios': 'Horarios',
+      'asistencias': 'Asistencias',
+      'calendario': 'Calendario Académico',
+      'noticias': 'Noticias y Anuncios',
+      'empleo': 'Bolsa de Empleo',
+      'pagos': 'Mis Pagos',
     };
     return names[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
   };

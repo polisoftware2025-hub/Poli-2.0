@@ -119,10 +119,11 @@ export default function DashboardLayout({
     { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap, roles: ["estudiante"] },
     { href: "/dashboard/horarios", label: "Horarios", icon: Calendar, roles: ["estudiante", "docente"] },
     { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare, roles: ["estudiante", "docente"] },
+    { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell, roles: ["admin", "gestor", "docente", "estudiante"] },
     { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["admin", "gestor", "docente", "estudiante"] },
-    { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["admin", "gestor", "docente", "estudiante"] },
-    { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare, roles: ["estudiante"] },
     { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard, roles: ["estudiante"] },
+    { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare, roles: ["estudiante"] },
+    { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["admin", "gestor", "docente", "estudiante"] },
   ];
 
   if (!userEmail || !userRole) {
@@ -149,7 +150,7 @@ export default function DashboardLayout({
               <span className="font-poppins text-xl font-bold text-primary-foreground">
                   Poli 2.0
               </span>
-              <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden shrink-0">
+              <SidebarTrigger>
                   <X/>
               </SidebarTrigger>
             </div>
