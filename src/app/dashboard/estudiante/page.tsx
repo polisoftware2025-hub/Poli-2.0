@@ -151,15 +151,13 @@ export default function StudentDashboardPage() {
             </div>
         </div>
         
-        <div>
+        <div className="space-y-4">
+            <div className="flex items-center gap-3">
+                <CheckSquare className="h-6 w-6 text-primary"/>
+                <h2 className="font-poppins text-2xl font-bold text-gray-800">Lista de Tareas Pendientes</h2>
+            </div>
             <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <CheckSquare className="h-6 w-6 text-primary"/>
-                        <CardTitle>Lista de Tareas Pendientes</CardTitle>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 p-6">
                    {todoItems.map((item) => (
                        <div key={item.id} className="flex items-start gap-4">
                             <Checkbox id={item.id} checked={item.completed} className="mt-1"/>
