@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { ArrowLeft, Home, ChevronRight, Bell } from "lucide-react";
+import { ArrowLeft, Home, ChevronRight } from "lucide-react";
 import React from "react";
 
 const Breadcrumbs = () => {
