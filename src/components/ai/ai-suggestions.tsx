@@ -3,15 +3,8 @@
 
 import { suggestContent } from "@/ai/flows/suggest-content";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, ArrowRight, LayoutDashboard, BookOpen, GraduationCap } from "lucide-react";
+import { Sparkles, LayoutDashboard, BookOpen, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useTransition, useEffect } from "react";
 
@@ -76,65 +69,62 @@ export function AiSuggestions() {
 
   return (
     <SidebarGroup>
-      <Card className="border-0 shadow-none group-data-[collapsible=icon]:bg-transparent">
-        <div className="group-data-[collapsible=icon]:hidden">
-          <h4 className="px-3 text-xs font-semibold text-muted-foreground mb-2">{t("Más Utilizados")}</h4>
-          <SidebarMenu className="px-0">
-             <SidebarMenuItem>
-                 <SidebarMenuButton asChild size="sm">
-                     <Link href="/dashboard"><LayoutDashboard/> <span>{t("Panel")}</span></Link>
-                 </SidebarMenuButton>
-             </SidebarMenuItem>
-             <SidebarMenuItem>
-                 <SidebarMenuButton asChild size="sm">
-                     <Link href="/dashboard/materias"><BookOpen/> <span>{t("Materias")}</span></Link>
-                 </SidebarMenuButton>
-             </SidebarMenuItem>
-             <SidebarMenuItem>
-                 <SidebarMenuButton asChild size="sm">
-                     <Link href="/dashboard/calificaciones"><GraduationCap/> <span>{t("Calificaciones")}</span></Link>
-                 </SidebarMenuButton>
-             </SidebarMenuItem>
-          </SidebarMenu>
+      <div className="group-data-[collapsible=icon]:hidden pt-4">
+        <h4 className="px-3 text-xs font-semibold text-primary-foreground/80 mb-2">{t("Más Utilizados")}</h4>
+        <SidebarMenu className="px-0">
+           <SidebarMenuItem>
+               <SidebarMenuButton asChild size="sm" className="text-primary-foreground hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground">
+                   <Link href="/dashboard"><LayoutDashboard/> <span>{t("Panel")}</span></Link>
+               </SidebarMenuButton>
+           </SidebarMenuItem>
+           <SidebarMenuItem>
+               <SidebarMenuButton asChild size="sm" className="text-primary-foreground hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground">
+                   <Link href="/dashboard/materias"><BookOpen/> <span>{t("Materias")}</span></Link>
+               </SidebarMenuButton>
+           </SidebarMenuItem>
+           <SidebarMenuItem>
+               <SidebarMenuButton asChild size="sm" className="text-primary-foreground hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground">
+                   <Link href="/dashboard/calificaciones"><GraduationCap/> <span>{t("Calificaciones")}</span></Link>
+               </SidebarMenuButton>
+           </SidebarMenuItem>
+        </SidebarMenu>
+      </div>
+
+      <div className="p-0 pt-4 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+        <div className="hidden items-center gap-2 text-base font-semibold group-data-[collapsible=icon]:flex">
+          <Sparkles className="size-4 text-primary-foreground" />
         </div>
-
-
-        <CardHeader className="p-0 pt-4 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
-          <div className="hidden items-center gap-2 text-base font-semibold group-data-[collapsible=icon]:flex">
-            <Sparkles className="size-4 text-primary" />
+        <div className="group-data-[collapsible=icon]:hidden px-3">
+          <div className="flex items-center gap-2 text-xs font-semibold text-primary-foreground/80">
+            <Sparkles className="size-4" />
+            {t("Para Ti")}
           </div>
-          <div className="group-data-[collapsible=icon]:hidden px-3">
-            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-              <Sparkles className="size-4 text-primary" />
-              {t("Para Ti")}
-            </div>
-            {activity && <p className="text-xs text-muted-foreground mt-1">
-               {t("Simulando:")} <span className="font-semibold text-primary">{activity}</span>
-            </p>}
+          {activity && <p className="text-xs text-primary-foreground/80 mt-1">
+             {t("Simulando:")} <span className="font-semibold">{activity}</span>
+          </p>}
+        </div>
+      </div>
+      <div className="space-y-4 p-0 pt-4 group-data-[collapsible=icon]:hidden px-3">
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-primary-foreground/80">
+            {t("Simular Actividad:")}
+          </p>
+          <div className="flex flex-col gap-2">
+            {activities.map((act) => (
+              <Button
+                key={act.value}
+                variant="outline"
+                size="sm"
+                className="h-auto w-full justify-start whitespace-normal text-xs bg-primary/80 border-primary-foreground/20 text-primary-foreground hover:bg-accent hover:text-accent-foreground"
+                onClick={() => handleSuggestion(act.value)}
+                disabled={isPending}
+              >
+                {act.label}
+              </Button>
+            ))}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4 p-0 pt-4 group-data-[collapsible=icon]:hidden px-3">
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">
-              {t("Simular Actividad:")}
-            </p>
-            <div className="flex flex-col gap-2">
-              {activities.map((act) => (
-                <Button
-                  key={act.value}
-                  variant="outline"
-                  size="sm"
-                  className="h-auto w-full justify-start whitespace-normal text-xs"
-                  onClick={() => handleSuggestion(act.value)}
-                  disabled={isPending}
-                >
-                  {act.label}
-                </Button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </SidebarGroup>
   );
 }

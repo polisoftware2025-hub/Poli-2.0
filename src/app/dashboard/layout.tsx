@@ -27,6 +27,7 @@ import {
   Book,
   BotMessageSquare,
   Calendar,
+  CreditCard,
   GraduationCap,
   Home,
   Library,
@@ -87,6 +88,7 @@ export default function DashboardLayout({
     { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["admin", "gestor", "docente", "estudiante"] },
     { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["admin", "gestor", "docente", "estudiante"] },
     { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare, roles: ["estudiante"] },
+    { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard, roles: ["estudiante"] },
   ];
 
   if (!userEmail || !userRole) {
