@@ -4,7 +4,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-export default function DashboardPage() {
+export default function DashboardRedirectPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
 
@@ -37,12 +37,16 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-        <div className="text-center">
-            <p className="text-lg font-semibold text-gray-700">Cargando tu panel de control...</p>
-            <div className="mt-4 h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent mx-auto"></div>
-        </div>
-    </div>
-  );
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+          <div className="text-center">
+              <p className="text-lg font-semibold text-gray-700">Cargando tu panel de control...</p>
+              <div className="mt-4 h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent mx-auto"></div>
+          </div>
+      </div>
+    );
+  }
+
+  return null;
 }

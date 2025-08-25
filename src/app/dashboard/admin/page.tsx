@@ -1,12 +1,8 @@
 
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { GraduationCap, LogOut, Bell, User, BarChart2, Settings, Shield, Users, BookOpen } from "lucide-react";
-import Link from "next/link";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Shield, Users, BookOpen } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -19,21 +15,12 @@ export default function AdminDashboardPage() {
     const userRole = localStorage.getItem('userRole');
     if (storedEmail && userRole === 'admin') {
       setUserEmail(storedEmail);
+    } else if (storedEmail) {
+      router.push('/dashboard');
     } else {
       router.push('/login');
     }
   }, [router]);
-
-  const handleLogout = async () => {
-    localStorage.removeItem('userEmail');
-    localStorage.removeItem('userRole');
-    router.push("/");
-  };
-
-  const getInitials = (email: string | null | undefined) => {
-    if (!email) return 'A';
-    return email.substring(0, 2).toUpperCase();
-  }
 
   if (!userEmail) {
     return (
@@ -44,105 +31,49 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-100 font-roboto">
-      <header className="sticky top-0 z-50 w-full bg-white shadow-sm">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2">
-              <GraduationCap className="h-8 w-8 text-[#002147]" />
-              <span className="hidden font-poppins text-xl font-bold text-[#002147] sm:block">
-                Poli 2.0 (Admin)
-              </span>
-            </Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Bell className="h-5 w-5 text-gray-600" />
-              <span className="sr-only">Notificaciones</span>
-            </Button>
-            <div className="flex items-center gap-2">
-              <span className="hidden text-sm font-medium text-gray-700 sm:block">{userEmail}</span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-red-500 text-white">{getInitials(userEmail)}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <DropdownMenuLabel className="font-normal">
-                    <div className="flex flex-col space-y-1">
-                      <p className="text-sm font-medium leading-none">{userEmail}</p>
-                      <p className="text-xs leading-none text-muted-foreground">Administrador</p>
-                    </div>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Perfil</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem>
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Configuración Global</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Cerrar Sesión</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        </div>
-      </header>
-      <main className="flex-1 p-4 sm:p-6 lg:p-8">
-        <div className="container mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle className="font-poppins text-2xl font-bold text-gray-800">
-                Panel de Administración
-              </CardTitle>
-              <CardDescription className="font-poppins text-gray-600">
-                Gestión total del sistema académico y administrativo.
-              </CardDescription>
+    <div className="flex flex-col gap-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-poppins text-2xl font-bold text-gray-800">
+            Panel de Administración
+          </CardTitle>
+          <CardDescription className="font-poppins text-gray-600">
+            Gestión total del sistema académico y administrativo.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Usuarios</CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Usuarios</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">+1,234</div>
-                  <p className="text-xs text-muted-foreground">Gestión de todos los roles de usuario</p>
-                </CardContent>
-              </Card>
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Carreras</CardTitle>
-                  <BookOpen className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">+25</div>
-                  <p className="text-xs text-muted-foreground">Crear y editar programas académicos</p>
-                </CardContent>
-              </Card>
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Permisos</CardTitle>
-                  <Shield className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">Roles y Reglas</div>
-                  <p className="text-xs text-muted-foreground">Administrar reglas de seguridad</p>
-                </CardContent>
-              </Card>
+            <CardContent>
+              <div className="text-2xl font-bold">+1,234</div>
+              <p className="text-xs text-muted-foreground">Gestión de todos los roles de usuario</p>
             </CardContent>
           </Card>
-        </div>
-      </main>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Carreras</CardTitle>
+              <BookOpen className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">+25</div>
+              <p className="text-xs text-muted-foreground">Crear y editar programas académicos</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-lg transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">Permisos</CardTitle>
+              <Shield className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">Roles y Reglas</div>
+              <p className="text-xs text-muted-foreground">Administrar reglas de seguridad</p>
+            </CardContent>
+          </Card>
+        </CardContent>
+      </Card>
     </div>
   );
 }
