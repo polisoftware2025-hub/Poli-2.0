@@ -38,6 +38,7 @@ import {
   Search,
   Settings,
   User,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -115,59 +116,7 @@ export default function DashboardLayout({
     <SidebarProvider>
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
-          <SidebarHeader>
-             <Link href="/" className="flex items-center gap-2 p-2">
-              <GraduationCap className="h-8 w-8 text-primary-foreground" />
-              <span className="font-poppins text-xl font-bold text-primary-foreground group-data-[collapsible=icon]:hidden">
-                Poli 2.0
-              </span>
-            </Link>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
-               {menuItems.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    className="text-primary-foreground hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
-                    tooltip={{
-                      children: item.label,
-                      className: "group-data-[collapsible=icon]:flex hidden",
-                    }}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-            <AiSuggestions />
-          </SidebarContent>
-        </Sidebar>
-      </div>
-      <SidebarInset>
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
-           <div className="flex items-center gap-4">
-               <SidebarTrigger className="text-card-foreground"/>
-                <div className="relative hidden md:block">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
-                    <Input placeholder="Buscar en la plataforma..." className="w-64 lg:w-96 pl-9"/>
-                </div>
-           </div>
-           
-           <div className="flex items-center gap-4">
-             <Button variant="ghost" size="icon" className="relative rounded-full">
-                <Bell className="h-5 w-5"/>
-                <span className="absolute top-1 right-1 flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                </span>
-                <span className="sr-only">Notificaciones</span>
-             </Button>
-
+          <SidebarHeader className="flex items-center justify-between">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                  <Button variant="ghost" className="relative h-10 w-10 rounded-full">
@@ -201,6 +150,63 @@ export default function DashboardLayout({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+             <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
+                <X/>
+             </SidebarTrigger>
+          </SidebarHeader>
+          <SidebarContent>
+            <SidebarMenu>
+               {menuItems.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={pathname === item.href}
+                    className="text-primary-foreground hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
+                    tooltip={{
+                      children: item.label,
+                      className: "group-data-[collapsible=icon]:flex hidden",
+                    }}
+                  >
+                    <Link href={item.href}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+            <AiSuggestions />
+          </SidebarContent>
+        </Sidebar>
+      </div>
+      <SidebarInset>
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
+           <div className="flex items-center gap-4">
+               <SidebarTrigger className="text-card-foreground"/>
+                <Link href="/" className="flex items-center gap-2 font-poppins text-xl font-bold text-card-foreground">
+                  <GraduationCap className="h-8 w-8" />
+                  <span>Poli 2.0</span>
+                </Link>
+           </div>
+            
+           <div className="flex flex-1 items-center justify-center">
+             <div className="relative w-full max-w-lg">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                <Input placeholder="Buscar en la plataforma..." className="w-full pl-9"/>
+             </div>
+           </div>
+           
+           <div className="flex items-center gap-4">
+             <Button variant="ghost" size="icon" className="relative rounded-full">
+                <Bell className="h-5 w-5"/>
+                <span className="absolute top-1 right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                <span className="sr-only">Notificaciones</span>
+             </Button>
+
+            
            </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
