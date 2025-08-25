@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SidebarGroup } from "@/components/ui/sidebar";
+import { SidebarGroup, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { Sparkles, ArrowRight, LayoutDashboard, BookOpen, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useTransition, useEffect } from "react";
 
@@ -31,16 +30,14 @@ export function AiSuggestions() {
     const savedLanguage = localStorage.getItem("language") || "es";
     setLanguage(savedLanguage);
   }, []);
-
-  useEffect(() => {
-    const initialActivity = language === 'en' ? "Just logged in" : "Acaba de iniciar sesión";
-    handleSuggestion(initialActivity);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [language]);
   
   const t = (text: string) => {
     if (language === 'en') {
       const translations: { [key: string]: string } = {
+        "Más Utilizados": "Most Used",
+        "Panel": "Dashboard",
+        "Materias": "Subjects",
+        "Calificaciones": "Grades",
         "Para Ti": "For You",
         "Sugerencias basadas en tu actividad:": "Suggestions based on your activity:",
         "Simular Actividad:": "Simulate Activity:",
@@ -50,38 +47,12 @@ export function AiSuggestions() {
         "Revisando la lista de tareas pendientes": "Reviewing the to-do list",
         "Actualizó Ajustes": "Updated Settings",
         "Cambió la configuración de perfil y notificaciones": "Changed profile and notification settings",
-        "Enlaces Sugeridos": "Suggested Links",
-        "Ir a": "Go to",
-        "Panel": "Dashboard",
-        "Proyectos": "Projects",
-        "Tareas": "Tasks",
-        "Configuración": "Settings",
-        "Acaba de iniciar sesión": "Just logged in",
       };
       return translations[text] || text;
     }
     return text;
   }
   
-  const linkLabel = (path: string) => {
-    if (language === 'en') {
-      switch (path) {
-        case '/': return 'Dashboard';
-        case '/projects': return 'Projects';
-        case '/tasks': return 'Tasks';
-        case '/settings': return 'Settings';
-        default: return path.replace('/', '');
-      }
-    }
-    switch (path) {
-      case '/': return 'Panel';
-      case '/projects': return 'Proyectos';
-      case '/tasks': return 'Tareas';
-      case '/settings': return 'Configuración';
-      default: return path.replace('/', '');
-    }
-  }
-
   const activities = [
     { label: t("Vio Proyectos"), value: t("Viendo el tablero de gestión de proyectos") },
     { label: t("Revisó Tareas"), value: t("Revisando la lista de tareas pendientes") },
@@ -106,22 +77,43 @@ export function AiSuggestions() {
   return (
     <SidebarGroup>
       <Card className="border-0 shadow-none group-data-[collapsible=icon]:bg-transparent">
-        <CardHeader className="p-0 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
+        <div className="group-data-[collapsible=icon]:hidden">
+          <h4 className="px-3 text-xs font-semibold text-muted-foreground mb-2">{t("Más Utilizados")}</h4>
+          <SidebarMenu className="px-0">
+             <SidebarMenuItem>
+                 <SidebarMenuButton asChild size="sm">
+                     <Link href="/dashboard"><LayoutDashboard/> <span>{t("Panel")}</span></Link>
+                 </SidebarMenuButton>
+             </SidebarMenuItem>
+             <SidebarMenuItem>
+                 <SidebarMenuButton asChild size="sm">
+                     <Link href="/dashboard/materias"><BookOpen/> <span>{t("Materias")}</span></Link>
+                 </SidebarMenuButton>
+             </SidebarMenuItem>
+             <SidebarMenuItem>
+                 <SidebarMenuButton asChild size="sm">
+                     <Link href="/dashboard/calificaciones"><GraduationCap/> <span>{t("Calificaciones")}</span></Link>
+                 </SidebarMenuButton>
+             </SidebarMenuItem>
+          </SidebarMenu>
+        </div>
+
+
+        <CardHeader className="p-0 pt-4 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:justify-center">
           <div className="hidden items-center gap-2 text-base font-semibold group-data-[collapsible=icon]:flex">
             <Sparkles className="size-4 text-primary" />
           </div>
-          <div className="group-data-[collapsible=icon]:hidden">
-            <div className="flex items-center gap-2 text-base font-semibold">
+          <div className="group-data-[collapsible=icon]:hidden px-3">
+            <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
               <Sparkles className="size-4 text-primary" />
               {t("Para Ti")}
             </div>
-            <p className="text-xs text-muted-foreground">
-              {t("Sugerencias basadas en tu actividad:")}{" "}
-              <span className="font-semibold text-primary">{activity}</span>
-            </p>
+            {activity && <p className="text-xs text-muted-foreground mt-1">
+               {t("Simulando:")} <span className="font-semibold text-primary">{activity}</span>
+            </p>}
           </div>
         </CardHeader>
-        <CardContent className="space-y-4 p-0 pt-4 group-data-[collapsible=icon]:hidden">
+        <CardContent className="space-y-4 p-0 pt-4 group-data-[collapsible=icon]:hidden px-3">
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">
               {t("Simular Actividad:")}
@@ -140,34 +132,6 @@ export function AiSuggestions() {
                 </Button>
               ))}
             </div>
-          </div>
-         
-          <div className="space-y-4">
-            {isPending && (
-              <div className="space-y-4">
-                <div>
-                  <Skeleton className="h-4 w-20" />
-                  <div className="mt-2 space-y-2">
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-2/3" />
-                  </div>
-                </div>
-              </div>
-            )}
-            {!isPending && suggestions && (
-              <div>
-                <h4 className="text-sm font-semibold">{t("Enlaces Sugeridos")}</h4>
-                <ul className="mt-2 list-none space-y-1">
-                  {suggestions.links.map((link, i) => (
-                    link && <li key={i}>
-                      <Link href={link} className="flex items-center gap-1 text-sm text-primary hover:underline">
-                        {t("Ir a")} {linkLabel(link)} <ArrowRight className="size-3" />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
           </div>
         </CardContent>
       </Card>
