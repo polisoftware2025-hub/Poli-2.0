@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import {
+  Bell,
   Book,
   BotMessageSquare,
   Calendar,
@@ -34,6 +35,7 @@ import {
   Library,
   LogOut,
   Newspaper,
+  Search,
   Settings,
   User,
 } from "lucide-react";
@@ -41,6 +43,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AiSuggestions } from "@/components/ai/ai-suggestions";
+import { Input } from "@/components/ui/input";
 
 type UserRole = "admin" | "gestor" | "docente" | "estudiante";
 
@@ -113,43 +116,12 @@ export default function DashboardLayout({
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
           <SidebarHeader>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="w-full justify-start gap-2 px-2 text-left h-auto hover:bg-primary/80 focus-visible:ring-offset-primary">
-                   <Avatar className="h-8 w-8 bg-primary-foreground text-primary">
-                    <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col group-data-[collapsible=icon]:hidden text-primary-foreground">
-                      <span className="text-sm font-medium">{userEmail}</span>
-                      <span className="text-xs text-primary-foreground/80">{roleNames[userRole]}</span>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 mb-2" align="end" forceMount>
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{userEmail}</p>
-                    <p className="text-xs leading-none text-muted-foreground">
-                      {roleNames[userRole]}
-                    </p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Perfil</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Configuración</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Cerrar Sesión</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+             <Link href="/" className="flex items-center gap-2 p-2">
+              <GraduationCap className="h-8 w-8 text-primary-foreground" />
+              <span className="font-poppins text-xl font-bold text-primary-foreground group-data-[collapsible=icon]:hidden">
+                Poli 2.0
+              </span>
+            </Link>
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
@@ -177,14 +149,59 @@ export default function DashboardLayout({
         </Sidebar>
       </div>
       <SidebarInset>
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-card px-4 sm:px-6">
-           <SidebarTrigger className="text-card-foreground"/>
-           <Link href="/" className="flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            <span className="font-poppins text-xl font-bold text-primary">
-              Poli 2.0
-            </span>
-          </Link>
+        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
+           <div className="flex items-center gap-4">
+               <SidebarTrigger className="text-card-foreground"/>
+                <div className="relative hidden md:block">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                    <Input placeholder="Buscar en la plataforma..." className="w-64 lg:w-96 pl-9"/>
+                </div>
+           </div>
+           
+           <div className="flex items-center gap-4">
+             <Button variant="ghost" size="icon" className="relative rounded-full">
+                <Bell className="h-5 w-5"/>
+                <span className="absolute top-1 right-1 flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                </span>
+                <span className="sr-only">Notificaciones</span>
+             </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                   <Avatar className="h-9 w-9 bg-primary-foreground text-primary">
+                    <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end" forceMount>
+                <DropdownMenuLabel className="font-normal">
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium leading-none">{userEmail}</p>
+                    <p className="text-xs leading-none text-muted-foreground">
+                      {roleNames[userRole]}
+                    </p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Perfil</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configuración</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Cerrar Sesión</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+           </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
       </SidebarInset>
