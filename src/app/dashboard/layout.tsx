@@ -117,12 +117,16 @@ export default function DashboardLayout({
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
           <SidebarHeader className="flex items-center justify-between">
-            <DropdownMenu>
+             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                 <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+                <Button variant="ghost" className="w-full justify-start gap-2 px-2 h-12">
                    <Avatar className="h-9 w-9 bg-primary-foreground text-primary">
                     <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
                   </Avatar>
+                  <div className="flex flex-col items-start text-left truncate">
+                    <span className="text-sm font-semibold text-primary-foreground">{userEmail}</span>
+                     <span className="text-xs text-primary-foreground/80">{roleNames[userRole]}</span>
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -150,7 +154,7 @@ export default function DashboardLayout({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-             <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
+            <SidebarTrigger variant="ghost" size="icon" className="group-data-[collapsible=icon]:hidden">
                 <X/>
              </SidebarTrigger>
           </SidebarHeader>
@@ -183,17 +187,13 @@ export default function DashboardLayout({
         <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
            <div className="flex items-center gap-4">
                <SidebarTrigger className="text-card-foreground"/>
-                <Link href="/" className="flex items-center gap-2 font-poppins text-xl font-bold text-card-foreground">
-                  <GraduationCap className="h-8 w-8" />
-                  <span>Poli 2.0</span>
-                </Link>
            </div>
             
            <div className="flex flex-1 items-center justify-center">
-             <div className="relative w-full max-w-lg">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
-                <Input placeholder="Buscar en la plataforma..." className="w-full pl-9"/>
-             </div>
+             <Link href="/" className="flex items-center gap-2 font-poppins text-2xl font-bold text-card-foreground">
+                <GraduationCap className="h-8 w-8" />
+                <span>Poli 2.0</span>
+            </Link>
            </div>
            
            <div className="flex items-center gap-4">
@@ -205,8 +205,6 @@ export default function DashboardLayout({
                 </span>
                 <span className="sr-only">Notificaciones</span>
              </Button>
-
-            
            </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
