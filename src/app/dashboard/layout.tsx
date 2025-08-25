@@ -192,13 +192,17 @@ export default function DashboardLayout({
            </div>
             
            <div className="flex flex-1 items-center justify-center">
-             <Link href="/" className="flex items-center gap-2 font-poppins text-2xl font-bold text-card-foreground">
+             <Link href="/dashboard" className="flex items-center gap-2 font-poppins text-2xl font-bold text-card-foreground">
                 <GraduationCap className="h-8 w-8" />
                 <span>Poli 2.0</span>
             </Link>
            </div>
            
            <div className="flex items-center gap-4">
+             <div className="relative">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <Input placeholder="Buscar..." className="pl-9 bg-background" />
+            </div>
              <Button variant="ghost" size="icon" className="relative rounded-full">
                 <Bell className="h-5 w-5"/>
                 <span className="absolute top-1 right-1 flex h-2 w-2">
