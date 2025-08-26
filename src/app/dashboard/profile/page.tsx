@@ -16,14 +16,39 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Shield, Briefcase } from "lucide-react";
+import { User, Shield, Briefcase, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
+import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "La contraseña actual es obligatoria."),
+  newPassword: z.string().min(8, "Mínimo 8 caracteres.")
+    .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
+    .regex(/[a-z]/, "Debe contener al menos una minúscula.")
+    .regex(/[0-9]/, "Debe contener al menos un número.")
+    .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
+  confirmPassword: z.string(),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "Las contraseñas no coinciden.",
+  path: ["confirmPassword"],
+});
+
 
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -33,6 +58,60 @@ export default function ProfilePage() {
       router.push('/login');
     }
   }, [router]);
+  
+  const form = useForm<z.infer<typeof changePasswordSchema>>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const onSubmit = async (values: z.infer<typeof changePasswordSchema>) => {
+    setIsLoading(true);
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user || !user.email) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo encontrar un usuario autenticado.",
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    const credential = EmailAuthProvider.credential(user.email, values.currentPassword);
+
+    try {
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, values.newPassword);
+      
+      toast({
+        title: "Éxito",
+        description: "Tu contraseña ha sido cambiada exitosamente.",
+      });
+      form.reset();
+
+    } catch (error: any) {
+      let errorMessage = "Ocurrió un error inesperado.";
+      if (error.code === 'auth/wrong-password') {
+        errorMessage = "La contraseña actual es incorrecta.";
+      } else if (error.code === 'auth/too-many-requests') {
+          errorMessage = "Demasiados intentos fallidos. Inténtalo de nuevo más tarde."
+      }
+      toast({
+        variant: "destructive",
+        title: "Error al cambiar la contraseña",
+        description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -105,24 +184,68 @@ export default function ProfilePage() {
               </form>
             </TabsContent>
             <TabsContent value="security" className="mt-6">
-               <form className="space-y-6">
-                <div>
-                    <Label htmlFor="currentPassword">Contraseña Actual</Label>
-                    <Input id="currentPassword" type="password" />
-                </div>
-                <div>
-                    <Label htmlFor="newPassword">Nueva Contraseña</Label>
-                    <Input id="newPassword" type="password" />
-                </div>
-                <div>
-                    <Label htmlFor="confirmPassword">Confirmar Nueva Contraseña</Label>
-                    <Input id="confirmPassword" type="password" />
-                </div>
+              <Form {...form}>
+               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                 <FormField
+                    control={form.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contraseña Actual</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input type={showCurrentPassword ? "text" : "password"} {...field} />
+                             <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowCurrentPassword(!showCurrentPassword)}>
+                               {showCurrentPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                             </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                 <FormField
+                    control={form.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nueva Contraseña</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input type={showNewPassword ? "text" : "password"} {...field} />
+                             <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowNewPassword(!showNewPassword)}>
+                               {showNewPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                             </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirmar Nueva Contraseña</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input type={showConfirmPassword ? "text" : "password"} {...field} />
+                             <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                               {showConfirmPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                             </Button>
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 <div className="flex justify-end gap-2">
-                    <Button variant="outline">Cancelar</Button>
-                    <Button>Cambiar Contraseña</Button>
+                    <Button type="button" variant="outline" onClick={() => form.reset()}>Cancelar</Button>
+                    <Button type="submit" disabled={isLoading}>{isLoading ? "Cambiando..." : "Cambiar Contraseña"}</Button>
                 </div>
               </form>
+              </Form>
             </TabsContent>
             <TabsContent value="academic" className="mt-6">
               <div className="space-y-4">
