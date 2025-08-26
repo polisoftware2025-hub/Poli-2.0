@@ -1,6 +1,6 @@
 
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, query, where, getDocs } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { z } from "zod";
@@ -37,6 +37,27 @@ const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string 
     'passport': { id: 'passport', descripcion: 'Pasaporte' },
 };
 
+async function emailExists(email: string): Promise<boolean> {
+    const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+    const q = query(usuariosRef, where("correoInstitucional", "==", email));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
+}
+
+async function generateUniqueInstitutionalEmail(firstName: string, lastName: string): Promise<string> {
+    const domain = "@pi.edu.co";
+    const baseEmail = `${firstName.toLowerCase().split(' ')[0]}.${lastName.toLowerCase().split(' ')[0]}`;
+    let finalEmail = `${baseEmail}${domain}`;
+    let counter = 1;
+
+    while (await emailExists(finalEmail)) {
+        finalEmail = `${baseEmail}${counter}${domain}`;
+        counter++;
+    }
+
+    return finalEmail;
+}
+
 
 export async function POST(req: Request) {
     try {
@@ -56,7 +77,7 @@ export async function POST(req: Request) {
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
         const newUserDocRef = doc(usuariosCollectionRef);
 
-        const correoInstitucional = `${data.firstName.toLowerCase()}.${data.lastName.toLowerCase()}@poli.edu.co`;
+        const correoInstitucional = await generateUniqueInstitutionalEmail(data.firstName, data.lastName);
 
         const usuarioData = {
           nombre1: data.firstName,
