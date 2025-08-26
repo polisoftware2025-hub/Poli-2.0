@@ -1,0 +1,99 @@
+Historial de Solicitudes del Proyecto
+
+Fecha: 2023-10-27
+Responsable: user@example.com
+Solicitud:
+- Implementar un calendario interactivo en el panel del estudiante.
+- Marcar los días con actividades pendientes con un punto rojo.
+- Al hacer clic en un día, mostrar la información de las actividades pendientes en un panel a la derecha.
+- El panel de detalles debe mostrar la información del evento y un enlace para ir a la entrega.
+
+---
+
+Fecha: 2023-10-27
+Responsable: user@example.com
+Solicitud:
+- Corregir el error "Runtime Error: Error: Cannot read properties of undefined (reading 'marked')" en el componente del calendario.
+- El error ocurre porque se intenta acceder a `props.modifiers.marked` cuando `props.modifiers` puede ser `undefined`.
+
+---
+
+Fecha: 2023-10-27
+Responsable: user@example.com
+Solicitud:
+- Arreglar un error visual en el menú lateral en dispositivos móviles.
+- El menú lateral se muestra con un fondo gris en lugar del color azul primario de la marca cuando la pantalla es pequeña.
+- Se debe asegurar que el menú mantenga los colores corporativos (fondo azul, texto blanco) en todas las resoluciones.
+
+---
+
+Fecha: 2023-10-27
+Responsable: user@example.com
+Solicitud:
+- Corregir el error de consola "params are being enumerated. `params` should be unwrapped with `React.use()`".
+- El error está relacionado con el uso de `useSearchParams` en el componente de migas de pan (Breadcrumbs).
+
+---
+
+Fecha: 2023-10-27
+Responsable: user@example.com
+Solicitud:
+- Cambiar el color de la barra de desplazamiento (scrollbar) en el menú lateral.
+- El fondo de la barra de desplazamiento debe coincidir con el color de fondo del propio menú para una apariencia más integrada.
+
+---
+
+Fecha: 2023-10-27
+Responsable: user@example.com
+Solicitud:
+- Corregir el error de compilación "Error: Cannot find module 'tailwind-scrollbar'".
+- El archivo de configuración de Tailwind (`tailwind.config.ts`) requiere un plugin que no está instalado en `package.json`.
+
+---
+
+Fecha: 2023-10-28
+Responsable: user@example.com
+Solicitud:
+- Implementar la funcionalidad completa para el formulario de cambio de contraseña en la página de perfil.
+- Requisitos: Validación de campos (obligatorios, longitud), la nueva contraseña y su confirmación deben coincidir, botón para ver/ocultar contraseña.
+- Lógica del backend: Usar reautenticación de Firebase (`reauthenticateWithCredential`) y luego actualizar la contraseña (`updatePassword`).
+- Mostrar mensajes de éxito y error claros para el usuario.
+
+---
+
+Fecha: 2023-10-28
+Responsable: user@example.com
+Solicitud:
+- Corregir el error "Runtime Error: FirebaseError: Firebase: No Firebase App '[DEFAULT]' has been created - call initializeApp() first".
+- El error ocurre al llamar `getAuth()` sin la inicialización de la app de Firebase.
+
+---
+
+Fecha: 2023-10-28
+Responsable: user@example.com
+Solicitud:
+- Corregir la funcionalidad de cambio de contraseña, ya que el sistema no usa la autenticación de Firebase, sino un sistema de roles simulado.
+- Se debe crear un endpoint en el backend para manejar el cambio de contraseña de forma segura sin depender de una sesión de Firebase Auth.
+
+---
+
+Fecha: 2023-10-28
+Responsable: user@example.com
+Solicitud:
+- Solucionar el error "La contraseña actual es incorrecta" al intentar cambiarla.
+- El problema parece estar en la lógica de verificación de la contraseña en el backend.
+
+---
+
+Fecha: 2023-10-28
+Responsable: user@example.com
+Solicitud:
+- Asegurarse de que las contraseñas de los nuevos usuarios se cifren (hasheen) correctamente durante el proceso de registro, ya que esto podría estar causando el problema con el cambio de contraseña.
+
+---
+
+Fecha: 2023-10-28
+Responsable: user@example.com
+Solicitud:
+- Asegurarse de que las contraseñas de los usuarios ya registrados también se traten correctamente.
+- La solución debe ser capaz de manejar tanto contraseñas en texto plano (de usuarios antiguos) como contraseñas ya cifradas (de usuarios nuevos), migrando las antiguas al formato seguro cuando se cambien.
