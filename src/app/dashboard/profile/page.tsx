@@ -25,8 +25,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "La contraseña actual es obligatoria."),
@@ -71,41 +69,50 @@ export default function ProfilePage() {
 
   const onSubmit = async (values: z.infer<typeof changePasswordSchema>) => {
     setIsLoading(true);
-    const user = auth.currentUser;
 
-    if (!user || !user.email) {
+    if (!userEmail) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "No se pudo encontrar un usuario autenticado.",
+        description: "No se pudo encontrar tu sesión. Por favor, inicia sesión de nuevo.",
       });
       setIsLoading(false);
       return;
     }
 
-    const credential = EmailAuthProvider.credential(user.email, values.currentPassword);
-
     try {
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, values.newPassword);
-      
-      toast({
-        title: "Éxito",
-        description: "Tu contraseña ha sido cambiada exitosamente.",
+      const response = await fetch('/api/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userEmail,
+          currentPassword: values.currentPassword,
+          newPassword: values.newPassword,
+        }),
       });
-      form.reset();
 
-    } catch (error: any) {
-      let errorMessage = "Ocurrió un error inesperado.";
-      if (error.code === 'auth/wrong-password') {
-        errorMessage = "La contraseña actual es incorrecta.";
-      } else if (error.code === 'auth/too-many-requests') {
-          errorMessage = "Demasiados intentos fallidos. Inténtalo de nuevo más tarde."
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Éxito",
+          description: data.message,
+        });
+        form.reset();
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error al cambiar la contraseña",
+          description: data.message || "Ocurrió un error inesperado.",
+        });
       }
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Error al cambiar la contraseña",
-        description: errorMessage,
+        title: "Error de red",
+        description: "No se pudo conectar con el servidor. Inténtalo de nuevo más tarde.",
       });
     } finally {
       setIsLoading(false);
