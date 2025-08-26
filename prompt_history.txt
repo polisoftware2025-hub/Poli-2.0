@@ -65,5 +65,47 @@ Historial de Solicitudes del Proyecto
   - **Solución:** Implementar una lógica dual en el endpoint de cambio de contraseña que primero intenta comparar con `bcrypt` y, si falla, compara como texto plano. La nueva contraseña siempre se guarda cifrada, migrando así las antiguas.
 
 - **Solicitud 7: Crear Historial de Prompts**
-  - **Requisito:** Generar un archivo de texto (`prompt_history.txt`) con un historial de las solicitudes, responsable y fecha.
+  - **Requisito:** Generar un archivo de texto (`prompt_history.txt`) con un historial de las solicitudes y fecha.
   - **Solución:** Crear el archivo en la raíz del proyecto.
+  
+---
+
+**Día: 2023-10-29**
+
+- **Solicitud 1: Implementar Formulario de Registro Multi-paso**
+  - **Requisitos:**
+    - Dividir el registro en 6 pasos: Datos Personales, Contacto, Académicos, Acceso, Inscripción y Confirmación.
+    - Añadir una barra de progreso.
+    - Validar cada paso con Zod antes de continuar.
+    - Al final, enviar todos los datos a un endpoint (`/api/register-user`).
+
+- **Solicitud 2: Implementar Lógica de Recuperación de Contraseña**
+  - **Requisitos:**
+    - Crear una página (`/forgot-password`) donde el usuario introduce su correo.
+    - Crear un endpoint (`/api/request-reset-password`) que genere un token único y lo guarde en Firestore.
+    - El token debe tener una fecha de expiración de 1 hora.
+    - Enviar un correo al usuario con un enlace que incluya el token.
+
+- **Solicitud 3: Implementar Página de Restablecimiento de Contraseña**
+  - **Requisitos:**
+    - Crear una página (`/reset-password`) que lea el token de la URL.
+    - Crear un endpoint (`/api/reset-password`) que valide el token.
+    - El token debe ser válido, no haber expirado y no haber sido usado.
+    - Si el token es válido, permitir al usuario establecer una nueva contraseña.
+    - La nueva contraseña debe ser cifrada con `bcrypt` y guardada en Firestore.
+    - Invalidar el token después de su uso.
+
+- **Solicitud 4: Crear Endpoint de Correo con IA Generativa**
+  - **Requisitos:**
+    - Crear un flow de Genkit en `src/ai/flows/send-verification-code.ts`.
+    - El flow debe usar un modelo de IA (Gemini) para generar un correo electrónico en formato HTML.
+    - El correo debe tener un diseño profesional y un código de verificación de 6 dígitos.
+    - El flow debe ser llamado desde un endpoint o simular el envío de correos.
+
+- **Solicitud 5: Implementar Página de Verificación de Código**
+  - **Problema:** El flujo de recuperación de contraseña con token por correo puede ser complejo de configurar (Nodemailer, etc.).
+  - **Solución Alternativa:** Crear una página de verificación (`/verify-code`) donde el usuario introduce un código de 6 dígitos que recibe por correo.
+    - **Paso 1:** En la página de "olvidé mi contraseña", en lugar de generar y enviar un token, se genera un código de 6 dígitos y se guarda en el `localStorage` del navegador junto con la hora y el correo.
+    - **Paso 2:** El usuario es redirigido a `/verify-code`.
+    - **Paso 3:** El usuario introduce el código. La página lo valida contra el que está en `localStorage`.
+    - **Paso 4:** Si es correcto y no ha expirado (ej. 10 minutos), se le permite ir a la página de restablecimiento de contraseña.
