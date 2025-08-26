@@ -25,7 +25,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
-import { getAuth, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "La contraseña actual es obligatoria."),
@@ -70,7 +71,6 @@ export default function ProfilePage() {
 
   const onSubmit = async (values: z.infer<typeof changePasswordSchema>) => {
     setIsLoading(true);
-    const auth = getAuth();
     const user = auth.currentUser;
 
     if (!user || !user.email) {
