@@ -46,8 +46,6 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { getFirestore, doc, setDoc, collection, serverTimestamp } from "firebase/firestore";
-import { app } from "@/lib/firebase";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -204,80 +202,48 @@ export default function RegisterPage() {
     }
   };
   
-  const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string } } = {
-    'cc': { id: 'cc', descripcion: 'Cédula de Ciudadanía' },
-    'ti': { id: 'ti', descripcion: 'Tarjeta de Identidad' },
-    'ce': { id: 'ce', descripcion: 'Cédula de Extranjería' },
-    'passport': { id: 'passport', descripcion: 'Pasaporte' },
-  };
-
   const handleFinalSubmit = async () => {
     const allData = getValues();
     const result = await allStepsSchema.safeParseAsync(allData);
-    
+
     if (result.success) {
       try {
-        const db = getFirestore(app);
-        
-        const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
-        
-        const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
-        const newUserDocRef = doc(usuariosCollectionRef);
-
-        const correoInstitucional = `${result.data.firstName.toLowerCase()}.${result.data.lastName.toLowerCase()}@poli.edu.co`;
-
-        const usuarioData = {
-          nombre1: result.data.firstName,
-          nombre2: result.data.segundoNombre || "",
-          apellido1: result.data.lastName,
-          apellido2: result.data.segundoApellido,
-          tipoIdentificacion: tipoIdentificacionMap[result.data.tipoIdentificacion],
-          identificacion: result.data.numeroIdentificacion,
-          genero: result.data.gender,
-          telefono: result.data.phone,
-          direccion: result.data.address,
-          ciudad: result.data.city,
-          pais: result.data.country,
-          correo: result.data.correoPersonal,
-          correoInstitucional: correoInstitucional,
-          contrasena: "ENCRYPTED_PASSWORD_PLACEHOLDER", // Remember to handle password encryption
-          rol: { id: "estudiante", descripcion: "Estudiante" },
-          estaInscrito: true,
-          fechaCreacion: serverTimestamp(),
-        };
-        
-        await setDoc(newUserDocRef, usuarioData);
-        
-        const estudiantesCollectionRef = collection(politecnicoDocRef, "estudiantes");
-        const estudianteDocRef = doc(estudiantesCollectionRef, newUserDocRef.id);
-        
-        const estudianteData = {
-          usuarioId: newUserDocRef.id,
-          estado: 'activo',
-          fechaCreacion: serverTimestamp(),
-        };
-
-        await setDoc(estudianteDocRef, estudianteData);
-        
-        toast({
-          title: "¡Registro exitoso!",
-          description: "Tu cuenta ha sido creada. Serás redirigido.",
+        const response = await fetch('/api/register-user', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(result.data),
         });
 
-        localStorage.setItem('userEmail', result.data.correoPersonal);
-        localStorage.setItem('userRole', 'estudiante');
-        router.push("/dashboard");
+        const responseData = await response.json();
 
+        if (response.ok) {
+          toast({
+            title: "¡Registro exitoso!",
+            description: "Tu cuenta ha sido creada. Serás redirigido.",
+          });
+
+          localStorage.setItem('userEmail', result.data.correoPersonal);
+          localStorage.setItem('userRole', 'estudiante');
+          router.push("/dashboard");
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Error en el registro",
+            description: responseData.message || "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
+          });
+        }
       } catch (error: any) {
         console.error("Error during registration: ", error);
         toast({
           variant: "destructive",
           title: "Error en el registro",
-          description: "Ha ocurrido un error. Por favor, inténtalo de nuevo.",
+          description: "Ha ocurrido un error de red. Por favor, inténtalo de nuevo.",
         });
       }
     } else {
-       toast({
+      toast({
         variant: "destructive",
         title: "Error de Validación",
         description: "Por favor, revisa todos los pasos y corrige los errores.",
@@ -290,7 +256,7 @@ export default function RegisterPage() {
         });
       });
     }
-  }
+  };
 
 
   const progress = (currentStep / totalSteps) * 100;
@@ -809,3 +775,4 @@ const Step6 = () => (
 
 
     
+
