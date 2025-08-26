@@ -39,31 +39,32 @@ export async function POST(req: Request) {
 
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data();
+    const storedPassword = userData.contrasena;
 
-    // Si la contraseña no está encriptada en la BD, la comparación con bcrypt fallará.
-    // Por ello, añadimos una lógica de mock para permitir el flujo.
     let isMatch = false;
-    if (userData.contrasena) {
-      // Si hay contraseña, intentamos compararla como si estuviera hasheada.
-       try {
-         isMatch = await bcrypt.compare(currentPassword, userData.contrasena);
-       } catch (error) {
-         // Si bcrypt falla (ej. el hash es inválido), asumimos que no coincide.
-         console.warn("Error al comparar con bcrypt, posiblemente el hash no es válido:", error);
-         isMatch = false;
-       }
+
+    // Intentar comparar con bcrypt si hay una contraseña almacenada.
+    if (storedPassword) {
+      try {
+        isMatch = await bcrypt.compare(currentPassword, storedPassword);
+      } catch (error) {
+        // Si bcrypt falla (ej. el hash es inválido o no es un hash), lo ignoramos y procedemos a la comparación de texto plano.
+        console.warn("Bcrypt compare falló, probablemente no es un hash válido. Se intentará comparación de texto plano.", error);
+        isMatch = false;
+      }
+    }
+
+    // Si la comparación con bcrypt falla o no hay contraseña, intentar como texto plano.
+    // Esto es para la simulación donde la contraseña inicial no está encriptada.
+    if (!isMatch && currentPassword === storedPassword) {
+      isMatch = true;
     }
 
     if (!isMatch) {
-        // Lógica de MOCK: si la comparación falla, comprobamos contra una contraseña por defecto
-        // o contra la contraseña en texto plano si no está hasheada.
-        // Esto NO debe hacerse en producción. Es solo para el entorno de desarrollo actual.
-        if (currentPassword !== "password123" && currentPassword !== userData.contrasena) {
-            return NextResponse.json({ message: "La contraseña actual es incorrecta." }, { status: 400 });
-        }
+      return NextResponse.json({ message: "La contraseña actual es incorrecta." }, { status: 400 });
     }
     
-    // Si la contraseña actual es correcta (ya sea por bcrypt o por el mock), procedemos a actualizar.
+    // Si la contraseña actual es correcta, procedemos a actualizar.
 
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
