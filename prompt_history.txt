@@ -1,99 +1,69 @@
 Historial de Solicitudes del Proyecto
 
-Fecha: 2023-10-27
-Responsable: user@example.com
-Solicitud:
-- Implementar un calendario interactivo en el panel del estudiante.
-- Marcar los días con actividades pendientes con un punto rojo.
-- Al hacer clic en un día, mostrar la información de las actividades pendientes en un panel a la derecha.
-- El panel de detalles debe mostrar la información del evento y un enlace para ir a la entrega.
+**Día: 2023-10-27**
+
+- **Solicitud 1: Implementar Calendario Interactivo**
+  - **Requisitos:**
+    - Crear un calendario en el panel del estudiante.
+    - Marcar días con actividades pendientes con un punto rojo.
+    - Al hacer clic en un día, mostrar detalles de la actividad en un panel lateral.
+    - El panel debe incluir información del evento y un enlace a la entrega.
+
+- **Solicitud 2: Corregir Error en el Calendario**
+  - **Error:** `Runtime Error: Cannot read properties of undefined (reading 'marked')`.
+  - **Causa:** Se intentaba acceder a `props.modifiers.marked` cuando `props.modifiers` podía ser `undefined`.
+  - **Solución:** Añadir una verificación de seguridad (`props.modifiers?.marked`) para evitar el error.
+
+- **Solicitud 3: Arreglar Error Visual en Menú Lateral Móvil**
+  - **Problema:** El menú lateral se mostraba con fondo gris en lugar de azul en pantallas pequeñas.
+  - **Solución:** Asegurar que el menú mantenga los colores corporativos (fondo azul, texto blanco) en todas las resoluciones aplicando la clase `bg-primary`.
+
+- **Solicitud 4: Corregir Error de Consola en `useSearchParams`**
+  - **Error:** `params are being enumerated. 'params' should be unwrapped with 'React.use()'`.
+  - **Causa:** El componente de migas de pan (`Breadcrumbs`) estaba usando `useSearchParams` de una manera obsoleta.
+  - **Solución:** Eliminar el uso innecesario de `useSearchParams` y basar la lógica únicamente en `usePathname`.
+
+- **Solicitud 5: Cambiar Color del Scrollbar en Menú Lateral**
+  - **Requisito:** El fondo de la barra de desplazamiento debe coincidir con el color de fondo del menú.
+  - **Solución:** Añadir clases de Tailwind (`scrollbar-thumb-accent`, `scrollbar-track-primary`) para personalizar el estilo del scrollbar.
+
+- **Solicitud 6: Corregir Error de Compilación `tailwind-scrollbar`**
+  - **Error:** `Error: Cannot find module 'tailwind-scrollbar'`.
+  - **Causa:** El plugin `tailwind-scrollbar` estaba requerido en la configuración de Tailwind pero no estaba instalado.
+  - **Solución:** Añadir el paquete `tailwind-scrollbar` a las dependencias en `package.json`.
 
 ---
 
-Fecha: 2023-10-27
-Responsable: user@example.com
-Solicitud:
-- Corregir el error "Runtime Error: Error: Cannot read properties of undefined (reading 'marked')" en el componente del calendario.
-- El error ocurre porque se intenta acceder a `props.modifiers.marked` cuando `props.modifiers` puede ser `undefined`.
+**Día: 2023-10-28**
 
----
+- **Solicitud 1: Implementar Funcionalidad de Cambio de Contraseña**
+  - **Requisitos:**
+    - Validación de campos (obligatorios, longitud, coincidencia).
+    - Lógica de backend con reautenticación de Firebase (`reauthenticateWithCredential`) y actualización (`updatePassword`).
+    - Mensajes de éxito y error claros.
+    - Botón para ver/ocultar contraseña.
 
-Fecha: 2023-10-27
-Responsable: user@example.com
-Solicitud:
-- Arreglar un error visual en el menú lateral en dispositivos móviles.
-- El menú lateral se muestra con un fondo gris en lugar del color azul primario de la marca cuando la pantalla es pequeña.
-- Se debe asegurar que el menú mantenga los colores corporativos (fondo azul, texto blanco) en todas las resoluciones.
+- **Solicitud 2: Corregir Error de Inicialización de Firebase**
+  - **Error:** `FirebaseError: Firebase: No Firebase App '[DEFAULT]' has been created - call initializeApp() first`.
+  - **Causa:** Se llamaba a `getAuth()` sin la inicialización de la app de Firebase.
+  - **Solución:** Importar la instancia `auth` ya inicializada desde `src/lib/firebase.ts`.
 
----
+- **Solicitud 3: Adaptar Cambio de Contraseña sin Firebase Auth**
+  - **Problema:** El sistema no usa Firebase Auth, sino un sistema de roles simulado.
+  - **Solución:** Crear un endpoint en el backend (`/api/change-password`) para manejar el cambio de contraseña sin depender de una sesión de Firebase Auth.
 
-Fecha: 2023-10-27
-Responsable: user@example.com
-Solicitud:
-- Corregir el error de consola "params are being enumerated. `params` should be unwrapped with `React.use()`".
-- El error está relacionado con el uso de `useSearchParams` en el componente de migas de pan (Breadcrumbs).
+- **Solicitud 4: Solucionar Error de "Contraseña Actual Incorrecta"**
+  - **Problema:** La lógica de verificación de la contraseña en el backend fallaba.
+  - **Solución:** Mejorar la lógica del backend para comparar la contraseña actual de forma correcta, considerando que podía no estar encriptada.
 
----
+- **Solicitud 5: Asegurar Cifrado de Contraseñas en el Registro**
+  - **Problema:** Las contraseñas de nuevos usuarios no se cifraban (`hasheaban`) al registrarse.
+  - **Solución:** Crear un endpoint (`/api/register-user`) que se encargue de cifrar la contraseña con `bcrypt` antes de guardarla en la base de datos.
 
-Fecha: 2023-10-27
-Responsable: user@example.com
-Solicitud:
-- Cambiar el color de la barra de desplazamiento (scrollbar) en el menú lateral.
-- El fondo de la barra de desplazamiento debe coincidir con el color de fondo del propio menú para una apariencia más integrada.
+- **Solicitud 6: Manejar Contraseñas de Usuarios Antiguos**
+  - **Requisito:** El sistema debe ser capaz de manejar tanto contraseñas en texto plano como cifradas.
+  - **Solución:** Implementar una lógica dual en el endpoint de cambio de contraseña que primero intenta comparar con `bcrypt` y, si falla, compara como texto plano. La nueva contraseña siempre se guarda cifrada, migrando así las antiguas.
 
----
-
-Fecha: 2023-10-27
-Responsable: user@example.com
-Solicitud:
-- Corregir el error de compilación "Error: Cannot find module 'tailwind-scrollbar'".
-- El archivo de configuración de Tailwind (`tailwind.config.ts`) requiere un plugin que no está instalado en `package.json`.
-
----
-
-Fecha: 2023-10-28
-Responsable: user@example.com
-Solicitud:
-- Implementar la funcionalidad completa para el formulario de cambio de contraseña en la página de perfil.
-- Requisitos: Validación de campos (obligatorios, longitud), la nueva contraseña y su confirmación deben coincidir, botón para ver/ocultar contraseña.
-- Lógica del backend: Usar reautenticación de Firebase (`reauthenticateWithCredential`) y luego actualizar la contraseña (`updatePassword`).
-- Mostrar mensajes de éxito y error claros para el usuario.
-
----
-
-Fecha: 2023-10-28
-Responsable: user@example.com
-Solicitud:
-- Corregir el error "Runtime Error: FirebaseError: Firebase: No Firebase App '[DEFAULT]' has been created - call initializeApp() first".
-- El error ocurre al llamar `getAuth()` sin la inicialización de la app de Firebase.
-
----
-
-Fecha: 2023-10-28
-Responsable: user@example.com
-Solicitud:
-- Corregir la funcionalidad de cambio de contraseña, ya que el sistema no usa la autenticación de Firebase, sino un sistema de roles simulado.
-- Se debe crear un endpoint en el backend para manejar el cambio de contraseña de forma segura sin depender de una sesión de Firebase Auth.
-
----
-
-Fecha: 2023-10-28
-Responsable: user@example.com
-Solicitud:
-- Solucionar el error "La contraseña actual es incorrecta" al intentar cambiarla.
-- El problema parece estar en la lógica de verificación de la contraseña en el backend.
-
----
-
-Fecha: 2023-10-28
-Responsable: user@example.com
-Solicitud:
-- Asegurarse de que las contraseñas de los nuevos usuarios se cifren (hasheen) correctamente durante el proceso de registro, ya que esto podría estar causando el problema con el cambio de contraseña.
-
----
-
-Fecha: 2023-10-28
-Responsable: user@example.com
-Solicitud:
-- Asegurarse de que las contraseñas de los usuarios ya registrados también se traten correctamente.
-- La solución debe ser capaz de manejar tanto contraseñas en texto plano (de usuarios antiguos) como contraseñas ya cifradas (de usuarios nuevos), migrando las antiguas al formato seguro cuando se cambien.
+- **Solicitud 7: Crear Historial de Prompts**
+  - **Requisito:** Generar un archivo de texto (`prompt_history.txt`) con un historial de las solicitudes, responsable y fecha.
+  - **Solución:** Crear el archivo en la raíz del proyecto.
