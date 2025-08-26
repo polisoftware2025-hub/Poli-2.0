@@ -43,18 +43,17 @@ export async function POST(req: Request) {
 
     let isMatch = false;
 
-    // Intentar comparar con bcrypt si hay una contraseña almacenada.
-    if (storedPassword) {
+    // Intentar comparar con bcrypt si hay una contraseña almacenada y es un hash válido.
+    if (storedPassword && storedPassword.startsWith('$2b$')) {
       try {
         isMatch = await bcrypt.compare(currentPassword, storedPassword);
       } catch (error) {
-        // Si bcrypt falla (ej. el hash es inválido o no es un hash), lo ignoramos y procedemos a la comparación de texto plano.
-        console.warn("Bcrypt compare falló, probablemente no es un hash válido. Se intentará comparación de texto plano.", error);
+        console.warn("Bcrypt compare falló. Se intentará comparación de texto plano.", error);
         isMatch = false;
       }
     }
 
-    // Si la comparación con bcrypt falla o no hay contraseña, intentar como texto plano.
+    // Si la comparación con bcrypt falla o no era un hash, intentar como texto plano.
     // Esto es para la simulación donde la contraseña inicial no está encriptada.
     if (!isMatch && currentPassword === storedPassword) {
       isMatch = true;
