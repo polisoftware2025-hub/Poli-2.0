@@ -44,9 +44,9 @@ async function emailExists(email: string): Promise<boolean> {
     return !querySnapshot.empty;
 }
 
-async function generateUniqueInstitutionalEmail(firstName: string, lastName: string): Promise<string> {
+async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2: string): Promise<string> {
     const domain = "@pi.edu.co";
-    const baseEmail = `${firstName.toLowerCase().split(' ')[0]}.${lastName.toLowerCase().split(' ')[0]}`;
+    const baseEmail = `${firstName.toLowerCase().split(' ')[0]}.${lastName1.toLowerCase().split(' ')[0]}.${lastName2.toLowerCase().split(' ')[0]}`;
     let finalEmail = `${baseEmail}${domain}`;
     let counter = 1;
 
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
         const newUserDocRef = doc(usuariosCollectionRef);
 
-        const correoInstitucional = await generateUniqueInstitutionalEmail(data.firstName, data.lastName);
+        const correoInstitucional = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoApellido);
 
         const usuarioData = {
           nombre1: data.firstName,
