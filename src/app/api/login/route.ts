@@ -40,8 +40,9 @@ export async function POST(req: Request) {
 
     // No devolver la contraseña en la respuesta
     const { contrasena, ...user } = userData;
+    const userId = userDoc.id;
 
-    return NextResponse.json({ message: "Inicio de sesión exitoso.", user }, { status: 200 });
+    return NextResponse.json({ message: "Inicio de sesión exitoso.", user, userId }, { status: 200 });
 
   } catch (error) {
     console.error("Error en /api/login:", error);

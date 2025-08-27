@@ -54,24 +54,26 @@ export default function LoginPage() {
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
 
-    const testUsers = {
-      "admin@example.com": "admin",
-      "gestor@example.com": "gestor",
-      "docente@example.com": "docente",
-      "estudiante@example.com": "estudiante",
+    const testUsers: { [key: string]: { role: string; id: string } } = {
+        "admin@example.com": { role: "admin", id: "admin01" },
+        "gestor@example.com": { role: "gestor", id: "gestor01" },
+        "docente@example.com": { role: "docente", id: "docente01" },
+        "estudiante@example.com": { role: "estudiante", id: "est001" },
     };
-
+    
     const userEmail = values.email;
-    const userRole = testUsers[userEmail as keyof typeof testUsers];
+    const testUser = testUsers[userEmail];
 
-    if (userRole) {
+
+    if (testUser) {
       // Simulated login
       toast({
         title: "Inicio de sesión de prueba exitoso",
-        description: `Has ingresado como ${userRole}.`,
+        description: `Has ingresado como ${testUser.role}.`,
       });
       localStorage.setItem('userEmail', userEmail);
-      localStorage.setItem('userRole', userRole);
+      localStorage.setItem('userRole', testUser.role);
+      localStorage.setItem('userId', testUser.id);
       router.push('/dashboard');
       setIsLoading(false);
       return;
@@ -94,6 +96,7 @@ export default function LoginPage() {
         });
         localStorage.setItem('userEmail', data.user.correoInstitucional);
         localStorage.setItem('userRole', data.user.rol.id);
+        localStorage.setItem('userId', data.userId);
         router.push('/dashboard');
       } else {
         toast({

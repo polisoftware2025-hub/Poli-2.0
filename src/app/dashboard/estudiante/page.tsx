@@ -5,39 +5,23 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, BookOpen, X, GraduationCap, Calendar as CalendarIcon, User, FileText, CheckSquare } from "lucide-react";
+import { ArrowRight, X, GraduationCap, Calendar as CalendarIcon, User, CheckSquare } from "lucide-react";
 import Image from 'next/image';
 import Link from "next/link";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const initialCourses = [
-  {
-    title: "PRUEBAS Y MANTENIMIENTO DE ...",
-    progress: 7,
-    image: "https://placehold.co/600x400/002147/FFFFFF?text=P",
-    imageHint: "abstract pattern",
-  },
-  {
-    title: "LENGUAJES DE PROGRAMACION ...",
-    progress: 10,
-    image: "https://placehold.co/600x400/00346e/FFFFFF?text=L",
-    imageHint: "abstract waves",
-  },
-  {
-    title: "INTELIGENCIA ARTIFICIAL",
-    progress: 0,
-    image: "https://placehold.co/600x400/004aad/FFFFFF?text=I",
-    imageHint: "abstract circles",
-  },
-  {
-    title: "CONTABILIDAD BASICA",
-    progress: 40,
-    image: "https://placehold.co/600x400/1b5fa5/FFFFFF?text=C",
-    imageHint: "abstract geometric",
-  },
-];
+interface Course {
+    id: string;
+    title: string;
+    progress: number;
+    image: string;
+    imageHint: string;
+}
 
 const todoItems = [
     { id: "task1", label: "Cuestionario de Cálculo", dueDate: "2024-08-15", course: "Cálculo Diferencial", completed: false },
@@ -54,17 +38,30 @@ const calendarEvents = [
     { date: new Date("2024-09-02"), title: "Presentación Final", course: "Lógica de Programación" },
 ];
 
+const placeholderImages = [
+    { image: "https://placehold.co/600x400/002147/FFFFFF?text=P", imageHint: "abstract pattern" },
+    { image: "https://placehold.co/600x400/00346e/FFFFFF?text=L", imageHint: "abstract waves" },
+    { image: "https://placehold.co/600x400/004aad/FFFFFF?text=I", imageHint: "abstract circles" },
+    { image: "https://placehold.co/600x400/1b5fa5/FFFFFF?text=C", imageHint: "abstract geometric" },
+];
+
 export default function StudentDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
-    const userRole = localStorage.getItem('userRole');
-    if (storedEmail && userRole === 'estudiante') {
+    const storedRole = localStorage.getItem('userRole');
+    const storedUserId = localStorage.getItem('userId');
+
+    if (storedEmail && storedRole === 'estudiante' && storedUserId) {
       setUserEmail(storedEmail);
+      setUserId(storedUserId);
     } else if (storedEmail) {
        router.push('/dashboard');
     }
@@ -73,6 +70,47 @@ export default function StudentDashboardPage() {
     }
   }, [router]);
   
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchCourses = async () => {
+        setIsLoadingCourses(true);
+        try {
+            const gruposRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+            const q = query(gruposRef, where("estudiantes", "array-contains", { id: userId, nombre: "Test Student" }));
+            
+            const studentQuery = query(gruposRef, where('estudiantes', 'array-contains-any', [{id: userId}]));
+
+            const querySnapshot = await getDocs(gruposRef);
+            
+            const studentGroups: DocumentData[] = [];
+            querySnapshot.forEach(doc => {
+                const group = doc.data();
+                if (group.estudiantes && group.estudiantes.some((est: any) => est.id === userId)) {
+                    studentGroups.push({ id: doc.id, ...group });
+                }
+            });
+
+
+            const fetchedCourses = studentGroups.map((group, index) => ({
+                id: group.id,
+                title: group.materia.nombre.toUpperCase(),
+                progress: Math.floor(Math.random() * 100), // Placeholder progress
+                ...placeholderImages[index % placeholderImages.length]
+            }));
+
+            setCourses(fetchedCourses);
+        } catch (error) {
+            console.error("Error fetching student courses: ", error);
+        } finally {
+            setIsLoadingCourses(false);
+        }
+    };
+
+    fetchCourses();
+  }, [userId]);
+
+
   if (!userEmail) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-100">
@@ -140,31 +178,41 @@ export default function StudentDashboardPage() {
                     </Link>
                 </Button>
             </div>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {initialCourses.map((course, index) => (
-                <Card key={index} className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                <CardContent className="p-0">
-                    <div className="relative h-40 w-full">
-                        <Image
-                        src={course.image}
-                        alt={`Imagen de ${course.title}`}
-                        fill
-                        style={{objectFit: 'cover'}}
-                        className="group-hover:scale-105 transition-transform duration-500"
-                        data-ai-hint={course.imageHint}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                        <div className="absolute bottom-2 left-4 text-white">
-                            <span className="text-sm font-semibold">{course.progress}% completado</span>
-                        </div>
-                    </div>
-                    <div className="p-4">
-                        <h3 className="font-semibold truncate" title={course.title}>{course.title}</h3>
-                    </div>
-                </CardContent>
-                </Card>
-            ))}
-            </div>
+             {isLoadingCourses ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    {[...Array(4)].map((_, index) => (
+                        <Card key={index}><CardContent className="p-4"><Skeleton className="h-48 w-full" /></CardContent></Card>
+                    ))}
+                </div>
+            ) : courses.length > 0 ? (
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    {courses.map((course) => (
+                        <Card key={course.id} className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                        <CardContent className="p-0">
+                            <div className="relative h-40 w-full">
+                                <Image
+                                src={course.image}
+                                alt={`Imagen de ${course.title}`}
+                                fill
+                                style={{objectFit: 'cover'}}
+                                className="group-hover:scale-105 transition-transform duration-500"
+                                data-ai-hint={course.imageHint}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                <div className="absolute bottom-2 left-4 text-white">
+                                    <span className="text-sm font-semibold">{course.progress}% completado</span>
+                                </div>
+                            </div>
+                            <div className="p-4">
+                                <h3 className="font-semibold truncate" title={course.title}>{course.title}</h3>
+                            </div>
+                        </CardContent>
+                        </Card>
+                    ))}
+                </div>
+             ) : (
+                <Card><CardContent className="p-6 text-center text-muted-foreground">No estás inscrito en ninguna materia actualmente.</CardContent></Card>
+             )}
         </div>
         
         <div className="space-y-4">

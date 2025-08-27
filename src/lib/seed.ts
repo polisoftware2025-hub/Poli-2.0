@@ -107,7 +107,7 @@ const gruposData = [
     {
         codigoGrupo: "C2-MI-001",
         materia: { id: "c2-mi", nombre: "Marketing Internacional" },
-        docente: { id: "docente03", nombre: "Laura Mendoza", usuarioId: "user03", email: "docente@example.com" },
+        docente: { id: "docente01", nombre: "Ana Pérez", usuarioId: "user01", email: "docente@example.com" },
         modalidad: "Virtual",
         franjaHoraria: "Sabatina",
         aula: { sede: "Sede 80", salon: "Teams-Marketing" },
