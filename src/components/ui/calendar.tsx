@@ -14,15 +14,14 @@ export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
     markedDays?: Date[];
 };
 
-function DayContent({ date, ...props }: DayProps) {
-    const isMarked = (props.displayMonth.getMonth() === date.getMonth()) && 
-                     (props.selected || (props.modifiers?.marked && !props.modifiers?.selected));
+function DayContent({ date, ...props }: DayProps & { modifiers: any }) {
+    const isMarked = props.modifiers?.marked && !props.modifiers?.selected;
     
     return (
         <div className="relative h-full w-full flex items-center justify-center">
             <span>{format(date, "d")}</span>
             {isMarked && (
-                <div className="absolute bottom-1 h-1 w-1 rounded-full bg-red-500" />
+                <div className="absolute bottom-1 h-1 w-1 rounded-full bg-primary" />
             )}
         </div>
     );
@@ -136,7 +135,6 @@ function Calendar({
 
   const modifiersClassNames = {
     ...props.modifiersClassNames,
-    marked: 'font-bold',
   }
 
   return (
@@ -169,7 +167,7 @@ function Calendar({
           modifiers={modifiers}
           modifiersClassNames={modifiersClassNames}
           components={{
-            DayContent: DayContent
+            DayContent: (dayProps) => <DayContent {...dayProps} modifiers={dayProps.modifiers} />,
           }}
           classNames={{
             months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
@@ -204,5 +202,3 @@ function Calendar({
 Calendar.displayName = "Calendar"
 
 export { Calendar }
-
-    

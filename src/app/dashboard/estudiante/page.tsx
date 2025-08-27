@@ -15,38 +15,26 @@ const initialCourses = [
   {
     title: "PRUEBAS Y MANTENIMIENTO DE ...",
     progress: 7,
-    image: "https://placehold.co/600x400.png",
+    image: "https://placehold.co/600x400/002147/FFFFFF?text=P",
     imageHint: "abstract pattern",
   },
   {
     title: "LENGUAJES DE PROGRAMACION ...",
     progress: 10,
-    image: "https://placehold.co/600x400.png",
+    image: "https://placehold.co/600x400/00346e/FFFFFF?text=L",
     imageHint: "abstract waves",
   },
   {
     title: "INTELIGENCIA ARTIFICIAL",
     progress: 0,
-    image: "https://placehold.co/600x400.png",
+    image: "https://placehold.co/600x400/004aad/FFFFFF?text=I",
     imageHint: "abstract circles",
   },
   {
     title: "CONTABILIDAD BASICA",
     progress: 40,
-    image: "https://placehold.co/600x400.png",
+    image: "https://placehold.co/600x400/1b5fa5/FFFFFF?text=C",
     imageHint: "abstract geometric",
-  },
-  {
-    title: "CALCULO DIFERENCIAL",
-    progress: 85,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "mathematics equations",
-  },
-  {
-    title: "BASE DE DATOS",
-    progress: 25,
-    image: "https://placehold.co/600x400.png",
-    imageHint: "database servers",
   },
 ];
 
@@ -187,7 +175,7 @@ export default function StudentDashboardPage() {
                 <CardContent className="space-y-4 p-6">
                     {todoItems.map((item) => (
                         <div key={item.id} className="flex items-start gap-4">
-                            <Checkbox id={item.id} checked={item.completed} className="mt-1"/>
+                            <Checkbox id={item.id} defaultChecked={item.completed} className="mt-1"/>
                             <div className="grid gap-1.5">
                                 <label htmlFor={item.id} className={`font-medium ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
                                     {item.label}
@@ -252,5 +240,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
-    

@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -111,7 +110,7 @@ export default function CoursesPage() {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className={`grid gap-6 ${view === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
             {coursesData.map((course, index) => (
                 <Card key={index} className="group flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5">
                    <div className="relative h-48 w-full">
