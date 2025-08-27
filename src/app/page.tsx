@@ -21,12 +21,15 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import { useToast } from "@/hooks/use-toast";
 
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const { toast } = useToast();
 
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
@@ -133,6 +136,30 @@ export default function HomePage() {
   const scrollToSlide = (index: number) => {
     carouselApi?.scrollTo(index);
   };
+  
+  const handleSeedDatabase = async () => {
+    setIsSeeding(true);
+    try {
+      const response = await fetch('/api/seed', { method: 'POST' });
+      const data = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Éxito",
+          description: data.message,
+        });
+      } else {
+        throw new Error(data.message || 'Error al poblar la base de datos');
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
 
   return (
@@ -200,6 +227,15 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="flex-1">
+         {/* Seed Button Section */}
+        <section className="bg-yellow-100 py-4">
+            <div className="container mx-auto px-6 text-center">
+                <Button onClick={handleSeedDatabase} disabled={isSeeding}>
+                    {isSeeding ? 'Poblando...' : 'Poblar Base de Datos (Temporal)'}
+                </Button>
+                <p className="text-xs text-yellow-800 mt-2">Este botón es para desarrollo y carga los datos iniciales.</p>
+            </div>
+        </section>
         {/* Hero Section */}
         <section
           id="inicio"
