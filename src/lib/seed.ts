@@ -58,8 +58,8 @@ const gruposData = [
             { id: "est002", nombre: "Maria Lopez" },
         ],
         horario: [
-            { dia: "Lunes", hora: "6:00 PM - 8:00 PM" },
-            { dia: "Miércoles", hora: "6:00 PM - 8:00 PM" },
+            { dia: "Lunes", hora: "18:00 - 20:00" },
+            { dia: "Miércoles", hora: "18:00 - 20:00" },
         ]
     },
     {
@@ -73,8 +73,8 @@ const gruposData = [
              { id: "est001", nombre: "Juan Perez" },
         ],
         horario: [
-            { dia: "Martes", hora: "10:00 AM - 12:00 PM" },
-            { dia: "Jueves", hora: "10:00 AM - 12:00 PM" },
+            { dia: "Martes", hora: "10:00 - 12:00" },
+            { dia: "Jueves", hora: "10:00 - 12:00" },
         ]
     },
     {
@@ -88,7 +88,7 @@ const gruposData = [
             { id: "est002", nombre: "Maria Lopez" },
         ],
         horario: [
-            { dia: "Sábado", hora: "8:00 AM - 12:00 PM" },
+            { dia: "Sábado", hora: "08:00 - 12:00" },
         ]
     }
 ];

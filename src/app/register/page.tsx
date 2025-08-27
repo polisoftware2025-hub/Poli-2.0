@@ -571,7 +571,7 @@ const Step2 = () => {
 interface Carrera {
     id: string;
     nombre: string;
-    ciclos?: { numero: number, materias: any[] }[];
+    ciclos?: { numero: number; materias: any[] }[];
 }
 
 const Step3 = () => {
@@ -821,6 +821,7 @@ const Step6 = () => (
 
 
     
+
 
 
 
