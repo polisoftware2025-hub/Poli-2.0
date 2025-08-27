@@ -157,7 +157,7 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <Label htmlFor="email">Correo Electrónico</Label>
-                    <Input id="email" type="email" defaultValue={userEmail || ''} disabled />
+                    <Input id="email" type="email" value={userEmail || ''} disabled />
                   </div>
                   <div>
                     <Label htmlFor="phone">Teléfono</Label>
@@ -177,14 +177,14 @@ export default function ProfilePage() {
                   </div>
                    <div>
                     <Label htmlFor="idNumber">Número de Identificación</Label>
-                    <Input id="idNumber" defaultValue="1234567890" />
+                    <Input id="idNumber" defaultValue="1234567890" disabled />
                   </div>
                   <div className="md:col-span-2">
                     <Label htmlFor="address">Dirección</Label>
                     <Input id="address" defaultValue="Calle Falsa 123, Springfield" />
                   </div>
                 </div>
-                 <div className="flex justify-end gap-2">
+                 <div className="flex justify-end gap-2 pt-4">
                     <Button variant="outline">Cancelar</Button>
                     <Button>Guardar Cambios</Button>
                 </div>
