@@ -33,7 +33,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm, FormProvider, useFormContext, useWatch } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -52,6 +52,8 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
 
 
 const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
@@ -213,7 +215,10 @@ export default function RegisterPage() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(result.data),
+          body: JSON.stringify({
+            ...result.data,
+            birthDate: format(result.data.birthDate, 'yyyy-MM-dd')
+          }),
         });
 
         const responseData = await response.json();
@@ -224,7 +229,7 @@ export default function RegisterPage() {
             description: "Tu cuenta ha sido creada. Serás redirigido.",
           });
 
-          localStorage.setItem('userEmail', result.data.correoPersonal);
+          localStorage.setItem('userEmail', responseData.correoInstitucional);
           localStorage.setItem('userRole', 'estudiante');
           router.push("/dashboard");
         } else {
@@ -559,8 +564,36 @@ const Step2 = () => {
   );
 };
 
+interface Carrera {
+    id: string;
+    nombre: string;
+}
+
 const Step3 = () => {
-  const { control } = useFormContext();
+    const { control } = useFormContext();
+    const [carreras, setCarreras] = useState<Carrera[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchCarreras = async () => {
+            setIsLoading(true);
+            try {
+                const carrerasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+                const querySnapshot = await getDocs(carrerasRef);
+                const fetchedCarreras = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    nombre: doc.data().nombre,
+                }));
+                setCarreras(fetchedCarreras);
+            } catch (error) {
+                console.error("Error fetching carreras:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchCarreras();
+    }, []);
 
   const getAvailablePeriods = () => {
     const today = new Date();
@@ -571,17 +604,13 @@ const Step3 = () => {
     let year = currentYear;
     let semester = currentMonth < 6 ? 1 : 2; // 1st semester: Jan-Jun, 2nd: Jul-Dec
 
-    // Rule: if we are past the first two months of the semester, don't show it.
-    // Semester 1 (Jan-Jun, months 0-5). Hide if current month is March (2) or later.
-    // Semester 2 (Jul-Dec, months 6-11). Hide if current month is September (8) or later.
     if (semester === 1 && currentMonth >= 2) {
-      semester = 2; // Move to next semester
+      semester = 2; 
     } else if (semester === 2 && currentMonth >= 8) {
-      semester = 1; // Move to next year's first semester
+      semester = 1;
       year += 1;
     }
     
-    // Generate 3 future periods
     for (let i = 0; i < 3; i++) {
         const periodValue = `${year}-${semester}`;
         const periodLabel = `${year} - ${semester}`;
@@ -608,19 +637,16 @@ const Step3 = () => {
         render={({ field }) => (
           <FormItem>
             <FormLabel>Carrera</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una carrera" />
+                  <SelectValue placeholder={isLoading ? "Cargando carreras..." : "Selecciona una carrera"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                <SelectItem value="adm">Administración de Empresas</SelectItem>
-                <SelectItem value="cont">Contaduría Pública</SelectItem>
-                <SelectItem value="mkt">Mercadeo y Publicidad</SelectItem>
-                <SelectItem value="sis">Ingeniería de Sistemas</SelectItem>
-                <SelectItem value="gastro">Gastronomía</SelectItem>
-                <SelectItem value="tur">Hotelería y Turismo</SelectItem>
+                {carreras.map(carrera => (
+                    <SelectItem key={carrera.id} value={carrera.id}>{carrera.nombre}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <FormMessage />
@@ -775,4 +801,5 @@ const Step6 = () => (
 
 
     
+
 

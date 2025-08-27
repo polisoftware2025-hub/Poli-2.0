@@ -107,6 +107,7 @@ export async function POST(req: Request) {
         
         const estudianteData = {
           usuarioId: newUserDocRef.id,
+          carreraId: data.program, // Save Carrera ID
           estado: 'activo',
           fechaCreacion: serverTimestamp(),
         };
