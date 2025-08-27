@@ -30,6 +30,7 @@ const Breadcrumbs = () => {
       'noticias': 'Noticias y Anuncios',
       'empleo': 'Bolsa de Empleo',
       'pagos': 'Mis Pagos',
+      'evaluacion-docente': 'Evaluación Docente'
     };
     return names[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
   };
@@ -97,3 +98,5 @@ export const PageHeader = ({ title, description, icon }: PageHeaderProps) => {
     </Card>
   );
 };
+
+    
