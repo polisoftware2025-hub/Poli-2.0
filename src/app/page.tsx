@@ -28,7 +28,8 @@ export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isSeeding, setIsSeeding] = useState(false);
+  const [isSeedingCarreras, setIsSeedingCarreras] = useState(false);
+  const [isSeedingGrupos, setIsSeedingGrupos] = useState(false);
   const { toast } = useToast();
 
   const navLinks = [
@@ -137,10 +138,15 @@ export default function HomePage() {
     carouselApi?.scrollTo(index);
   };
   
-  const handleSeedDatabase = async () => {
-    setIsSeeding(true);
+  const handleSeed = async (type: 'carrera' | 'grupos') => {
+    if (type === 'carrera') {
+      setIsSeedingCarreras(true);
+    } else {
+      setIsSeedingGrupos(true);
+    }
+    
     try {
-      const response = await fetch('/api/seed', { method: 'POST' });
+      const response = await fetch(`/api/seed/${type}`, { method: 'POST' });
       const data = await response.json();
       if (response.ok) {
         toast({
@@ -157,7 +163,11 @@ export default function HomePage() {
         description: error.message,
       });
     } finally {
-      setIsSeeding(false);
+       if (type === 'carrera') {
+        setIsSeedingCarreras(false);
+      } else {
+        setIsSeedingGrupos(false);
+      }
     }
   };
 
@@ -230,10 +240,15 @@ export default function HomePage() {
          {/* Seed Button Section */}
         <section className="bg-yellow-100 py-4">
             <div className="container mx-auto px-6 text-center">
-                <Button onClick={handleSeedDatabase} disabled={isSeeding}>
-                    {isSeeding ? 'Poblando...' : 'Poblar Base de Datos (Temporal)'}
-                </Button>
-                <p className="text-xs text-yellow-800 mt-2">Este botón es para desarrollo y carga los datos iniciales.</p>
+                 <div className="flex justify-center gap-4">
+                    <Button onClick={() => handleSeed('carrera')} disabled={isSeedingCarreras}>
+                        {isSeedingCarreras ? 'Poblando Carreras...' : 'Poblar Carreras'}
+                    </Button>
+                    <Button onClick={() => handleSeed('grupos')} disabled={isSeedingGrupos}>
+                        {isSeedingGrupos ? 'Poblando Grupos...' : 'Poblar Grupos'}
+                    </Button>
+                </div>
+                <p className="text-xs text-yellow-800 mt-2">Estos botones son para desarrollo y cargan los datos iniciales.</p>
             </div>
         </section>
         {/* Hero Section */}
@@ -374,3 +389,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
