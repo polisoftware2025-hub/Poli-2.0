@@ -38,6 +38,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -48,26 +49,40 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    // NOTE: This is a mock login that simulates roles based on email.
-    console.log("Login values:", values);
-    
-    let role = 'estudiante'; // Default role
-    if (values.email.startsWith('admin@')) {
-      role = 'admin';
-    } else if (values.email.startsWith('gestor@')) {
-      role = 'gestor';
-    } else if (values.email.startsWith('docente@')) {
-      role = 'docente';
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: "Inicio de sesión exitoso",
+          description: `Bienvenido de nuevo, ${data.user.nombre1}.`,
+        });
+        localStorage.setItem('userEmail', data.user.correoInstitucional);
+        localStorage.setItem('userRole', data.user.rol.id);
+        router.push('/dashboard');
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error de inicio de sesión",
+          description: data.message || "Credenciales incorrectas.",
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo conectar con el servidor. Inténtalo de nuevo más tarde.",
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    localStorage.setItem('userEmail', values.email);
-    localStorage.setItem('userRole', role);
-
-    toast({
-      title: "Inicio de sesión exitoso",
-      description: `Bienvenido de nuevo. Rol: ${role}`,
-    });
-    router.push("/dashboard");
   };
 
   return (
@@ -90,7 +105,7 @@ export default function LoginPage() {
             Iniciar Sesión
           </CardTitle>
           <CardDescription className="font-poppins text-gray-600">
-            Bienvenido de nuevo.
+            Bienvenido de nuevo. Usa tu correo institucional.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -101,11 +116,11 @@ export default function LoginPage() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Correo Electrónico</FormLabel>
+                    <FormLabel>Correo Institucional</FormLabel>
                     <FormControl>
                       <Input
                         type="email"
-                        placeholder="tu.correo@example.com"
+                        placeholder="tu.correo@pi.edu.co"
                         className="rounded-lg border-gray-300 py-6 focus:border-[#004aad] focus:ring-[#004aad]"
                         {...field}
                       />
@@ -158,21 +173,13 @@ export default function LoginPage() {
               />
               <Button
                 type="submit"
+                disabled={isLoading}
                 className="w-full rounded-full bg-[#004aad] py-6 text-base font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
               >
-                Ingresar
+                {isLoading ? "Ingresando..." : "Ingresar"}
               </Button>
             </form>
           </Form>
-          <div className="mt-6 rounded-lg bg-blue-50 p-4 text-center text-xs text-blue-800">
-            <p className="font-bold">Utiliza estos correos para probar los diferentes roles:</p>
-            <ul className="mt-2 list-inside list-disc text-left">
-              <li><span className="font-semibold">Administrador:</span> admin@example.com</li>
-              <li><span className="font-semibold">Gestor:</span> gestor@example.com</li>
-              <li><span className="font-semibold">Docente:</span> docente@example.com</li>
-              <li><span className="font-semibold">Estudiante:</span> (cualquier otro correo)</li>
-            </ul>
-          </div>
         </CardContent>
       </Card>
     </div>
