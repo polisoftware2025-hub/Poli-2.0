@@ -1,6 +1,6 @@
 
 import { db } from './firebase'; 
-import { collection, addDoc, getDocs, query, where, doc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 
 const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
@@ -76,13 +76,13 @@ const gruposData = [
     {
         codigoGrupo: "C1-MB-001",
         materia: { id: "c1-mb", nombre: "Matemática Básica" },
-        docente: { id: "docente01", nombre: "Ana Pérez", usuarioId: "user01" },
+        docente: { id: "docente01", nombre: "Ana Pérez", usuarioId: "user01", email: "docente@example.com" },
         modalidad: "Virtual",
         franjaHoraria: "Nocturna",
-        aula: { sede: "Virtual", salon: "Zoom-101" },
+        aula: { sede: "Sede Norte", salon: "Zoom-101" },
         estudiantes: [
-            { estudianteId: "est001", usuarioId: "userEst001", nombre: "Juan Perez" },
-            { estudianteId: "est002", usuarioId: "userEst002", nombre: "Maria Lopez" },
+            { id: "est001", nombre: "Juan Perez" },
+            { id: "est002", nombre: "Maria Lopez" },
         ],
         horario: [
             { dia: "Lunes", hora: "6:00 PM - 8:00 PM" },
@@ -92,12 +92,12 @@ const gruposData = [
     {
         codigoGrupo: "C1-CA-002",
         materia: { id: "c1-ca", nombre: "Clasificación Arancelaria" },
-        docente: { id: "docente02", nombre: "Carlos Rivas", usuarioId: "user02" },
+        docente: { id: "docente02", nombre: "Carlos Rivas", usuarioId: "user02", email: "carlos.rivas@example.com" },
         modalidad: "Presencial",
         franjaHoraria: "Diurna",
         aula: { sede: "Sede 73", salon: "302" },
         estudiantes: [
-             { estudianteId: "est001", usuarioId: "userEst001", nombre: "Juan Perez" },
+             { id: "est001", nombre: "Juan Perez" },
         ],
         horario: [
             { dia: "Martes", hora: "10:00 AM - 12:00 PM" },
@@ -107,12 +107,12 @@ const gruposData = [
     {
         codigoGrupo: "C2-MI-001",
         materia: { id: "c2-mi", nombre: "Marketing Internacional" },
-        docente: { id: "docente03", nombre: "Laura Mendoza", usuarioId: "user03" },
+        docente: { id: "docente03", nombre: "Laura Mendoza", usuarioId: "user03", email: "docente@example.com" },
         modalidad: "Virtual",
         franjaHoraria: "Sabatina",
         aula: { sede: "Sede 80", salon: "Teams-Marketing" },
         estudiantes: [
-            { estudianteId: "est002", usuarioId: "userEst002", nombre: "Maria Lopez" },
+            { id: "est002", nombre: "Maria Lopez" },
         ],
         horario: [
             { dia: "Sábado", hora: "8:00 AM - 12:00 PM" },
@@ -169,5 +169,3 @@ export async function seedGrupos() {
         return { success: false, message: errorMessage };
     }
 }
-    
-    

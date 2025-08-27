@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ClipboardCheck, UserCheck, BookCopy } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function TeacherDashboardPage() {
   const router = useRouter();
@@ -50,7 +51,9 @@ export default function TeacherDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">Ver y administrar los grupos asignados.</p>
-              <Button className="mt-4 w-full">Ver Grupos</Button>
+              <Button className="mt-4 w-full" asChild>
+                <Link href="/dashboard/docente/grupos">Ver Grupos</Link>
+              </Button>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
@@ -60,7 +63,9 @@ export default function TeacherDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">Calificar actividades y registrar notas.</p>
-               <Button className="mt-4 w-full">Registrar Notas</Button>
+               <Button className="mt-4 w-full" asChild>
+                <Link href="/dashboard/docente/notas">Registrar Notas</Link>
+              </Button>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
@@ -70,7 +75,9 @@ export default function TeacherDashboardPage() {
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground">Pasar lista y registrar asistencias.</p>
-               <Button className="mt-4 w-full">Tomar Asistencia</Button>
+               <Button className="mt-4 w-full" asChild>
+                <Link href="/dashboard/docente/asistencia">Tomar Asistencia</Link>
+              </Button>
             </CardContent>
           </Card>
         </CardContent>
