@@ -15,7 +15,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, DocumentData } from "firebase/firestore";
 
 interface Grade {
   id: string;
@@ -26,14 +26,6 @@ interface Grade {
   desglose: { actividad: string; nota: number; porcentaje: number }[];
 }
 
-const placeholderGrades: Grade[] = [
-    { id: '1', materia: 'Cálculo Diferencial', codigoGrupo: 'CD-001', notaFinal: 4.5, creditos: 3, desglose: [{ actividad: 'Parcial 1', nota: 4.0, porcentaje: 30 }, { actividad: 'Parcial 2', nota: 5.0, porcentaje: 30 }, { actividad: 'Trabajo Final', nota: 4.5, porcentaje: 40 }] },
-    { id: '2', materia: 'Inteligencia Artificial', codigoGrupo: 'IA-002', notaFinal: 4.8, creditos: 4, desglose: [{ actividad: 'Proyecto 1', nota: 4.7, porcentaje: 50 }, { actividad: 'Proyecto 2', nota: 4.9, porcentaje: 50 }] },
-    { id: '3', materia: 'Base de Datos', codigoGrupo: 'BD-001', notaFinal: 3.2, creditos: 3, desglose: [{ actividad: 'Taller 1', nota: 3.0, porcentaje: 25 }, { actividad: 'Taller 2', nota: 3.5, porcentaje: 25 }, { actividad: 'Examen Final', nota: 3.1, porcentaje: 50 }] },
-    { id: '4', materia: 'Pruebas y Mantenimiento', codigoGrupo: 'PM-003', notaFinal: 2.8, creditos: 2, desglose: [{ actividad: 'Exposición', nota: 2.5, porcentaje: 40 }, { actividad: 'Trabajo Escrito', nota: 3.0, porcentaje: 60 }] },
-];
-
-
 export default function GradesPage() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,17 +34,69 @@ export default function GradesPage() {
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     setUserId(storedUserId);
-
-    // Simular carga de datos
-    setTimeout(() => {
-        setGrades(placeholderGrades); // Usamos datos de ejemplo por ahora
-        setIsLoading(false);
-    }, 1500);
-
   }, []);
 
-  const averageGrade = (grades.reduce((acc, grade) => acc + grade.notaFinal, 0) / grades.length).toFixed(2);
-  const totalCredits = grades.reduce((acc, grade) => acc + grade.creditos, 0);
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchGrades = async () => {
+      setIsLoading(true);
+      try {
+        const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
+        const q = query(notesRef, where("estudianteId", "==", userId));
+        const querySnapshot = await getDocs(q);
+
+        const fetchedGrades: Grade[] = [];
+
+        for (const noteDoc of querySnapshot.docs) {
+          const noteData = noteDoc.data();
+          
+          if (noteData.grupoId) {
+            const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", noteData.grupoId);
+            const groupSnap = await getDoc(groupRef);
+
+            if (groupSnap.exists()) {
+              const groupData = groupSnap.data();
+              const materiaId = groupData.materia.id;
+              
+              // Asumiendo que podemos obtener los créditos de alguna parte.
+              // Por ahora, usaremos un valor por defecto o buscaremos en carreras.
+              let creditos = 3; // Valor por defecto
+
+              fetchedGrades.push({
+                id: noteDoc.id,
+                materia: groupData.materia.nombre,
+                codigoGrupo: groupData.codigoGrupo,
+                notaFinal: noteData.nota,
+                creditos: creditos,
+                // El desglose sigue siendo un placeholder
+                desglose: [
+                  { actividad: "Nota registrada por docente", nota: noteData.nota, porcentaje: 100 }
+                ],
+              });
+            }
+          }
+        }
+        
+        setGrades(fetchedGrades);
+      } catch (error) {
+          console.error("Error fetching grades: ", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchGrades();
+  }, [userId]);
+  
+  const totalCredits = grades
+    .filter(g => g.notaFinal >= 3.0)
+    .reduce((acc, grade) => acc + grade.creditos, 0);
+  
+  const weightedSum = grades.reduce((acc, grade) => acc + (grade.notaFinal * grade.creditos), 0);
+  const totalPossibleCredits = grades.reduce((acc, grade) => acc + grade.creditos, 0);
+  const averageGrade = totalPossibleCredits > 0 ? (weightedSum / totalPossibleCredits).toFixed(2) : "0.00";
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -192,3 +236,5 @@ export default function GradesPage() {
     </div>
   );
 }
+
+    
