@@ -24,8 +24,9 @@ const registerUserSchema = z.object({
     city: cityCountryValidation,
     correoPersonal: z.string().email(),
     program: z.string(),
-    periodoIngreso: z.string(),
-    jornada: z.string().optional(),
+    ciclo: z.string(),
+    grupo: z.string(),
+    jornada: z.string(),
     password: z.string().min(8),
     metodoPago: z.string(),
 });
@@ -107,7 +108,10 @@ export async function POST(req: Request) {
         
         const estudianteData = {
           usuarioId: newUserDocRef.id,
-          carreraId: data.program, // Save Carrera ID
+          carreraId: data.program,
+          cicloActual: parseInt(data.ciclo, 10),
+          grupo: data.grupo,
+          jornada: data.jornada,
           estado: 'activo',
           fechaCreacion: serverTimestamp(),
         };

@@ -9,66 +9,39 @@ const carreraData = {
   descripcionGeneral: "Gestiona los procesos de importación definitiva (para consumo, con franquicia, en cumplimiento de garantía y reimportaciones) de productos al país, a partir de la planificación logística de sus operaciones, integrando y adecuando documentos, costos, medios de pago y requisitos conformes con la normatividad vigente en Colombia, con el fin de generar procesos rentables y eficientes.",
   descripcionAprendizaje: "El Tecnólogo en Comercio Exterior y Negocios Internacionales, gestiona procesos de importación, exportación y logística de las operaciones de comercio nacional e internacional, cumpliendo con los requerimientos de la normatividad vigente y las oportunidades comerciales para apoyar los procesos de negociación, diseñando e implementando proyectos de desarrollo empresarial en comercio internacional.",
   imagenURL: "https://placehold.co/800x400/002147/FFFFFF?text=Comercio+Exterior",
-  materias: [
-    // Ciclo I
-    { id: "c1-mb", nombre: "Matemática Básica", codigo: "C1-MB" },
-    { id: "c1-ca", nombre: "Clasificación Arancelaria", codigo: "C1-CA" },
-    { id: "c1-ice", nombre: "Introducción al Comercio Exterior", codigo: "C1-ICE" },
-    { id: "c1-aig", nombre: "Acuerdos Internacionales y Geopolítica", codigo: "C1-AIG" },
-    { id: "c1-tic", nombre: "TIC", codigo: "C1-TIC" },
-    // Ciclo II
-    { id: "c2-cc", nombre: "Competencias Comunicativas", codigo: "C2-CC" },
-    { id: "c2-e", nombre: "Estadística", codigo: "C2-E" },
-    { id: "c2-la", nombre: "Legislación Aduanera", codigo: "C2-LA" },
-    { id: "c2-mi", nombre: "Marketing Internacional", codigo: "C2-MI" },
-    { id: "c2-fe", nombre: "Fundamentos de Economía", codigo: "C2-FE" },
-    { id: "c2-pv", nombre: "Plan de Vida", codigo: "C2-PV" },
-    // Ciclo III
-    { id: "c3-pi1", nombre: "Procesos de Importación I", codigo: "C3-PI1" },
-    { id: "c3-pe1", nombre: "Procesos de Exportación I", codigo: "C3-PE1" },
-    { id: "c3-mpcc", nombre: "Medios de Pago y Coberturas Cambiarias", codigo: "C3-MPCC" },
-    { id: "c3-ci", nombre: "Cambios Internacionales", codigo: "C3-CI" },
-    { id: "c3-i1", nombre: "Inglés I", codigo: "C3-I1" },
-    // Ciclo IV
-    { id: "c4-cp", nombre: "Costos y Presupuestos", codigo: "C4-CP" },
-    { id: "c4-pi2", nombre: "Procesos de Importación II", codigo: "C4-PI2" },
-    { id: "c4-pe2", nombre: "Procesos de Exportación II", codigo: "C4-PE2" },
-    { id: "c4-caa", nombre: "Cadena de Abastecimiento y Alistamiento", codigo: "C4-CAA" },
-    { id: "c4-i2", nombre: "Inglés II", codigo: "C4-I2" },
-    // Ciclo V
-    { id: "c5-pi3", nombre: "Procesos de Importación III", codigo: "C5-PI3" },
-    { id: "c5-pe3", nombre: "Procesos de Exportación III", codigo: "C5-PE3" },
-    { id: "c5-oe", nombre: "Orientación a la Empleabilidad", codigo: "C5-OE" },
-    { id: "c5-i3", nombre: "Inglés III", codigo: "C5-I3" },
-    // Ciclo VI
-    { id: "c6-pc", nombre: "Participación Ciudadana", codigo: "C6-PC" },
-    { id: "c6-cis", nombre: "Comercialización Internacional de Servicios", codigo: "C6-CIS" },
-    { id: "c6-zf", nombre: "Zonas Francas", codigo: "C6-ZF" },
-    { id: "c6-dfi", nombre: "Distribución Física Internacional", codigo: "C6-DFI" },
-    { id: "c6-oe2", nombre: "Orientación al Emprendimiento", codigo: "C6-OE2" },
-    { id: "c6-p1", nombre: "Proyectos I", codigo: "C6-P1" },
-    { id: "c6-i4", nombre: "Inglés IV", codigo: "C6-I4" },
-    // Ciclo VII
-    { id: "c7-ed1", nombre: "Electiva Disciplinar I", codigo: "C7-ED1" },
-    { id: "c7-nci", nombre: "Negociaciones y Contratos Internacionales", codigo: "C7-NCI" },
-    { id: "c7-tt", nombre: "Tráfico y Transporte", codigo: "C7-TT" },
-    { id: "c7-e1", nombre: "Empleabilidad I", codigo: "C7-E1" },
-    { id: "c7-em1", nombre: "Emprendimiento I", codigo: "C7-EM1" },
-    { id: "c7-i5", nombre: "Inglés V", codigo: "C7-I5" },
-    // Ciclo VIII
-    { id: "c8-ed2", nombre: "Electiva Disciplinar II", codigo: "C8-ED2" },
-    { id: "c8-ec", nombre: "E-Commerce", codigo: "C8-EC" },
-    { id: "c8-in", nombre: "Inteligencia de Negocios", codigo: "C8-IN" },
-    { id: "c8-la", nombre: "Logística de Aprovisionamiento", codigo: "C8-LA" },
-    { id: "c8-e2", nombre: "Empleabilidad II", codigo: "C8-E2" },
-    { id: "c8-em2", nombre: "Emprendimiento II", codigo: "C8-EM2" },
-    { id: "c8-p2", nombre: "Proyectos II", codigo: "C8-P2" },
-    // Ciclo IX
-    { id: "c9-ed3", nombre: "Electiva Disciplinar III", codigo: "C9-ED3" },
-    { id: "c9-en", nombre: "Estrategias de Negociación", codigo: "C9-EN" },
-    { id: "c9-si", nombre: "Sistemas de Información OPEN COMEX Y ERP", codigo: "C9-SI" },
-    { id: "c9-mm", nombre: "Mantenimiento de Mercancías", codigo: "C9-MM" },
-    { id: "c9-gp", nombre: "Gestión de Proyectos", codigo: "C9-GP" },
+  ciclos: [
+    {
+      numero: 1,
+      materias: [
+        { id: "c1-mb", nombre: "Matemática Básica", codigo: "C1-MB", creditos: 2 },
+        { id: "c1-ca", nombre: "Clasificación Arancelaria", codigo: "C1-CA", creditos: 2 },
+        { id: "c1-ice", nombre: "Introducción al Comercio Exterior", codigo: "C1-ICE", creditos: 2 },
+        { id: "c1-aig", nombre: "Acuerdos Internacionales y Geopolítica", codigo: "C1-AIG", creditos: 2 },
+        { id: "c1-tic", nombre: "TIC", codigo: "C1-TIC", creditos: 2 }
+      ]
+    },
+    {
+      numero: 2,
+      materias: [
+        { id: "c2-cc", nombre: "Competencias Comunicativas", codigo: "C2-CC", creditos: 2 },
+        { id: "c2-e", nombre: "Estadística", codigo: "C2-E", creditos: 2 },
+        { id: "c2-la", nombre: "Legislación Aduanera", codigo: "C2-LA", creditos: 2 },
+        { id: "c2-mi", nombre: "Marketing Internacional", codigo: "C2-MI", creditos: 2 },
+        { id: "c2-fe", nombre: "Fundamentos de Economía", codigo: "C2-FE", creditos: 2 },
+        { id: "c2-pv", nombre: "Plan de Vida", codigo: "C2-PV", creditos: 0 }
+      ]
+    },
+    {
+        numero: 3,
+        materias: [
+            { id: "c3-pi1", nombre: "Procesos de Importación I", codigo: "C3-PI1", creditos: 2 },
+            { id: "c3-pe1", nombre: "Procesos de Exportación I", codigo: "C3-PE1", creditos: 2 },
+            { id: "c3-mpcc", nombre: "Medios de Pago y Coberturas Cambiarias", codigo: "C3-MPCC", creditos: 2 },
+            { id: "c3-ci", nombre: "Cambios Internacionales", codigo: "C3-CI", creditos: 2 },
+            { id: "c3-i1", nombre: "Inglés I", codigo: "C3-I1", creditos: 2 }
+        ]
+    }
+    // ... más ciclos
   ]
 };
 

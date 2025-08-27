@@ -18,6 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import {
   GraduationCap,
@@ -31,6 +32,7 @@ import {
   CalendarIcon,
   Eye,
   EyeOff,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
@@ -53,7 +55,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 
 
 const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
@@ -97,8 +99,9 @@ const step2Schema = z.object({
 
 const step3Schema = z.object({
   program: z.string({ required_error: "Por favor, selecciona una carrera." }),
-  periodoIngreso: z.string({ required_error: "Por favor, selecciona un periodo de ingreso." }),
-  jornada: z.string().optional(),
+  ciclo: z.string({ required_error: "Por favor, selecciona un ciclo." }),
+  grupo: z.string({ required_error: "Por favor, selecciona un grupo." }),
+  jornada: z.string({ required_error: "Por favor, selecciona una jornada." }),
 });
 
 const step4Schema = z.object({
@@ -136,7 +139,7 @@ type AllStepsData = z.infer<typeof allStepsSchema>;
 const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys((step1Schema._def as any).schema.shape) as (keyof AllStepsData)[] },
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
-    { number: 3, title: "Datos Académicos", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
+    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
     { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys((step4Schema._def as any).schema.shape) as (keyof AllStepsData)[] },
     { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema, fields: Object.keys(step5Schema.shape) as (keyof AllStepsData)[] },
     { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
@@ -168,7 +171,8 @@ export default function RegisterPage() {
       country: undefined,
       correoPersonal: "",
       program: undefined,
-      periodoIngreso: undefined,
+      ciclo: undefined,
+      grupo: undefined,
       jornada: undefined,
       password: "",
       confirmPassword: "",
@@ -567,12 +571,16 @@ const Step2 = () => {
 interface Carrera {
     id: string;
     nombre: string;
+    ciclos?: { numero: number, materias: any[] }[];
 }
 
 const Step3 = () => {
-    const { control } = useFormContext();
+    const { control, setValue } = useFormContext();
     const [carreras, setCarreras] = useState<Carrera[]>([]);
+    const [ciclos, setCiclos] = useState<{ numero: number }[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    const selectedProgramId = useWatch({ control, name: "program" });
 
     useEffect(() => {
         const fetchCarreras = async () => {
@@ -583,6 +591,7 @@ const Step3 = () => {
                 const fetchedCarreras = querySnapshot.docs.map(doc => ({
                     id: doc.id,
                     nombre: doc.data().nombre,
+                    ciclos: doc.data().ciclos,
                 }));
                 setCarreras(fetchedCarreras);
             } catch (error) {
@@ -595,39 +604,15 @@ const Step3 = () => {
         fetchCarreras();
     }, []);
 
-  const getAvailablePeriods = () => {
-    const today = new Date();
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth(); // 0-11
-
-    const periods = [];
-    let year = currentYear;
-    let semester = currentMonth < 6 ? 1 : 2; // 1st semester: Jan-Jun, 2nd: Jul-Dec
-
-    if (semester === 1 && currentMonth >= 2) {
-      semester = 2; 
-    } else if (semester === 2 && currentMonth >= 8) {
-      semester = 1;
-      year += 1;
-    }
-    
-    for (let i = 0; i < 3; i++) {
-        const periodValue = `${year}-${semester}`;
-        const periodLabel = `${year} - ${semester}`;
-        periods.push({ value: periodValue, label: periodLabel });
-
-        if (semester === 1) {
-            semester = 2;
-        } else {
-            semester = 1;
-            year += 1;
-        }
-    }
-
-    return periods;
-  };
-
-  const availablePeriods = getAvailablePeriods();
+    useEffect(() => {
+      if (selectedProgramId) {
+          const selectedCarrera = carreras.find(c => c.id === selectedProgramId);
+          setCiclos(selectedCarrera?.ciclos || []);
+          setValue("ciclo", undefined, { shouldValidate: true });
+      } else {
+          setCiclos([]);
+      }
+    }, [selectedProgramId, carreras, setValue]);
 
   return (
     <div className="space-y-6">
@@ -654,21 +639,21 @@ const Step3 = () => {
         )}
       />
 
-      <FormField
+       <FormField
         control={control}
-        name="periodoIngreso"
+        name="ciclo"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Periodo Académico de Ingreso</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <FormLabel>Ciclo Académico</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedProgramId || ciclos.length === 0}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un periodo" />
+                  <SelectValue placeholder={!selectedProgramId ? "Selecciona una carrera primero" : "Selecciona un ciclo"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {availablePeriods.map(period => (
-                    <SelectItem key={period.value} value={period.value}>{period.label}</SelectItem>
+                {ciclos.map(ciclo => (
+                    <SelectItem key={ciclo.numero} value={ciclo.numero.toString()}>Ciclo {ciclo.numero}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -681,20 +666,55 @@ const Step3 = () => {
         control={control}
         name="jornada"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Jornada (Opcional)</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona una jornada" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="diurna">Diurna</SelectItem>
-                <SelectItem value="nocturna">Nocturna</SelectItem>
-                <SelectItem value="findesemana">Fin de Semana</SelectItem>
-              </SelectContent>
-            </Select>
+          <FormItem className="space-y-3">
+            <FormLabel>Jornada y Modalidad</FormLabel>
+            <FormControl>
+              <RadioGroup
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                className="flex flex-col space-y-1"
+              >
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormControl><RadioGroupItem value="diurna_presencial" /></FormControl>
+                  <FormLabel className="font-normal">Diurna - Presencial</FormLabel>
+                </FormItem>
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormControl><RadioGroupItem value="nocturna_virtual" /></FormControl>
+                  <FormLabel className="font-normal">Nocturna - Virtual</FormLabel>
+                </FormItem>
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormControl><RadioGroupItem value="especial_findesemana" /></FormControl>
+                  <FormLabel className="font-normal">Especial - Fin de semana</FormLabel>
+                </FormItem>
+              </RadioGroup>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+
+      <FormField
+        control={control}
+        name="grupo"
+        render={({ field }) => (
+          <FormItem className="space-y-3">
+            <FormLabel>Grupo</FormLabel>
+            <FormControl>
+              <RadioGroup
+                onValueChange={field.onChange}
+                defaultValue={field.value}
+                className="flex flex-col space-y-1"
+              >
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormControl><RadioGroupItem value="grupo1" /></FormControl>
+                  <FormLabel className="font-normal">Grupo 1</FormLabel>
+                </FormItem>
+                <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormControl><RadioGroupItem value="grupo2" /></FormControl>
+                  <FormLabel className="font-normal">Grupo 2</FormLabel>
+                </FormItem>
+              </RadioGroup>
+            </FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -801,5 +821,6 @@ const Step6 = () => (
 
 
     
+
 
 
