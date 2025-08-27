@@ -50,7 +50,7 @@ export default function ManagerDashboardPage() {
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">Crear, editar y administrar programas.</p>
+              <p className="text-xs text-muted-foreground">Crear, editar y eliminar programas académicos. Asignar planes de estudio.</p>
               <Button className="mt-4 w-full">Administrar Carreras</Button>
             </CardContent>
           </Card>
@@ -60,7 +60,7 @@ export default function ManagerDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">Asignar docentes y estudiantes a grupos.</p>
+              <p className="text-xs text-muted-foreground">Crear grupos, asignar docentes, estudiantes y horarios.</p>
                <Button className="mt-4 w-full">Administrar Grupos</Button>
             </CardContent>
           </Card>
@@ -70,7 +70,7 @@ export default function ManagerDashboardPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">Consultar y verificar estado de pagos.</p>
+              <p className="text-xs text-muted-foreground">Consultar estado de pagos de estudiantes y generar reportes.</p>
                <Button className="mt-4 w-full">Ver Pagos</Button>
             </CardContent>
           </Card>
