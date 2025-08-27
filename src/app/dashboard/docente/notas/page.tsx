@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ClipboardCheck } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,10 +14,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
+interface Student {
+  id: string;
+  nombre: string;
+}
+
 interface Group {
   id: string;
   materia: { id: string; nombre: string };
-  estudiantes: { id: string; nombre: string }[];
+  estudiantes: Student[];
   docente: { id: string; nombre: string; email: string; usuarioId: string };
 }
 
@@ -30,15 +35,18 @@ export default function RegisterGradesPage() {
   const [docenteId, setDocenteId] = useState<string | null>(null);
 
    useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
-     if (storedEmail) {
-        setDocenteId(storedEmail);
+    // En una app real, el ID del docente se obtendría de la sesión.
+    // Usamos el userId de localStorage que podría ser el ID del documento del usuario.
+    const storedUserId = localStorage.getItem('userId');
+     if (storedUserId) {
+        setDocenteId(storedUserId);
     }
   }, []);
 
   const handleGroupSelect = (group: Group | null) => {
     setSelectedGroup(group);
     setSelectedStudentId(""); // Reset student selection when group changes
+    setGrade("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -72,9 +80,10 @@ export default function RegisterGradesPage() {
       await addDoc(notesRef, {
         estudianteId: selectedStudentId,
         grupoId: selectedGroup.id,
+        materiaId: selectedGroup.materia.id,
         nota: numericGrade,
         fecha: serverTimestamp(),
-        docenteId: selectedGroup.docente.id, // Usamos el ID del docente asignado al grupo
+        docenteId: docenteId, 
       });
       
       toast({
@@ -98,6 +107,8 @@ export default function RegisterGradesPage() {
     }
   };
 
+  const studentsInGroup = selectedGroup?.estudiantes || [];
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -107,6 +118,12 @@ export default function RegisterGradesPage() {
       />
 
       <Card>
+        <CardHeader>
+            <CardTitle>Formulario de Calificación</CardTitle>
+            <CardDescription>
+                Completa los siguientes campos para registrar una nueva nota.
+            </CardDescription>
+        </CardHeader>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <GroupSelector onGroupSelect={handleGroupSelect} />
@@ -115,12 +132,12 @@ export default function RegisterGradesPage() {
               <>
                 <div className="space-y-2">
                   <Label htmlFor="student">Seleccionar Estudiante</Label>
-                  <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!selectedGroup.estudiantes || selectedGroup.estudiantes.length === 0}>
+                  <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!studentsInGroup || studentsInGroup.length === 0}>
                     <SelectTrigger id="student">
-                      <SelectValue placeholder={selectedGroup.estudiantes?.length > 0 ? "Selecciona un estudiante" : "No hay estudiantes en este grupo"} />
+                      <SelectValue placeholder={studentsInGroup.length > 0 ? "Selecciona un estudiante" : "No hay estudiantes en este grupo"} />
                     </SelectTrigger>
                     <SelectContent>
-                      {selectedGroup.estudiantes.map((student: any) => (
+                      {studentsInGroup.map((student) => (
                         <SelectItem key={student.id} value={student.id}>
                           {student.nombre}
                         </SelectItem>

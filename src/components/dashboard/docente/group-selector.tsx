@@ -7,11 +7,16 @@ import { Label } from "@/components/ui/label";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 
+interface Student {
+  id: string;
+  nombre: string;
+}
+
 interface Group {
   id: string;
   codigoGrupo: string;
   materia: { id: string; nombre: string };
-  estudiantes: { id: string; nombre: string }[];
+  estudiantes: Student[];
   docente: { id: string; nombre: string; email: string; usuarioId: string };
 }
 
@@ -63,7 +68,7 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
   return (
     <div className="space-y-2">
       <Label htmlFor="group-selector">Seleccionar Grupo</Label>
-      <Select onValueChange={handleSelectChange} value={selectedGroupId} disabled={isLoading}>
+      <Select onValueChange={handleSelectChange} value={selectedGroupId} disabled={isLoading || groups.length === 0}>
         <SelectTrigger id="group-selector">
           <SelectValue placeholder={isLoading ? "Cargando grupos..." : "Selecciona un grupo"} />
         </SelectTrigger>
