@@ -95,7 +95,7 @@ const gruposData = [
         docente: { id: "docente02", nombre: "Carlos Rivas", usuarioId: "user02" },
         modalidad: "Presencial",
         franjaHoraria: "Diurna",
-        aula: { sede: "Principal", salon: "302" },
+        aula: { sede: "Sede 73", salon: "302" },
         estudiantes: [
              { estudianteId: "est001", usuarioId: "userEst001", nombre: "Juan Perez" },
         ],
@@ -110,7 +110,7 @@ const gruposData = [
         docente: { id: "docente03", nombre: "Laura Mendoza", usuarioId: "user03" },
         modalidad: "Virtual",
         franjaHoraria: "Sabatina",
-        aula: { sede: "Virtual", salon: "Teams-Marketing" },
+        aula: { sede: "Sede 80", salon: "Teams-Marketing" },
         estudiantes: [
             { estudianteId: "est002", usuarioId: "userEst002", nombre: "Maria Lopez" },
         ],
@@ -142,21 +142,23 @@ export async function seedCarrera() {
 export async function seedGrupos() {
     try {
         const gruposRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+        const codigosExistentes = new Set();
         
-        const q = query(gruposRef, where("codigoGrupo", "in", gruposData.map(g => g.codigoGrupo)));
-        const querySnapshot = await getDocs(q);
-        
-        if (!querySnapshot.empty) {
-            throw new Error(`Uno o más grupos de ejemplo ya existen.`);
+        for (const grupo of gruposData) {
+            const q = query(gruposRef, where("codigoGrupo", "==", grupo.codigoGrupo));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                codigosExistentes.add(grupo.codigoGrupo);
+            }
+        }
+
+        if (codigosExistentes.size > 0) {
+            const codigosStr = Array.from(codigosExistentes).join(", ");
+            throw new Error(`Los siguientes grupos ya existen: ${codigosStr}`);
         }
         
         for (const grupo of gruposData) {
-            const grupoDocRef = doc(gruposRef);
-            // Firestore does not directly support subcollections in the initial addDoc call.
-            // This structure implies that 'estudiantes' and 'horario' are fields within the document,
-            // which is fine for this structure. If they were meant to be subcollections,
-            // a different approach (e.g., batch writes after creation) would be needed.
-            await addDoc(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"), grupo);
+            await addDoc(gruposRef, grupo);
         }
 
         return { success: true, message: "Datos de grupos insertados exitosamente." };
