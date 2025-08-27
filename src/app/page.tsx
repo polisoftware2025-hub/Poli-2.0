@@ -15,12 +15,25 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Menu } from "lucide-react";
+import { GraduationCap, Menu, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+
+const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.03-4.83-.95-6.43-2.88-1.59-1.92-2.3-4.4-2.17-6.83.08-1.55.54-3.09 1.38-4.34 1.3-1.92 3.57-3.17 5.9-3.22.42-.01.84-.01 1.25-.02v4.03c-.44 0-.88 0-1.32.02-1.07.03-2.14.41-2.98 1.15-.84.74-1.26 1.87-1.18 2.91.07.92.52 1.84 1.2 2.42.68.58 1.63.84 2.53.7.87-.13 1.66-.63 2.12-1.38.45-.75.55-1.7.46-2.56-.07-1.07-.52-2.15-1.2-2.91-.71-.78-1.76-1.14-2.73-1.11v-4.04c.01 0 .01 0 0 0z" />
+    </svg>
+);
+
+const XIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+    </svg>
+);
+
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -312,27 +325,57 @@ export default function HomePage() {
           </div>
         </section>
 
-
-        {/* CTA Section */}
-        <section
-          id="contacto"
-          style={{ backgroundColor: "#002147" }}
-          className="py-20"
-        >
-          <div className="container mx-auto px-6 text-center text-white" data-aos="fade-up">
-            <h3 className="font-poppins text-3xl font-bold">
-              ¿Quieres más información? Escríbenos.
-            </h3>
-            <Button
-              asChild
-              style={{ backgroundColor: "#004aad" }}
-              className="mt-6 rounded-full px-10 py-5 text-base font-semibold text-white transition-transform hover:scale-105"
-            >
-              <a href="mailto:info@politecnicointernacional.edu">Contacto</a>
-            </Button>
-          </div>
-        </section>
       </main>
+
+       {/* Footer / Contact Section */}
+        <footer id="contacto" style={{ backgroundColor: "#002147" }} className="py-12 text-white">
+            <div className="container mx-auto px-6">
+                <div className="flex flex-wrap justify-between items-start gap-10">
+                    {/* Left Side: Contact Info & Buttons */}
+                    <div className="flex-1 min-w-[280px]">
+                        <h3 className="font-poppins text-2xl font-bold mb-4">Contacto</h3>
+                        <div className="space-y-3 font-roboto">
+                            <p className="font-bold text-lg">Politécnico 2.0</p>
+                            <p className="flex items-center gap-2"><Phone className="h-5 w-5" /> Admisiones: 60-1-9876543</p>
+                            <p className="flex items-center gap-2"><Phone className="h-5 w-5" /> Atención al cliente: 60-1-9123456</p>
+                            <p className="flex items-center gap-2"><MapPin className="h-5 w-5" /> Dirección: Avenida Siempre Viva #123, Bogotá D.C.</p>
+                            <p className="text-xs text-gray-400 mt-4">Resolución SNES 5678 del 15 de marzo de 2010.</p>
+                        </div>
+                        <div className="mt-6 flex flex-col sm:flex-row gap-4">
+                            <Button asChild style={{ backgroundColor: "#004aad" }} className="rounded-md px-6 py-3 font-semibold text-white transition-transform hover:scale-105">
+                                <Link href="#">Solicita Información</Link>
+                            </Button>
+                            <Button asChild style={{ backgroundColor: "#1b5fa5" }} className="rounded-md px-6 py-3 font-semibold text-white transition-transform hover:scale-105">
+                                <Link href="/register">Registra tu Interés</Link>
+                            </Button>
+                        </div>
+                    </div>
+
+                    {/* Right Side: Social Media Icons */}
+                    <div className="flex-shrink-0">
+                        <h4 className="font-poppins text-lg font-semibold mb-4">Síguenos</h4>
+                        <div className="flex items-center space-x-4">
+                            <Link href="#" className="text-white hover:text-blue-400 transition-colors">
+                                <Facebook className="h-7 w-7" />
+                                <span className="sr-only">Facebook</span>
+                            </Link>
+                            <Link href="#" className="text-white hover:text-pink-400 transition-colors">
+                                <Instagram className="h-7 w-7" />
+                                <span className="sr-only">Instagram</span>
+                            </Link>
+                            <Link href="#" className="text-white hover:text-cyan-400 transition-colors">
+                                <TikTokIcon className="h-7 w-7" />
+                                <span className="sr-only">TikTok</span>
+                            </Link>
+                            <Link href="#" className="text-white hover:text-gray-400 transition-colors">
+                                <XIcon className="h-6 w-6" />
+                                <span className="sr-only">X/Twitter</span>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
   );
 }
