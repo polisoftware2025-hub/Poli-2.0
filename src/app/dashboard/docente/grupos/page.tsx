@@ -66,49 +66,54 @@ export default function MyGroupsPage() {
   }, [userEmail]);
   
   const handleViewDetails = async (group: Group) => {
-    const studentIds = group.estudiantes.map(s => s.id);
-    if(studentIds.length === 0) {
+    // Si no hay estudiantes, simplemente muestra el grupo sin hacer más consultas
+    if (!group.estudiantes || group.estudiantes.length === 0) {
         setSelectedGroup(group);
         return;
     }
-
+  
+    // Mapear los IDs de los estudiantes para la consulta
+    const studentIds = group.estudiantes.map(s => s.id);
+    
     try {
         const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
-        // Firestore 'in' query is limited to 30 elements
+        // Firestore 'in' query tiene un límite de 30 elementos, se debe manejar en chunks si hay más.
         const studentChunks = [];
         for (let i = 0; i < studentIds.length; i += 30) {
           studentChunks.push(studentIds.slice(i, i + 30));
         }
 
-        const studentsWithEmails: Student[] = [];
+        const studentsWithEmails: Student[] = [...group.estudiantes];
+        const emailMap = new Map<string, string>();
 
         for (const chunk of studentChunks) {
-            const q = query(usersRef, where("usuarioId", "in", chunk));
+            // Nota: El campo a consultar en 'usuarios' debe coincidir con el 'id' guardado en 'grupos/estudiantes'
+            // Asumiendo que el `id` en `grupos.estudiantes` es el `ID del documento` del usuario.
+            const q = query(usersRef, where("__name__", "in", chunk));
             const userDocs = await getDocs(q);
             
-            const emailMap = new Map<string, string>();
             userDocs.forEach(doc => {
                  const data = doc.data();
-                 // Assuming the student document ID in 'estudiantes' subcollection is the same as 'usuarioId' field in 'usuarios' collection
                  emailMap.set(doc.id, data.correoInstitucional);
-            });
-
-             group.estudiantes.forEach(student => {
-                 studentsWithEmails.push({
-                     ...student,
-                     correoInstitucional: emailMap.get(student.id) || 'No encontrado'
-                 });
             });
         }
         
-        setSelectedGroup({...group, estudiantes: studentsWithEmails});
+        // Asignar correos a los estudiantes
+        const updatedStudents = studentsWithEmails.map(student => ({
+            ...student,
+            correoInstitucional: emailMap.get(student.id) || 'Correo no encontrado'
+        }));
+        
+        setSelectedGroup({...group, estudiantes: updatedStudents});
 
     } catch (err) {
         console.error("Error fetching student emails: ", err);
-        setError("No se pudo cargar la información de los estudiantes.");
-        setSelectedGroup(group); // Show details even if emails fail
+        setError("No se pudo cargar la información de los correos de los estudiantes.");
+        // Aun así, mostrar los detalles básicos del grupo aunque falle la carga de correos
+        setSelectedGroup(group);
     }
   };
+
 
   if (isLoading) {
     return (
@@ -147,6 +152,9 @@ export default function MyGroupsPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Lista de Estudiantes</CardTitle>
+                 <CardDescription>
+                    {selectedGroup.estudiantes?.length || 0} estudiantes inscritos.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                 {selectedGroup.estudiantes && selectedGroup.estudiantes.length > 0 ? (

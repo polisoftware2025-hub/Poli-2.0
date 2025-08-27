@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { ClipboardCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,12 +14,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
+interface Group {
+  id: string;
+  materia: { id: string; nombre: string };
+  estudiantes: { id: string; nombre: string }[];
+  docente: { id: string; nombre: string; email: string; usuarioId: string };
+}
+
 export default function RegisterGradesPage() {
-  const [selectedGroup, setSelectedGroup] = useState<any>(null);
+  const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [grade, setGrade] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [docenteId, setDocenteId] = useState<string | null>(null);
+
+   useEffect(() => {
+    const storedEmail = localStorage.getItem('userEmail');
+     if (storedEmail) {
+        setDocenteId(storedEmail);
+    }
+  }, []);
+
+  const handleGroupSelect = (group: Group | null) => {
+    setSelectedGroup(group);
+    setSelectedStudentId(""); // Reset student selection when group changes
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +50,10 @@ export default function RegisterGradesPage() {
         description: "Por favor, completa todos los campos.",
       });
       return;
+    }
+     if (!docenteId) {
+         toast({ variant: "destructive", title: "Error", description: "No se pudo verificar la identidad del docente." });
+        return;
     }
 
     const numericGrade = parseFloat(grade);
@@ -48,9 +72,9 @@ export default function RegisterGradesPage() {
       await addDoc(notesRef, {
         estudianteId: selectedStudentId,
         grupoId: selectedGroup.id,
-        materiaId: selectedGroup.materia.id,
         nota: numericGrade,
         fecha: serverTimestamp(),
+        docenteId: selectedGroup.docente.id, // Usamos el ID del docente asignado al grupo
       });
       
       toast({
@@ -59,7 +83,6 @@ export default function RegisterGradesPage() {
       });
 
       // Reset form
-      setSelectedGroup(null);
       setSelectedStudentId("");
       setGrade("");
 
@@ -86,15 +109,15 @@ export default function RegisterGradesPage() {
       <Card>
         <CardContent className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <GroupSelector onGroupSelect={setSelectedGroup} />
+            <GroupSelector onGroupSelect={handleGroupSelect} />
 
             {selectedGroup && (
               <>
                 <div className="space-y-2">
                   <Label htmlFor="student">Seleccionar Estudiante</Label>
-                  <Select onValueChange={setSelectedStudentId} value={selectedStudentId}>
+                  <Select onValueChange={setSelectedStudentId} value={selectedStudentId} disabled={!selectedGroup.estudiantes || selectedGroup.estudiantes.length === 0}>
                     <SelectTrigger id="student">
-                      <SelectValue placeholder="Selecciona un estudiante" />
+                      <SelectValue placeholder={selectedGroup.estudiantes?.length > 0 ? "Selecciona un estudiante" : "No hay estudiantes en este grupo"} />
                     </SelectTrigger>
                     <SelectContent>
                       {selectedGroup.estudiantes.map((student: any) => (
@@ -116,9 +139,10 @@ export default function RegisterGradesPage() {
                     value={grade}
                     onChange={(e) => setGrade(e.target.value)}
                     placeholder="Ej: 4.5"
+                    disabled={!selectedStudentId}
                   />
                 </div>
-                <Button type="submit" disabled={isLoading || !selectedGroup}>
+                <Button type="submit" disabled={isLoading || !selectedStudentId || !grade}>
                   {isLoading ? "Guardando..." : "Guardar Nota"}
                 </Button>
               </>

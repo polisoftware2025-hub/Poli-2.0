@@ -12,6 +12,7 @@ interface Group {
   codigoGrupo: string;
   materia: { id: string; nombre: string };
   estudiantes: { id: string; nombre: string }[];
+  docente: { id: string; nombre: string; email: string; usuarioId: string };
 }
 
 interface GroupSelectorProps {
@@ -36,8 +37,6 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
       setIsLoading(true);
       try {
         const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-        // Assuming the teacher's email is stored in docente.email
-        // If not, this query needs to be adjusted.
         const q = query(groupsRef, where("docente.email", "==", userEmail));
         const querySnapshot = await getDocs(q);
         const fetchedGroups: Group[] = querySnapshot.docs.map(doc => ({
