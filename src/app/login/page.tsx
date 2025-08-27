@@ -29,7 +29,10 @@ import { useRouter } from "next/navigation";
 
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
+  email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." })
+    .refine(email => email.endsWith('@pi.edu.co'), {
+      message: "Solo se permiten correos con el dominio institucional @pi.edu.co."
+    }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
 
