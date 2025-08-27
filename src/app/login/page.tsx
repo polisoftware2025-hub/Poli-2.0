@@ -30,8 +30,8 @@ import { useRouter } from "next/navigation";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." })
-    .refine(email => email.endsWith('@pi.edu.co'), {
-      message: "Solo se permiten correos con el dominio institucional @pi.edu.co."
+    .refine(email => email.endsWith('@pi.edu.co') || email.endsWith('@example.com'), {
+      message: "Solo se permiten correos institucionales (@pi.edu.co) o de prueba (@example.com)."
     }),
   password: z.string().min(1, { message: "La contraseña es obligatoria." }),
 });
@@ -53,6 +53,31 @@ export default function LoginPage() {
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
+
+    const testUsers = {
+      "admin@example.com": "admin",
+      "gestor@example.com": "gestor",
+      "docente@example.com": "docente",
+      "estudiante@example.com": "estudiante",
+    };
+
+    const userEmail = values.email;
+    const userRole = testUsers[userEmail as keyof typeof testUsers];
+
+    if (userRole) {
+      // Simulated login
+      toast({
+        title: "Inicio de sesión de prueba exitoso",
+        description: `Has ingresado como ${userRole}.`,
+      });
+      localStorage.setItem('userEmail', userEmail);
+      localStorage.setItem('userRole', userRole);
+      router.push('/dashboard');
+      setIsLoading(false);
+      return;
+    }
+
+
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
