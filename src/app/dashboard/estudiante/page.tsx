@@ -77,10 +77,7 @@ export default function StudentDashboardPage() {
         setIsLoadingCourses(true);
         try {
             const gruposRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-            const q = query(gruposRef, where("estudiantes", "array-contains", { id: userId, nombre: "Test Student" }));
             
-            const studentQuery = query(gruposRef, where('estudiantes', 'array-contains-any', [{id: userId}]));
-
             const querySnapshot = await getDocs(gruposRef);
             
             const studentGroups: DocumentData[] = [];
