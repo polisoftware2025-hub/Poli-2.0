@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     }
 
     const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
-    const q = query(usuariosRef, where("correo", "==", email));
+    const q = query(usuariosRef, where("correoInstitucional", "==", email));
     const querySnapshot = await getDocs(q);
 
     if (querySnapshot.empty) {
