@@ -2,13 +2,18 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Users, BookOpen } from "lucide-react";
+import { Shield, Users, BookOpen, Database } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [isSeedingCarreras, setIsSeedingCarreras] = useState(false);
+  const [isSeedingGrupos, setIsSeedingGrupos] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -21,6 +26,40 @@ export default function AdminDashboardPage() {
       router.push('/login');
     }
   }, [router]);
+
+  const handleSeed = async (type: 'carrera' | 'grupos') => {
+    if (type === 'carrera') {
+      setIsSeedingCarreras(true);
+    } else {
+      setIsSeedingGrupos(true);
+    }
+    
+    try {
+      const response = await fetch(`/api/seed/${type}`, { method: 'POST' });
+      const data = await response.json();
+      if (response.ok) {
+        toast({
+          title: "Éxito",
+          description: data.message,
+        });
+      } else {
+        throw new Error(data.message || 'Error al poblar la base de datos');
+      }
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    } finally {
+       if (type === 'carrera') {
+        setIsSeedingCarreras(false);
+      } else {
+        setIsSeedingGrupos(false);
+      }
+    }
+  };
+
 
   if (!userEmail) {
     return (
@@ -72,6 +111,25 @@ export default function AdminDashboardPage() {
               <p className="text-xs text-muted-foreground">Administrar reglas de seguridad</p>
             </CardContent>
           </Card>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+            <div className="flex items-center gap-3">
+                <Database className="h-6 w-6 text-primary" />
+                <CardTitle>Gestión de Datos Iniciales</CardTitle>
+            </div>
+          <CardDescription>
+            Usa estos botones para poblar la base de datos con los datos iniciales de carreras y grupos. Esta acción solo debe realizarse una vez.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col sm:flex-row gap-4">
+           <Button onClick={() => handleSeed('carrera')} disabled={isSeedingCarreras}>
+                {isSeedingCarreras ? 'Poblando Carreras...' : 'Poblar Carreras'}
+            </Button>
+            <Button onClick={() => handleSeed('grupos')} disabled={isSeedingGrupos}>
+                {isSeedingGrupos ? 'Poblando Grupos...' : 'Poblar Grupos'}
+            </Button>
         </CardContent>
       </Card>
     </div>

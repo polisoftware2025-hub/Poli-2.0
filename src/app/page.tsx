@@ -21,16 +21,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { useToast } from "@/hooks/use-toast";
-
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [isSeedingCarreras, setIsSeedingCarreras] = useState(false);
-  const [isSeedingGrupos, setIsSeedingGrupos] = useState(false);
-  const { toast } = useToast();
 
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
@@ -138,40 +133,6 @@ export default function HomePage() {
     carouselApi?.scrollTo(index);
   };
   
-  const handleSeed = async (type: 'carrera' | 'grupos') => {
-    if (type === 'carrera') {
-      setIsSeedingCarreras(true);
-    } else {
-      setIsSeedingGrupos(true);
-    }
-    
-    try {
-      const response = await fetch(`/api/seed/${type}`, { method: 'POST' });
-      const data = await response.json();
-      if (response.ok) {
-        toast({
-          title: "Éxito",
-          description: data.message,
-        });
-      } else {
-        throw new Error(data.message || 'Error al poblar la base de datos');
-      }
-    } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    } finally {
-       if (type === 'carrera') {
-        setIsSeedingCarreras(false);
-      } else {
-        setIsSeedingGrupos(false);
-      }
-    }
-  };
-
-
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 font-roboto">
       {/* Header */}
@@ -237,20 +198,6 @@ export default function HomePage() {
 
       {/* Main Content */}
       <main className="flex-1">
-         {/* Seed Button Section */}
-        <section className="bg-yellow-100 py-4">
-            <div className="container mx-auto px-6 text-center">
-                 <div className="flex justify-center gap-4">
-                    <Button onClick={() => handleSeed('carrera')} disabled={isSeedingCarreras}>
-                        {isSeedingCarreras ? 'Poblando Carreras...' : 'Poblar Carreras'}
-                    </Button>
-                    <Button onClick={() => handleSeed('grupos')} disabled={isSeedingGrupos}>
-                        {isSeedingGrupos ? 'Poblando Grupos...' : 'Poblar Grupos'}
-                    </Button>
-                </div>
-                <p className="text-xs text-yellow-800 mt-2">Estos botones son para desarrollo y cargan los datos iniciales.</p>
-            </div>
-        </section>
         {/* Hero Section */}
         <section
           id="inicio"
@@ -389,5 +336,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
