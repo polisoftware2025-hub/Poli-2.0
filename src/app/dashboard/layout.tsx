@@ -116,8 +116,8 @@ export default function DashboardLayout({
 
   const menuItems = [
     { href: "/dashboard", label: "Panel", icon: Home, roles: ["admin", "gestor", "docente", "estudiante"] },
-    { href: "/dashboard/materias", label: "Materias", icon: Library, roles: ["estudiante", "docente"] },
-    { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap, roles: ["estudiante"] },
+    { href: "/dashboard/materias", label: "Materias", icon: Library, roles: ["estudiante", "docente", "gestor"] },
+    { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap, roles: ["estudiante", "gestor"] },
     { href: "/dashboard/horarios", label: "Horarios", icon: Calendar, roles: ["estudiante", "docente"] },
     { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare, roles: ["estudiante", "docente"] },
     { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell, roles: ["admin", "gestor", "docente", "estudiante"] },
@@ -297,5 +297,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
