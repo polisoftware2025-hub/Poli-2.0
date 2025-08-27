@@ -208,6 +208,9 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
+           <CardDescription className="mt-6 text-center text-xs text-gray-500">
+            **Para pruebas:** Usa `admin@example.com`, `gestor@example.com`, `docente@example.com` o `estudiante@example.com` con cualquier contraseña para acceder a los diferentes roles.
+          </CardDescription>
         </CardContent>
       </Card>
     </div>
