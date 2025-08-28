@@ -93,17 +93,20 @@ const step3Schema = z.object({
   jornada: z.string({ required_error: "Por favor, selecciona una jornada." }),
 });
 
-const step4Schema = z.object({
+const passwordSchema = z.object({
   password: z.string().min(8, "Mínimo 8 caracteres.")
     .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
     .regex(/[a-z]/, "Debe contener al menos una minúscula.")
     .regex(/[0-9]/, "Debe contener al menos un número.")
     .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
   confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
+});
+
+const step4Schema = passwordSchema.refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
 });
+
 
 const step5Schema = z.object({
   metodoPago: z.string({ required_error: "Por favor, selecciona un método de pago." }),
@@ -112,16 +115,19 @@ const step5Schema = z.object({
 const step6Schema = z.object({});
 
 
-const allStepsSchema = z.object({
+const baseAllStepsSchema = z.object({
   ...step1Schema.shape,
   ...step2Schema.shape,
   ...step3Schema.shape,
   ...step4Schema.shape,
   ...step5Schema.shape
-}).refine((data) => data.password === data.confirmPassword, {
+});
+
+const allStepsSchema = baseAllStepsSchema.refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
 });
+
 
 type AllStepsData = z.infer<typeof allStepsSchema>;
 
@@ -129,7 +135,7 @@ const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
     { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys(step4Schema.shape) as (keyof AllStepsData)[] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys(passwordSchema.shape) as (keyof AllStepsData)[] },
     { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema, fields: Object.keys(step5Schema.shape) as (keyof AllStepsData)[] },
     { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
   ];
