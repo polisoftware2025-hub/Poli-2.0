@@ -1,205 +1,160 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { PageHeader } from "@/components/page-header";
-import { Users, Filter, Search, ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, GraduationCap, Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
 
-type UserRole = "admin" | "gestor" | "docente" | "estudiante";
-type UserStatus = "activo" | "inactivo";
-type SortDirection = "asc" | "desc";
+const addUserSchema = z.object({
+  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
+  email: z.string().email("Por favor, introduce un correo válido."),
+  role: z.string({ required_error: "Debes seleccionar un rol." }),
+  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+});
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-}
+type AddUserFormValues = z.infer<typeof addUserSchema>;
 
-const mockUsers: User[] = [
-  { id: "usr_001", name: "Ana Pérez", email: "docente@example.com", role: "docente", status: "activo" },
-  { id: "usr_002", name: "Carlos Rivas", email: "carlos.rivas@example.com", role: "docente", status: "inactivo" },
-  { id: "usr_003", name: "Laura Gómez", email: "gestor@example.com", role: "gestor", status: "activo" },
-  { id: "usr_004", name: "Juan Perez", email: "estudiante@example.com", role: "estudiante", status: "activo" },
-  { id: "usr_005", name: "Admin User", email: "admin@example.com", role: "admin", status: "activo" },
-  { id: "usr_006", name: "Maria Lopez", email: "maria.lopez@pi.edu.co", role: "estudiante", status: "inactivo" },
-  { id: "usr_007", name: "Sofia Castro", email: "sofia.castro@pi.edu.co", role: "estudiante", status: "activo" },
-];
-
-export default function ManageUsersPage() {
+export default function AddUserPage() {
   const router = useRouter();
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [roleFilter, setRoleFilter] = useState("todos");
-  const [sortConfig, setSortConfig] = useState<{ key: keyof User; direction: SortDirection } | null>(null);
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    setUserRole(role);
-    if (role !== "admin") {
-      // For visual restriction simulation
-      console.warn("Acceso denegado: este módulo es solo para administradores.");
-    }
-  }, []);
+  const form = useForm<AddUserFormValues>({
+    resolver: zodResolver(addUserSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      password: "",
+    },
+  });
 
-  const sortedAndFilteredUsers = useMemo(() => {
-    let filteredUsers = mockUsers.filter(user => {
-      const searchMatch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          user.email.toLowerCase().includes(searchTerm.toLowerCase());
-      const roleMatch = roleFilter === "todos" || user.role === roleFilter;
-      return searchMatch && roleMatch;
+  const onSubmit = async (values: AddUserFormValues) => {
+    setIsLoading(true);
+    // Simulación de una llamada a API
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log("Datos del nuevo usuario:", values);
+
+    toast({
+      title: "Usuario Agregado (Simulación)",
+      description: `El usuario ${values.name} con el rol ${values.role} ha sido creado.`,
     });
-
-    if (sortConfig !== null) {
-      filteredUsers.sort((a, b) => {
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
-        }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-    }
-
-    return filteredUsers;
-  }, [searchTerm, roleFilter, sortConfig]);
-
-  const requestSort = (key: keyof User) => {
-    let direction: SortDirection = 'asc';
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
+    
+    setIsLoading(false);
+    // Redirigir a una página de listado de usuarios (a crear en el futuro)
+    router.push("/dashboard/admin"); 
   };
 
-  if (userRole === null) {
-    return <div className="flex items-center justify-center min-h-[calc(100vh-200px)]"><p>Cargando...</p></div>;
-  }
-
-  if (userRole !== "admin") {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)] text-center">
-        <div>
-          <h2 className="text-2xl font-bold text-destructive">Acceso Denegado</h2>
-          <p className="text-muted-foreground">Este módulo es solo para administradores.</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Panel de Usuarios"
-        description="Gestiona todos los usuarios del sistema, sus roles y estados."
-        icon={<Users className="h-8 w-8 text-primary" />}
-      />
-
-      <Card>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
+      <Card className="w-full max-w-lg">
         <CardHeader>
-          <CardTitle>Lista de Usuarios</CardTitle>
-          <CardDescription>Busca, filtra y administra los usuarios registrados.</CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <GraduationCap className="h-8 w-8 text-primary" />
+              <div>
+                <CardTitle>Agregar Nuevo Usuario</CardTitle>
+                <CardDescription>Completa el formulario para crear una nueva cuenta.</CardDescription>
+              </div>
+            </div>
+            <Button variant="ghost" size="icon" asChild>
+                <Link href="/dashboard/admin">
+                    <ArrowLeft />
+                </Link>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row items-center gap-4 mb-6">
-            <div className="relative w-full md:flex-grow">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre o correo..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre Completo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: John Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            <div className="flex w-full md:w-auto items-center gap-4">
-              <Filter className="h-5 w-5 text-muted-foreground" />
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger className="w-full md:w-48">
-                  <SelectValue placeholder="Filtrar por rol..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todos">Todos los roles</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
-                  <SelectItem value="gestor">Gestor</SelectItem>
-                  <SelectItem value="docente">Docente</SelectItem>
-                  <SelectItem value="estudiante">Estudiante</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button>Agregar Usuario</Button>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('name')}>
-                      Nombre <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                    <Button variant="ghost" onClick={() => requestSort('email')}>
-                      Correo Electrónico <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead>
-                     <Button variant="ghost" onClick={() => requestSort('role')}>
-                      Rol <ArrowUpDown className="ml-2 h-4 w-4" />
-                    </Button>
-                  </TableHead>
-                  <TableHead className="text-center">Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedAndFilteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell className="capitalize">{user.role}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={user.status === "activo" ? "secondary" : "destructive"}
-                        className={user.status === "activo" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
-                      >
-                        {user.status === "activo" ? "Activo" : "Inactivo"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                       <DropdownMenu>
-                         <DropdownMenuTrigger asChild>
-                           <Button variant="ghost" size="icon">
-                             <MoreHorizontal className="h-4 w-4" />
-                           </Button>
-                         </DropdownMenuTrigger>
-                         <DropdownMenuContent align="end">
-                           <DropdownMenuItem>Editar</DropdownMenuItem>
-                           <DropdownMenuItem>Cambiar Rol</DropdownMenuItem>
-                           <DropdownMenuItem className="text-destructive">Desactivar</DropdownMenuItem>
-                         </DropdownMenuContent>
-                       </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-             {sortedAndFilteredUsers.length === 0 && (
-                <div className="text-center text-muted-foreground py-10">
-                    <p>No se encontraron usuarios que coincidan con la búsqueda.</p>
-                </div>
-            )}
-          </div>
-
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Correo Electrónico</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="usuario@example.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña</FormLabel>
+                     <div className="relative">
+                        <FormControl>
+                            <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowPassword(!showPassword)}>
+                           {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
+                        </Button>
+                     </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="role"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rol del Usuario</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona un rol" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="admin">Administrador</SelectItem>
+                        <SelectItem value="editor">Editor</SelectItem>
+                        <SelectItem value="user">Usuario</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-4 pt-4">
+                <Button type="button" variant="outline" onClick={() => router.push('/dashboard/admin')}>
+                  Cancelar
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? 'Guardando...' : 'Guardar Usuario'}
+                </Button>
+              </div>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
