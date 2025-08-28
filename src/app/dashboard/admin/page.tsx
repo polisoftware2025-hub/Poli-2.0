@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -83,32 +84,34 @@ export default function AdminDashboardPage() {
         <CardContent className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Usuarios</CardTitle>
+              <CardTitle className="text-sm font-medium">Gestión de Usuarios</CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+1,234</div>
-              <p className="text-xs text-muted-foreground">Gestión de todos los roles de usuario</p>
+              <p className="text-xs text-muted-foreground">Administrar todos los roles y permisos de usuario.</p>
+               <Button className="mt-4 w-full" asChild>
+                  <Link href="/dashboard/admin/users">Administrar Usuarios</Link>
+               </Button>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Carreras</CardTitle>
+              <CardTitle className="text-sm font-medium">Gestión de Carreras</CardTitle>
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+25</div>
-              <p className="text-xs text-muted-foreground">Crear y editar programas académicos</p>
+              <p className="text-xs text-muted-foreground">Crear y editar programas académicos y planes de estudio.</p>
+              <Button className="mt-4 w-full">Administrar Carreras</Button>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Permisos</CardTitle>
+              <CardTitle className="text-sm font-medium">Configuración Global</CardTitle>
               <Shield className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">Roles y Reglas</div>
-              <p className="text-xs text-muted-foreground">Administrar reglas de seguridad</p>
+              <p className="text-xs text-muted-foreground">Administrar la configuración general del sistema.</p>
+               <Button className="mt-4 w-full">Ir a Configuración</Button>
             </CardContent>
           </Card>
         </CardContent>
@@ -135,3 +138,4 @@ export default function AdminDashboardPage() {
     </div>
   );
 }
+
