@@ -29,7 +29,7 @@ const registerUserSchema = z.object({
     jornada: z.string(),
     password: z.string().min(8),
     metodoPago: z.string(),
-});
+}).passthrough(); // Se añade passthrough para ignorar campos extra como confirmPassword
 
 const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string } } = {
     'cc': { id: 'cc', descripcion: 'Cédula de Ciudadanía' },
