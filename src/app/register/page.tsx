@@ -97,11 +97,13 @@ const step3Schema = z.object({
   jornada: z.string({ required_error: "Por favor, selecciona una jornada." }),
 });
 
-const step4Schema_materias = z.object({
+const step4Object = z.object({
   selectedSubjects: z.array(z.any()).refine(value => value.length > 0, {
-    message: 'Debes seleccionar al menos una materia electiva si hay disponibles.'
+    message: 'Debes seleccionar al menos una materia.'
   })
-}).refine((data) => {
+});
+
+const step4Schema_materias = step4Object.refine((data) => {
     const totalCredits = data.selectedSubjects.reduce((acc, subject) => acc + subject.creditos, 0);
     return totalCredits === 10;
 }, {
@@ -136,7 +138,7 @@ const allStepsSchema = z.object({
   ...step1Schema.shape,
   ...step2Schema.shape,
   ...step3Schema.shape,
-  ...step4Schema_materias.shape,
+  ...step4Object.shape,
   ...step5Schema.shape,
   ...step6Schema.shape
 }).refine((data) => data.password === data.confirmPassword, {
@@ -150,7 +152,7 @@ const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
     { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
-    { number: 4, title: "Selección de Materias", icon: ListChecks, schema: step4Schema_materias, fields: Object.keys(step4Schema_materias.shape) as (keyof AllStepsData)[] },
+    { number: 4, title: "Selección de Materias", icon: ListChecks, schema: step4Schema_materias, fields: Object.keys(step4Object.shape) as (keyof AllStepsData)[] },
     { number: 5, title: "Datos de Acceso", icon: KeyRound, schema: step5Schema, fields: Object.keys(step5Object.shape) as (keyof AllStepsData)[] },
     { number: 6, title: "Datos de Inscripción", icon: CreditCard, schema: step6Schema, fields: Object.keys(step6Schema.shape) as (keyof AllStepsData)[] },
     { number: 7, title: "Confirmación", icon: CheckCircle, schema: step7Schema, fields: [] },
@@ -312,6 +314,8 @@ export default function RegisterPage() {
 
 
   const progress = (currentStep / totalSteps) * 100;
+
+  const CurrentStepIcon = steps[currentStep - 1].icon;
 
   return (
     <FormProvider {...methods}>
@@ -841,7 +845,7 @@ const Step4_Materias = () => {
                     Total de créditos: {totalCredits} / 10. Debes seleccionar exactamente 10 créditos para continuar.
                 </AlertDescription>
             </Alert>
-             {errors.selectedSubjects && <p className="text-sm font-medium text-destructive">{errors.selectedSubjects.message}</p>}
+             {errors.selectedSubjects && <p className="text-sm font-medium text-destructive">{(errors.selectedSubjects as any).message}</p>}
         </div>
     );
 };
@@ -935,22 +939,5 @@ const Step7_Confirm = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-    
-    
 
     
-
-
-
-
-
-    
-
-
-
-
-
-
-
-
-
