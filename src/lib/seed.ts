@@ -2,7 +2,7 @@
 import { db } from './firebase'; 
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 
-const carreraData = {
+export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
   duracionCiclo: "9 Ciclos",
   modalidad: "Virtual / Presencial",
