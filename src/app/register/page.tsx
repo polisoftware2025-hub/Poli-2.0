@@ -72,17 +72,6 @@ const step1Schema = z.object({
   numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio.").max(15, "El número de identificación no puede tener más de 15 caracteres.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
   birthDate: z.date({ required_error: "Por favor, introduce una fecha válida." }),
-}).refine(data => {
-    if (data.tipoIdentificacion === 'cc') {
-        return /^\d{7,10}$/.test(data.numeroIdentificacion);
-    }
-    if (data.tipoIdentificacion === 'passport') {
-        return /^[A-Z0-9]{6,9}$/.test(data.numeroIdentificacion);
-    }
-    return true;
-}, {
-    message: "Número de identificación no válido para el tipo seleccionado.",
-    path: ["numeroIdentificacion"],
 });
 
 const step2Schema = z.object({
@@ -821,6 +810,7 @@ const Step6 = () => (
 
 
     
+
 
 
 

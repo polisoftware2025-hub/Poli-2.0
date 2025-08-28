@@ -7,7 +7,7 @@ const carreraData = {
   duracionCiclo: "9 Ciclos",
   modalidad: "Virtual / Presencial",
   descripcionGeneral: "Gestiona los procesos de importación definitiva (para consumo, con franquicia, en cumplimiento de garantía y reimportaciones) de productos al país, a partir de la planificación logística de sus operaciones, integrando y adecuando documentos, costos, medios de pago y requisitos conformes con la normatividad vigente en Colombia, con el fin de generar procesos rentables y eficientes.",
-  descripcionAprendizaje: "El Tecnólogo en Comercio Exterior y Negocios Internacionales, gestiona procesos de importación, exportación y logística de las operaciones de comercio nacional e internacional, cumpliendo con los requerimientos de la normatividad vigente y las oportunidades comerciales para apoyar los procesos de negociación, diseñando e implementando proyectos de desarrollo empresarial en comercio internacional.",
+  perfilProfesional: "El Tecnólogo en Comercio Exterior y Negocios Internacionales, gestiona procesos de importación, exportación y logística de las operaciones de comercio nacional e internacional, cumpliendo con los requerimientos de la normatividad vigente y las oportunidades comerciales para apoyar los procesos de negociación, diseñando e implementando proyectos de desarrollo empresarial en comercio internacional.",
   imagenURL: "https://placehold.co/800x400/002147/FFFFFF?text=Comercio+Exterior",
   ciclos: [
     {
@@ -40,8 +40,71 @@ const carreraData = {
             { id: "c3-ci", nombre: "Cambios Internacionales", codigo: "C3-CI", creditos: 2 },
             { id: "c3-i1", nombre: "Inglés I", codigo: "C3-I1", creditos: 2 }
         ]
+    },
+    {
+      numero: 4,
+      materias: [
+          { id: "c4-cp", nombre: "Costos y Presupuestos", codigo: "C4-CP", creditos: 2 },
+          { id: "c4-pi2", nombre: "Procesos de Importación II", codigo: "C4-PI2", creditos: 2 },
+          { id: "c4-pe2", nombre: "Procesos de Exportación II", codigo: "C4-PE2", creditos: 2 },
+          { id: "c4-caa", nombre: "Cadena de Abastecimiento y Alistamiento", codigo: "C4-CAA", creditos: 2 },
+          { id: "c4-i2", nombre: "Inglés II", codigo: "C4-I2", creditos: 2 }
+      ]
+    },
+    {
+      numero: 5,
+      materias: [
+          { id: "c5-pi3", nombre: "Procesos de Importación III", codigo: "C5-PI3", creditos: 2 },
+          { id: "c5-pe3", nombre: "Procesos de Exportación III", codigo: "C5-PE3", creditos: 2 },
+          { id: "c5-oe", nombre: "Orientación a la Empleabilidad", codigo: "C5-OE", creditos: 2 },
+          { id: "c5-i3", nombre: "Inglés III", codigo: "C5-I3", creditos: 4 }
+      ]
+    },
+    {
+      numero: 6,
+      materias: [
+          { id: "c6-pc", nombre: "Participación Ciudadana", codigo: "C6-PC", creditos: 1 },
+          { id: "c6-cis", nombre: "Comercialización Internacional de Servicios", codigo: "C6-CIS", creditos: 2 },
+          { id: "c6-zf", nombre: "Zonas Francas", codigo: "C6-ZF", creditos: 1 },
+          { id: "c6-dfi", nombre: "Distribución Física Internacional", codigo: "C6-DFI", creditos: 2 },
+          { id: "c6-oae", nombre: "Orientación al Emprendimiento", codigo: "C6-OAE", creditos: 1 },
+          { id: "c6-p1", nombre: "Proyectos I", codigo: "C6-P1", creditos: 1 },
+          { id: "c6-i4", nombre: "Inglés IV", codigo: "C6-I4", creditos: 2 }
+      ]
+    },
+    {
+      numero: 7,
+      materias: [
+          { id: "c7-ed1", nombre: "Electiva Disciplinar I", codigo: "C7-ED1", creditos: 2 },
+          { id: "c7-nci", nombre: "Negociaciones y Contratos Internacionales", codigo: "C7-NCI", creditos: 2 },
+          { id: "c7-tt", nombre: "Tráfico y Transporte", codigo: "C7-TT", creditos: 1 },
+          { id: "c7-e1", nombre: "Empleabilidad I", codigo: "C7-E1", creditos: 1 },
+          { id: "c7-em1", nombre: "Emprendimiento I", codigo: "C7-EM1", creditos: 2 },
+          { id: "c7-i5", nombre: "Inglés V", codigo: "C7-I5", creditos: 2 }
+      ]
+    },
+    {
+      numero: 8,
+      materias: [
+          { id: "c8-ed2", nombre: "Electiva Disciplinar II", codigo: "C8-ED2", creditos: 2 },
+          { id: "c8-ecomm", nombre: "E-Commerce", codigo: "C8-ECOMM", creditos: 1 },
+          { id: "c8-in", nombre: "Inteligencia de Negocios", codigo: "C8-IN", creditos: 2 },
+          { id: "c8-la", nombre: "Logística de Aprovisionamiento", codigo: "C8-LA", creditos: 2 },
+          { id: "c8-e2", nombre: "Empleabilidad II", codigo: "C8-E2", creditos: 1 },
+          { id: "c8-em2", nombre: "Emprendimiento II", codigo: "C8-EM2", creditos: 1 },
+          { id: "c8-p2", nombre: "Proyectos II", codigo: "C8-P2", creditos: 1 }
+      ]
+    },
+    {
+      numero: 9,
+      materias: [
+          { id: "c9-ed3", nombre: "Electiva Disciplinar III", codigo: "C9-ED3", creditos: 2 },
+          { id: "c9-en", nombre: "Estrategias de Negociación", codigo: "C9-EN", creditos: 2 },
+          { id: "c9-si", nombre: "Sistemas de Información OPEN COMEX Y ERP", codigo: "C9-SI", creditos: 2 },
+          { id: "c9-mm", nombre: "Mantenimiento de Mercancías", codigo: "C9-MM", creditos: 2 },
+          { id: "c9-gp", nombre: "Gestión de Proyectos", codigo: "C9-GP", creditos: 2 }
+      ]
     }
-    // ... más ciclos
   ]
 };
 
