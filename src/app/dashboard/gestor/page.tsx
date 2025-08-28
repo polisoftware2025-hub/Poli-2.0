@@ -50,8 +50,8 @@ export default function ManagerDashboardPage() {
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">Crear, editar y administrar programas académicos.</p>
-              <Button className="mt-4 w-full">Gestionar Carreras</Button>
+              <p className="text-xs text-muted-foreground">Crear, editar y eliminar programas académicos. Asignar planes de estudio.</p>
+              <Button className="mt-4 w-full">Administrar Carreras</Button>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
@@ -60,8 +60,8 @@ export default function ManagerDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">Asignación de docentes y estudiantes.</p>
-               <Button className="mt-4 w-full">Gestionar Grupos</Button>
+              <p className="text-xs text-muted-foreground">Crear grupos, asignar docentes, estudiantes y definir horarios.</p>
+               <Button className="mt-4 w-full">Administrar Grupos</Button>
             </CardContent>
           </Card>
           <Card className="hover:shadow-lg transition-shadow">
@@ -70,8 +70,8 @@ export default function ManagerDashboardPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-xs text-muted-foreground">Consultar y verificar estado de pagos.</p>
-               <Button className="mt-4 w-full">Ver Pagos</Button>
+              <p className="text-xs text-muted-foreground">Consultar historial, validar pagos y generar reportes financieros.</p>
+               <Button className="mt-4 w-full">Administrar Pagos</Button>
             </CardContent>
           </Card>
         </CardContent>
