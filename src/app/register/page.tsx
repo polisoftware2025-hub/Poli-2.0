@@ -33,6 +33,7 @@ import {
   Eye,
   EyeOff,
   Users,
+  ListChecks,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
@@ -56,6 +57,9 @@ import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { carreraData as staticCarreraData } from "@/lib/seed";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/, "Solo se permiten letras, sin espacios.");
@@ -93,7 +97,20 @@ const step3Schema = z.object({
   jornada: z.string({ required_error: "Por favor, selecciona una jornada." }),
 });
 
-const step4Object = z.object({
+const step4Schema_materias = z.object({
+  selectedSubjects: z.array(z.any()).refine(value => value.length > 0, {
+    message: 'Debes seleccionar al menos una materia electiva si hay disponibles.'
+  })
+}).refine((data) => {
+    const totalCredits = data.selectedSubjects.reduce((acc, subject) => acc + subject.creditos, 0);
+    return totalCredits === 10;
+}, {
+    message: 'La suma de créditos debe ser exactamente 10.',
+    path: ['selectedSubjects'],
+});
+
+
+const step5Object = z.object({
   password: z.string().min(8, "Mínimo 8 caracteres.")
     .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
     .regex(/[a-z]/, "Debe contener al menos una minúscula.")
@@ -102,25 +119,26 @@ const step4Object = z.object({
   confirmPassword: z.string(),
 });
 
-const step4Schema = step4Object.refine((data) => data.password === data.confirmPassword, {
+const step5Schema = step5Object.refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
 });
 
 
-const step5Schema = z.object({
+const step6Schema = z.object({
   metodoPago: z.string({ required_error: "Por favor, selecciona un método de pago." }),
 });
 
-const step6Schema = z.object({});
+const step7Schema = z.object({});
 
 
 const allStepsSchema = z.object({
   ...step1Schema.shape,
   ...step2Schema.shape,
   ...step3Schema.shape,
-  ...step4Schema.shape,
-  ...step5Schema.shape
+  ...step4Schema_materias.shape,
+  ...step5Schema.shape,
+  ...step6Schema.shape
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
@@ -132,14 +150,15 @@ const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
     { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys(step4Object.shape) as (keyof AllStepsData)[] },
-    { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema, fields: Object.keys(step5Schema.shape) as (keyof AllStepsData)[] },
-    { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
-  ];
+    { number: 4, title: "Selección de Materias", icon: ListChecks, schema: step4Schema_materias, fields: Object.keys(step4Schema_materias.shape) as (keyof AllStepsData)[] },
+    { number: 5, title: "Datos de Acceso", icon: KeyRound, schema: step5Schema, fields: Object.keys(step5Object.shape) as (keyof AllStepsData)[] },
+    { number: 6, title: "Datos de Inscripción", icon: CreditCard, schema: step6Schema, fields: Object.keys(step6Schema.shape) as (keyof AllStepsData)[] },
+    { number: 7, title: "Confirmación", icon: CheckCircle, schema: step7Schema, fields: [] },
+];
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 7;
   const { toast } = useToast();
   const router = useRouter();
   
@@ -166,18 +185,45 @@ export default function RegisterPage() {
       ciclo: undefined,
       grupo: undefined,
       jornada: undefined,
+      selectedSubjects: [],
       password: "",
       confirmPassword: "",
       metodoPago: undefined,
     },
   });
 
-  const { getValues, setError, trigger } = methods;
+  const { getValues, setError, trigger, watch } = methods;
+  
+  const selectedCiclo = watch("ciclo");
+  const cycleHasElectives = useMemo(() => {
+    if (!selectedCiclo) return false;
+    const cicloData = staticCarreraData.ciclos.find(c => c.numero.toString() === selectedCiclo);
+    if (!cicloData) return false;
+    return cicloData.materias.some(m => m.nombre.toLowerCase().includes('electiva'));
+  }, [selectedCiclo]);
 
-  const CurrentStepIcon = steps[currentStep - 1].icon;
 
   const nextStep = async () => {
     const fields = steps[currentStep - 1].fields;
+
+    // Skip subject selection if cycle has no electives
+    if (currentStep === 3) {
+      const isValid = await trigger(fields as any, { shouldFocus: true });
+      if (isValid) {
+        if (!cycleHasElectives) {
+          // If no electives, auto-populate subjects and skip to next step
+          const cicloData = staticCarreraData.ciclos.find(c => c.numero.toString() === getValues("ciclo"));
+          if (cicloData) {
+            methods.setValue("selectedSubjects", cicloData.materias);
+          }
+          setCurrentStep(5); // Skip to step 5
+        } else {
+          setCurrentStep(4);
+        }
+      }
+      return;
+    }
+    
     if (fields.length === 0) {
       if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
@@ -196,7 +242,12 @@ export default function RegisterPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
+      // If we are on step 5 and the previous cycle had no electives, go back to step 3
+      if(currentStep === 5 && !cycleHasElectives) {
+        setCurrentStep(3);
+      } else {
+        setCurrentStep(currentStep - 1);
+      }
     }
   };
   
@@ -298,9 +349,10 @@ export default function RegisterPage() {
                 {currentStep === 1 && <Step1 />}
                 {currentStep === 2 && <Step2 />}
                 {currentStep === 3 && <Step3 />}
-                {currentStep === 4 && <Step4 />}
-                {currentStep === 5 && <Step5 />}
-                {currentStep === 6 && <Step6 />}
+                {currentStep === 4 && <Step4_Materias />}
+                {currentStep === 5 && <Step5_Access />}
+                {currentStep === 6 && <Step6_Payment />}
+                {currentStep === 7 && <Step7_Confirm />}
             </CardContent>
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
               <Button
@@ -578,14 +630,12 @@ const Step3 = () => {
         const fetchCarreras = async () => {
             setIsLoading(true);
             try {
-                const carrerasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
-                const querySnapshot = await getDocs(carrerasRef);
-                const fetchedCarreras = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    nombre: doc.data().nombre,
-                    ciclos: doc.data().ciclos,
-                }));
-                setCarreras(fetchedCarreras);
+                // Simulating fetch with static data
+                const fetchedCarreras = [{
+                  id: "TCNI01", // Example ID
+                  ...staticCarreraData
+                }];
+                setCarreras(fetchedCarreras as any);
             } catch (error) {
                 console.error("Error fetching carreras:", error);
             } finally {
@@ -715,7 +765,89 @@ const Step3 = () => {
   );
 };
 
-const Step4 = () => {
+const Step4_Materias = () => {
+    const { control, watch, setValue, formState: { errors } } = useFormContext<AllStepsData>();
+    const selectedCiclo = watch("ciclo");
+    const selectedSubjects = watch("selectedSubjects") || [];
+
+    const { mandatory, electives } = useMemo(() => {
+        if (!selectedCiclo) return { mandatory: [], electives: [] };
+        const cycleData = staticCarreraData.ciclos.find(c => c.numero.toString() === selectedCiclo);
+        if (!cycleData) return { mandatory: [], electives: [] };
+
+        const mandatory = cycleData.materias.filter(m => !m.nombre.toLowerCase().includes('electiva'));
+        const electives = cycleData.materias.filter(m => m.nombre.toLowerCase().includes('electiva'));
+        return { mandatory, electives };
+    }, [selectedCiclo]);
+    
+    useEffect(() => {
+        // Automatically set mandatory subjects
+        setValue("selectedSubjects", mandatory, { shouldValidate: true });
+    }, [mandatory, setValue]);
+    
+    const totalCredits = useMemo(() => {
+        return selectedSubjects.reduce((acc, subject) => acc + subject.creditos, 0);
+    }, [selectedSubjects]);
+
+    const handleElectiveChange = (subject: any, checked: boolean) => {
+        const currentSelection = watch("selectedSubjects") || [];
+        let newSelection;
+        if (checked) {
+            newSelection = [...currentSelection, subject];
+        } else {
+            newSelection = currentSelection.filter(s => s.id !== subject.id);
+        }
+        setValue("selectedSubjects", newSelection, { shouldValidate: true });
+    };
+
+    return (
+        <div className="space-y-6">
+            <div>
+                <h4 className="font-semibold text-lg mb-2">Materias Obligatorias</h4>
+                <div className="space-y-2 rounded-md border p-4">
+                    {mandatory.length > 0 ? mandatory.map(subject => (
+                        <div key={subject.id} className="flex justify-between items-center">
+                            <span>{subject.nombre}</span>
+                            <span className="font-semibold">{subject.creditos} créditos</span>
+                        </div>
+                    )) : <p className="text-muted-foreground">No hay materias obligatorias para este ciclo.</p>}
+                </div>
+            </div>
+
+            {electives.length > 0 && (
+                <div>
+                    <h4 className="font-semibold text-lg mb-2">Materias Electivas</h4>
+                    <div className="space-y-2 rounded-md border p-4">
+                        {electives.map(subject => (
+                            <div key={subject.id} className="flex items-center space-x-3">
+                                <Checkbox
+                                    id={subject.id}
+                                    onCheckedChange={(checked) => handleElectiveChange(subject, !!checked)}
+                                    checked={selectedSubjects.some(s => s.id === subject.id)}
+                                />
+                                <label htmlFor={subject.id} className="flex-1 flex justify-between items-center cursor-pointer">
+                                    <span>{subject.nombre}</span>
+                                    <span className="font-semibold">{subject.creditos} créditos</span>
+                                </label>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            <Alert variant={totalCredits === 10 ? "default" : "destructive"} className={totalCredits === 10 ? 'border-green-500' : ''}>
+                <AlertTitle className="font-bold">Créditos Seleccionados</AlertTitle>
+                <AlertDescription>
+                    Total de créditos: {totalCredits} / 10. Debes seleccionar exactamente 10 créditos para continuar.
+                </AlertDescription>
+            </Alert>
+             {errors.selectedSubjects && <p className="text-sm font-medium text-destructive">{errors.selectedSubjects.message}</p>}
+        </div>
+    );
+};
+
+
+const Step5_Access = () => {
   const { control } = useFormContext();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -764,7 +896,7 @@ const Step4 = () => {
   );
 };
 
-const Step5 = () => {
+const Step6_Payment = () => {
   const { control } = useFormContext();
   return (
     <div className="space-y-6">
@@ -796,7 +928,7 @@ const Step5 = () => {
   );
 };
 
-const Step6 = () => (
+const Step7_Confirm = () => (
     <div className="text-center flex flex-col items-center gap-4 py-8">
         <CheckCircle className="h-16 w-16 text-green-500" />
         <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>
@@ -813,6 +945,7 @@ const Step6 = () => (
 
 
     
+
 
 
 

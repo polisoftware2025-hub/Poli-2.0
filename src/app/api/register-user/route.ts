@@ -29,6 +29,12 @@ const registerUserSchema = z.object({
     jornada: z.string(),
     password: z.string().min(8),
     metodoPago: z.string(),
+    selectedSubjects: z.array(z.object({
+      id: z.string(),
+      nombre: z.string(),
+      codigo: z.string(),
+      creditos: z.number(),
+    })).optional(),
 }).passthrough();
 
 const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string } } = {
@@ -113,6 +119,7 @@ export async function POST(req: Request) {
           cicloActual: parseInt(data.ciclo, 10),
           grupo: data.grupo,
           jornada: data.jornada,
+          materiasInscritas: data.selectedSubjects || [],
           estado: 'activo',
           fechaCreacion: serverTimestamp(),
         };
