@@ -17,7 +17,7 @@ const registerUserSchema = z.object({
     tipoIdentificacion: z.string(),
     numeroIdentificacion: z.string().min(1).max(15).refine(val => !/\s/.test(val)),
     gender: z.string(),
-    birthDate: z.string(), // Dates will be passed as strings
+    birthDate: z.union([z.date(), z.string()]), // Acepta tanto Date como string
     phone: z.string().regex(/^\d{7,15}$/),
     address: z.string().min(5),
     country: cityCountryValidation,
@@ -29,7 +29,7 @@ const registerUserSchema = z.object({
     jornada: z.string(),
     password: z.string().min(8),
     metodoPago: z.string(),
-}).passthrough(); // Se añade passthrough para ignorar campos extra como confirmPassword
+}).passthrough();
 
 const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string } } = {
     'cc': { id: 'cc', descripcion: 'Cédula de Ciudadanía' },
@@ -66,6 +66,7 @@ export async function POST(req: Request) {
         const validation = registerUserSchema.safeParse(body);
 
         if (!validation.success) {
+            console.error("Validation errors:", validation.error.format());
             return NextResponse.json({ message: "Datos de entrada inválidos.", error: validation.error.format() }, { status: 400 });
         }
         
