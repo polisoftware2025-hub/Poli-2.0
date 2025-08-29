@@ -46,6 +46,8 @@ import {
   Star,
   User,
   X,
+  Users,
+  ClipboardList
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -113,6 +115,13 @@ export default function DashboardLayout({
     if (!email) return "U";
     return email.substring(0, 2).toUpperCase();
   };
+  
+  const adminMenuItems = [
+    { href: "/dashboard/admin/users", label: "Usuarios", icon: Users, roles: ["admin"] },
+    { href: "/dashboard/admin/pre-register", label: "Pre registro", icon: ClipboardList, roles: ["admin"] },
+    { href: "/dashboard/admin/payments", label: "Gestion pagos", icon: CreditCard, roles: ["admin"] },
+    { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar, roles: ["admin"] },
+  ];
 
   const menuItems = [
     { href: "/dashboard", label: "Panel", icon: Home, roles: ["admin", "gestor", "docente", "estudiante"] },
@@ -127,6 +136,9 @@ export default function DashboardLayout({
     { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare, roles: ["estudiante"] },
     { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["admin", "gestor", "docente", "estudiante"] },
   ];
+  
+  const itemsToRender = userRole === 'admin' ? adminMenuItems : menuItems;
+
 
   if (!userEmail || !userRole) {
     return (
@@ -200,7 +212,7 @@ export default function DashboardLayout({
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
-               {menuItems.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
+               {itemsToRender.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
