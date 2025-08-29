@@ -59,10 +59,11 @@ export default function AttendancePage() {
 
         // 2. Obtener las asistencias del estudiante
         const asistenciasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/asistencias");
+        // Se elimina el `orderBy` para evitar la necesidad de un índice compuesto.
+        // El ordenamiento se hará en el cliente.
         const q = query(
             asistenciasRef, 
-            where("estudianteId", "==", userId),
-            orderBy("fecha", "desc")
+            where("estudianteId", "==", userId)
         );
         const querySnapshot = await getDocs(q);
         
@@ -75,6 +76,9 @@ export default function AttendancePage() {
                 materiaNombre: grupo?.materia.nombre || "Materia Desconocida",
             } as Asistencia;
         });
+        
+        // Ordenar las asistencias en el lado del cliente
+        fetchedAsistencias.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
 
         setAsistencias(fetchedAsistencias);
       } catch (error) {
