@@ -43,6 +43,53 @@ const programs = [
       image: "/images/carousel/software-development.jpg",
       imageHint: "software development",
     },
+    {
+      slug: "gastronomia",
+      title: "Gastronomía",
+      description: "Fusiona arte y técnica culinaria para crear experiencias únicas.",
+      image: "/images/carousel/chef-cooking.jpg",
+      imageHint: "chef cooking",
+    },
+    {
+      slug: "hoteleria-y-turismo",
+      title: "Hotelería y Turismo",
+      description:
+        "Gestiona servicios de hospitalidad con estándares internacionales.",
+      image: "/images/carousel/luxury-hotel.jpg",
+      imageHint: "luxury hotel",
+    },
+    {
+      slug: "derecho",
+      title: "Derecho",
+      description:
+        "Forma profesionales con sólidos principios éticos y jurídicos.",
+      image: "/images/carousel/law-books-courtroom.jpg",
+      imageHint: "law books courtroom",
+    },
+    {
+      slug: "psicologia",
+      title: "Psicología",
+      description:
+        "Comprende el comportamiento humano para promover el bienestar.",
+      image: "/images/carousel/therapy-session.jpg",
+      imageHint: "therapy session",
+    },
+    {
+      slug: "enfermeria",
+      title: "Enfermería",
+      description:
+        "Cuidado integral de la salud con vocación de servicio y humanismo.",
+      image: "/images/carousel/nurses-hospital.jpg",
+      imageHint: "nurses hospital",
+    },
+    {
+      slug: "comunicacion-social",
+      title: "Comunicación Social",
+      description:
+        "Forma comunicadores estratégicos para medios y organizaciones.",
+      image: "/images/carousel/media-broadcast.jpg",
+      imageHint: "media broadcast",
+    },
 ];
 
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
