@@ -162,3 +162,47 @@ Historial de Solicitudes del Proyecto
     - `/dashboard/admin/page.tsx`
     - `/dashboard/gestor/page.tsx`
     Se implementó lógica de redirección basada en el rol guardado en `localStorage` para dirigir a cada usuario a su panel correspondiente y proteger el acceso a los demás.
+
+---
+
+**Día: 2023-10-31**
+
+- **Solicitud 1: Implementar Endpoints de Seeding**
+  - **Requisitos:**
+    - Crear endpoints en el backend para poblar la base de datos con datos iniciales de carreras y grupos.
+    - Los endpoints deben verificar si los datos ya existen para evitar duplicados.
+    - Deben estar accesibles desde el panel de administrador.
+  - **Solución:** Se crearon `src/app/api/seed/carrera/route.ts` y `src/app/api/seed/grupos/route.ts`. Se implementó la lógica de verificación en `src/lib/seed.ts` y se conectaron los botones en el panel de administrador (`/dashboard/admin/page.tsx`).
+
+- **Solicitud 2: Desarrollar Módulo de Asistencia**
+  - **Requisitos:**
+    - **Docente:** Página para tomar asistencia. Debe permitir seleccionar un grupo, ver la lista de estudiantes y marcar la asistencia.
+    - **Estudiante:** Página para consultar el historial de asistencias, con la opción de filtrar por materia.
+  - **Solución:**
+    - Se creó la página `/dashboard/docente/asistencia/page.tsx` con un selector de grupos y una tabla para registrar asistencias.
+    - Se creó la página `/dashboard/asistencias/page.tsx` para el estudiante, con lógica para obtener los grupos del estudiante y filtrar las asistencias correspondientes.
+
+- **Solicitud 3: Implementar Página de Calificaciones (Estudiante)**
+  - **Requisitos:**
+    - Mostrar las calificaciones finales por materia.
+    - Calcular y mostrar el promedio general ponderado.
+    - Incluir un desglose (placeholder) de las notas.
+  - **Solución:** Se creó la página `/dashboard/calificaciones/page.tsx` que consulta las notas del estudiante, las asocia con los grupos correspondientes para obtener el nombre de la materia y calcula el promedio ponderado.
+
+- **Solicitud 4: Desarrollar Página "Mis Grupos" (Docente)**
+  - **Requisitos:**
+    - Mostrar una lista de los grupos asignados al docente que ha iniciado sesión.
+    - Al seleccionar un grupo, mostrar la lista de estudiantes inscritos con su nombre y correo.
+  - **Solución:** Se creó `/dashboard/docente/grupos/page.tsx`. La lógica del backend consulta los grupos del docente y, al seleccionar uno, realiza una consulta adicional para obtener los correos de los estudiantes a partir de sus IDs.
+
+- **Solicitud 5: Implementar Registro de Notas (Docente)**
+  - **Requisitos:**
+    - Crear un formulario donde el docente pueda seleccionar un grupo, un estudiante de ese grupo e ingresar una calificación.
+    - La nota debe guardarse en la colección `notas` de Firestore.
+  - **Solución:** Se creó la página `/dashboard/docente/notas/page.tsx` con un formulario que utiliza el componente `GroupSelector`. El endpoint guarda la nota asociándola al estudiante, grupo, materia y docente.
+
+- **Solicitud 6: Crear Página de Horario (Estudiante)**
+  - **Requisitos:**
+    - Mostrar el horario de clases del estudiante en una vista de tabla semanal.
+    - La tabla debe mostrar las clases en sus respectivas franjas horarias y días.
+  - **Solución:** Se creó `/dashboard/horarios/page.tsx`. La página obtiene los grupos del estudiante, procesa los horarios de cada uno y los renderiza en una tabla que simula una grilla semanal.
