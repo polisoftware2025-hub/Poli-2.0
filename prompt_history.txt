@@ -1,208 +1,87 @@
+### [Cambio 1] - Secuencial
+**Descripción breve:** Creación de la página de inicio (Landing Page).
+**Detalles:** Se diseñó y desarrolló la página principal del sitio, accesible en la ruta `/`. Esta página sirve como la primera impresión para los visitantes y contiene secciones clave como un "Hero Section" con un llamado a la acción, una sección de bienvenida, un carrusel de programas académicos y un pie de página con información de contacto y redes sociales. Se implementó un diseño responsivo, incluyendo un menú de navegación adaptable para dispositivos móviles.
 
-Historial de Solicitudes del Proyecto
+### [Cambio 2] - Secuencial
+**Descripción breve:** Implementación del formulario de inicio de sesión.
+**Detalles:** Se creó la página de inicio de sesión en `/login`. El formulario incluye campos para correo electrónico y contraseña, con validación en el lado del cliente usando Zod y React Hook Form. Se añadió la funcionalidad de "mostrar/ocultar contraseña". La página se conecta al endpoint `/api/login` para autenticar a los usuarios. Se incluyeron usuarios de prueba para cada rol (`admin@example.com`, `gestor@example.com`, etc.) para facilitar el acceso durante el desarrollo.
 
-**Día: 2023-10-27**
+### [Cambio 3] - Secuencial
+**Descripción breve:** Implementación de la recuperación de contraseña.
+**Detalles:** Se desarrollaron dos páginas para el flujo de recuperación de contraseña: `/forgot-password` para solicitar el enlace de reseteo y `/reset-password` para establecer una nueva contraseña. Se crearon los endpoints de backend correspondientes (`/api/request-reset-password` y `/api/reset-password`) que gestionan la generación de tokens, el envío de correos (simulado a través de Nodemailer) y la actualización de la contraseña en la base de datos de Firebase.
 
-- **Solicitud 1: Implementar Calendario Interactivo**
-  - **Requisitos:**
-    - Crear un calendario en el panel del estudiante.
-    - Marcar días con actividades pendientes con un punto rojo.
-    - Al hacer clic en un día, mostrar detalles de la actividad en un panel lateral.
-    - El panel debe incluir información del evento y un enlace a la entrega.
+### [Cambio 4] - Secuencial
+**Descripción breve:** Creación del formulario de registro de múltiples pasos.
+**Detalles:** Se desarrolló la página de registro en `/register` como un formulario de múltiples pasos para mejorar la experiencia del usuario. Cada paso tiene su propio esquema de validación con Zod. Los pasos incluyen: datos personales, datos de contacto, inscripción académica, selección de materias, datos de acceso y método de pago. La lógica de navegación entre pasos valida los campos antes de permitir avanzar. El formulario se conecta al endpoint `/api/register-user` para crear el nuevo usuario en Firestore.
 
-- **Solicitud 2: Corregir Error en el Calendario**
-  - **Error:** `Runtime Error: Cannot read properties of undefined (reading 'marked')`.
-  - **Causa:** Se intentaba acceder a `props.modifiers.marked` cuando `props.modifiers` podía ser `undefined`.
-  - **Solución:** Añadir una verificación de seguridad (`props.modifiers?.marked`) para evitar el error.
+### [Cambio 5] - Secuencial
+**Descripción breve:** Implementación de la lógica de selección de materias en el registro.
+**Detalles:** Se añadió un nuevo paso al formulario de registro para la selección de materias. El sistema asigna automáticamente las materias obligatorias del ciclo seleccionado por el estudiante. Si el ciclo contiene materias electivas, se presenta una lista para que el estudiante elija. Se implementó una validación en tiempo real para asegurar que la suma de los créditos de las materias seleccionadas sea exactamente 10 antes de permitir continuar.
 
-- **Solicitud 3: Arreglar Error Visual en Menú Lateral Móvil**
-  - **Problema:** El menú lateral se mostraba con fondo gris en lugar de azul en pantallas pequeñas.
-  - **Solución:** Asegurar que el menú mantenga los colores corporativos (fondo azul, texto blanco) en todas las resoluciones aplicando la clase `bg-primary`.
+### [Cambio 6] - Secuencial
+**Descripción breve:** Desarrollo de la API de autenticación y registro.
+**Detalles:** Se crearon los endpoints de backend para gestionar la autenticación y el registro de usuarios.
+- `/api/login`: Valida las credenciales del usuario contra los datos en Firestore, usando `bcrypt` para comparar contraseñas cifradas. Devuelve los datos del usuario y su rol si el inicio de sesión es exitoso.
+- `/api/register-user`: Recibe los datos del formulario de registro, genera un correo institucional único, cifra la contraseña con `bcrypt` y crea los documentos correspondientes en las colecciones `usuarios` y `estudiantes` de Firestore.
 
-- **Solicitud 4: Corregir Error de Consola en `useSearchParams`**
-  - **Error:** `params are being enumerated. 'params' should be unwrapped with 'React.use()'`.
-  - **Causa:** El componente de migas de pan (`Breadcrumbs`) estaba usando `useSearchParams` de una manera obsoleta.
-  - **Solución:** Eliminar el uso innecesario de `useSearchParams` y basar la lógica únicamente en `usePathname`.
+### [Cambio 7] - Secuencial
+**Descripción breve:** Creación del Layout del Dashboard.
+**Detalles:** Se diseñó el layout principal para todas las páginas del dashboard (`/dashboard/layout.tsx`). Este layout incluye una barra lateral de navegación persistente y un encabezado. La barra lateral es personalizable, responsive y colapsable. El encabezado contiene un buscador, un menú de notificaciones y un menú de perfil de usuario con opciones como "Perfil", "Configuración" y "Cerrar Sesión".
 
-- **Solicitud 5: Cambiar Color del Scrollbar en Menú Lateral**
-  - **Requisito:** El fondo de la barra de desplazamiento debe coincidir con el color de fondo del menú.
-  - **Solución:** Añadir clases de Tailwind (`scrollbar-thumb-accent`, `scrollbar-track-primary`) para personalizar el estilo del scrollbar.
+### [Cambio 8] - Secuencial
+**Descripción breve:** Implementación de la redirección basada en roles.
+**Detalles:** Se creó una página de redirección en `/dashboard/page.tsx`. Esta página verifica el rol del usuario guardado en el `localStorage` después del inicio de sesión y redirige automáticamente al panel de control correspondiente (`/dashboard/admin`, `/dashboard/gestor`, `/dashboard/docente` o `/dashboard/estudiante`), asegurando que cada usuario vea la interfaz adecuada para su rol.
 
-- **Solicitud 6: Corregir Error de Compilación `tailwind-scrollbar`**
-  - **Error:** `Error: Cannot find module 'tailwind-scrollbar'`.
-  - **Causa:** El plugin `tailwind-scrollbar` estaba requerido en la configuración de Tailwind pero no estaba instalado.
-  - **Solución:** Añadir el paquete `tailwind-scrollbar` a las dependencias en `package.json`.
+### [Cambio 9] - Secuencial
+**Descripción breve:** Desarrollo del panel de Estudiante.
+**Detalles:** Se crearon varias páginas para el rol de estudiante:
+- **Panel Principal (`/dashboard/estudiante`):** Muestra un resumen de las materias actuales, una lista de tareas pendientes y un calendario académico interactivo.
+- **Materias (`/dashboard/materias`):** Permite ver las materias inscritas en formato de cuadrícula o lista, con filtros y opciones de ordenamiento.
+- **Calificaciones (`/dashboard/calificaciones`):** Muestra las notas por materia, el promedio general ponderado y el total de créditos aprobados. Incluye un desglose de notas por actividad.
+- **Horario (`/dashboard/horarios`):** Presenta el horario de clases en una vista de calendario semanal.
+- **Asistencias (`/dashboard/asistencias`):** Permite al estudiante consultar su historial de asistencias y faltas.
+- **Pagos (`/dashboard/pagos`):** Muestra el historial de transacciones y el saldo pendiente.
+- **Evaluación Docente (`/dashboard/evaluacion-docente`):** Permite al estudiante calificar a sus docentes.
+- **Perfil (`/dashboard/profile`):** Permite al usuario ver y actualizar su información personal y cambiar su contraseña.
 
----
+### [Cambio 10] - Secuencial
+**Descripción breve:** Desarrollo del panel de Docente.
+**Detalles:** Se crearon varias páginas para el rol de docente:
+- **Panel Principal (`/dashboard/docente`):** Proporciona accesos directos a las principales herramientas del docente.
+- **Mis Grupos (`/dashboard/docente/grupos`):** Permite al docente ver los grupos que tiene asignados y la lista de estudiantes inscritos en cada uno.
+- **Registrar Notas (`/dashboard/docente/notas`):** Un formulario para que el docente seleccione un grupo y un estudiante para registrar su calificación final.
+- **Tomar Asistencia (`/dashboard/docente/asistencia`):** Una interfaz para pasar lista y registrar la asistencia de los estudiantes de un grupo seleccionado.
 
-**Día: 2023-10-28**
+### [Cambio 11] - Secuencial
+**Descripción breve:** Desarrollo del panel de Administrador.
+**Detalles:** Se creó la página del panel de administrador en `/dashboard/admin`. Esta interfaz incluye un resumen de estadísticas del sistema (usuarios, carreras, etc.) y herramientas para la gestión de datos iniciales. Se añadieron botones para ejecutar los endpoints de "seeding" (`/api/seed/carrera` y `/api/seed/grupos`) para poblar la base de datos con datos de prueba.
 
-- **Solicitud 1: Implementar Funcionalidad de Cambio de Contraseña**
-  - **Requisitos:**
-    - Validación de campos (obligatorios, longitud, coincidencia).
-    - Lógica de backend con reautenticación de Firebase (`reauthenticateWithCredential`) y actualización (`updatePassword`).
-    - Mensajes de éxito y error claros.
-    - Botón para ver/ocultar contraseña.
+### [Cambio 12] - Secuencial
+**Descripción breve:** Desarrollo del panel de Gestor.
+**Detalles:** Se creó la página del panel de gestor en `/dashboard/gestor`. Esta página proporciona una interfaz con accesos directos a las funciones de gestión académica, como la administración de carreras, la gestión de grupos y la revisión de pagos.
 
-- **Solicitud 2: Corregir Error de Inicialización de Firebase**
-  - **Error:** `FirebaseError: Firebase: No Firebase App '[DEFAULT]' has been created - call initializeApp() first`.
-  - **Causa:** Se llamaba a `getAuth()` sin la inicialización de la app de Firebase.
-  - **Solución:** Importar la instancia `auth` ya inicializada desde `src/lib/firebase.ts`.
+### [Cambio 13] - Secuencial
+**Descripción breve:** Creación de endpoints de "seeding".
+**Detalles:** Se implementaron los endpoints `/api/seed/carrera` y `/api/seed/grupos` para poblar la base de datos de Firestore con datos iniciales. Estos endpoints verifican si los datos ya existen para evitar duplicados y facilitan la configuración inicial del entorno de desarrollo.
 
-- **Solicitud 3: Adaptar Cambio de Contraseña sin Firebase Auth**
-  - **Problema:** El sistema no usa Firebase Auth, sino un sistema de roles simulado.
-  - **Solución:** Crear un endpoint en el backend (`/api/change-password`) para manejar el cambio de contraseña sin depender de una sesión de Firebase Auth.
+### [Cambio 14] - Secuencial
+**Descripción breve:** Implementación de flujos de IA con Genkit.
+**Detalles:** Se crearon dos flujos de IA utilizando Genkit:
+- **Sugerencia de Contenido (`/ai/flows/suggest-content.ts`):** Un agente que sugiere contenido y enlaces de navegación relevantes basándose en la actividad simulada del usuario.
+- **Envío de Código de Verificación (`/ai/flows/send-verification-code.ts`):** Un flujo que genera un correo electrónico en formato HTML con un código de verificación para el proceso de recuperación de contraseña.
 
-- **Solicitud 4: Solucionar Error de "Contraseña Actual Incorrecta"**
-  - **Problema:** La lógica de verificación de la contraseña en el backend fallaba.
-  - **Solución:** Mejorar la lógica del backend para comparar la contraseña actual de forma correcta, considerando que podía no estar encriptada.
+### [Cambio 15] - Secuencial
+**Descripción breve:** Corrección de error `PageNotFoundError`.
+**Detalles:** Se solucionó un `PageNotFoundError` que ocurría debido a una estructura de carpetas incorrecta para la ruta `/register`. El archivo `register/page.tsx` fue movido a la ubicación correcta `src/app/register/page.tsx`, alineándolo con las convenciones del App Router de Next.js.
 
-- **Solicitud 5: Asegurar Cifrado de Contraseñas en el Registro**
-  - **Problema:** Las contraseñas de nuevos usuarios no se cifraban (`hasheaban`) al registrarse.
-  - **Solución:** Crear un endpoint (`/api/register-user`) que se encargue de cifrar la contraseña con `bcrypt` antes de guardarla en la base de datos.
+### [Cambio 16] - Secuencial
+**Descripción breve:** Corrección de error de `shape` indefinido en Zod.
+**Detalles:** Se resolvió un error de runtime `Cannot read properties of undefined (reading 'shape')` en el formulario de registro. El problema se debía a un intento de acceder a la propiedad `_def.schema.shape` en esquemas de Zod. Se corrigió utilizando la propiedad `.shape` directamente, que es la forma correcta de combinar esquemas de objetos.
 
-- **Solicitud 6: Manejar Contraseñas de Usuarios Antiguos**
-  - **Requisito:** El sistema debe ser capaz de manejar tanto contraseñas en texto plano como cifradas.
-  - **Solución:** Implementar una lógica dual en el endpoint de cambio de contraseña que primero intenta comparar con `bcrypt` y, si falla, compara como texto plano. La nueva contraseña siempre se guarda cifrada, migrando así las antiguas.
+### [Cambio 17] - Secuencial
+**Descripción breve:** Corrección de error `Cannot convert undefined or null to object`.
+**Detalles:** Se solucionó un error de runtime en el formulario de registro que ocurría al intentar acceder a la propiedad `.shape` de un esquema de Zod modificado con `.refine()`. Se refactorizó la lógica para separar la definición del objeto base del esquema de la validación con `.refine()`, asegurando que la propiedad `.shape` estuviera disponible cuando se necesitaba.
 
-- **Solicitud 7: Crear Historial de Prompts**
-  - **Requisito:** Generar un archivo de texto (`prompt_history.txt`) con un historial de las solicitudes y fecha.
-  - **Solución:** Crear el archivo en la raíz del proyecto.
-  
----
-
-**Día: 2023-10-29**
-
-- **Solicitud 1: Implementar Formulario de Registro Multi-paso**
-  - **Requisitos:**
-    - Dividir el registro en 6 pasos: Datos Personales, Contacto, Académicos, Acceso, Inscripción y Confirmación.
-    - Añadir una barra de progreso.
-    - Validar cada paso con Zod antes de continuar.
-    - Al final, enviar todos los datos a un endpoint (`/api/register-user`).
-
-- **Solicitud 2: Implementar Lógica de Recuperación de Contraseña**
-  - **Requisitos:**
-    - Crear una página (`/forgot-password`) donde el usuario introduce su correo.
-    - Crear un endpoint (`/api/request-reset-password`) que genere un token único y lo guarde en Firestore.
-    - El token debe tener una fecha de expiración de 1 hora.
-    - Enviar un correo al usuario con un enlace que incluya el token.
-
-- **Solicitud 3: Implementar Página de Restablecimiento de Contraseña**
-  - **Requisitos:**
-    - Crear una página (`/reset-password`) que lea el token de la URL.
-    - Crear un endpoint (`/api/reset-password`) que valide el token.
-    - El token debe ser válido, no haber expirado y no haber sido usado.
-    - Si el token es válido, permitir al usuario establecer una nueva contraseña.
-    - La nueva contraseña debe ser cifrada con `bcrypt` y guardada en Firestore.
-    - Invalidar el token después de su uso.
-
-- **Solicitud 4: Crear Endpoint de Correo con IA Generativa**
-  - **Requisitos:**
-    - Crear un flow de Genkit en `src/ai/flows/send-verification-code.ts`.
-    - El flow debe usar un modelo de IA (Gemini) para generar un correo electrónico en formato HTML.
-    - El correo debe tener un diseño profesional y un código de verificación de 6 dígitos.
-    - El flow debe ser llamado desde un endpoint o simular el envío de correos.
-
-- **Solicitud 5: Implementar Página de Verificación de Código**
-  - **Problema:** El flujo de recuperación de contraseña con token por correo puede ser complejo de configurar (Nodemailer, etc.).
-  - **Solución Alternativa:** Crear una página de verificación (`/verify-code`) donde el usuario introduce un código de 6 dígitos que recibe por correo.
-    - **Paso 1:** En la página de "olvidé mi contraseña", en lugar de generar y enviar un token, se genera un código de 6 dígitos y se guarda en el `localStorage` del navegador junto con la hora y el correo.
-    - **Paso 2:** El usuario es redirigido a `/verify-code`.
-    - **Paso 3:** El usuario introduce el código. La página lo valida contra el que está en `localStorage`.
-    - **Paso 4:** Si es correcto y no ha expirado (ej. 10 minutos), se le permite ir a la página de restablecimiento de contraseña.
-
-- **Solicitud 6: Corrección de error de compilación por exportación inexistente**
-  - **Problema:** `Export carreraData doesn't exist in target module`
-  - **Causa:** La variable `carreraData` en `src/lib/seed.ts` no estaba siendo exportada, impidiendo su uso en el formulario de registro.
-  - **Solución:** Se añadió la palabra clave `export` a `carreraData` para hacerla accesible a otros módulos.
-
-- **Solicitud 7: Corrección de error `Cannot convert undefined or null to object`**
-  - **Problema:** Error de runtime en el formulario de registro.
-  - **Causa:** Se intentaba acceder a la propiedad `.shape` de un esquema Zod que había sido modificado con `.refine()`, lo cual elimina dicha propiedad.
-  - **Solución:** Se refactorizó la creación del esquema `step4Schema_materias`, separando el objeto base (`step4Object`) de la validación con `.refine()` para poder acceder a `.shape` del objeto base sin problemas.
-
-- **Solicitud 8: Actualización de este historial**
-  - **Requisito:** Actualizar el archivo `prompt_history.txt` con todos los cambios realizados en el proyecto.
-  - **Solución:** Se editó este archivo para reflejar el historial completo de solicitudes y soluciones.
-
----
-
-**Día: 2023-10-30**
-
-- **Solicitud 1: Crear la Página de Inicio (Landing Page)**
-  - **Requisitos:**
-    - Diseño profesional y atractivo que refleje la identidad de la institución (Poli 2.0).
-    - Incluir un encabezado con navegación clara (Inicio, Inscripción, Programas, Contacto).
-    - Una sección "hero" con un llamado a la acción (CTA) para "Iniciar Sesión" y "Conocer Programas".
-    - Una sección de "Inscripción" con un botón que dirija al formulario de registro.
-    - Un carrusel dinámico para mostrar los programas académicos ofrecidos.
-    - Un pie de página con información de contacto y enlaces a redes sociales.
-  - **Solución:** Se creó `src/app/page.tsx` con todos los componentes de la interfaz de usuario requeridos, utilizando ShadCN y Tailwind CSS. Se implementó el carrusel de programas y se aseguró que el diseño fuera completamente adaptable a dispositivos móviles.
-
-- **Solicitud 2: Implementar Sistema de Inicio de Sesión y Roles**
-  - **Requisitos:**
-    - Crear una página de login en `/login`.
-    - Validar las credenciales (correo y contraseña) contra los datos en Firestore.
-    - Implementar un sistema de roles (estudiante, docente, admin, gestor).
-    - Al iniciar sesión, guardar la información del usuario (correo, rol, ID) en `localStorage`.
-    - Redirigir al usuario a un panel de control específico según su rol.
-    - Añadir usuarios de prueba para cada rol (`admin@example.com`, `docente@example.com`, etc.) para facilitar el desarrollo.
-  - **Solución:** Se creó la página `/login/page.tsx` con un formulario de inicio de sesión y validación. Se desarrolló el endpoint `/api/login` que verifica las credenciales con `bcrypt` y devuelve los datos del usuario. Se implementó la lógica de redirección en `src/app/dashboard/page.tsx` y el `layout` del dashboard (`src/app/dashboard/layout.tsx`) para proteger las rutas y gestionar la sesión.
-
-- **Solicitud 3: Desarrollar Paneles de Control por Rol**
-  - **Requisitos:**
-    - **Panel de Estudiante:** Mostrar un resumen de materias, tareas pendientes y un calendario de actividades.
-    - **Panel de Docente:** Proporcionar acceso rápido a "Mis Grupos", "Registro de Notas" y "Control de Asistencia".
-    - **Panel de Administrador:** Permitir la gestión de usuarios, carreras, permisos y la capacidad de poblar la base de datos con datos iniciales (`seed`).
-    - **Panel de Gestor:** Mostrar opciones para gestionar carreras, grupos y revisar pagos.
-    - Cada panel debe ser accesible solo para el rol correspondiente.
-  - **Solución:** Se crearon las páginas para cada panel:
-    - `/dashboard/estudiante/page.tsx`
-    - `/dashboard/docente/page.tsx`
-    - `/dashboard/admin/page.tsx`
-    - `/dashboard/gestor/page.tsx`
-    Se implementó lógica de redirección basada en el rol guardado en `localStorage` para dirigir a cada usuario a su panel correspondiente y proteger el acceso a los demás.
-
----
-
-**Día: 2023-10-31**
-
-- **Solicitud 1: Implementar Endpoints de Seeding**
-  - **Requisitos:**
-    - Crear endpoints en el backend para poblar la base de datos con datos iniciales de carreras y grupos.
-    - Los endpoints deben verificar si los datos ya existen para evitar duplicados.
-    - Deben estar accesibles desde el panel de administrador.
-  - **Solución:** Se crearon `src/app/api/seed/carrera/route.ts` y `src/app/api/seed/grupos/route.ts`. Se implementó la lógica de verificación en `src/lib/seed.ts` y se conectaron los botones en el panel de administrador (`/dashboard/admin/page.tsx`).
-
-- **Solicitud 2: Desarrollar Módulo de Asistencia**
-  - **Requisitos:**
-    - **Docente:** Página para tomar asistencia. Debe permitir seleccionar un grupo, ver la lista de estudiantes y marcar la asistencia.
-    - **Estudiante:** Página para consultar el historial de asistencias, con la opción de filtrar por materia.
-  - **Solución:**
-    - Se creó la página `/dashboard/docente/asistencia/page.tsx` con un selector de grupos y una tabla para registrar asistencias.
-    - Se creó la página `/dashboard/asistencias/page.tsx` para el estudiante, con lógica para obtener los grupos del estudiante y filtrar las asistencias correspondientes.
-
-- **Solicitud 3: Implementar Página de Calificaciones (Estudiante)**
-  - **Requisitos:**
-    - Mostrar las calificaciones finales por materia.
-    - Calcular y mostrar el promedio general ponderado.
-    - Incluir un desglose (placeholder) de las notas.
-  - **Solución:** Se creó la página `/dashboard/calificaciones/page.tsx` que consulta las notas del estudiante, las asocia con los grupos correspondientes para obtener el nombre de la materia y calcula el promedio ponderado.
-
-- **Solicitud 4: Desarrollar Página "Mis Grupos" (Docente)**
-  - **Requisitos:**
-    - Mostrar una lista de los grupos asignados al docente que ha iniciado sesión.
-    - Al seleccionar un grupo, mostrar la lista de estudiantes inscritos con su nombre y correo.
-  - **Solución:** Se creó `/dashboard/docente/grupos/page.tsx`. La lógica del backend consulta los grupos del docente y, al seleccionar uno, realiza una consulta adicional para obtener los correos de los estudiantes a partir de sus IDs.
-
-- **Solicitud 5: Implementar Registro de Notas (Docente)**
-  - **Requisitos:**
-    - Crear un formulario donde el docente pueda seleccionar un grupo, un estudiante de ese grupo e ingresar una calificación.
-    - La nota debe guardarse en la colección `notas` de Firestore.
-  - **Solución:** Se creó la página `/dashboard/docente/notas/page.tsx` con un formulario que utiliza el componente `GroupSelector`. El endpoint guarda la nota asociándola al estudiante, grupo, materia y docente.
-
-- **Solicitud 6: Crear Página de Horario (Estudiante)**
-  - **Requisitos:**
-    - Mostrar el horario de clases del estudiante en una vista de tabla semanal.
-    - La tabla debe mostrar las clases en sus respectivas franjas horarias y días.
-  - **Solución:** Se creó `/dashboard/horarios/page.tsx`. La página obtiene los grupos del estudiante, procesa los horarios de cada uno y los renderiza en una tabla que simula una grilla semanal.
+### [Cambio 18] - Secuencial
+**Descripción breve:** Corrección de error "datos de entrada inválidos" en el registro.
+**Detalles:** Se solucionó un error persistente de "datos de entrada inválidos" al finalizar el registro. Después de varios intentos, se identificó que el problema no estaba en la validación de entrada, sino en la lógica de negocio del backend. El campo `segundoNombre`, al llegar como una cadena vacía, causaba un fallo al intentar usarlo para generar el correo institucional. Se ajustó la lógica en `/api/register-user/route.ts` para manejar correctamente el caso en que `segundoNombre` esté vacío, omitiéndolo de la construcción del correo y permitiendo que el registro se complete con éxito.
