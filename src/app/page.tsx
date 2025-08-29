@@ -15,7 +15,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Menu, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
+import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
@@ -32,6 +32,18 @@ const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
 const XIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
         <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
+    </svg>
+);
+
+const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
+    </svg>
+);
+
+const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
+     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.802c-3.552 0-3.868.014-5.225.076-2.805.127-4.223 1.543-4.351 4.35C2.368 9.944 2.356 10.26 2.356 12s.012 2.056.076 3.419c.127 2.805 1.543 4.223 4.35 4.35C8.132 19.828 8.448 19.84 12 19.84s3.868-.012 5.225-.076c2.805-.127 4.223-1.543 4.35-4.35.064-1.363.076-1.68.076-3.419s-.012-2.056-.076-3.419c-.127-2.805-1.543-4.223-4.35-4.35C15.868 3.98 15.552 3.965 12 3.965zM12 6.837c-2.848 0-5.163 2.315-5.163 5.163s2.315 5.163 5.163 5.163 5.163-2.315 5.163-5.163-2.315-5.163-5.163-5.163zm0 8.529c-1.87 0-3.366-1.496-3.366-3.366s1.496-3.366 3.366-3.366 3.366 1.496 3.366 3.366-1.496 3.366-3.366 3.366zm5.338-8.201c-.966 0-1.75.784-1.75 1.75s.784 1.75 1.75 1.75 1.75-.784 1.75-1.75-.784-1.75-1.75-1.75z" />
     </svg>
 );
 
@@ -134,8 +146,6 @@ export default function HomePage() {
     };
     
     const onSettle = (api: CarouselApi) => {
-      // After settling, if autoplay is not playing, restart it.
-      // This is a workaround for when `stopOnInteraction` is true.
       if (!api.plugins().autoplay.isPlaying()) {
         api.plugins().autoplay.play();
       }
@@ -160,7 +170,6 @@ export default function HomePage() {
 
   const scrollToSlide = (index: number) => {
     carouselApi?.scrollTo(index);
-    // After manually selecting a slide, restart autoplay
     if (carouselApi && !carouselApi.plugins().autoplay.isPlaying()) {
       carouselApi.plugins().autoplay.play();
     }
@@ -359,55 +368,63 @@ export default function HomePage() {
 
        {/* Footer */}
         <footer id="contacto" style={{ backgroundColor: "#002147" }} className="text-white">
-            <div className="container mx-auto px-6 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center md:text-left">
-                    {/* Contact Info */}
+            <div className="container mx-auto px-6 py-16">
+                <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-4 md:text-left">
+                    {/* Column 1: About Us */}
                     <div className="space-y-4">
-                        <h3 className="font-poppins text-xl font-bold">Contáctanos</h3>
-                        <p className="flex items-center justify-center md:justify-start gap-2">
-                            <MapPin className="h-5 w-5" />
-                            Avenida Siempre Viva #123, Bogotá
+                        <h3 className="font-poppins text-xl font-bold">Sobre nosotros</h3>
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                          Politécnico 2.0 es una institución de educación superior orientada a la formación práctica y tecnológica en distintas áreas del conocimiento.
                         </p>
-                        <p className="flex items-center justify-center md:justify-start gap-2">
-                            <Phone className="h-5 w-5" />
-                            (601) 123-4567
-                        </p>
+                         <Link href="#inicio" className="inline-flex items-center gap-2">
+                            <GraduationCap className="h-7 w-7 text-white" />
+                            <span className="font-poppins text-lg font-bold text-white">
+                                Poli 2.0
+                            </span>
+                        </Link>
                     </div>
 
-                    {/* Social Media */}
+                    {/* Column 2: Quick Links */}
+                    <div className="space-y-4">
+                        <h3 className="font-poppins text-xl font-bold">Enlaces rápidos</h3>
+                        <ul className="space-y-3">
+                            <li><Link href="#inicio" className="text-gray-300 hover:text-white transition-colors">Inicio</Link></li>
+                            <li><Link href="#programas" className="text-gray-300 hover:text-white transition-colors">Programas académicos</Link></li>
+                            <li><Link href="#" className="text-gray-300 hover:text-white transition-colors">Noticias y anuncios</Link></li>
+                            <li><Link href="#" className="text-gray-300 hover:text-white transition-colors">Calendario académico</Link></li>
+                            <li><Link href="#contacto" className="text-gray-300 hover:text-white transition-colors">Contacto</Link></li>
+                        </ul>
+                    </div>
+
+                    {/* Column 3: Contact Us */}
+                    <div className="space-y-4">
+                        <h3 className="font-poppins text-xl font-bold">Contáctanos</h3>
+                         <ul className="space-y-3">
+                            <li className="flex items-center justify-center gap-3 md:justify-start">
+                                <MapPin className="h-5 w-5 shrink-0" />
+                                <span className="text-gray-300 text-sm">Calle 123 #45-67, Bogotá, Colombia</span>
+                            </li>
+                            <li className="flex items-center justify-center gap-3 md:justify-start">
+                                <Phone className="h-5 w-5 shrink-0" />
+                                <span className="text-gray-300 text-sm">+57 310 456 7890</span>
+                            </li>
+                             <li className="flex items-center justify-center gap-3 md:justify-start">
+                                <Mail className="h-5 w-5 shrink-0" />
+                                <span className="text-gray-300 text-sm">info@politecnico20.edu.co</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    {/* Column 4: Follow Us */}
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
                         <div className="flex justify-center md:justify-start items-center space-x-4">
-                            <Link href="#" className="text-white hover:text-blue-400 transition-colors">
-                                <Facebook className="h-7 w-7" />
-                                <span className="sr-only">Facebook</span>
-                            </Link>
-                            <Link href="#" className="text-white hover:text-pink-400 transition-colors">
-                                <Instagram className="h-7 w-7" />
-                                <span className="sr-only">Instagram</span>
-                            </Link>
-                            <Link href="#" className="text-white hover:text-gray-400 transition-colors">
-                                <XIcon className="h-6 w-6" />
-                                <span className="sr-only">X/Twitter</span>
-                            </Link>
-                            <Link href="#" className="text-white hover:text-cyan-400 transition-colors">
-                                <TikTokIcon className="h-7 w-7" />
-                                <span className="sr-only">TikTok</span>
-                            </Link>
+                            <Link href="#" className="text-white hover:text-blue-400 transition-colors" aria-label="Facebook"><FacebookIcon className="h-7 w-7" /></Link>
+                            <Link href="#" className="text-white hover:text-pink-400 transition-colors" aria-label="Instagram"><InstagramIcon className="h-7 w-7" /></Link>
+                            <Link href="#" className="text-white hover:text-gray-400 transition-colors" aria-label="X/Twitter"><XIcon className="h-6 w-6" /></Link>
+                            <Link href="#" className="text-white hover:text-blue-500 transition-colors" aria-label="LinkedIn"><Linkedin className="h-7 w-7" /></Link>
+                            <Link href="https://www.tiktok.com/@politecnico20" className="text-white hover:text-cyan-400 transition-colors" aria-label="TikTok"><TikTokIcon className="h-7 w-7" /></Link>
                         </div>
-                    </div>
-
-                    {/* Logo and Copyright */}
-                    <div className="flex flex-col items-center md:items-start space-y-4">
-                         <div className="flex items-center gap-2">
-                            <GraduationCap className="h-8 w-8 text-white" />
-                            <span className="font-poppins text-xl font-bold text-white">
-                                Poli 2.0
-                            </span>
-                        </div>
-                        <p className="text-sm text-gray-400">
-                           Formando el futuro, hoy.
-                        </p>
                     </div>
                 </div>
             </div>
