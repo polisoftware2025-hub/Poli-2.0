@@ -1,6 +1,6 @@
 
 import { db } from './firebase'; 
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, writeBatch } from 'firebase/firestore';
 
 export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
@@ -205,3 +205,125 @@ export async function seedGrupos() {
         return { success: false, message: errorMessage };
     }
 }
+
+
+export async function seedInitialData() {
+    const batch = writeBatch(db);
+    const politecnicoRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+
+    try {
+        // Simple check to avoid re-seeding. Checks if the first user exists.
+        const q = query(politecnicoRef, where("identificacion", "==", "123456789"));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+            throw new Error("Los datos iniciales ya parecen existir en la base de datos.");
+        }
+
+        // 1. Usuarios
+        const usuarioEstudianteRef = collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/usuarios');
+        const newUserRef = addDoc(usuarioEstudianteRef, {
+            nombre1: "Juan",
+            nombre2: "Carlos",
+            apellido1: "Perez",
+            apellido2: "Gomez",
+            tipoIdentificacion: { id: "cc", descripcion: "Cédula de Ciudadanía" },
+            identificacion: "123456789",
+            genero: "M",
+            telefono: "3001234567",
+            direccion: "Calle Falsa 123",
+            ciudad: "Bogotá",
+            pais: "Colombia",
+            correo: "juan.perez@test.com",
+            correoInstitucional: "juan.perez@pi.edu.co",
+            contrasena: "$2b$10$abcdefghijklmnopqrstuv", // Placeholder bcrypt hash
+            rol: { id: "estudiante", descripcion: "Estudiante" },
+            estaInscrito: true,
+            fechaCreacion: new Date()
+        });
+
+        // For other collections, we will create refs and set data inside the batch
+        // In a real scenario, you'd create more complex and related data.
+        // For now, we'll add one sample document to each to ensure collections are created.
+
+        // 2. Estudiantes (referencing the user created above)
+        // This part is tricky without knowing the ID beforehand.
+        // For simplicity, we'll do this after the user is created.
+        // Let's assume we have a fixed ID for the seed user.
+        const studentId = "seededStudent01";
+        const studentRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes/${studentId}`);
+        batch.set(studentRef, {
+            usuarioId: studentId,
+            estado: "activo",
+            fechaCreacion: new Date()
+        });
+
+        // 3. Docentes
+        const docenteId = "seededDocente01";
+        const docenteRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/docentes/${docenteId}`);
+        batch.set(docenteRef, {
+            usuarioId: docenteId,
+            estado: "activo",
+            fechaCreacion: new Date()
+        });
+
+        // 4. Pagos
+        const pagoRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/pagos'));
+        batch.set(pagoRef, {
+            estudianteId: studentId,
+            carreraId: "TCNI01",
+            periodo: "2024-1",
+            monto: 3500000,
+            metodo: "PSE",
+            estado: "Pagado",
+            fechaPago: new Date()
+        });
+
+        // 5. Notas
+        const notaRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/notas'));
+        batch.set(notaRef, {
+            estudianteId: studentId,
+            grupoId: "C1-MB-001",
+            notaFinal: 4.5
+        });
+
+        // 6. Asistencias
+        const asistenciaRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/asistencias'));
+        batch.set(asistenciaRef, {
+            estudianteId: studentId,
+            grupoId: "C1-MB-001",
+            estado: "Presente",
+            fecha: new Date()
+        });
+
+        // 7. Evaluaciones Docentes
+        const evaluacionRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/evaluaciones_docentes'));
+        batch.set(evaluacionRef, {
+            estudianteId: studentId,
+            docenteId: docenteId,
+            grupoId: "C1-MB-001",
+            fecha: new Date(),
+            calificacion: 5,
+            comentario: "Excelente docente."
+        });
+
+        // For collections with subcollections, you'd add them similarly.
+        // Example for estudiante's subcollection:
+        const carreraInscritaRef = doc(collection(studentRef, 'carreras_inscritas'));
+        batch.set(carreraInscritaRef, {
+            carreraId: "TCNI01",
+            periodo: "2024-1",
+            fechaInscripcion: new Date(),
+            estadoEstudianteCarrera: "activo"
+        });
+
+        await batch.commit();
+
+        return { success: true, message: "Datos iniciales (usuarios, estudiantes, etc.) insertados exitosamente." };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió al poblar los datos iniciales.";
+        console.error("Error en seedInitialData:", error);
+        return { success: false, message: errorMessage };
+    }
+}
+
+    

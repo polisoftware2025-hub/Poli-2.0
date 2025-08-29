@@ -2,17 +2,18 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Users, BookOpen, Database } from "lucide-react";
+import { Shield, Users, BookOpen, Database, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+type SeedType = 'carrera' | 'grupos' | 'initial-data';
+
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [isSeedingCarreras, setIsSeedingCarreras] = useState(false);
-  const [isSeedingGrupos, setIsSeedingGrupos] = useState(false);
+  const [isSeeding, setIsSeeding] = useState<{[key in SeedType]?: boolean}>({});
   const { toast } = useToast();
 
   useEffect(() => {
@@ -27,12 +28,8 @@ export default function AdminDashboardPage() {
     }
   }, [router]);
 
-  const handleSeed = async (type: 'carrera' | 'grupos') => {
-    if (type === 'carrera') {
-      setIsSeedingCarreras(true);
-    } else {
-      setIsSeedingGrupos(true);
-    }
+  const handleSeed = async (type: SeedType) => {
+    setIsSeeding(prev => ({...prev, [type]: true}));
     
     try {
       const response = await fetch(`/api/seed/${type}`, { method: 'POST' });
@@ -52,11 +49,7 @@ export default function AdminDashboardPage() {
         description: error.message,
       });
     } finally {
-       if (type === 'carrera') {
-        setIsSeedingCarreras(false);
-      } else {
-        setIsSeedingGrupos(false);
-      }
+       setIsSeeding(prev => ({...prev, [type]: false}));
     }
   };
 
@@ -120,18 +113,24 @@ export default function AdminDashboardPage() {
                 <CardTitle>Gestión de Datos Iniciales</CardTitle>
             </div>
           <CardDescription>
-            Usa estos botones para poblar la base de datos con los datos iniciales de carreras y grupos. Esta acción solo debe realizarse una vez.
+            Usa estos botones para poblar la base de datos con los datos iniciales. Esta acción solo debe realizarse una vez.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4">
-           <Button onClick={() => handleSeed('carrera')} disabled={isSeedingCarreras}>
-                {isSeedingCarreras ? 'Poblando Carreras...' : 'Poblar Carreras'}
+           <Button onClick={() => handleSeed('carrera')} disabled={isSeeding['carrera']}>
+                {isSeeding['carrera'] ? 'Poblando...' : 'Poblar Carreras'}
             </Button>
-            <Button onClick={() => handleSeed('grupos')} disabled={isSeedingGrupos}>
-                {isSeedingGrupos ? 'Poblando Grupos...' : 'Poblar Grupos'}
+            <Button onClick={() => handleSeed('grupos')} disabled={isSeeding['grupos']}>
+                {isSeeding['grupos'] ? 'Poblando...' : 'Poblar Grupos'}
+            </Button>
+            <Button onClick={() => handleSeed('initial-data')} disabled={isSeeding['initial-data']}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                {isSeeding['initial-data'] ? 'Poblando...' : 'Poblar Datos Iniciales'}
             </Button>
         </CardContent>
       </Card>
     </div>
   );
 }
+
+    
