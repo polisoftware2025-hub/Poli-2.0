@@ -405,13 +405,15 @@ export default function HomePage() {
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
                         <div className="flex justify-center md:justify-start items-center space-x-4">
-                             <a href="#" className="text-white hover:text-blue-500 transition-colors" aria-label="Facebook">
+                            <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook">
                                 <FacebookIcon className="h-7 w-7" />
                             </a>
                             <a href="#" className="group" aria-label="Instagram">
-                                <svg className="h-7 w-7 text-white group-hover:text-transparent transition-colors bg-clip-text bg-gradient-to-br from-pink-500 to-yellow-500"
-                                     viewBox="0 0 24 24"
-                                     fill="currentColor">
+                                <svg
+                                    className="h-7 w-7 text-white transition-colors group-hover:text-[#E1306C]"
+                                    viewBox="0 0 24 24"
+                                    fill="currentColor"
+                                >
                                     <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664 4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.802c-3.552 0-3.868.014-5.225.076-2.805.127-4.223 1.543-4.35 4.35C2.368 9.944 2.356 10.26 2.356 12s.012 2.056.076 3.419c.127 2.805 1.543 4.223 4.35 4.35C8.132 19.828 8.448 19.84 12 19.84s3.868-.012 5.225-.076c2.805-.127 4.223-1.543 4.35-4.35.064-1.363.076-1.68.076-3.419s-.012-2.056-.076-3.419c-.127-2.805-1.543-4.223-4.35-4.35C15.868 3.98 15.552 3.965 12 3.965zM12 6.837c-2.848 0-5.163 2.315-5.163 5.163s2.315 5.163 5.163 5.163 5.163-2.315 5.163-5.163-2.315-5.163-5.163-5.163zm0 8.529c-1.87 0-3.366-1.496-3.366-3.366s1.496-3.366 3.366 3.366 3.366 1.496 3.366 3.366-1.496 3.366-3.366 3.366zm5.338-8.201c-.966 0-1.75.784-1.75 1.75s.784 1.75 1.75 1.75 1.75-.784 1.75-1.75-.784-1.75-1.75-1.75z" />
                                 </svg>
                             </a>
