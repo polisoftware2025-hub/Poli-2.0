@@ -37,7 +37,7 @@ const Breadcrumbs = () => {
 
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
-      <Link href="/dashboard" className="hover:text-primary transition-colors">
+      <Link href="/" className="hover:text-primary transition-colors">
         <Home className="h-4 w-4" />
       </Link>
       {pathSegments.map((segment, index) => {
