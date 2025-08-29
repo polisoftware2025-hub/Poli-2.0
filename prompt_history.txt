@@ -124,3 +124,41 @@ Historial de Solicitudes del Proyecto
 - **Solicitud 8: Actualización de este historial**
   - **Requisito:** Actualizar el archivo `prompt_history.txt` con todos los cambios realizados en el proyecto.
   - **Solución:** Se editó este archivo para reflejar el historial completo de solicitudes y soluciones.
+
+---
+
+**Día: 2023-10-30**
+
+- **Solicitud 1: Crear la Página de Inicio (Landing Page)**
+  - **Requisitos:**
+    - Diseño profesional y atractivo que refleje la identidad de la institución (Poli 2.0).
+    - Incluir un encabezado con navegación clara (Inicio, Inscripción, Programas, Contacto).
+    - Una sección "hero" con un llamado a la acción (CTA) para "Iniciar Sesión" y "Conocer Programas".
+    - Una sección de "Inscripción" con un botón que dirija al formulario de registro.
+    - Un carrusel dinámico para mostrar los programas académicos ofrecidos.
+    - Un pie de página con información de contacto y enlaces a redes sociales.
+  - **Solución:** Se creó `src/app/page.tsx` con todos los componentes de la interfaz de usuario requeridos, utilizando ShadCN y Tailwind CSS. Se implementó el carrusel de programas y se aseguró que el diseño fuera completamente adaptable a dispositivos móviles.
+
+- **Solicitud 2: Implementar Sistema de Inicio de Sesión y Roles**
+  - **Requisitos:**
+    - Crear una página de login en `/login`.
+    - Validar las credenciales (correo y contraseña) contra los datos en Firestore.
+    - Implementar un sistema de roles (estudiante, docente, admin, gestor).
+    - Al iniciar sesión, guardar la información del usuario (correo, rol, ID) en `localStorage`.
+    - Redirigir al usuario a un panel de control específico según su rol.
+    - Añadir usuarios de prueba para cada rol (`admin@example.com`, `docente@example.com`, etc.) para facilitar el desarrollo.
+  - **Solución:** Se creó la página `/login/page.tsx` con un formulario de inicio de sesión y validación. Se desarrolló el endpoint `/api/login` que verifica las credenciales con `bcrypt` y devuelve los datos del usuario. Se implementó la lógica de redirección en `src/app/dashboard/page.tsx` y el `layout` del dashboard (`src/app/dashboard/layout.tsx`) para proteger las rutas y gestionar la sesión.
+
+- **Solicitud 3: Desarrollar Paneles de Control por Rol**
+  - **Requisitos:**
+    - **Panel de Estudiante:** Mostrar un resumen de materias, tareas pendientes y un calendario de actividades.
+    - **Panel de Docente:** Proporcionar acceso rápido a "Mis Grupos", "Registro de Notas" y "Control de Asistencia".
+    - **Panel de Administrador:** Permitir la gestión de usuarios, carreras, permisos y la capacidad de poblar la base de datos con datos iniciales (`seed`).
+    - **Panel de Gestor:** Mostrar opciones para gestionar carreras, grupos y revisar pagos.
+    - Cada panel debe ser accesible solo para el rol correspondiente.
+  - **Solución:** Se crearon las páginas para cada panel:
+    - `/dashboard/estudiante/page.tsx`
+    - `/dashboard/docente/page.tsx`
+    - `/dashboard/admin/page.tsx`
+    - `/dashboard/gestor/page.tsx`
+    Se implementó lógica de redirección basada en el rol guardado en `localStorage` para dirigir a cada usuario a su panel correspondiente y proteger el acceso a los demás.
