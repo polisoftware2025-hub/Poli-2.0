@@ -357,34 +357,27 @@ export default function HomePage() {
 
       </main>
 
-       {/* Footer / Contact Section */}
-        <footer id="contacto" style={{ backgroundColor: "#002147" }} className="py-12 text-white">
-            <div className="container mx-auto px-6">
-                <div className="flex flex-wrap justify-between items-start gap-10">
-                    {/* Left Side: Contact Info & Buttons */}
-                    <div className="flex-1 min-w-[280px]">
-                        <h3 className="font-poppins text-2xl font-bold mb-4">Contacto</h3>
-                        <div className="space-y-3 font-roboto">
-                            <p className="font-bold text-lg">Politécnico 2.0</p>
-                            <p className="flex items-center gap-2"><Phone className="h-5 w-5" /> Admisiones: 60-1-9876543</p>
-                            <p className="flex items-center gap-2"><Phone className="h-5 w-5" /> Atención al cliente: 60-1-9123456</p>
-                            <p className="flex items-center gap-2"><MapPin className="h-5 w-5" /> Dirección: Avenida Siempre Viva #123, Bogotá D.C.</p>
-                            <p className="text-xs text-gray-400 mt-4">Resolución SNES 5678 del 15 de marzo de 2010.</p>
-                        </div>
-                        <div className="mt-6 flex flex-col sm:flex-row gap-4">
-                            <Button asChild style={{ backgroundColor: "#004aad" }} className="rounded-md px-6 py-3 font-semibold text-white transition-transform hover:scale-105">
-                                <Link href="#">Solicita Información</Link>
-                            </Button>
-                            <Button asChild style={{ backgroundColor: "#1b5fa5" }} className="rounded-md px-6 py-3 font-semibold text-white transition-transform hover:scale-105">
-                                <Link href="/register">Registra tu Interés</Link>
-                            </Button>
-                        </div>
+       {/* Footer */}
+        <footer id="contacto" style={{ backgroundColor: "#002147" }} className="text-white">
+            <div className="container mx-auto px-6 py-12">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-center md:text-left">
+                    {/* Contact Info */}
+                    <div className="space-y-4">
+                        <h3 className="font-poppins text-xl font-bold">Contáctanos</h3>
+                        <p className="flex items-center justify-center md:justify-start gap-2">
+                            <MapPin className="h-5 w-5" />
+                            Avenida Siempre Viva #123, Bogotá
+                        </p>
+                        <p className="flex items-center justify-center md:justify-start gap-2">
+                            <Phone className="h-5 w-5" />
+                            (601) 123-4567
+                        </p>
                     </div>
 
-                    {/* Right Side: Social Media Icons */}
-                    <div className="flex-shrink-0">
-                        <h4 className="font-poppins text-lg font-semibold mb-4">Síguenos</h4>
-                        <div className="flex items-center space-x-4">
+                    {/* Social Media */}
+                    <div className="space-y-4">
+                        <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
+                        <div className="flex justify-center md:justify-start items-center space-x-4">
                             <Link href="#" className="text-white hover:text-blue-400 transition-colors">
                                 <Facebook className="h-7 w-7" />
                                 <span className="sr-only">Facebook</span>
@@ -393,19 +386,39 @@ export default function HomePage() {
                                 <Instagram className="h-7 w-7" />
                                 <span className="sr-only">Instagram</span>
                             </Link>
-                            <Link href="#" className="text-white hover:text-cyan-400 transition-colors">
-                                <TikTokIcon className="h-7 w-7" />
-                                <span className="sr-only">TikTok</span>
-                            </Link>
                             <Link href="#" className="text-white hover:text-gray-400 transition-colors">
                                 <XIcon className="h-6 w-6" />
                                 <span className="sr-only">X/Twitter</span>
                             </Link>
+                            <Link href="#" className="text-white hover:text-cyan-400 transition-colors">
+                                <TikTokIcon className="h-7 w-7" />
+                                <span className="sr-only">TikTok</span>
+                            </Link>
                         </div>
                     </div>
+
+                    {/* Logo and Copyright */}
+                    <div className="flex flex-col items-center md:items-start space-y-4">
+                         <div className="flex items-center gap-2">
+                            <GraduationCap className="h-8 w-8 text-white" />
+                            <span className="font-poppins text-xl font-bold text-white">
+                                Poli 2.0
+                            </span>
+                        </div>
+                        <p className="text-sm text-gray-400">
+                           Formando el futuro, hoy.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div className="border-t border-gray-700 py-6">
+                <div className="container mx-auto text-center text-sm text-gray-400">
+                    &copy; {new Date().getFullYear()} Politécnico 2.0. Todos los derechos reservados.
                 </div>
             </div>
         </footer>
     </div>
   );
 }
+
+    
