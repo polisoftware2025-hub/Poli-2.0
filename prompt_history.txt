@@ -1,3 +1,4 @@
+
 Historial de Solicitudes del Proyecto
 
 **Día: 2023-10-27**
@@ -109,3 +110,17 @@ Historial de Solicitudes del Proyecto
     - **Paso 2:** El usuario es redirigido a `/verify-code`.
     - **Paso 3:** El usuario introduce el código. La página lo valida contra el que está en `localStorage`.
     - **Paso 4:** Si es correcto y no ha expirado (ej. 10 minutos), se le permite ir a la página de restablecimiento de contraseña.
+
+- **Solicitud 6: Corrección de error de compilación por exportación inexistente**
+  - **Problema:** `Export carreraData doesn't exist in target module`
+  - **Causa:** La variable `carreraData` en `src/lib/seed.ts` no estaba siendo exportada, impidiendo su uso en el formulario de registro.
+  - **Solución:** Se añadió la palabra clave `export` a `carreraData` para hacerla accesible a otros módulos.
+
+- **Solicitud 7: Corrección de error `Cannot convert undefined or null to object`**
+  - **Problema:** Error de runtime en el formulario de registro.
+  - **Causa:** Se intentaba acceder a la propiedad `.shape` de un esquema Zod que había sido modificado con `.refine()`, lo cual elimina dicha propiedad.
+  - **Solución:** Se refactorizó la creación del esquema `step4Schema_materias`, separando el objeto base (`step4Object`) de la validación con `.refine()` para poder acceder a `.shape` del objeto base sin problemas.
+
+- **Solicitud 8: Actualización de este historial**
+  - **Requisito:** Actualizar el archivo `prompt_history.txt` con todos los cambios realizados en el proyecto.
+  - **Solución:** Se editó este archivo para reflejar el historial completo de solicitudes y soluciones.
