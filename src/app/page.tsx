@@ -18,9 +18,10 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { GraduationCap, Menu, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import Autoplay from "embla-carousel-autoplay"
 
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -39,6 +40,10 @@ export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
+
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
+  );
 
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
@@ -124,13 +129,24 @@ export default function HomePage() {
       return;
     }
 
-    const onSelect = () => {
-      setCurrentSlide(carouselApi.selectedScrollSnap());
+    const onSelect = (api: CarouselApi) => {
+      setCurrentSlide(api.selectedScrollSnap());
     };
+    
+    const onSettle = (api: CarouselApi) => {
+      // After settling, if autoplay is not playing, restart it.
+      // This is a workaround for when `stopOnInteraction` is true.
+      if (!api.plugins().autoplay.isPlaying()) {
+        api.plugins().autoplay.play();
+      }
+    }
 
     carouselApi.on("select", onSelect);
+    carouselApi.on("settle", onSettle);
+
     return () => {
       carouselApi.off("select", onSelect);
+       carouselApi.off("settle", onSettle);
     };
   }, [carouselApi]);
   
@@ -144,6 +160,10 @@ export default function HomePage() {
 
   const scrollToSlide = (index: number) => {
     carouselApi?.scrollTo(index);
+    // After manually selecting a slide, restart autoplay
+    if (carouselApi && !carouselApi.plugins().autoplay.isPlaying()) {
+      carouselApi.plugins().autoplay.play();
+    }
   };
   
   return (
@@ -267,7 +287,17 @@ export default function HomePage() {
             <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-12">
               Nuestros Programas Académicos
             </h2>
-            <Carousel setApi={setCarouselApi} className="w-full">
+            <Carousel 
+                setApi={setCarouselApi} 
+                className="w-full"
+                plugins={[autoplayPlugin.current]}
+                opts={{
+                    loop: true,
+                    align: "start",
+                }}
+                onMouseEnter={autoplayPlugin.current.stop}
+                onMouseLeave={autoplayPlugin.current.play}
+            >
               <CarouselContent>
                 {programs.map((program, index) => (
                   <CarouselItem key={index}>
