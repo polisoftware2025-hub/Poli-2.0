@@ -178,10 +178,12 @@ export default function UsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <FilePenLine className="mr-2 h-4 w-4" />
-                            Editar
-                          </DropdownMenuItem>
+                           <DropdownMenuItem asChild>
+                                <Link href={`/dashboard/admin/edit-user/${user.id}`}>
+                                    <FilePenLine className="mr-2 h-4 w-4" />
+                                    Editar
+                                </Link>
+                            </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
                             <Trash2 className="mr-2 h-4 w-4" />
                             Eliminar
