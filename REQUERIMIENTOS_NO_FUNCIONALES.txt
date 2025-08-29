@@ -1,0 +1,86 @@
+# Requerimientos No Funcionales - Sistema de Gestión Académica "Poli 2.0"
+
+## 1. Rendimiento
+
+- **1.1. Tiempos de Carga:**
+  - La carga inicial de la página de inicio (landing page) no debe superar los 2.5 segundos en una conexión de banda ancha estándar (3G rápida o superior).
+  - Las transiciones entre páginas dentro del dashboard no deben superar 1 segundo.
+  - Las respuestas de las API para operaciones comunes (consultas de datos, etc.) deben completarse en menos de 800 ms.
+
+- **1.2. Responsividad de la Interfaz:**
+  - La interfaz de usuario debe ser fluida y responder a las interacciones del usuario (clics, entradas de formulario) en menos de 100 ms.
+  - Las animaciones y transiciones deben mantenerse a 60 fotogramas por segundo (FPS) para evitar tartamudeos (jank).
+
+- **1.3. Concurrencia:**
+  - El sistema debe ser capaz de manejar al menos 100 usuarios concurrentes en el dashboard sin una degradación significativa del rendimiento.
+
+## 2. Seguridad
+
+- **2.1. Autenticación:**
+  - Las contraseñas de los usuarios deben almacenarse en la base de datos (Firestore) utilizando un algoritmo de hash seguro y con salt (e.g., bcrypt).
+  - El sistema debe protegerse contra ataques de fuerza bruta en el formulario de inicio de sesión (e.g., limitación de intentos).
+  - Los tokens de sesión y recuperación de contraseña deben ser seguros, de un solo uso cuando corresponda, y tener un tiempo de expiración definido.
+
+- **2.2. Autorización:**
+  - El acceso a las diferentes vistas y funcionalidades del sistema debe estar estrictamente controlado por el rol del usuario (Administrador, Gestor, Docente, Estudiante).
+  - Un usuario no debe poder acceder a recursos o ejecutar acciones para las que no tiene permiso, ni siquiera manipulando las URL o las peticiones a la API.
+
+- **2.3. Protección de Datos:**
+  - La comunicación entre el cliente y el servidor debe realizarse exclusivamente a través de HTTPS para cifrar los datos en tránsito.
+  - Se debe evitar exponer información sensible en las respuestas de la API (e.g., nunca devolver la contraseña del usuario).
+
+- **2.4. Inyección de Código:**
+  - Todas las entradas del usuario deben ser validadas y sanitizadas tanto en el cliente (Zod) como en el servidor para prevenir ataques de inyección (XSS, etc.).
+
+## 3. Usabilidad
+
+- **3.1. Diseño Responsivo:**
+  - Todas las páginas de la aplicación deben ser completamente funcionales y visualmente agradables en una amplia gama de dispositivos, incluyendo ordenadores de escritorio, tabletas y teléfonos móviles.
+  - En pantallas pequeñas, los elementos de navegación complejos (como la barra lateral) deben colapsar en un menú accesible (tipo hamburguesa).
+
+- **3.2. Consistencia de la Interfaz:**
+  - El diseño visual (colores, tipografía, espaciado) y el comportamiento de los componentes (botones, formularios, tarjetas) deben ser consistentes en toda la aplicación, siguiendo las guías de estilo de ShadCN y Tailwind CSS.
+
+- **3.3. Navegación Intuitiva:**
+  - La estructura de navegación debe ser lógica y predecible. Los usuarios deben poder encontrar las funcionalidades que necesitan con un mínimo de clics.
+  - Se deben proporcionar elementos de navegación claros, como menús y breadcrumbs.
+
+- **3.4. Accesibilidad (A11y):**
+  - La aplicación debe cumplir con las directrices de accesibilidad WCAG 2.1 Nivel AA. Esto incluye el uso de HTML semántico, atributos ARIA, contraste de color adecuado y navegación por teclado.
+
+- **3.5. Feedback al Usuario:**
+  - El sistema debe proporcionar retroalimentación clara e inmediata para las acciones del usuario (e.g., mensajes de éxito, error, carga) a través de componentes como Toasts y spinners.
+
+## 4. Confiabilidad
+
+- **4.1. Disponibilidad:**
+  - El sistema debe tener una disponibilidad del 99.5% (uptime), excluyendo mantenimientos programados.
+
+- **4.2. Manejo de Errores:**
+  - Los errores de la aplicación, tanto en el cliente como en el servidor, deben ser capturados y manejados de forma controlada, mostrando mensajes amigables al usuario sin exponer detalles técnicos sensibles.
+  - El sistema debe ser resiliente a fallos de servicios externos (e.g., API de Genkit) y degradarse con gracia.
+
+- **4.3. Integridad de los Datos:**
+  - Las validaciones (Zod) deben asegurar que solo se guarden datos válidos y consistentes en la base de datos.
+  - Las transacciones críticas (e.g., registro de usuario) deben ser atómicas para evitar estados de datos inconsistentes.
+
+## 5. Mantenibilidad
+
+- **5.1. Código Limpio y Organizado:**
+  - El código fuente debe seguir una estructura de archivos lógica y consistente.
+  - Los componentes de React deben ser modulares, reutilizables y seguir las mejores prácticas (e.g., componentes funcionales con Hooks).
+  - Se debe utilizar TypeScript para asegurar la tipificación estática y mejorar la calidad del código.
+
+- **5.2. Manejo de Dependencias:**
+  - Las dependencias del proyecto (listadas en `package.json`) deben mantenerse actualizadas para incorporar parches de seguridad y mejoras.
+
+- **5.3. Configuración del Entorno:**
+  - La configuración del proyecto debe estar claramente separada del código, utilizando variables de entorno (`.env`) para datos sensibles como claves de API.
+
+## 6. Escalabilidad
+
+- **6.1. Escalabilidad Horizontal:**
+  - La arquitectura basada en Next.js y Firebase App Hosting permite escalar horizontalmente, aumentando el número de instancias de servidor (`maxInstances` en `apphosting.yaml`) para manejar un aumento en el tráfico.
+
+- **6.2. Base de Datos:**
+  - Firestore es una base de datos NoSQL diseñada para escalar automáticamente, soportando un gran volumen de datos y lecturas/escrituras concurrentes sin necesidad de gestión manual de la infraestructura.
