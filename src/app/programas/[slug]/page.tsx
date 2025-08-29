@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookOpen, User, CheckCircle } from "lucide-react";
-import { notFound } from "next/navigation";
+import { notFound, useParams } from "next/navigation";
 import { carreraData } from "@/lib/seed"; 
 import Image from "next/image";
 
@@ -145,8 +145,10 @@ const programData: { [key: string]: any } = {
   }
 };
 
-export default function ProgramDetailPage({ params }: { params: { slug: string } }) {
-  const program = programData[params.slug] || Object.values(programData).find(p => p.slug === params.slug);
+export default function ProgramDetailPage() {
+  const params = useParams();
+  const slug = params.slug as string;
+  const program = programData[slug] || Object.values(programData).find(p => p.slug === slug);
 
   if (!program) {
     notFound();
