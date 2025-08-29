@@ -43,7 +43,7 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 const InstagramIcon = (props: React.SVGProps<SVGSVGElement>) => (
      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664-4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.802c-3.552 0-3.868.014-5.225.076-2.805.127-4.223 1.543-4.35 4.35C2.368 9.944 2.356 10.26 2.356 12s.012 2.056.076 3.419c.127 2.805 1.543 4.223 4.35 4.35C8.132 19.828 8.448 19.84 12 19.84s3.868-.012 5.225-.076c2.805-.127 4.223-1.543 4.35-4.35.064-1.363.076-1.68.076-3.419s-.012-2.056-.076-3.419c-.127-2.805-1.543-4.223-4.35-4.35C15.868 3.98 15.552 3.965 12 3.965zM12 6.837c-2.848 0-5.163 2.315-5.163 5.163s2.315 5.163 5.163 5.163 5.163-2.315 5.163-5.163-2.315-5.163-5.163-5.163zm0 8.529c-1.87 0-3.366-1.496-3.366-3.366s1.496-3.366 3.366 3.366 3.366 1.496 3.366 3.366-1.496 3.366-3.366 3.366zm5.338-8.201c-.966 0-1.75.784-1.75 1.75s.784 1.75 1.75 1.75 1.75-.784 1.75-1.75-.784-1.75-1.75-1.75z" />
+        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664 4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.802c-3.552 0-3.868.014-5.225.076-2.805.127-4.223 1.543-4.35 4.35C2.368 9.944 2.356 10.26 2.356 12s.012 2.056.076 3.419c.127 2.805 1.543 4.223 4.35 4.35C8.132 19.828 8.448 19.84 12 19.84s3.868-.012 5.225-.076c2.805-.127 4.223-1.543 4.35-4.35.064-1.363.076-1.68.076-3.419s-.012-2.056-.076-3.419c-.127-2.805-1.543-4.223-4.35-4.35C15.868 3.98 15.552 3.965 12 3.965zM12 6.837c-2.848 0-5.163 2.315-5.163 5.163s2.315 5.163 5.163 5.163 5.163-2.315 5.163-5.163-2.315-5.163-5.163-5.163zm0 8.529c-1.87 0-3.366-1.496-3.366-3.366s1.496-3.366 3.366 3.366 3.366 1.496 3.366 3.366-1.496 3.366-3.366 3.366zm5.338-8.201c-.966 0-1.75.784-1.75 1.75s.784 1.75 1.75 1.75 1.75-.784 1.75-1.75-.784-1.75-1.75-1.75z" />
     </svg>
 );
 
@@ -369,22 +369,8 @@ export default function HomePage() {
        {/* Footer */}
         <footer id="contacto" style={{ backgroundColor: "#002147" }} className="text-white">
             <div className="container mx-auto px-6 py-16">
-                <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-4 md:text-left">
-                    {/* Column 1: About Us */}
-                    <div className="space-y-4">
-                        <h3 className="font-poppins text-xl font-bold">Sobre nosotros</h3>
-                        <p className="text-gray-300 text-sm leading-relaxed">
-                          Politécnico 2.0 es una institución de educación superior orientada a la formación práctica y tecnológica en distintas áreas del conocimiento.
-                        </p>
-                         <Link href="#inicio" className="inline-flex items-center gap-2">
-                            <GraduationCap className="h-7 w-7 text-white" />
-                            <span className="font-poppins text-lg font-bold text-white">
-                                Poli 2.0
-                            </span>
-                        </Link>
-                    </div>
-
-                    {/* Column 2: Quick Links */}
+                <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left">
+                    {/* Column 1: Quick Links */}
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Enlaces rápidos</h3>
                         <ul className="space-y-3">
@@ -396,7 +382,7 @@ export default function HomePage() {
                         </ul>
                     </div>
 
-                    {/* Column 3: Contact Us */}
+                    {/* Column 2: Contact Us */}
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Contáctanos</h3>
                          <ul className="space-y-3">
@@ -415,15 +401,20 @@ export default function HomePage() {
                         </ul>
                     </div>
 
-                    {/* Column 4: Follow Us */}
+                    {/* Column 3: Follow Us */}
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
                         <div className="flex justify-center md:justify-start items-center space-x-4">
-                            <Link href="#" className="text-white hover:text-blue-400 transition-colors" aria-label="Facebook"><FacebookIcon className="h-7 w-7" /></Link>
-                            <Link href="#" className="text-white hover:text-pink-400 transition-colors" aria-label="Instagram"><InstagramIcon className="h-7 w-7" /></Link>
-                            <Link href="#" className="text-white hover:text-gray-400 transition-colors" aria-label="X/Twitter"><XIcon className="h-6 w-6" /></Link>
-                            <Link href="#" className="text-white hover:text-blue-500 transition-colors" aria-label="LinkedIn"><Linkedin className="h-7 w-7" /></Link>
-                            <Link href="https://www.tiktok.com/@politecnico20" className="text-white hover:text-cyan-400 transition-colors" aria-label="TikTok"><TikTokIcon className="h-7 w-7" /></Link>
+                             <a href="#" className="text-white hover:text-blue-500 transition-colors" aria-label="Facebook">
+                                <FacebookIcon className="h-7 w-7" />
+                            </a>
+                            <a href="#" className="group" aria-label="Instagram">
+                                <svg className="h-7 w-7 text-white group-hover:text-transparent transition-colors bg-clip-text bg-gradient-to-br from-pink-500 to-yellow-500"
+                                     viewBox="0 0 24 24"
+                                     fill="currentColor">
+                                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664 4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.802c-3.552 0-3.868.014-5.225.076-2.805.127-4.223 1.543-4.35 4.35C2.368 9.944 2.356 10.26 2.356 12s.012 2.056.076 3.419c.127 2.805 1.543 4.223 4.35 4.35C8.132 19.828 8.448 19.84 12 19.84s3.868-.012 5.225-.076c2.805-.127 4.223-1.543 4.35-4.35.064-1.363.076-1.68.076-3.419s-.012-2.056-.076-3.419c-.127-2.805-1.543-4.223-4.35-4.35C15.868 3.98 15.552 3.965 12 3.965zM12 6.837c-2.848 0-5.163 2.315-5.163 5.163s2.315 5.163 5.163 5.163 5.163-2.315 5.163-5.163-2.315-5.163-5.163-5.163zm0 8.529c-1.87 0-3.366-1.496-3.366-3.366s1.496-3.366 3.366 3.366 3.366 1.496 3.366 3.366-1.496 3.366-3.366 3.366zm5.338-8.201c-.966 0-1.75.784-1.75 1.75s.784 1.75 1.75 1.75 1.75-.784 1.75-1.75-.784-1.75-1.75-1.75z" />
+                                </svg>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -438,4 +429,3 @@ export default function HomePage() {
   );
 }
 
-    
