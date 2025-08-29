@@ -31,6 +31,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   Bell,
   Book,
+  BookMarked,
   BotMessageSquare,
   Calendar,
   Check,
@@ -119,6 +120,7 @@ export default function DashboardLayout({
   const adminMenuItems = [
     { href: "/dashboard/admin/users", label: "Usuarios", icon: Users, roles: ["admin"] },
     { href: "/dashboard/admin/pre-register", label: "Pre registro", icon: ClipboardList, roles: ["admin"] },
+    { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked, roles: ["admin"] },
     { href: "/dashboard/admin/payments", label: "Gestion pagos", icon: CreditCard, roles: ["admin"] },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar, roles: ["admin"] },
   ];
