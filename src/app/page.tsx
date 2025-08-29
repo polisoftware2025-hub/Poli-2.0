@@ -60,7 +60,7 @@ export default function HomePage() {
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
     { href: "#inscripcion", label: "Inscripción" },
-    { href: "#programas", label: "Programas" },
+    { href: "/programas", label: "Programas" },
     { href: "#contacto", label: "Contacto" },
   ];
 
@@ -385,7 +385,7 @@ export default function HomePage() {
                         <h3 className="font-poppins text-xl font-bold">Enlaces rápidos</h3>
                         <ul className="space-y-3">
                             <li><Link href="#inicio" className="text-gray-300 hover:text-white transition-colors">Inicio</Link></li>
-                            <li><Link href="#programas" className="text-gray-300 hover:text-white transition-colors">Programas académicos</Link></li>
+                            <li><Link href="/programas" className="text-gray-300 hover:text-white transition-colors">Programas académicos</Link></li>
                             <li><Link href="#" className="text-gray-300 hover:text-white transition-colors">Noticias y anuncios</Link></li>
                             <li><Link href="#" className="text-gray-300 hover:text-white transition-colors">Calendario académico</Link></li>
                             <li><Link href="#contacto" className="text-gray-300 hover:text-white transition-colors">Contacto</Link></li>
