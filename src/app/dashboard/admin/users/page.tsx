@@ -17,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 const users = [
   {
@@ -123,7 +124,9 @@ export default function UsersPage() {
                 <SelectItem value="Estudiante">Estudiante</SelectItem>
               </SelectContent>
             </Select>
-             <Button>Agregar Usuario</Button>
+             <Button asChild>
+                <Link href="/dashboard/admin/add-user">Agregar Usuario</Link>
+             </Button>
           </div>
           <div className="overflow-x-auto">
             <Table>
