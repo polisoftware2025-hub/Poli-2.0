@@ -2,159 +2,195 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/page-header";
+import { Users, MoreHorizontal, FilePenLine, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, GraduationCap, Eye, EyeOff } from "lucide-react";
-import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-const addUserSchema = z.object({
-  name: z.string().min(3, "El nombre debe tener al menos 3 caracteres."),
-  email: z.string().email("Por favor, introduce un correo válido."),
-  role: z.string({ required_error: "Debes seleccionar un rol." }),
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
-});
+const users = [
+  {
+    id: "usr_1",
+    name: "Ana Pérez",
+    email: "docente@example.com",
+    role: "Docente",
+    status: "Activo",
+    createdAt: "2023-01-15",
+    avatar: "/avatars/01.png",
+  },
+  {
+    id: "usr_2",
+    name: "Carlos Rivas",
+    email: "carlos.rivas@example.com",
+    role: "Docente",
+    status: "Activo",
+    createdAt: "2023-02-20",
+    avatar: "/avatars/02.png",
+  },
+  {
+    id: "usr_3",
+    name: "Juan Perez",
+    email: "juan.perez@pi.edu.co",
+    role: "Estudiante",
+    status: "Activo",
+    createdAt: "2023-08-10",
+    avatar: "/avatars/03.png",
+  },
+  {
+    id: "usr_4",
+    name: "Maria Lopez",
+    email: "maria.lopez@pi.edu.co",
+    role: "Estudiante",
+    status: "Inactivo",
+    createdAt: "2023-08-11",
+    avatar: "/avatars/04.png",
+  },
+  {
+    id: "usr_5",
+    name: "Pedro Ramirez",
+    email: "admin@example.com",
+    role: "Admin",
+    status: "Activo",
+    createdAt: "2023-01-01",
+    avatar: "/avatars/05.png",
+  },
+  {
+    id: "usr_6",
+    name: "Luisa Fernandez",
+    email: "gestor@example.com",
+    role: "Gestor",
+    status: "Activo",
+    createdAt: "2023-01-05",
+    avatar: "/avatars/06.png",
+  },
+];
 
-type AddUserFormValues = z.infer<typeof addUserSchema>;
+const getInitials = (name: string) => {
+  const names = name.split(' ');
+  if (names.length > 1) {
+    return `${names[0][0]}${names[1][0]}`.toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+}
 
-export default function AddUserPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+const roleBadgeVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
+  "Admin": "destructive",
+  "Docente": "secondary",
+  "Estudiante": "default",
+  "Gestor": "outline",
+};
 
-  const form = useForm<AddUserFormValues>({
-    resolver: zodResolver(addUserSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-    },
-  });
-
-  const onSubmit = async (values: AddUserFormValues) => {
-    setIsLoading(true);
-    // Simulación de una llamada a API
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    console.log("Datos del nuevo usuario:", values);
-
-    toast({
-      title: "Usuario Agregado (Simulación)",
-      description: `El usuario ${values.name} con el rol ${values.role} ha sido creado.`,
-    });
-    
-    setIsLoading(false);
-    // Redirigir a una página de listado de usuarios (a crear en el futuro)
-    router.push("/dashboard/admin"); 
-  };
+export default function UsersPage() {
+  const [filter, setFilter] = useState("all");
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-lg">
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Gestión de Usuarios"
+        description="Administra los usuarios del sistema, sus roles y permisos."
+        icon={<Users className="h-8 w-8 text-primary" />}
+      />
+
+      <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <GraduationCap className="h-8 w-8 text-primary" />
-              <div>
-                <CardTitle>Agregar Nuevo Usuario</CardTitle>
-                <CardDescription>Completa el formulario para crear una nueva cuenta.</CardDescription>
-              </div>
-            </div>
-            <Button variant="ghost" size="icon" asChild>
-                <Link href="/dashboard/admin">
-                    <ArrowLeft />
-                </Link>
-            </Button>
-          </div>
+          <CardTitle>Lista de Usuarios</CardTitle>
+          <CardDescription>
+            Aquí puedes ver y gestionar todos los usuarios registrados en la plataforma.
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nombre Completo</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ej: John Doe" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Correo Electrónico</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="usuario@example.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Contraseña</FormLabel>
-                     <div className="relative">
-                        <FormControl>
-                            <Input type={showPassword ? 'text' : 'password'} placeholder="••••••••" {...field} />
-                        </FormControl>
-                        <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7" onClick={() => setShowPassword(!showPassword)}>
-                           {showPassword ? <EyeOff className="h-4 w-4"/> : <Eye className="h-4 w-4"/>}
-                        </Button>
-                     </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="role"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rol del Usuario</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecciona un rol" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="admin">Administrador</SelectItem>
-                        <SelectItem value="editor">Editor</SelectItem>
-                        <SelectItem value="user">Usuario</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-end gap-4 pt-4">
-                <Button type="button" variant="outline" onClick={() => router.push('/dashboard/admin')}>
-                  Cancelar
-                </Button>
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? 'Guardando...' : 'Guardar Usuario'}
-                </Button>
-              </div>
-            </form>
-          </Form>
+          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+            <Input placeholder="Buscar por nombre o correo..." className="flex-grow" />
+            <Select value={filter} onValueChange={setFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Filtrar por rol" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los roles</SelectItem>
+                <SelectItem value="Admin">Admin</SelectItem>
+                <SelectItem value="Gestor">Gestor</SelectItem>
+                <SelectItem value="Docente">Docente</SelectItem>
+                <SelectItem value="Estudiante">Estudiante</SelectItem>
+              </SelectContent>
+            </Select>
+             <Button>Agregar Usuario</Button>
+          </div>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Usuario</TableHead>
+                  <TableHead>Rol</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead>Fecha de Creación</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={user.avatar} alt={user.name} />
+                          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                          <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={roleBadgeVariant[user.role] || "default"}>
+                        {user.role}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                       <Badge variant={user.status === "Activo" ? "secondary" : "destructive"}
+                          className={user.status === "Activo" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                          {user.status}
+                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {new Date(user.createdAt).toLocaleDateString('es-ES', {
+                        year: 'numeric', month: 'long', day: 'numeric'
+                      })}
+                    </TableCell>
+                    <TableCell className="text-right">
+                       <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>
+                            <FilePenLine className="mr-2 h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </div>
