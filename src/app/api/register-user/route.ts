@@ -51,9 +51,19 @@ async function emailExists(email: string): Promise<boolean> {
     return !querySnapshot.empty;
 }
 
-async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2: string): Promise<string> {
+async function generateUniqueInstitutionalEmail(firstName: string, segundoNombre: string | undefined, lastName1: string, lastName2: string): Promise<string> {
     const domain = "@pi.edu.co";
-    const baseEmail = `${firstName.toLowerCase().split(' ')[0]}.${lastName1.toLowerCase().split(' ')[0]}.${lastName2.toLowerCase().split(' ')[0]}`;
+    
+    // Construir la base del correo, ignorando el segundo nombre si está vacío.
+    const nameParts = [
+        firstName.toLowerCase().split(' ')[0],
+        segundoNombre ? segundoNombre.toLowerCase().split(' ')[0] : '',
+        lastName1.toLowerCase().split(' ')[0],
+        lastName2.toLowerCase().split(' ')[0]
+    ].filter(Boolean); // Filtrar partes vacías
+
+    const baseEmail = nameParts.slice(0, 3).join('.'); // Usar las primeras 3 partes relevantes
+    
     let finalEmail = `${baseEmail}${domain}`;
     let counter = 1;
 
@@ -85,7 +95,7 @@ export async function POST(req: Request) {
         const usuariosCollectionRef = collection(politecnicoDocRef, "usuarios");
         const newUserDocRef = doc(usuariosCollectionRef);
 
-        const correoInstitucional = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoApellido);
+        const correoInstitucional = await generateUniqueInstitutionalEmail(data.firstName, data.segundoNombre, data.lastName, data.segundoApellido);
 
         const usuarioData = {
           nombre1: data.firstName,
