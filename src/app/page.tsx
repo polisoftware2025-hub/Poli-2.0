@@ -66,6 +66,7 @@ export default function HomePage() {
 
   const programs = [
     {
+      slug: "administracion-de-empresas",
       title: "Administración de Empresas",
       description:
         "Forma líderes con visión estratégica para gestionar organizaciones.",
@@ -73,6 +74,7 @@ export default function HomePage() {
       imageHint: "business students",
     },
     {
+      slug: "contaduria-publica",
       title: "Contaduría Pública",
       description:
         "Prepara expertos en el control financiero y la normativa contable.",
@@ -80,6 +82,7 @@ export default function HomePage() {
       imageHint: "accounting finance",
     },
     {
+      slug: "mercadeo-y-publicidad",
       title: "Mercadeo y Publicidad",
       description:
         "Desarrolla estrategias creativas para posicionar marcas y productos.",
@@ -87,6 +90,7 @@ export default function HomePage() {
       imageHint: "marketing team",
     },
     {
+      slug: "ingenieria-de-sistemas",
       title: "Ingeniería de Sistemas",
       description:
         "Crea soluciones tecnológicas innovadoras para optimizar procesos.",
@@ -94,12 +98,14 @@ export default function HomePage() {
       imageHint: "software development",
     },
     {
+      slug: "gastronomia",
       title: "Gastronomía",
       description: "Fusiona arte y técnica culinaria para crear experiencias únicas.",
       image: "/images/carousel/chef-cooking.jpg",
       imageHint: "chef cooking",
     },
     {
+      slug: "hoteleria-y-turismo",
       title: "Hotelería y Turismo",
       description:
         "Gestiona servicios de hospitalidad con estándares internacionales.",
@@ -107,6 +113,7 @@ export default function HomePage() {
       imageHint: "luxury hotel",
     },
     {
+      slug: "derecho",
       title: "Derecho",
       description:
         "Forma profesionales con sólidos principios éticos y jurídicos.",
@@ -114,6 +121,7 @@ export default function HomePage() {
       imageHint: "law books courtroom",
     },
     {
+      slug: "psicologia",
       title: "Psicología",
       description:
         "Comprende el comportamiento humano para promover el bienestar.",
@@ -121,6 +129,7 @@ export default function HomePage() {
       imageHint: "therapy session",
     },
     {
+      slug: "enfermeria",
       title: "Enfermería",
       description:
         "Cuidado integral de la salud con vocación de servicio y humanismo.",
@@ -128,6 +137,7 @@ export default function HomePage() {
       imageHint: "nurses hospital",
     },
     {
+      slug: "comunicacion-social",
       title: "Comunicación Social",
       description:
         "Forma comunicadores estratégicos para medios y organizaciones.",
@@ -263,11 +273,11 @@ export default function HomePage() {
               >
                 <Link href="/login">Inicia Sesión</Link>
               </Button>
-              <Button
+              <Button asChild
                 style={{ backgroundColor: "#2ecc71" }}
                 className="rounded-full px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600"
               >
-                Conoce Nuestros Programas
+                <Link href="/programas">Conoce Nuestros Programas</Link>
               </Button>
             </div>
           </div>
@@ -328,16 +338,16 @@ export default function HomePage() {
                             {program.description}
                           </p>
                           <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
-                            <Button
+                            <Button asChild
                               style={{ backgroundColor: "#004aad" }}
                               className="px-8 py-3 font-semibold text-white transition-transform hover:scale-105"
                             >
-                              Inscribirme
+                              <Link href="/register">Inscribirme</Link>
                             </Button>
-                            <Button
+                            <Button asChild
                               className="px-8 py-3 font-semibold text-white shadow-lg transition-transform hover:scale-105 bg-[#2ecc71] hover:bg-[#27ae60] active:bg-[#219150]"
                             >
-                              Ver más
+                               <Link href={`/programas/${program.slug}`}>Ver más</Link>
                             </Button>
                           </div>
                         </div>
@@ -367,7 +377,7 @@ export default function HomePage() {
       </main>
 
        {/* Footer */}
-        <footer id="contacto" style={{ backgroundColor: "#002147" }} className="text-white">
+        <footer id="contacto" style={{ backgroundColor: "#0A0A23" }} className="text-white">
             <div className="container mx-auto px-6 py-16">
                 <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left">
                     {/* Column 1: Quick Links */}
@@ -405,17 +415,11 @@ export default function HomePage() {
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
                         <div className="flex justify-center md:justify-start items-center space-x-4">
-                            <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook">
+                           <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook">
                                 <FacebookIcon className="h-7 w-7" />
                             </a>
                             <a href="#" className="group" aria-label="Instagram">
-                                <svg
-                                    className="h-7 w-7 text-white transition-colors group-hover:text-[#E1306C]"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                >
-                                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.148-4.771-1.691-4.919-4.919-.058-1.265-.069-1.645-.069-4.85s.011-3.584.069-4.85c.149-3.225 1.664 4.771 4.919-4.919C8.416 2.175 8.796 2.163 12 2.163zm0 1.802c-3.552 0-3.868.014-5.225.076-2.805.127-4.223 1.543-4.35 4.35C2.368 9.944 2.356 10.26 2.356 12s.012 2.056.076 3.419c.127 2.805 1.543 4.223 4.35 4.35C8.132 19.828 8.448 19.84 12 19.84s3.868-.012 5.225-.076c2.805-.127 4.223-1.543 4.35-4.35.064-1.363.076-1.68.076-3.419s-.012-2.056-.076-3.419c-.127-2.805-1.543-4.223-4.35-4.35C15.868 3.98 15.552 3.965 12 3.965zM12 6.837c-2.848 0-5.163 2.315-5.163 5.163s2.315 5.163 5.163 5.163 5.163-2.315 5.163-5.163-2.315-5.163-5.163-5.163zm0 8.529c-1.87 0-3.366-1.496-3.366-3.366s1.496-3.366 3.366 3.366 3.366 1.496 3.366 3.366-1.496 3.366-3.366 3.366zm5.338-8.201c-.966 0-1.75.784-1.75 1.75s.784 1.75 1.75 1.75 1.75-.784 1.75-1.75-.784-1.75-1.75-1.75z" />
-                                </svg>
+                               <InstagramIcon className="h-7 w-7 text-white transition-colors group-hover:text-[#E1306C]" />
                             </a>
                         </div>
                     </div>
@@ -430,4 +434,3 @@ export default function HomePage() {
     </div>
   );
 }
-
