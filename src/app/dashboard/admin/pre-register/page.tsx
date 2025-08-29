@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -16,6 +17,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import Link from "next/link";
 
 const preRegisteredUsers = [
   {
@@ -161,9 +163,11 @@ export default function PreRegisterPage() {
                             <X className="mr-2 h-4 w-4" />
                             Rechazar
                           </DropdownMenuItem>
-                           <DropdownMenuItem>
-                            Ver Detalles
-                          </DropdownMenuItem>
+                           <DropdownMenuItem asChild>
+                               <Link href={`/dashboard/admin/pre-register/${user.id}`}>
+                                Ver Detalles
+                               </Link>
+                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
