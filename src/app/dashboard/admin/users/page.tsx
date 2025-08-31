@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Users, MoreHorizontal, FilePenLine, Trash2 } from "lucide-react";
+import { Users, MoreHorizontal, FilePenLine, UserX } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -185,8 +185,8 @@ export default function UsersPage() {
                                 </Link>
                             </DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Eliminar
+                            <UserX className="mr-2 h-4 w-4" />
+                            Deshabilitar
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
