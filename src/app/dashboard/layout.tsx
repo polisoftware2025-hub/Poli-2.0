@@ -266,7 +266,7 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-            <AiSuggestions />
+             {userRole === 'estudiante' && <AiSuggestions />}
           </SidebarContent>
         </Sidebar>
       </div>
