@@ -6,10 +6,20 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ArrowLeft, Home, ChevronRight } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 const Breadcrumbs = () => {
   const pathname = usePathname();
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    setUserRole(role);
+  }, []);
+
+  const isAdmin = userRole === 'admin';
+  const homePath = isAdmin ? '/dashboard/admin' : '/dashboard';
+  
   const pathSegments = pathname.split('/').filter(segment => segment);
 
   const getBreadcrumbName = (segment: string) => {
@@ -23,6 +33,11 @@ const Breadcrumbs = () => {
       'docente': 'Docente',
       'estudiante': 'Estudiante',
       'gestor': 'Gestor',
+      'users': 'Usuarios',
+      'pre-register': 'Pre-registro',
+      'subjects': 'Materias',
+      'payments': 'Pagos',
+      'schedules': 'Horarios',
       'calificaciones': 'Calificaciones',
       'horarios': 'Horarios',
       'asistencias': 'Asistencias',
@@ -32,24 +47,39 @@ const Breadcrumbs = () => {
       'pagos': 'Mis Pagos',
       'evaluacion-docente': 'Evaluación Docente'
     };
-    return names[segment] || segment.charAt(0).toUpperCase() + segment.slice(1);
+    // This is a simplistic way to handle dynamic parts like [userId]
+    if (names[segment]) {
+        return names[segment];
+    }
+    // A simple heuristic for IDs or slugs
+    if (segment.length > 10 || segment.match(/^[a-z0-9-_]+$/)) {
+      return "Detalle";
+    }
+    return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
+  
+  const initialSegments = isAdmin ? ['dashboard', 'admin'] : ['dashboard'];
 
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
-      <Link href="/" className="hover:text-primary transition-colors">
+      <Link href={homePath} className="hover:text-primary transition-colors">
         <Home className="h-4 w-4" />
       </Link>
       {pathSegments.map((segment, index) => {
-        const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+        const currentPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
+        // Skip breadcrumb rendering for the base path of the role
+        if (isAdmin && index < 2) return null;
+        if (!isAdmin && index < 1) return null;
+        
         const isLast = index === pathSegments.length - 1;
+
         return (
-          <React.Fragment key={href}>
+          <React.Fragment key={currentPath}>
             <ChevronRight className="h-4 w-4 mx-1" />
             {isLast ? (
               <span className="font-medium text-foreground">{getBreadcrumbName(segment)}</span>
             ) : (
-              <Link href={href} className="hover:text-primary transition-colors">
+              <Link href={currentPath} className="hover:text-primary transition-colors">
                 {getBreadcrumbName(segment)}
               </Link>
             )}
@@ -98,5 +128,3 @@ export const PageHeader = ({ title, description, icon }: PageHeaderProps) => {
     </Card>
   );
 };
-
-    
