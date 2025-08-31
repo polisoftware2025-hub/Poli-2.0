@@ -50,7 +50,10 @@ import {
   Users,
   ClipboardList,
   LayoutDashboard,
-  BarChart3
+  BarChart3,
+  BookCopy,
+  ClipboardCheck,
+  UserCheck
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -129,22 +132,49 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3, roles: ["admin"] },
   ];
 
-  const menuItems = [
-    { href: "/dashboard", label: "Panel", icon: Home, roles: ["admin", "gestor", "docente", "estudiante"] },
-    { href: "/dashboard/materias", label: "Materias", icon: Library, roles: ["estudiante", "docente", "gestor"] },
-    { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap, roles: ["estudiante", "docente", "gestor"] },
-    { href: "/dashboard/horarios", label: "Horarios", icon: Calendar, roles: ["estudiante", "docente"] },
-    { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare, roles: ["estudiante", "docente"] },
-    { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell, roles: ["admin", "gestor", "docente", "estudiante"] },
-    { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["admin", "gestor", "docente", "estudiante"] },
+  const studentMenuItems = [
+    { href: "/dashboard/estudiante", label: "Panel", icon: Home, roles: ["estudiante"] },
+    { href: "/dashboard/materias", label: "Materias", icon: Library, roles: ["estudiante"] },
+    { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap, roles: ["estudiante"] },
+    { href: "/dashboard/horarios", label: "Horarios", icon: Calendar, roles: ["estudiante"] },
+    { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare, roles: ["estudiante"] },
+    { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell, roles: ["estudiante"] },
+    { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["estudiante"] },
     { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard, roles: ["estudiante"] },
     { href: "/dashboard/evaluacion-docente", label: "Evaluar Docentes", icon: Star, roles: ["estudiante"] },
     { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare, roles: ["estudiante"] },
-    { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["admin", "gestor", "docente", "estudiante"] },
+    { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["estudiante"] },
   ];
   
-  const itemsToRender = userRole === 'admin' ? adminMenuItems : menuItems;
+  const teacherMenuItems = [
+      { href: "/dashboard/docente", label: "Panel", icon: LayoutDashboard, roles: ["docente"] },
+      { href: "/dashboard/docente/grupos", label: "Mis Grupos", icon: BookCopy, roles: ["docente"] },
+      { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck, roles: ["docente"] },
+      { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck, roles: ["docente"] },
+      { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["docente"] },
+      { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["docente"] },
+  ];
 
+  const managerMenuItems = [
+      // Define manager items here if they differ
+  ];
+
+  const getMenuItems = (role: UserRole) => {
+    switch (role) {
+      case 'admin':
+        return adminMenuItems;
+      case 'docente':
+        return teacherMenuItems;
+      case 'estudiante':
+        return studentMenuItems;
+      case 'gestor':
+        return managerMenuItems; // Defaulting to student for now
+      default:
+        return [];
+    }
+  };
+
+  const itemsToRender = userRole ? getMenuItems(userRole) : [];
 
   if (!userEmail || !userRole) {
     return (
@@ -218,7 +248,7 @@ export default function DashboardLayout({
           </SidebarHeader>
           <SidebarContent>
             <SidebarMenu>
-               {itemsToRender.filter(item => userRole && item.roles.includes(userRole)).map((item) => (
+               {itemsToRender.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
