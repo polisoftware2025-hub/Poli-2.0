@@ -152,7 +152,6 @@ export default function DashboardLayout({
       { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck, roles: ["docente"] },
       { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck, roles: ["docente"] },
       { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["docente"] },
-      { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["docente"] },
   ];
 
   const managerMenuItems = [
