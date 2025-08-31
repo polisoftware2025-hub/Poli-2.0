@@ -49,7 +49,8 @@ import {
   X,
   Users,
   ClipboardList,
-  LayoutDashboard
+  LayoutDashboard,
+  BarChart3
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -125,6 +126,7 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked, roles: ["admin"] },
     { href: "/dashboard/admin/payments", label: "Gestion pagos", icon: CreditCard, roles: ["admin"] },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar, roles: ["admin"] },
+    { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3, roles: ["admin"] },
   ];
 
   const menuItems = [
