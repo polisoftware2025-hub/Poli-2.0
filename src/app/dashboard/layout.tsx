@@ -48,7 +48,8 @@ import {
   User,
   X,
   Users,
-  ClipboardList
+  ClipboardList,
+  LayoutDashboard
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -118,7 +119,7 @@ export default function DashboardLayout({
   };
   
   const adminMenuItems = [
-    { href: "/dashboard/admin", label: "Inicio", icon: Home, roles: ["admin"] },
+    { href: "/dashboard/admin", label: "Panel", icon: LayoutDashboard, roles: ["admin"] },
     { href: "/dashboard/admin/users", label: "Usuarios", icon: Users, roles: ["admin"] },
     { href: "/dashboard/admin/pre-register", label: "Pre registro", icon: ClipboardList, roles: ["admin"] },
     { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked, roles: ["admin"] },
