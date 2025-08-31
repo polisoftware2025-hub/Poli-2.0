@@ -38,6 +38,7 @@ const Breadcrumbs = () => {
       'subjects': 'Materias',
       'payments': 'Pagos',
       'schedules': 'Horarios',
+      'analytics': 'Analíticas',
       'calificaciones': 'Calificaciones',
       'horarios': 'Horarios',
       'asistencias': 'Asistencias',
@@ -68,8 +69,9 @@ const Breadcrumbs = () => {
       {pathSegments.map((segment, index) => {
         const currentPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
         // Skip breadcrumb rendering for the base path of the role
-        if (isAdmin && index < 2) return null;
+        if (isAdmin && index < 2 && segment === 'admin') return null;
         if (!isAdmin && index < 1) return null;
+        if(segment === 'dashboard' && index === 0) return null;
         
         const isLast = index === pathSegments.length - 1;
 
