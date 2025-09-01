@@ -135,7 +135,7 @@ export default function SchedulesManagerPage() {
             </CardHeader>
             <CardContent className="p-4 md:p-6">
                 {scheduleForSalon.length > 0 ? (
-                    <div className="overflow-x-auto">
+                    <div className="w-full overflow-x-auto">
                         <Table className="min-w-full border">
                             <TableHeader>
                             <TableRow>
