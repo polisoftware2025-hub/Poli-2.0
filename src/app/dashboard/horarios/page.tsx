@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter, Search, ArrowRight, XCircle } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Download, CalendarDays, Search, ArrowRight, XCircle, Edit } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,8 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { es } from "date-fns/locale";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-
 
 interface ScheduleEntry {
   dia: string;
@@ -75,9 +73,13 @@ export default function SchedulePage() {
   }, [allSchedule]);
 
   const grupos = useMemo(() => {
-    const uniqueGrupos = [...new Set(allSchedule.map(g => g.grupo))];
+    let filteredSchedule = allSchedule;
+    if (filterMateria !== 'all') {
+        filteredSchedule = allSchedule.filter(s => s.materia === filterMateria);
+    }
+    const uniqueGrupos = [...new Set(filteredSchedule.map(g => g.grupo))];
     return uniqueGrupos.map(g => ({ value: g, label: g }));
-  }, [allSchedule]);
+  }, [allSchedule, filterMateria]);
 
 
   useEffect(() => {
@@ -278,59 +280,53 @@ export default function SchedulePage() {
         icon={<CalendarDays className="h-8 w-8 text-primary" />}
       />
       
-      <Card>
-        <CardHeader className="border-b">
-            <CardTitle>Filtro de Horario</CardTitle>
-            <CardDescription>Selecciona los filtros para visualizar el horario.</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                  <div className="space-y-2 md:col-span-1">
-                     <label className="text-sm font-medium">Materia</label>
-                      <Select value={filterMateria} onValueChange={setFilterMateria} disabled={isLoading}>
-                          <SelectTrigger>
-                              <SelectValue placeholder="Filtrar por materia" />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="all">Todas las materias</SelectItem>
-                              {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="space-y-2 md:col-span-1">
-                     <label className="text-sm font-medium">Grupo</label>
-                      <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading}>
-                          <SelectTrigger>
-                              <SelectValue placeholder="Filtrar por grupo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                               <SelectItem value="all">Todos los grupos</SelectItem>
-                               {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </div>
-                  <div className="flex gap-2 md:col-span-2">
-                    <Button onClick={handleShowSchedule} className="w-full">
-                        <Search className="mr-2 h-4 w-4"/>
-                        Ver Horario
-                    </Button>
-                     <Button onClick={handleClearFilters} variant="outline" className="w-full">
-                        <XCircle className="mr-2 h-4 w-4"/>
-                        Limpiar Filtros
-                    </Button>
-                  </div>
-              </div>
-        </CardContent>
-      </Card>
-      
       {!showSchedule ? (
-         <Alert className="border-primary/20 bg-primary/5 text-center">
-             <ArrowRight className="h-4 w-4" />
-            <AlertTitle className="font-semibold">¡Comienza a explorar tu horario!</AlertTitle>
-            <AlertDescription>
-                Seleccione un grupo o materia en los filtros para visualizar su horario de clases.
-            </AlertDescription>
-        </Alert>
+        <Card>
+            <CardHeader className="border-b">
+                <CardTitle>Filtro de Horario</CardTitle>
+                <CardDescription>Selecciona los filtros para visualizar el horario.</CardDescription>
+            </CardHeader>
+            <CardContent className="p-6">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                    <div className="space-y-2 md:col-span-1">
+                        <label className="text-sm font-medium">Materia</label>
+                        <Select value={filterMateria} onValueChange={(value) => {
+                            setFilterMateria(value);
+                            setFilterGrupo('all');
+                        }} disabled={isLoading}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filtrar por materia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas las materias</SelectItem>
+                                {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2 md:col-span-1">
+                        <label className="text-sm font-medium">Grupo</label>
+                        <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || grupos.length === 0}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filtrar por grupo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los grupos</SelectItem>
+                                {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="flex gap-2 md:col-span-2">
+                        <Button onClick={handleShowSchedule} className="w-full">
+                            <Search className="mr-2 h-4 w-4"/>
+                            Ver Horario
+                        </Button>
+                    </div>
+                </div>
+                <div className="mt-6 text-center text-muted-foreground">
+                    <p>Seleccione un grupo o materia en los filtros para visualizar su horario de clases.</p>
+                </div>
+            </CardContent>
+        </Card>
       ) : (
         <Card>
             <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
@@ -338,16 +334,22 @@ export default function SchedulePage() {
                     <Button variant={viewMode === 'semana' ? 'default' : 'outline'} onClick={() => setViewMode('semana')}>Semana</Button>
                     <Button variant={viewMode === 'dia' ? 'default' : 'outline'} onClick={() => setViewMode('dia')}>Día</Button>
                 </div>
-                 <Button variant="secondary">
-                    <Download className="mr-2 h-4 w-4"/>
-                    Descargar Horario
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="secondary">
+                        <Download className="mr-2 h-4 w-4"/>
+                        Descargar Horario
+                    </Button>
+                     <Button variant="outline" onClick={handleClearFilters}>
+                        <Edit className="mr-2 h-4 w-4"/>
+                        Cambiar Filtros
+                    </Button>
+                </div>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
             {isLoading ? (
                 <div className="space-y-4">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-64 w-full" />
                 </div>
             ) : schedule.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -359,7 +361,7 @@ export default function SchedulePage() {
                                 selected={selectedDate}
                                 onSelect={(date) => setSelectedDate(date || new Date())}
                                 className="p-0 w-full rounded-md border"
-                                disabled={(date) => date.getDay() === 0} // Disable Sundays
+                                disabled={(date) => date.getDay() === 0}
                             />
                         </div>
                     )}
@@ -369,18 +371,13 @@ export default function SchedulePage() {
                     </div>
                 </div>
             ) : (
-                <Alert>
-                    <Clock className="h-4 w-4" />
-                    <AlertTitle>Horario Vacío</AlertTitle>
-                    <AlertDescription>
-                        No tienes clases programadas que coincidan con los filtros seleccionados.
-                    </AlertDescription>
-                </Alert>
+                <div className="text-center text-muted-foreground py-10">
+                    <p>No tienes clases programadas que coincidan con los filtros seleccionados.</p>
+                </div>
             )}
             </CardContent>
         </Card>
       )}
-
     </div>
   );
 }
