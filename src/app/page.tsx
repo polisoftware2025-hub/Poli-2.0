@@ -23,10 +23,6 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Autoplay from "embla-carousel-autoplay"
 
-const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2859 3333" shapeRendering="geometricPrecision" textRendering="geometricPrecision" imageRendering="optimizeQuality" fillRule="evenodd" clipRule="evenodd" {...props}><path d="M2081 0c55 473 319 755 778 785v532c-266 26-499-61-770-225v995c0 1264-1378 1659-1782 235-333-1205 10-2123 1532-2166 237-7 473-3 709-7v-554c-219 13-438 41-657 84-180 35-349 86-512 152v-565c285-113 543-291 757-523-2-114-4-228-4-343z"/></svg>
-);
-
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
         <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" />
@@ -403,9 +399,6 @@ export default function HomePage() {
                         <div className="flex justify-center md:justify-start items-center space-x-4">
                            <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook">
                                 <FacebookIcon className="h-7 w-7" />
-                            </a>
-                             <a href="#" className="text-white hover:text-gray-400 transition-colors" aria-label="TikTok">
-                                <TikTokIcon className="h-6 w-6" />
                             </a>
                              <a href="#" className="text-white hover:text-[#E1306C] transition-colors" aria-label="Instagram">
                                 <Instagram className="h-7 w-7" />
