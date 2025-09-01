@@ -159,13 +159,14 @@ export default function NewProgramPage() {
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
             {programDetails.ciclos.map((ciclo: any) => (
               <AccordionItem value={`ciclo-${ciclo.numero}`} key={ciclo.numero}>
-                <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-                  <div className="flex items-center gap-4 w-full">
-                    <span>Ciclo {ciclo.numero}</span>
+                <div className="flex items-center w-full">
+                    <AccordionTrigger className="text-lg font-semibold hover:no-underline flex-grow">
+                        Ciclo {ciclo.numero}
+                    </AccordionTrigger>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleRemoveCycle(ciclo.numero);
@@ -174,7 +175,6 @@ export default function NewProgramPage() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </AccordionTrigger>
                 <AccordionContent>
                   <ul className="space-y-3 pt-2">
                     {ciclo.materias.map((materia: any) => (
