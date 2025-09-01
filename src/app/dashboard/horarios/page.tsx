@@ -3,16 +3,17 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter, Search } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { es } from "date-fns/locale";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 
 interface ScheduleEntry {
@@ -63,9 +64,10 @@ export default function SchedulePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"semana" | "dia">("semana");
   const [selectedDate, setSelectedDate] = useState(new Date());
-
+  
   const [filterMateria, setFilterMateria] = useState('all');
   const [filterGrupo, setFilterGrupo] = useState('all');
+  const [showSchedule, setShowSchedule] = useState(false);
 
   const materias = useMemo(() => {
     const uniqueMaterias = [...new Set(allSchedule.map(s => s.materia))];
@@ -73,9 +75,11 @@ export default function SchedulePage() {
   }, [allSchedule]);
 
   const grupos = useMemo(() => {
-    const uniqueGrupos = [...new Set(allSchedule.map(s => s.grupo))];
+    const uniqueGrupos = [...new Set(allSchedule
+      .filter(s => filterMateria === 'all' || s.materia === filterMateria)
+      .map(s => s.grupo))];
     return uniqueGrupos.map(g => ({ value: g, label: g }));
-  }, [allSchedule]);
+  }, [allSchedule, filterMateria]);
 
 
   useEffect(() => {
@@ -140,7 +144,6 @@ export default function SchedulePage() {
             });
           }
         });
-
         setAllSchedule(parsedSchedule);
       } catch (error) {
         console.error("Error fetching schedule:", error);
@@ -188,6 +191,10 @@ export default function SchedulePage() {
     });
     return events;
   }, [schedule]);
+  
+  const handleShowSchedule = () => {
+    setShowSchedule(true);
+  };
 
   const renderWeekView = () => (
     <div className="w-full overflow-x-auto">
@@ -230,7 +237,7 @@ export default function SchedulePage() {
   );
   
   const renderDayView = () => {
-    const dayName = daysOfWeek[selectedDate.getDay() - 1] || daysOfWeek[0];
+    const dayName = daysOfWeek[selectedDate.getDay() -1] ?? daysOfWeek[(selectedDate.getDay() + 6) % 7];
     const dayEntries = (eventsByDay[dayName] || []).sort((a,b) => a.horaInicio.localeCompare(b.horaInicio));
 
     return (
@@ -264,70 +271,93 @@ export default function SchedulePage() {
       />
       
       <Card>
-        <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
-            <div className="flex items-center gap-2">
-                <Button variant={viewMode === 'semana' ? 'default' : 'outline'} onClick={() => setViewMode('semana')}>Semana</Button>
-                <Button variant={viewMode === 'dia' ? 'default' : 'outline'} onClick={() => setViewMode('dia')}>Día</Button>
-            </div>
-            {userRole === 'docente' && (
-              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-                  <Select value={filterMateria} onValueChange={setFilterMateria}>
-                      <SelectTrigger className="w-full sm:w-[200px]">
-                          <SelectValue placeholder="Filtrar por materia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="all">Todas las materias</SelectItem>
-                          {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                      </SelectContent>
-                  </Select>
-                  <Select value={filterGrupo} onValueChange={setFilterGrupo}>
-                      <SelectTrigger className="w-full sm:w-[200px]">
-                          <SelectValue placeholder="Filtrar por grupo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                           <SelectItem value="all">Todos los grupos</SelectItem>
-                           {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                      </SelectContent>
-                  </Select>
-              </div>
-            )}
-             <Button variant="secondary">
-                <Download className="mr-2 h-4 w-4"/>
-                Descargar Horario
-            </Button>
+        <CardHeader className="border-b">
+            <CardTitle>Filtro de Horario</CardTitle>
+            <CardDescription>Selecciona los filtros para visualizar el horario.</CardDescription>
         </CardHeader>
-        <CardContent className="p-4 md:p-6">
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-16 w-full" />
-              <Skeleton className="h-64 w-full" />
-            </div>
-          ) : allSchedule.length > 0 ? (
-             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className={viewMode === 'dia' ? 'md:col-span-1' : 'hidden md:block md:col-span-1'}>
-                     <Calendar
-                        mode="single"
-                        locale={es}
-                        selected={selectedDate}
-                        onSelect={(date) => setSelectedDate(date || new Date())}
-                        className="p-0 w-full"
-                        disabled={(date) => date.getDay() === 0} // Disable Sundays
-                      />
-                </div>
-                <div className={viewMode === 'dia' ? 'md:col-span-3' : 'md:col-span-3'}>
-                    {viewMode === 'semana' && renderWeekView()}
-                    {viewMode === 'dia' && renderDayView()}
-                </div>
-            </div>
-          ) : (
-            <div className="text-center text-muted-foreground py-16">
-              <Clock className="mx-auto h-12 w-12 text-gray-400" />
-              <h3 className="mt-2 text-lg font-medium">Horario Vacío</h3>
-              <p className="mt-1 text-sm text-gray-500">No tienes clases programadas en tu horario.</p>
-            </div>
-          )}
+        <CardContent className="p-6">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                  <div className="space-y-2">
+                     <label className="text-sm font-medium">Materia</label>
+                      <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('all'); }} disabled={isLoading}>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Filtrar por materia" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">Todas las materias</SelectItem>
+                              {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="space-y-2">
+                     <label className="text-sm font-medium">Grupo</label>
+                      <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || filterMateria === 'all'}>
+                          <SelectTrigger>
+                              <SelectValue placeholder="Filtrar por grupo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                               <SelectItem value="all">Todos los grupos</SelectItem>
+                               {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <Button onClick={handleShowSchedule} className="w-full md:w-auto">
+                    <Search className="mr-2 h-4 w-4"/>
+                    Ver Horario
+                  </Button>
+              </div>
         </CardContent>
       </Card>
+      
+      {showSchedule && (
+        <Card>
+            <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
+                <div className="flex items-center gap-2">
+                    <Button variant={viewMode === 'semana' ? 'default' : 'outline'} onClick={() => setViewMode('semana')}>Semana</Button>
+                    <Button variant={viewMode === 'dia' ? 'default' : 'outline'} onClick={() => setViewMode('dia')}>Día</Button>
+                </div>
+                 <Button variant="secondary">
+                    <Download className="mr-2 h-4 w-4"/>
+                    Descargar Horario
+                </Button>
+            </CardHeader>
+            <CardContent className="p-4 md:p-6">
+            {isLoading ? (
+                <div className="space-y-4">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-64 w-full" />
+                </div>
+            ) : allSchedule.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div className={viewMode === 'dia' ? 'md:col-span-1' : 'hidden md:block md:col-span-1'}>
+                        <Calendar
+                            mode="single"
+                            locale={es}
+                            selected={selectedDate}
+                            onSelect={(date) => setSelectedDate(date || new Date())}
+                            className="p-0 w-full"
+                            disabled={(date) => date.getDay() === 0} // Disable Sundays
+                        />
+                    </div>
+                    <div className="md:col-span-3">
+                        {viewMode === 'semana' && renderWeekView()}
+                        {viewMode === 'dia' && renderDayView()}
+                    </div>
+                </div>
+            ) : (
+                <Alert>
+                    <Clock className="h-4 w-4" />
+                    <AlertTitle>Horario Vacío</AlertTitle>
+                    <AlertDescription>
+                        No tienes clases programadas que coincidan con los filtros seleccionados.
+                    </AlertDescription>
+                </Alert>
+            )}
+            </CardContent>
+        </Card>
+      )}
+
     </div>
   );
 }
+
