@@ -3,11 +3,12 @@
 
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar, Building, School } from "lucide-react";
+import { Calendar, Building, School, Plus, Save } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 
 const timeSlots = Array.from({ length: 15 }, (_, i) => {
@@ -76,14 +77,14 @@ export default function SchedulesAdminPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Gestión de Horarios y Aulas"
-        description="Visualiza la programación y disponibilidad de los salones en las diferentes sedes."
+        description="Visualiza, asigna y modifica la programación de clases en las diferentes sedes."
         icon={<Calendar className="h-8 w-8 text-primary" />}
       />
 
       <Card>
         <CardHeader>
           <CardTitle>Filtro de Horarios</CardTitle>
-          <CardDescription>Selecciona una sede y un salón para ver su horario semanal.</CardDescription>
+          <CardDescription>Selecciona una sede y un salón para ver y editar su horario semanal.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <div className="space-y-2">
@@ -122,57 +123,69 @@ export default function SchedulesAdminPage() {
       
       {selectedSede && selectedSalon ? (
         <Card>
-            <CardHeader>
-                <CardTitle>Horario para {salonesPorSede[selectedSede].find(s => s.id === selectedSalon)?.nombre}</CardTitle>
-                <CardDescription>Sede: {sedes.find(s => s.id === selectedSede)?.nombre}</CardDescription>
+            <CardHeader className="flex justify-between items-center">
+                <div>
+                    <CardTitle>Horario para {salonesPorSede[selectedSede].find(s => s.id === selectedSalon)?.nombre}</CardTitle>
+                    <CardDescription>Sede: {sedes.find(s => s.id === selectedSede)?.nombre}</CardDescription>
+                </div>
+                 <Button>
+                    <Plus className="mr-2 h-4 w-4"/>
+                    Asignar Clase
+                </Button>
             </CardHeader>
             <CardContent className="p-4 md:p-6">
                 {scheduleForSalon.length > 0 ? (
-                    <div style={{ width: '80vw' }}>
-                    <Table>
-                        <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
-                            {daysOfWeek.map(day => (
-                            <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
-                            ))}
-                        </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                        {timeSlots.map((time, timeIndex) => (
-                            <TableRow key={time}>
-                            <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
-                            {daysOfWeek.map((day, dayIndex) => {
-                                const entry = scheduleGrid[timeIndex][dayIndex];
-                                if (entry && entry.materia === 'SPAN') {
-                                return null;
-                                }
-                                return (
-                                <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5' : ''}`}>
-                                    {entry && (
-                                    <div className="bg-white p-2 rounded-md border-l-4 border-blue-500 shadow-sm h-full flex flex-col justify-center">
-                                        <p className="font-bold text-xs text-blue-800">{entry.materia}</p>
-                                        <p className="text-xs text-muted-foreground">{entry.grupo}</p>
-                                        <p className="text-xs text-muted-foreground">{entry.docente}</p>
-                                    </div>
-                                    )}
-                                </TableCell>
-                                );
-                            })}
+                    <div className="w-full overflow-x-auto">
+                        <Table className="min-w-full border">
+                            <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
+                                {daysOfWeek.map(day => (
+                                <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
+                                ))}
                             </TableRow>
-                        ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                            {timeSlots.map((time, timeIndex) => (
+                                <TableRow key={time}>
+                                <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
+                                {daysOfWeek.map((day, dayIndex) => {
+                                    const entry = scheduleGrid[timeIndex][dayIndex];
+                                    if (entry && entry.materia === 'SPAN') {
+                                    return null;
+                                    }
+                                    return (
+                                    <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5 cursor-pointer hover:bg-primary/10' : 'hover:bg-gray-50 cursor-pointer'}`}>
+                                        {entry && (
+                                        <div className="bg-white p-2 rounded-md border-l-4 border-blue-500 shadow-sm h-full flex flex-col justify-center">
+                                            <p className="font-bold text-xs text-blue-800">{entry.materia}</p>
+                                            <p className="text-xs text-muted-foreground">{entry.grupo}</p>
+                                            <p className="text-xs text-muted-foreground">{entry.docente}</p>
+                                        </div>
+                                        )}
+                                    </TableCell>
+                                    );
+                                })}
+                                </TableRow>
+                            ))}
+                            </TableBody>
+                        </Table>
                     </div>
                 ) : (
                     <Alert>
                         <School className="h-4 w-4" />
                         <AlertTitle>Salón Disponible</AlertTitle>
                         <AlertDescription>
-                            Este salón no tiene clases programadas.
+                            Este salón no tiene clases programadas. Puedes empezar a asignar clases usando el botón de arriba.
                         </AlertDescription>
                     </Alert>
                 )}
+                 <div className="flex justify-end mt-6">
+                    <Button variant="secondary">
+                        <Save className="mr-2 h-4 w-4" />
+                        Guardar Cambios en el Horario
+                    </Button>
+                </div>
             </CardContent>
         </Card>
       ) : (
@@ -180,7 +193,7 @@ export default function SchedulesAdminPage() {
             <Calendar className="h-4 w-4" />
             <AlertTitle>Selecciona una Sede y Salón</AlertTitle>
             <AlertDescription>
-                Por favor, elige una sede y un salón para visualizar el horario correspondiente.
+                Por favor, elige una sede y un salón para visualizar y gestionar el horario correspondiente.
             </AlertDescription>
         </Alert>
       )}
