@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Clock, Download, CalendarDays, Search, ArrowRight, XCircle, Edit, ListFilter, Eye } from "lucide-react";
+import { Calendar as CalendarIcon, Download, CalendarDays, Eye, Edit, ListFilter, XCircle, ArrowLeft, Home, ChevronRight } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,6 +14,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { es } from "date-fns/locale";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+
 
 interface ScheduleEntry {
   dia: string;
@@ -54,8 +57,23 @@ const getSubjectColor = (subject: string) => {
     return subjectColorMap.get(subject)!;
 };
 
+// Componente de Breadcrumbs personalizado para esta página
+const HorarioBreadcrumbs = () => {
+  const homePath = '/dashboard/docente';
+  
+  return (
+    <nav className="flex items-center text-sm text-muted-foreground">
+      <Link href={homePath} className="hover:text-primary transition-colors">
+        <Home className="h-4 w-4" />
+      </Link>
+      <ChevronRight className="h-4 w-4 mx-1" />
+      <span className="font-medium text-foreground">Horarios</span>
+    </nav>
+  );
+};
 
-export default function SchedulePage() {
+
+export default function HorariosPage() {
   const [allSchedule, setAllSchedule] = useState<ScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
@@ -67,6 +85,9 @@ export default function SchedulePage() {
   const [filterMateria, setFilterMateria] = useState('all');
   const [filterGrupo, setFilterGrupo] = useState('all');
   const [showSchedule, setShowSchedule] = useState(false);
+  
+  const router = useRouter();
+
 
   const materias = useMemo(() => {
     const uniqueMaterias = [...new Set(allSchedule.map(s => s.materia))];
@@ -274,11 +295,33 @@ export default function SchedulePage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Mi Horario"
-        description="Consulta tu horario de clases de la semana."
-        icon={<CalendarDays className="h-8 w-8 text-primary" />}
-      />
+      <Card>
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col gap-4">
+              <HorarioBreadcrumbs />
+              <div className="flex items-center gap-4">
+                <CalendarDays className="h-8 w-8 text-primary" />
+                <div>
+                  <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
+                    Mi Horario
+                  </CardTitle>
+                  <CardDescription className="font-poppins text-gray-600">
+                     {!showSchedule 
+                        ? "Selecciona los filtros para visualizar el horario." 
+                        : "Consulta tu horario de clases de la semana."
+                    }
+                  </CardDescription>
+                </div>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => setShowSchedule(false)}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Volver
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
       
       {!showSchedule ? (
         <Card>
