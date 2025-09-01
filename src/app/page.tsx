@@ -15,7 +15,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin } from "lucide-react";
+import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin, Instagram } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
@@ -26,12 +26,6 @@ import Autoplay from "embla-carousel-autoplay"
 const TikTokIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
         <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.03-4.83-.95-6.43-2.88-1.59-1.92-2.3-4.4-2.17-6.83.08-1.55.54-3.09 1.38-4.34 1.3-1.92 3.57-3.17 5.9-3.22.42-.01.84-.01 1.25-.02v4.03c-.44 0-.88 0-1.32.02-1.07.03-2.14.41-2.98 1.15-.84.74-1.26 1.87-1.18 2.91.07.92.52 1.84 1.2 2.42.68.58 1.63.84 2.53.7.87-.13 1.66-.63 2.12-1.38.45-.75.55-1.7.46-2.56-.07-1.07-.52-2.15-1.2-2.91-.71-.78-1.76-1.14-2.73-1.11v-4.04c.01 0 .01 0 0 0z" />
-    </svg>
-);
-
-const XIcon = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
-        <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
     </svg>
 );
 
@@ -412,11 +406,11 @@ export default function HomePage() {
                            <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook">
                                 <FacebookIcon className="h-7 w-7" />
                             </a>
-                             <a href="#" className="text-white hover:text-gray-400 transition-colors" aria-label="X (Twitter)">
-                                <XIcon className="h-6 w-6" />
-                            </a>
                              <a href="#" className="text-white hover:text-gray-400 transition-colors" aria-label="TikTok">
                                 <TikTokIcon className="h-6 w-6" />
+                            </a>
+                             <a href="#" className="text-white hover:text-[#E1306C] transition-colors" aria-label="Instagram">
+                                <Instagram className="h-7 w-7" />
                             </a>
                              <a href="#" className="text-white hover:text-[#0A66C2] transition-colors" aria-label="LinkedIn">
                                 <Linkedin className="h-7 w-7" />
