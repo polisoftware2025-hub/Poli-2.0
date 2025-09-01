@@ -16,6 +16,7 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Datos de ejemplo para la maquetación
 const teacherData = {
@@ -34,6 +35,13 @@ const teacherData = {
         { name: "CD-001", average: 3.8 },
         { name: "BD-002", average: 4.2 },
         { name: "IA-001", average: 4.5 },
+    ],
+    schedule: [
+        { dia: "Lunes", hora: "18:00 - 20:00", materia: "Cálculo Diferencial", grupo: "CD-001", aula: "Zoom-101" },
+        { dia: "Martes", hora: "10:00 - 12:00", materia: "Bases de Datos", grupo: "BD-002", aula: "Sede 73 - 302" },
+        { dia: "Miércoles", hora: "18:00 - 20:00", materia: "Cálculo Diferencial", grupo: "CD-001", aula: "Zoom-101" },
+        { dia: "Jueves", hora: "10:00 - 12:00", materia: "Bases de Datos", grupo: "BD-002", aula: "Sede 73 - 302" },
+        { dia: "Sábado", hora: "08:00 - 12:00", materia: "Inteligencia Artificial", grupo: "IA-001", aula: "Teams-IA" },
     ]
 }
 
@@ -136,29 +144,41 @@ export default function TeacherDashboardPage() {
                 </div>
             </div>
             
-            {/* Course Statistics Widget */}
-             <Card className="mb-8">
+            {/* My Schedule Widget */}
+            <Card className="mb-8">
                 <CardHeader>
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
-                        <BarChart3 className="h-5 w-5 text-primary"/>
-                        Estadísticas de Rendimiento
+                        <Calendar className="h-5 w-5 text-primary"/>
+                        Mi Horario Semanal
                     </CardTitle>
-                    <CardDescription>Promedio de notas por grupo</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <BarChart data={teacherData.courseStats}>
-                             <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                             <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} domain={[0, 5]} />
-                             <Tooltip
-                                contentStyle={{
-                                    backgroundColor: "hsl(var(--background))",
-                                    border: "1px solid hsl(var(--border))",
-                                }}
-                             />
-                             <Bar dataKey="average" name="Promedio" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                   <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Día</TableHead>
+                                    <TableHead>Hora</TableHead>
+                                    <TableHead>Materia</TableHead>
+                                    <TableHead>Grupo</TableHead>
+                                    <TableHead>Aula</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {teacherData.schedule.map((item, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell className="font-medium">{item.dia}</TableCell>
+                                        <TableCell>{item.hora}</TableCell>
+                                        <TableCell>{item.materia}</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">{item.grupo}</Badge>
+                                        </TableCell>
+                                        <TableCell>{item.aula}</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                   </div>
                 </CardContent>
             </Card>
 

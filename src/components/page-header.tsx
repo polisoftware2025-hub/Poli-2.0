@@ -35,7 +35,7 @@ const Breadcrumbs = () => {
       'users': 'Usuarios',
       'pre-register': 'Pre-Inscripción',
       'subjects': 'Materias',
-      'payments': userRole === 'admin' ? 'Gestión de Pagos' : 'Revisión de Pagos',
+      'payments': userRole === 'admin' ? 'Gestión de Pagos' : (userRole === 'gestor' ? 'Revisión de Pagos' : 'Pagos'),
       'schedules': 'Horarios',
       'analytics': 'Analíticas',
       'calificaciones': 'Calificaciones',
@@ -50,7 +50,10 @@ const Breadcrumbs = () => {
       'requests': 'Solicitudes',
       'reports': 'Reportes',
       'grades': 'Calificaciones',
-      'announcements': 'Anuncios'
+      'announcements': 'Anuncios',
+      'grupos': 'Mis Grupos',
+      'notas': 'Registro de Notas',
+      'asistencia': 'Toma de Asistencia'
     };
     // This is a simplistic way to handle dynamic parts like [userId]
     if (names[segment]) {

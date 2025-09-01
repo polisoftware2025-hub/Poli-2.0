@@ -13,6 +13,7 @@ import { GroupSelector } from "@/components/dashboard/docente/group-selector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Student {
   id: string;
@@ -30,13 +31,12 @@ export default function RegisterGradesPage() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
   const [grade, setGrade] = useState("");
+  const [observation, setObservation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const [docenteId, setDocenteId] = useState<string | null>(null);
 
    useEffect(() => {
-    // En una app real, el ID del docente se obtendría de la sesión.
-    // Usamos el userId de localStorage que podría ser el ID del documento del usuario.
     const storedUserId = localStorage.getItem('userId');
      if (storedUserId) {
         setDocenteId(storedUserId);
@@ -45,8 +45,9 @@ export default function RegisterGradesPage() {
 
   const handleGroupSelect = (group: Group | null) => {
     setSelectedGroup(group);
-    setSelectedStudentId(""); // Reset student selection when group changes
+    setSelectedStudentId(""); 
     setGrade("");
+    setObservation("");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,7 +56,7 @@ export default function RegisterGradesPage() {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Por favor, completa todos los campos.",
+        description: "Por favor, completa todos los campos requeridos.",
       });
       return;
     }
@@ -82,6 +83,7 @@ export default function RegisterGradesPage() {
         grupoId: selectedGroup.id,
         materiaId: selectedGroup.materia.id,
         nota: numericGrade,
+        observacion: observation,
         fecha: serverTimestamp(),
         docenteId: docenteId, 
       });
@@ -91,9 +93,9 @@ export default function RegisterGradesPage() {
         description: "Nota registrada correctamente.",
       });
 
-      // Reset form
       setSelectedStudentId("");
       setGrade("");
+      setObservation("");
 
     } catch (error) {
       console.error("Error saving grade: ", error);
@@ -145,20 +147,32 @@ export default function RegisterGradesPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="grade">Nota (0.0 - 5.0)</Label>
-                  <Input
-                    id="grade"
-                    type="number"
-                    step="0.1"
-                    min="0"
-                    max="5"
-                    value={grade}
-                    onChange={(e) => setGrade(e.target.value)}
-                    placeholder="Ej: 4.5"
-                    disabled={!selectedStudentId}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="grade">Nota (0.0 - 5.0)</Label>
+                        <Input
+                            id="grade"
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="5"
+                            value={grade}
+                            onChange={(e) => setGrade(e.target.value)}
+                            placeholder="Ej: 4.5"
+                            disabled={!selectedStudentId}
+                        />
+                    </div>
                 </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="observation">Observación (Opcional)</Label>
+                    <Textarea
+                        id="observation"
+                        value={observation}
+                        onChange={(e) => setObservation(e.target.value)}
+                        placeholder="Añade un comentario sobre la entrega o el desempeño del estudiante..."
+                        disabled={!selectedStudentId}
+                    />
+                 </div>
                 <Button type="submit" disabled={isLoading || !selectedStudentId || !grade}>
                   {isLoading ? "Guardando..." : "Guardar Nota"}
                 </Button>

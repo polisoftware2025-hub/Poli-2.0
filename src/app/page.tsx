@@ -412,6 +412,15 @@ export default function HomePage() {
                            <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook">
                                 <FacebookIcon className="h-7 w-7" />
                             </a>
+                             <a href="#" className="text-white hover:text-gray-400 transition-colors" aria-label="X (Twitter)">
+                                <XIcon className="h-6 w-6" />
+                            </a>
+                             <a href="#" className="text-white hover:text-gray-400 transition-colors" aria-label="TikTok">
+                                <TikTokIcon className="h-6 w-6" />
+                            </a>
+                             <a href="#" className="text-white hover:text-[#0A66C2] transition-colors" aria-label="LinkedIn">
+                                <Linkedin className="h-7 w-7" />
+                            </a>
                         </div>
                     </div>
                 </div>
