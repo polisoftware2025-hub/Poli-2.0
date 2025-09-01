@@ -181,7 +181,14 @@ export default function ManagerDashboardPage() {
             {/* Alerts */}
             <Card>
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary"/> Alertas y Notificaciones</CardTitle>
+                    <CardTitle className="flex items-center justify-between">
+                       <div className="flex items-center gap-2">
+                         <Bell className="h-5 w-5 text-primary"/> Alertas
+                       </div>
+                       <Button variant="link" size="sm" asChild>
+                           <Link href="/dashboard/gestor/notifications">Ver todas</Link>
+                       </Button>
+                    </CardTitle>
                 </CardHeader>
                  <CardContent>
                     <ul className="space-y-4">
