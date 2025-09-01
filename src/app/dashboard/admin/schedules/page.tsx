@@ -128,8 +128,8 @@ export default function SchedulesAdminPage() {
             </CardHeader>
             <CardContent className="p-4 md:p-6">
                 {scheduleForSalon.length > 0 ? (
-                    <div className="relative overflow-x-auto">
-                    <Table className="w-full">
+                    <div style={{ width: '80vw' }}>
+                    <Table>
                         <TableHeader>
                         <TableRow>
                             <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
