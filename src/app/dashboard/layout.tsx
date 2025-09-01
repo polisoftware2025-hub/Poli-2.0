@@ -53,12 +53,14 @@ import {
   BarChart3,
   BookCopy,
   ClipboardCheck,
-  UserCheck
+  UserCheck,
+  Edit,
+  FileText,
+  Send,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AiSuggestions } from "@/components/ai/ai-suggestions";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 
@@ -123,40 +125,45 @@ export default function DashboardLayout({
   };
   
   const adminMenuItems = [
-    { href: "/dashboard/admin", label: "Panel", icon: LayoutDashboard, roles: ["admin"] },
-    { href: "/dashboard/admin/users", label: "Usuarios", icon: Users, roles: ["admin"] },
-    { href: "/dashboard/admin/pre-register", label: "Pre registro", icon: ClipboardList, roles: ["admin"] },
-    { href: "/dashboard/admin/career", label: "Carreras", icon: BookCopy, roles: ["admin"] },
-    { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked, roles: ["admin"] },
-    { href: "/dashboard/admin/payments", label: "Gestion pagos", icon: CreditCard, roles: ["admin"] },
-    { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar, roles: ["admin"] },
-    { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3, roles: ["admin"] },
+    { href: "/dashboard/admin", label: "Panel", icon: LayoutDashboard },
+    { href: "/dashboard/admin/users", label: "Usuarios", icon: Users },
+    { href: "/dashboard/admin/pre-register", label: "Pre registro", icon: ClipboardList },
+    { href: "/dashboard/admin/career", label: "Carreras", icon: BookCopy },
+    { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked },
+    { href: "/dashboard/admin/payments", label: "Gestión Pagos", icon: CreditCard },
+    { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar },
+    { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3 },
   ];
 
   const studentMenuItems = [
-    { href: "/dashboard/estudiante", label: "Panel", icon: Home, roles: ["estudiante"] },
-    { href: "/dashboard/materias", label: "Materias", icon: Library, roles: ["estudiante"] },
-    { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap, roles: ["estudiante"] },
-    { href: "/dashboard/horarios", label: "Horarios", icon: Calendar, roles: ["estudiante"] },
-    { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare, roles: ["estudiante"] },
-    { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell, roles: ["estudiante"] },
-    { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["estudiante"] },
-    { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard, roles: ["estudiante"] },
-    { href: "/dashboard/evaluacion-docente", label: "Evaluar Docentes", icon: Star, roles: ["estudiante"] },
-    { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare, roles: ["estudiante"] },
-    { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["estudiante"] },
+    { href: "/dashboard/estudiante", label: "Panel", icon: Home },
+    { href: "/dashboard/materias", label: "Materias", icon: Library },
+    { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap },
+    { href: "/dashboard/horarios", label: "Horarios", icon: Calendar },
+    { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare },
+    { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
+    { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar },
+    { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard },
+    { href: "/dashboard/evaluacion-docente", label: "Evaluar Docentes", icon: Star },
+    { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare },
   ];
   
  const teacherMenuItems = [
-    { href: "/dashboard/docente", label: "Panel", icon: LayoutDashboard, roles: ["docente"] },
-    { href: "/dashboard/docente/grupos", label: "Mis Grupos", icon: BookCopy, roles: ["docente"] },
-    { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck, roles: ["docente"] },
-    { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck, roles: ["docente"] },
-    { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["docente"] },
+    { href: "/dashboard/docente", label: "Panel", icon: LayoutDashboard },
+    { href: "/dashboard/docente/grupos", label: "Mis Grupos", icon: BookCopy },
+    { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck },
+    { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck },
+    { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar },
 ];
 
   const managerMenuItems = [
-      // Define manager items here if they differ
+      { href: "/dashboard/gestor", label: "Panel", icon: LayoutDashboard },
+      { href: "/dashboard/gestor/payments", label: "Revisión de Pagos", icon: CreditCard },
+      { href: "/dashboard/gestor/requests", label: "Solicitudes", icon: CheckSquare },
+      { href: "/dashboard/gestor/schedules", label: "Gestión de Horarios", icon: Calendar },
+      { href: "/dashboard/gestor/grades", label: "Gestión de Notas", icon: Edit },
+      { href: "/dashboard/gestor/reports", label: "Reportes", icon: FileText },
+      { href: "/dashboard/gestor/announcements", label: "Anuncios", icon: Send },
   ];
 
   const getMenuItems = (role: UserRole) => {
@@ -168,7 +175,7 @@ export default function DashboardLayout({
       case 'estudiante':
         return studentMenuItems;
       case 'gestor':
-        return managerMenuItems; // Defaulting to student for now
+        return managerMenuItems;
       default:
         return [];
     }
