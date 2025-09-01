@@ -14,6 +14,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const subjects = [
   {
@@ -115,23 +125,66 @@ export default function SubjectsAdminPage() {
                     <CardHeader>
                         <div className="flex justify-between items-start">
                              <CardTitle className="text-lg">{subject.name}</CardTitle>
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
-                                </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Eliminar
-                                </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <Dialog>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Editar
+                                            </DropdownMenuItem>
+                                        </DialogTrigger>
+                                        <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Eliminar
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Editar Materia</DialogTitle>
+                                        <DialogDescription>Modifica los datos de la materia. Los cambios se guardarán al hacer clic en Guardar.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="name" className="text-right">Nombre</Label>
+                                            <Input id="name" defaultValue={subject.name} className="col-span-3" />
+                                        </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="code" className="text-right">Código</Label>
+                                            <Input id="code" defaultValue={subject.code} className="col-span-3" />
+                                        </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="credits" className="text-right">Créditos</Label>
+                                            <Input id="credits" type="number" defaultValue={subject.credits} className="col-span-3" />
+                                        </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="program" className="text-right">Carrera</Label>
+                                            <Select defaultValue={subject.program}>
+                                                <SelectTrigger id="program" className="col-span-3">
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Ingeniería de Sistemas">Ingeniería de Sistemas</SelectItem>
+                                                    <SelectItem value="Mercadeo y Publicidad">Mercadeo y Publicidad</SelectItem>
+                                                    <SelectItem value="Contaduría Pública">Contaduría Pública</SelectItem>
+                                                    <SelectItem value="Administración de Empresas">Administración de Empresas</SelectItem>
+                                                    <SelectItem value="Psicología">Psicología</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button type="button" variant="outline">Cancelar</Button>
+                                        <Button type="submit">Guardar Cambios</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                         <CardDescription>{subject.program}</CardDescription>
                     </CardHeader>
