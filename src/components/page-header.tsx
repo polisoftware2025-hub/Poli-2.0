@@ -17,8 +17,7 @@ const Breadcrumbs = () => {
     setUserRole(role);
   }, []);
 
-  const isAdmin = userRole === 'admin';
-  const homePath = isAdmin ? '/dashboard/admin' : '/dashboard';
+  const homePath = userRole ? `/dashboard/${userRole}` : '/dashboard';
   
   const pathSegments = pathname.split('/').filter(segment => segment);
 
@@ -47,7 +46,11 @@ const Breadcrumbs = () => {
       'empleo': 'Bolsa de Empleo',
       'pagos': 'Mis Pagos',
       'evaluacion-docente': 'Evaluación Docente',
-      'career': 'Carreras'
+      'career': 'Carreras',
+      'requests': 'Solicitudes',
+      'reports': 'Reportes',
+      'grades': 'Calificaciones',
+      'announcements': 'Anuncios'
     };
     // This is a simplistic way to handle dynamic parts like [userId]
     if (names[segment]) {
@@ -60,20 +63,16 @@ const Breadcrumbs = () => {
     return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
   
-  const initialSegments = isAdmin ? ['dashboard', 'admin'] : ['dashboard'];
-
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
       <Link href={homePath} className="hover:text-primary transition-colors">
         <Home className="h-4 w-4" />
       </Link>
       {pathSegments.map((segment, index) => {
-        const currentPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
-        // Skip breadcrumb rendering for the base path of the role
-        if (isAdmin && index < 2 && segment === 'admin') return null;
-        if (!isAdmin && index < 1) return null;
-        if(segment === 'dashboard' && index === 0) return null;
+        // Skip the 'dashboard' segment and the role-specific segment from breadcrumbs
+        if (segment === 'dashboard' || segment === userRole) return null;
         
+        const currentPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
         const isLast = index === pathSegments.length - 1;
 
         return (
