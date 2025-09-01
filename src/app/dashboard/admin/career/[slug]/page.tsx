@@ -226,7 +226,7 @@ export default function ProgramDetailPage() {
             style={{ objectFit: "cover" }}
           />
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-             <Button variant="secondary">
+             <Button variant="secondary" type="button">
                 <Upload className="mr-2 h-4 w-4"/>
                 Cambiar Imagen
             </Button>
@@ -336,19 +336,19 @@ export default function ProgramDetailPage() {
                                         </div>
                                     </div>
                                     <DialogFooter>
-                                        <Button variant="outline">Cancelar</Button>
-                                        <Button>Guardar Cambios</Button>
+                                        <Button variant="outline" type="button">Cancelar</Button>
+                                        <Button type="button">Guardar Cambios</Button>
                                     </DialogFooter>
                                 </DialogContent>
                             </Dialog>
-                            <Button variant="destructive" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4"/></Button>
+                            <Button variant="destructive" size="icon" className="h-8 w-8" type="button"><Trash2 className="h-4 w-4"/></Button>
                         </div>
                       </li>
                     ))}
                   </ul>
                   <Dialog>
                     <DialogTrigger asChild>
-                        <Button variant="outline" className="mt-4">
+                        <Button variant="outline" className="mt-4" type="button">
                             <Plus className="mr-2 h-4 w-4"/>
                             Agregar Materia
                         </Button>
@@ -373,8 +373,8 @@ export default function ProgramDetailPage() {
                             </div>
                         </div>
                         <DialogFooter>
-                            <Button variant="outline">Cancelar</Button>
-                            <Button>Guardar Materia</Button>
+                            <Button variant="outline" type="button">Cancelar</Button>
+                            <Button type="button">Guardar Materia</Button>
                         </DialogFooter>
                     </DialogContent>
                   </Dialog>

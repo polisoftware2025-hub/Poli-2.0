@@ -95,9 +95,11 @@ export default function CareerAdminPage() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input placeholder="Buscar por nombre de carrera..." className="pl-9" />
             </div>
-            <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                Agregar Carrera
+            <Button asChild>
+                <Link href="/dashboard/admin/career/new-career">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Agregar Carrera
+                </Link>
             </Button>
           </div>
           
@@ -117,9 +119,11 @@ export default function CareerAdminPage() {
                                 </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Editar
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/dashboard/admin/career/${career.slug}`}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Editar
+                                    </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
                                     <Link href={`/dashboard/admin/career/${career.slug}`}>
