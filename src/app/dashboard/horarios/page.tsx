@@ -340,18 +340,20 @@ export default function SchedulePage() {
                 <Skeleton className="h-64 w-full" />
                 </div>
             ) : schedule.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className={viewMode === 'dia' ? 'md:col-span-1' : 'hidden md:block md:col-span-1'}>
-                        <Calendar
-                            mode="single"
-                            locale={es}
-                            selected={selectedDate}
-                            onSelect={(date) => setSelectedDate(date || new Date())}
-                            className="p-0 w-full"
-                            disabled={(date) => date.getDay() === 0} // Disable Sundays
-                        />
-                    </div>
-                    <div className="md:col-span-3">
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    {viewMode === 'dia' && (
+                        <div className="lg:col-span-1">
+                            <Calendar
+                                mode="single"
+                                locale={es}
+                                selected={selectedDate}
+                                onSelect={(date) => setSelectedDate(date || new Date())}
+                                className="p-0 w-full rounded-md border"
+                                disabled={(date) => date.getDay() === 0} // Disable Sundays
+                            />
+                        </div>
+                    )}
+                    <div className={viewMode === 'dia' ? 'lg:col-span-3' : 'lg:col-span-4'}>
                         {viewMode === 'semana' && renderWeekView()}
                         {viewMode === 'dia' && renderDayView()}
                     </div>
