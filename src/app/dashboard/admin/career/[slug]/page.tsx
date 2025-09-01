@@ -226,10 +226,15 @@ export default function ProgramDetailPage() {
             style={{ objectFit: "cover" }}
           />
           <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-             <Button variant="secondary" type="button">
-                <Upload className="mr-2 h-4 w-4"/>
-                Cambiar Imagen
-            </Button>
+            <Label htmlFor="image-upload" className="cursor-pointer">
+                <Button variant="secondary" type="button" asChild>
+                    <span>
+                        <Upload className="mr-2 h-4 w-4"/>
+                        Cambiar Imagen
+                    </span>
+                </Button>
+            </Label>
+            <Input id="image-upload" type="file" className="hidden" accept="image/*" />
           </div>
         </div>
         <CardContent className="p-6 space-y-4">
