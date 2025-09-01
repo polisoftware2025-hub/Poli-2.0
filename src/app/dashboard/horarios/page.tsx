@@ -15,7 +15,7 @@ import { es } from "date-fns/locale";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -61,7 +61,14 @@ const getSubjectColor = (subject: string) => {
 
 // Componente de Breadcrumbs personalizado para esta página
 const HorarioBreadcrumbs = () => {
-  const homePath = '/dashboard/docente';
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const role = localStorage.getItem("userRole");
+    setUserRole(role);
+  }, []);
+
+  const homePath = userRole ? `/dashboard/${userRole}` : '/dashboard';
   
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
@@ -97,13 +104,9 @@ export default function HorariosPage() {
   }, [allSchedule]);
 
   const grupos = useMemo(() => {
-    let filteredSchedule = allSchedule;
-    if (filterMateria !== 'all') {
-        filteredSchedule = allSchedule.filter(s => s.materia === filterMateria);
-    }
-    const uniqueGrupos = [...new Set(filteredSchedule.map(g => g.grupo))];
+    const uniqueGrupos = [...new Set(allSchedule.map(g => g.grupo))];
     return uniqueGrupos.map(g => ({ value: g, label: g }));
-  }, [allSchedule, filterMateria]);
+  }, [allSchedule]);
 
 
   useEffect(() => {
@@ -221,21 +224,16 @@ export default function HorariosPage() {
   }, [schedule]);
   
   const handleShowSchedule = () => {
-    if (filterMateria === 'all' && filterGrupo === 'all') {
-        return; // Do not show schedule if no filter is selected
-    }
     setShowSchedule(true);
   };
   
-  const handleClearFilters = () => {
-    setFilterMateria('all');
-    setFilterGrupo('all');
+  const handleBackToFilters = () => {
     setShowSchedule(false);
   }
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-    const teacherName = schedule.length > 0 ? schedule[0].docente : 'Docente';
+    const teacherName = allSchedule.length > 0 ? allSchedule[0].docente : 'Docente';
     const date = new Date().toLocaleDateString('es-CO');
 
     doc.text(`Horario de Clases - ${teacherName}`, 14, 16);
@@ -357,7 +355,7 @@ export default function HorariosPage() {
                 </div>
               </div>
             </div>
-             <Button variant="outline" onClick={() => router.back()}>
+             <Button variant="outline" onClick={handleBackToFilters}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Volver
             </Button>
@@ -372,13 +370,10 @@ export default function HorariosPage() {
                 <CardDescription>Selecciona los filtros para visualizar el horario.</CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
-                    <div className="space-y-2 md:col-span-1">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                    <div className="space-y-2">
                         <label className="text-sm font-medium">Materia</label>
-                        <Select value={filterMateria} onValueChange={(value) => {
-                            setFilterMateria(value);
-                            setFilterGrupo('all');
-                        }} disabled={isLoading}>
+                        <Select value={filterMateria} onValueChange={setFilterMateria} disabled={isLoading}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Filtrar por materia" />
                             </SelectTrigger>
@@ -388,7 +383,7 @@ export default function HorariosPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="space-y-2 md:col-span-1">
+                    <div className="space-y-2">
                         <label className="text-sm font-medium">Grupo</label>
                         <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading}>
                             <SelectTrigger>
@@ -400,16 +395,10 @@ export default function HorariosPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="flex gap-2 md:col-span-2">
-                        <Button onClick={handleShowSchedule} className="w-full" disabled={filterMateria === 'all' && filterGrupo === 'all'}>
-                            <Eye className="mr-2 h-4 w-4"/>
-                            Ver Horario
-                        </Button>
-                         <Button onClick={handleClearFilters} variant="outline" className="w-full">
-                            <XCircle className="mr-2 h-4 w-4"/>
-                            Limpiar Filtros
-                        </Button>
-                    </div>
+                    <Button onClick={handleShowSchedule} className="w-full">
+                        <Eye className="mr-2 h-4 w-4"/>
+                        Ver Horario
+                    </Button>
                 </div>
                 <div className="mt-6">
                     <Alert>
