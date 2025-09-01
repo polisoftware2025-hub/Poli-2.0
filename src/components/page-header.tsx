@@ -35,7 +35,7 @@ const Breadcrumbs = () => {
       'users': 'Usuarios',
       'pre-register': 'Pre-registro',
       'subjects': 'Materias',
-      'payments': 'Pagos',
+      'payments': userRole === 'admin' ? 'Gestión de Pagos' : 'Revisión de Pagos',
       'schedules': 'Horarios',
       'analytics': 'Analíticas',
       'calificaciones': 'Calificaciones',
