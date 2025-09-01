@@ -129,7 +129,7 @@ export default function SchedulesAdminPage() {
             <CardContent className="p-4 md:p-6">
                 {scheduleForSalon.length > 0 ? (
                     <div className="overflow-x-auto">
-                    <Table className="min-w-full border">
+                    <Table className="w-full">
                         <TableHeader>
                         <TableRow>
                             <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
