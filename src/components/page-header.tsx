@@ -46,7 +46,8 @@ const Breadcrumbs = () => {
       'noticias': 'Noticias y Anuncios',
       'empleo': 'Bolsa de Empleo',
       'pagos': 'Mis Pagos',
-      'evaluacion-docente': 'Evaluación Docente'
+      'evaluacion-docente': 'Evaluación Docente',
+      'career': 'Carreras'
     };
     // This is a simplistic way to handle dynamic parts like [userId]
     if (names[segment]) {

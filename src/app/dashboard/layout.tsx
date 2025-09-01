@@ -126,6 +126,7 @@ export default function DashboardLayout({
     { href: "/dashboard/admin", label: "Panel", icon: LayoutDashboard, roles: ["admin"] },
     { href: "/dashboard/admin/users", label: "Usuarios", icon: Users, roles: ["admin"] },
     { href: "/dashboard/admin/pre-register", label: "Pre registro", icon: ClipboardList, roles: ["admin"] },
+    { href: "/dashboard/admin/career", label: "Carreras", icon: BookCopy, roles: ["admin"] },
     { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked, roles: ["admin"] },
     { href: "/dashboard/admin/payments", label: "Gestion pagos", icon: CreditCard, roles: ["admin"] },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar, roles: ["admin"] },
@@ -146,13 +147,13 @@ export default function DashboardLayout({
     { href: "/dashboard/noticias", label: "Noticias y Anuncios", icon: Newspaper, roles: ["estudiante"] },
   ];
   
-  const teacherMenuItems = [
-      { href: "/dashboard/docente", label: "Panel", icon: LayoutDashboard, roles: ["docente"] },
-      { href: "/dashboard/docente/grupos", label: "Mis Grupos", icon: BookCopy, roles: ["docente"] },
-      { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck, roles: ["docente"] },
-      { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck, roles: ["docente"] },
-      { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["docente"] },
-  ];
+ const teacherMenuItems = [
+    { href: "/dashboard/docente", label: "Panel", icon: LayoutDashboard, roles: ["docente"] },
+    { href: "/dashboard/docente/grupos", label: "Mis Grupos", icon: BookCopy, roles: ["docente"] },
+    { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck, roles: ["docente"] },
+    { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck, roles: ["docente"] },
+    { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar, roles: ["docente"] },
+];
 
   const managerMenuItems = [
       // Define manager items here if they differ
@@ -266,7 +267,6 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-             {userRole === 'estudiante' && <AiSuggestions />}
           </SidebarContent>
         </Sidebar>
       </div>
