@@ -153,7 +153,7 @@ export default function DashboardLayout({
     { href: "/dashboard/docente/grupos", label: "Mis Grupos", icon: BookCopy },
     { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck },
     { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck },
-    { href: "/dashboard/horarios", label: "Horarios", icon: Calendar },
+    { href: "/dashboard/horarios", label: "Horario", icon: Calendar },
 ];
 
   const managerMenuItems = [
