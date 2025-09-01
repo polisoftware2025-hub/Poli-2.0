@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookMarked, Plus, Search, Filter, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { BookMarked, Plus, Search, Filter, MoreVertical, Edit, Trash2, BookCopy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 const subjects = [
   {
@@ -32,6 +34,7 @@ const subjects = [
     code: "MAT-101",
     credits: 3,
     program: "Ingeniería de Sistemas",
+    programSlug: "ingenieria-de-sistemas",
     status: "Activa",
   },
   {
@@ -40,6 +43,7 @@ const subjects = [
     code: "BD-201",
     credits: 4,
     program: "Ingeniería de Sistemas",
+    programSlug: "ingenieria-de-sistemas",
     status: "Activa",
   },
   {
@@ -48,6 +52,7 @@ const subjects = [
     code: "MKT-301",
     credits: 3,
     program: "Mercadeo y Publicidad",
+    programSlug: "mercadeo-y-publicidad",
     status: "Activa",
   },
   {
@@ -56,6 +61,7 @@ const subjects = [
     code: "CONT-101",
     credits: 3,
     program: "Contaduría Pública",
+    programSlug: "contaduria-publica",
     status: "Inactiva",
   },
   {
@@ -64,6 +70,7 @@ const subjects = [
     code: "ADM-101",
     credits: 2,
     program: "Administración de Empresas",
+    programSlug: "administracion-de-empresas",
     status: "Activa",
   },
   {
@@ -72,6 +79,7 @@ const subjects = [
     code: "PSI-101",
     credits: 3,
     program: "Psicología",
+    programSlug: "psicologia",
     status: "Activa",
   },
 ];
@@ -139,6 +147,12 @@ export default function SubjectsAdminPage() {
                                                 Editar
                                             </DropdownMenuItem>
                                         </DialogTrigger>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/admin/career/${subject.programSlug}`}>
+                                                <BookCopy className="mr-2 h-4 w-4" />
+                                                Ver Carrera
+                                            </Link>
+                                        </DropdownMenuItem>
                                         <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10">
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             Eliminar
