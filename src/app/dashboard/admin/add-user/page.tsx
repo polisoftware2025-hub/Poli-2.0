@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -19,6 +18,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import Link from "next/link";
 
 // Schemas simplificados para la maquetación
 const addUserSchema = z.object({
@@ -194,7 +194,9 @@ export default function AddUserPage() {
             </CardContent>
             <CardFooter className="p-6 bg-gray-50 rounded-b-xl border-t">
                 <div className="flex justify-end w-full gap-4">
-                    <Button type="button" variant="outline">Cancelar</Button>
+                    <Button type="button" variant="outline" asChild>
+                        <Link href="/dashboard/admin/users">Cancelar</Link>
+                    </Button>
                     <Button type="submit" disabled={isLoading}>
                         {isLoading ? "Creando..." : "Crear Usuario"}
                     </Button>
