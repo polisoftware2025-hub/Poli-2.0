@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClipboardCheck, UserCheck, BookCopy, ArrowRight, Calendar, BarChart3 } from "lucide-react";
+import { ClipboardCheck, UserCheck, BookCopy, ArrowRight, Calendar, BarChart3, ListTodo, Users, Edit } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -16,6 +16,11 @@ const teacherData = {
         { id: 'grp003', name: 'Inteligencia Artificial (IA-001)', students: 25 },
     ],
     pendingTasks: 14,
+    nextActivities: [
+        { time: "10:00 AM", name: "Clase de Bases de Datos (BD-002)" },
+        { time: "02:00 PM", name: "Reunión de Facultad de Ingeniería" },
+        { time: "Mañana", name: "Entrega de notas - Parcial 1" },
+    ]
 }
 
 export default function TeacherDashboardPage() {
@@ -53,106 +58,88 @@ export default function TeacherDashboardPage() {
             Gestión de cursos, notas y asistencia de sus estudiantes.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-            {/* Widgets Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-base font-semibold flex items-center gap-2">
-                           <BookCopy className="h-5 w-5 text-primary"/>
-                           Mis Grupos Asignados
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                       <div className="space-y-3">
-                           {teacherData.assignedGroups.map(group => (
-                               <div key={group.id} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
-                                   <span>{group.name}</span>
-                                   <Badge variant="secondary">{group.students} Est.</Badge>
-                               </div>
-                           ))}
-                       </div>
-                       <Button variant="link" className="p-0 h-auto mt-4 text-primary" asChild>
-                           <Link href="/dashboard/docente/grupos">
-                                Ver todos los grupos <ArrowRight className="ml-2 h-4 w-4"/>
-                           </Link>
-                       </Button>
-                    </CardContent>
-                </Card>
-
-                <div className="flex flex-col gap-6">
-                   <Card>
-                        <CardHeader>
-                            <CardTitle className="text-base font-semibold">Tareas por Calificar</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex items-center justify-between">
-                            <div className="text-3xl font-bold text-primary">{teacherData.pendingTasks}</div>
-                             <Button asChild>
-                                <Link href="/dashboard/docente/notas">
-                                    Ir a Calificar
-                                </Link>
-                            </Button>
-                        </CardContent>
-                   </Card>
-                   <Card>
-                       <CardHeader>
-                            <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-primary"/>
-                                Horario
-                            </CardTitle>
-                       </CardHeader>
-                       <CardContent>
-                          <Button variant="outline" className="w-full" asChild>
-                            <Link href="/dashboard/horarios">
-                              Ver mi horario completo
-                            </Link>
-                          </Button>
-                       </CardContent>
-                   </Card>
-                </div>
-            </div>
-
-            {/* Main Action Buttons */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-               <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Mis Grupos</CardTitle>
-                  <BookCopy className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">Ver y administrar los grupos asignados.</p>
-                  <Button className="mt-4 w-full" asChild>
-                    <Link href="/dashboard/docente/grupos">Ver Grupos</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Registro de Notas</CardTitle>
-                  <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">Calificar actividades y registrar notas.</p>
-                   <Button className="mt-4 w-full" asChild>
-                    <Link href="/dashboard/docente/notas">Registrar Notas</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-              <Card className="hover:shadow-lg transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium">Control de Asistencia</CardTitle>
-                  <UserCheck className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground">Pasar lista y registrar asistencias.</p>
-                   <Button className="mt-4 w-full" asChild>
-                    <Link href="/dashboard/docente/asistencia">Tomar Asistencia</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-        </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-1">
+            <CardHeader>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <BookCopy className="h-5 w-5 text-primary"/>
+                    Mis Grupos Asignados
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    {teacherData.assignedGroups.slice(0, 3).map(group => (
+                        <div key={group.id} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
+                            <span>{group.name}</span>
+                            <Badge variant="secondary">{group.students} Est.</Badge>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+        <Card className="lg:col-span-1">
+            <CardHeader>
+                <CardTitle className="text-base font-semibold">Tareas por Calificar</CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-center justify-between">
+                <div className="text-5xl font-bold text-primary">{teacherData.pendingTasks}</div>
+                    <Button asChild>
+                    <Link href="/dashboard/docente/notas">
+                        Ir a Calificar
+                    </Link>
+                </Button>
+            </CardContent>
+        </Card>
+         <Card className="lg:col-span-1">
+            <CardHeader>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <ListTodo className="h-5 w-5 text-primary"/>
+                    Próximas Actividades
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ul className="space-y-3">
+                   {teacherData.nextActivities.map((activity, index) => (
+                       <li key={index} className="flex items-center gap-3 text-sm">
+                           <span className="font-bold text-primary w-20">{activity.time}</span>
+                           <span className="text-muted-foreground">{activity.name}</span>
+                       </li>
+                   ))}
+                </ul>
+            </CardContent>
+        </Card>
+      </div>
+      
+      <Button asChild size="lg" className="w-full py-6 text-lg">
+          <Link href="/dashboard/horarios">
+              <Calendar className="mr-2 h-5 w-5"/>
+              Ver mi horario completo
+          </Link>
+      </Button>
+      
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Button variant="outline" size="lg" className="h-auto py-6 flex-col gap-2" asChild>
+                <Link href="/dashboard/docente/grupos">
+                    <Users className="h-8 w-8 text-primary"/>
+                    <span className="font-semibold text-base">Mis Grupos</span>
+                </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="h-auto py-6 flex-col gap-2" asChild>
+                <Link href="/dashboard/docente/notas">
+                    <Edit className="h-8 w-8 text-primary"/>
+                    <span className="font-semibold text-base">Registro de Notas</span>
+                </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="h-auto py-6 flex-col gap-2" asChild>
+                <Link href="/dashboard/docente/asistencia">
+                    <UserCheck className="h-8 w-8 text-primary"/>
+                    <span className="font-semibold text-base">Control de Asistencia</span>
+                </Link>
+            </Button>
+        </div>
+
     </div>
   );
 }
