@@ -357,12 +357,10 @@ export default function HorariosPage() {
                 </div>
               </div>
             </div>
-             {showSchedule && (
-                <Button variant="outline" onClick={() => setShowSchedule(false)}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Volver
-                </Button>
-            )}
+             <Button variant="outline" onClick={() => router.back()}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Volver
+            </Button>
           </div>
         </CardHeader>
       </Card>
@@ -392,7 +390,7 @@ export default function HorariosPage() {
                     </div>
                     <div className="space-y-2 md:col-span-1">
                         <label className="text-sm font-medium">Grupo</label>
-                        <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || (filterMateria !== 'all' && grupos.length === 0)}>
+                        <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Filtrar por grupo" />
                             </SelectTrigger>
@@ -450,7 +448,7 @@ export default function HorariosPage() {
                         <Download className="mr-2 h-4 w-4"/>
                         Descargar
                     </Button>
-                     <Button variant="outline" onClick={handleClearFilters}>
+                     <Button variant="outline" onClick={() => setShowSchedule(false)}>
                         <Edit className="mr-2 h-4 w-4"/>
                         Cambiar Filtros
                     </Button>
