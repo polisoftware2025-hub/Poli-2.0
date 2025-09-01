@@ -159,7 +159,7 @@ export default function DashboardLayout({
   const managerMenuItems = [
       { href: "/dashboard/gestor", label: "Panel", icon: LayoutDashboard },
       { href: "/dashboard/gestor/payments", label: "Revisión de Pagos", icon: CreditCard },
-      { href: "/dashboard/gestor/requests", label: "Solicitudes", icon: CheckSquare },
+      { href: "/dashboard/gestor/pre-register", label: "Preinscripción", icon: ClipboardList },
       { href: "/dashboard/gestor/schedules", label: "Gestión de Horarios", icon: Calendar },
       { href: "/dashboard/gestor/grades", label: "Gestión de Notas", icon: Edit },
       { href: "/dashboard/gestor/reports", label: "Reportes", icon: FileText },
