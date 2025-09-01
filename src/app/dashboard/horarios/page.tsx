@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter, Search, ArrowRight } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -189,6 +189,10 @@ export default function SchedulePage() {
       }
       events[entry.dia].push(entry);
     });
+    // Sort events within each day
+    for (const day in events) {
+        events[day].sort((a,b) => a.horaInicio.localeCompare(b.horaInicio));
+    }
     return events;
   }, [schedule]);
   
@@ -238,7 +242,7 @@ export default function SchedulePage() {
   
   const renderDayView = () => {
     const dayName = daysOfWeek[selectedDate.getDay() -1] ?? daysOfWeek[(selectedDate.getDay() + 6) % 7];
-    const dayEntries = (eventsByDay[dayName] || []).sort((a,b) => a.horaInicio.localeCompare(b.horaInicio));
+    const dayEntries = eventsByDay[dayName] || [];
 
     return (
         <div className="space-y-4">
@@ -293,7 +297,7 @@ export default function SchedulePage() {
                      <label className="text-sm font-medium">Grupo</label>
                       <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || filterMateria === 'all'}>
                           <SelectTrigger>
-                              <SelectValue placeholder="Filtrar por grupo" />
+                              <SelectValue placeholder={filterMateria === 'all' ? "Selecciona una materia primero" : "Filtrar por grupo"} />
                           </SelectTrigger>
                           <SelectContent>
                                <SelectItem value="all">Todos los grupos</SelectItem>
@@ -309,6 +313,16 @@ export default function SchedulePage() {
         </CardContent>
       </Card>
       
+      {!showSchedule && (
+         <Alert className="border-primary/20 bg-primary/5">
+             <ArrowRight className="h-4 w-4" />
+            <AlertTitle className="font-semibold">¡Comienza a explorar tu horario!</AlertTitle>
+            <AlertDescription>
+                👉 Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.
+            </AlertDescription>
+        </Alert>
+      )}
+
       {showSchedule && (
         <Card>
             <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
@@ -327,7 +341,7 @@ export default function SchedulePage() {
                 <Skeleton className="h-16 w-full" />
                 <Skeleton className="h-64 w-full" />
                 </div>
-            ) : allSchedule.length > 0 ? (
+            ) : schedule.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     <div className={viewMode === 'dia' ? 'md:col-span-1' : 'hidden md:block md:col-span-1'}>
                         <Calendar
