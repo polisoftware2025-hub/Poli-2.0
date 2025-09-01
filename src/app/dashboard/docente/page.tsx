@@ -8,14 +8,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 // Datos de ejemplo para la maquetación
@@ -26,24 +18,21 @@ const teacherData = {
         { id: 'grp003', name: 'Inteligencia Artificial (IA-001)', students: 25 },
     ],
     pendingTasks: 14,
-    nextActivities: [
-        { id: 'act01', date: '2024-09-05', description: 'Examen Parcial - Cálculo' },
-        { id: 'act02', date: '2024-09-10', description: 'Entrega Proyecto Final - BD' },
-        { id: 'act03', date: '2024-09-12', description: 'Revisión Avance 2 - IA' },
-    ],
-    courseStats: [
-        { name: "CD-001", average: 3.8 },
-        { name: "BD-002", average: 4.2 },
-        { name: "IA-001", average: 4.5 },
-    ],
     schedule: [
-        { dia: "Lunes", hora: "18:00 - 20:00", materia: "Cálculo Diferencial", grupo: "CD-001", aula: "Zoom-101" },
-        { dia: "Martes", hora: "10:00 - 12:00", materia: "Bases de Datos", grupo: "BD-002", aula: "Sede 73 - 302" },
-        { dia: "Miércoles", hora: "18:00 - 20:00", materia: "Cálculo Diferencial", grupo: "CD-001", aula: "Zoom-101" },
-        { dia: "Jueves", hora: "10:00 - 12:00", materia: "Bases de Datos", grupo: "BD-002", aula: "Sede 73 - 302" },
-        { dia: "Sábado", hora: "08:00 - 12:00", materia: "Inteligencia Artificial", grupo: "IA-001", aula: "Teams-IA" },
+        { dia: "Lunes", hora: "18:00", duracion: 2, materia: "Cálculo Diferencial", grupo: "CD-001", docente: "Ana Pérez", aula: "Zoom-101" },
+        { dia: "Martes", hora: "10:00", duracion: 2, materia: "Bases de Datos", grupo: "BD-002", docente: "Carlos Rivas", aula: "Sede 73 - 302" },
+        { dia: "Miércoles", hora: "18:00", duracion: 2, materia: "Cálculo Diferencial", grupo: "CD-001", docente: "Ana Pérez", aula: "Zoom-101" },
+        { dia: "Jueves", hora: "10:00", duracion: 2, materia: "Bases de Datos", grupo: "BD-002", docente: "Carlos Rivas", aula: "Sede 73 - 302" },
+        { dia: "Sábado", hora: "08:00", duracion: 4, materia: "Inteligencia Artificial", grupo: "IA-001", docente: "Luisa Fernandez", aula: "Teams-IA" },
     ]
 }
+
+const timeSlots = Array.from({ length: 15 }, (_, i) => {
+  const hour = 7 + i;
+  return `${hour.toString().padStart(2, '0')}:00`;
+});
+
+const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export default function TeacherDashboardPage() {
   const router = useRouter();
@@ -60,6 +49,22 @@ export default function TeacherDashboardPage() {
       router.push('/login');
     }
   }, [router]);
+
+  const scheduleGrid: (any | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
+
+  teacherData.schedule.forEach(entry => {
+    const dayIndex = daysOfWeek.indexOf(entry.dia);
+    const timeIndex = timeSlots.indexOf(entry.hora);
+
+    if (dayIndex !== -1 && timeIndex !== -1) {
+      scheduleGrid[timeIndex][dayIndex] = entry;
+      for (let i = 1; i < entry.duracion; i++) {
+        if (timeIndex + i < timeSlots.length) {
+          scheduleGrid[timeIndex + i][dayIndex] = { ...entry, materia: 'SPAN' }; 
+        }
+      }
+    }
+  });
 
   if (!userEmail) {
     return (
@@ -83,7 +88,6 @@ export default function TeacherDashboardPage() {
         <CardContent>
             {/* Widgets Section */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                {/* Assigned Groups Widget */}
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -108,7 +112,6 @@ export default function TeacherDashboardPage() {
                     </CardContent>
                 </Card>
 
-                {/* Pending Tasks & Activities Widget */}
                 <div className="flex flex-col gap-6">
                    <Card>
                         <CardHeader>
@@ -127,24 +130,20 @@ export default function TeacherDashboardPage() {
                        <CardHeader>
                             <CardTitle className="text-base font-semibold flex items-center gap-2">
                                 <Calendar className="h-5 w-5 text-primary"/>
-                                Próximas Actividades
+                                Horario
                             </CardTitle>
                        </CardHeader>
                        <CardContent>
-                           <ul className="space-y-2 text-sm">
-                               {teacherData.nextActivities.map(activity => (
-                                   <li key={activity.id} className="flex gap-3">
-                                       <time className="font-semibold text-primary">{new Date(activity.date).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}:</time>
-                                       <span>{activity.description}</span>
-                                   </li>
-                               ))}
-                           </ul>
+                          <Button variant="outline" className="w-full" asChild>
+                            <Link href="/dashboard/horarios">
+                              Ver mi horario completo
+                            </Link>
+                          </Button>
                        </CardContent>
                    </Card>
                 </div>
             </div>
             
-            {/* My Schedule Widget */}
             <Card className="mb-8">
                 <CardHeader>
                     <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -152,33 +151,43 @@ export default function TeacherDashboardPage() {
                         Mi Horario Semanal
                     </CardTitle>
                 </CardHeader>
-                <CardContent>
-                   <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Día</TableHead>
-                                    <TableHead>Hora</TableHead>
-                                    <TableHead>Materia</TableHead>
-                                    <TableHead>Grupo</TableHead>
-                                    <TableHead>Aula</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {teacherData.schedule.map((item, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell className="font-medium">{item.dia}</TableCell>
-                                        <TableCell>{item.hora}</TableCell>
-                                        <TableCell>{item.materia}</TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">{item.grupo}</Badge>
-                                        </TableCell>
-                                        <TableCell>{item.aula}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                   </div>
+                <CardContent className="p-4 md:p-6">
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-full border">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
+                          {daysOfWeek.map(day => (
+                            <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {timeSlots.map((time, timeIndex) => (
+                          <TableRow key={time}>
+                            <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
+                            {daysOfWeek.map((day, dayIndex) => {
+                              const entry = scheduleGrid[timeIndex][dayIndex];
+                              if (entry && entry.materia === 'SPAN') {
+                                return null;
+                              }
+                              return (
+                                <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5' : ''}`}>
+                                  {entry && (
+                                    <div className="bg-white p-2 rounded-md border-l-4 border-blue-500 shadow-sm h-full flex flex-col justify-center">
+                                      <p className="font-bold text-xs text-blue-800">{entry.materia}</p>
+                                      <p className="text-xs text-muted-foreground">{entry.grupo}</p>
+                                      <p className="text-xs text-muted-foreground">{entry.aula}</p>
+                                    </div>
+                                  )}
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </CardContent>
             </Card>
 
