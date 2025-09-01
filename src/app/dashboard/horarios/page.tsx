@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { es } from "date-fns/locale";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+
 
 interface ScheduleEntry {
   dia: string;
@@ -54,13 +56,27 @@ const getSubjectColor = (subject: string) => {
 
 
 export default function SchedulePage() {
-  const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
+  const [allSchedule, setAllSchedule] = useState<ScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"semana" | "mes" | "dia">("semana");
+  const [viewMode, setViewMode] = useState<"semana" | "dia">("semana");
   const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const [filterMateria, setFilterMateria] = useState('all');
+  const [filterGrupo, setFilterGrupo] = useState('all');
+
+  const materias = useMemo(() => {
+    const uniqueMaterias = [...new Set(allSchedule.map(s => s.materia))];
+    return uniqueMaterias.map(m => ({ value: m, label: m }));
+  }, [allSchedule]);
+
+  const grupos = useMemo(() => {
+    const uniqueGrupos = [...new Set(allSchedule.map(s => s.grupo))];
+    return uniqueGrupos.map(g => ({ value: g, label: g }));
+  }, [allSchedule]);
+
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -86,6 +102,7 @@ export default function SchedulePage() {
           userGroupsQuery = query(gruposRef, where("estudiantes", "array-contains-any", [{ id: userId }]));
         } else {
           setIsLoading(false);
+          setAllSchedule([]);
           return;
         }
 
@@ -124,7 +141,7 @@ export default function SchedulePage() {
           }
         });
 
-        setSchedule(parsedSchedule);
+        setAllSchedule(parsedSchedule);
       } catch (error) {
         console.error("Error fetching schedule:", error);
       } finally {
@@ -135,6 +152,14 @@ export default function SchedulePage() {
     fetchSchedule();
   }, [userId, userRole, userEmail]);
   
+  const schedule = useMemo(() => {
+    return allSchedule.filter(entry => {
+        const materiaMatch = filterMateria === 'all' || entry.materia === filterMateria;
+        const grupoMatch = filterGrupo === 'all' || entry.grupo === filterGrupo;
+        return materiaMatch && grupoMatch;
+    });
+  }, [allSchedule, filterMateria, filterGrupo]);
+
   const scheduleGrid = useMemo(() => {
     const grid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
     schedule.forEach(entry => {
@@ -164,24 +189,6 @@ export default function SchedulePage() {
     return events;
   }, [schedule]);
 
-  const markedDays = useMemo(() => {
-      const dates: Date[] = [];
-      const today = new Date();
-      const currentDayOfWeek = today.getDay(); // Sunday - 0, Monday - 1, ...
-      
-      schedule.forEach(entry => {
-        const dayIndex = daysOfWeek.indexOf(entry.dia); // Lunes - 0
-        if (dayIndex !== -1) {
-          // Adjust dayIndex to match getDay() (Lunes should be 1)
-          const targetDay = dayIndex + 1;
-          const date = new Date(today);
-          date.setDate(today.getDate() - currentDayOfWeek + targetDay);
-          dates.push(date);
-        }
-      });
-      return dates;
-  }, [schedule]);
-
   const renderWeekView = () => (
     <div className="w-full overflow-x-auto">
         <Table className="min-w-full border">
@@ -207,9 +214,9 @@ export default function SchedulePage() {
                       {entry && (
                         <div className={`p-2 rounded-md border-l-4 h-full flex flex-col justify-center text-xs ${entry.color}`}>
                           <p className="font-bold">{entry.materia}</p>
-                          <p className="font-mono text-xs">{entry.grupo}</p>
-                          <p>{entry.docente}</p>
-                           <p className="mt-1 text-xs opacity-80">{entry.aula.sede} - {entry.aula.salon}</p>
+                          <p className="font-mono text-xs">{entry.grupo} - {entry.aula.salon}</p>
+                          <p className="mt-1 text-xs opacity-80">{entry.docente}</p>
+                          <p className="mt-1 font-semibold text-xs">{entry.horaInicio} - {entry.horaFin}</p>
                         </div>
                       )}
                     </TableCell>
@@ -222,19 +229,8 @@ export default function SchedulePage() {
     </div>
   );
   
-  const renderMonthView = () => (
-     <Calendar
-        mode="single"
-        locale={es}
-        selected={selectedDate}
-        onSelect={setSelectedDate}
-        className="p-0 w-full"
-        markedDays={markedDays}
-      />
-  );
-  
   const renderDayView = () => {
-    const dayName = daysOfWeek[selectedDate.getDay() - 1];
+    const dayName = daysOfWeek[selectedDate.getDay() - 1] || daysOfWeek[0];
     const dayEntries = (eventsByDay[dayName] || []).sort((a,b) => a.horaInicio.localeCompare(b.horaInicio));
 
     return (
@@ -268,12 +264,33 @@ export default function SchedulePage() {
       />
       
       <Card>
-        <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+        <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
             <div className="flex items-center gap-2">
-                 <Button variant={viewMode === 'semana' ? 'default' : 'outline'} onClick={() => setViewMode('semana')}>Semana</Button>
-                 <Button variant={viewMode === 'mes' ? 'default' : 'outline'} onClick={() => setViewMode('mes')}>Mes</Button>
-                 <Button variant={viewMode === 'dia' ? 'default' : 'outline'} onClick={() => setViewMode('dia')}>Día</Button>
+                <Button variant={viewMode === 'semana' ? 'default' : 'outline'} onClick={() => setViewMode('semana')}>Semana</Button>
+                <Button variant={viewMode === 'dia' ? 'default' : 'outline'} onClick={() => setViewMode('dia')}>Día</Button>
             </div>
+            {userRole === 'docente' && (
+              <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+                  <Select value={filterMateria} onValueChange={setFilterMateria}>
+                      <SelectTrigger className="w-full sm:w-[200px]">
+                          <SelectValue placeholder="Filtrar por materia" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="all">Todas las materias</SelectItem>
+                          {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+                  <Select value={filterGrupo} onValueChange={setFilterGrupo}>
+                      <SelectTrigger className="w-full sm:w-[200px]">
+                          <SelectValue placeholder="Filtrar por grupo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                           <SelectItem value="all">Todos los grupos</SelectItem>
+                           {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+              </div>
+            )}
              <Button variant="secondary">
                 <Download className="mr-2 h-4 w-4"/>
                 Descargar Horario
@@ -285,12 +302,23 @@ export default function SchedulePage() {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-64 w-full" />
             </div>
-          ) : schedule.length > 0 ? (
-            <>
-              {viewMode === 'semana' && renderWeekView()}
-              {viewMode === 'mes' && renderMonthView()}
-              {viewMode === 'dia' && renderDayView()}
-            </>
+          ) : allSchedule.length > 0 ? (
+             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className={viewMode === 'dia' ? 'md:col-span-1' : 'hidden md:block md:col-span-1'}>
+                     <Calendar
+                        mode="single"
+                        locale={es}
+                        selected={selectedDate}
+                        onSelect={(date) => setSelectedDate(date || new Date())}
+                        className="p-0 w-full"
+                        disabled={(date) => date.getDay() === 0} // Disable Sundays
+                      />
+                </div>
+                <div className={viewMode === 'dia' ? 'md:col-span-3' : 'md:col-span-3'}>
+                    {viewMode === 'semana' && renderWeekView()}
+                    {viewMode === 'dia' && renderDayView()}
+                </div>
+            </div>
           ) : (
             <div className="text-center text-muted-foreground py-16">
               <Clock className="mx-auto h-12 w-12 text-gray-400" />
