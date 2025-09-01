@@ -16,6 +16,8 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 
 interface ScheduleEntry {
@@ -219,6 +221,9 @@ export default function HorariosPage() {
   }, [schedule]);
   
   const handleShowSchedule = () => {
+    if (filterMateria === 'all' && filterGrupo === 'all') {
+        return; // Do not show schedule if no filter is selected
+    }
     setShowSchedule(true);
   };
   
@@ -227,6 +232,43 @@ export default function HorariosPage() {
     setFilterGrupo('all');
     setShowSchedule(false);
   }
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+    const teacherName = schedule.length > 0 ? schedule[0].docente : 'Docente';
+    const date = new Date().toLocaleDateString('es-CO');
+
+    doc.text(`Horario de Clases - ${teacherName}`, 14, 16);
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${date}`, 14, 22);
+
+    const tableColumn = ["Día", "Hora", "Materia", "Grupo", "Aula"];
+    const tableRows: (string|null)[][] = [];
+
+    schedule.sort((a,b) => {
+        const dayA = daysOfWeek.indexOf(a.dia);
+        const dayB = daysOfWeek.indexOf(b.dia);
+        if(dayA !== dayB) return dayA - dayB;
+        return a.horaInicio.localeCompare(b.horaInicio);
+    }).forEach(entry => {
+        const scheduleData = [
+            entry.dia,
+            `${entry.horaInicio} - ${entry.horaFin}`,
+            entry.materia,
+            entry.grupo,
+            `${entry.aula.sede} - ${entry.aula.salon}`
+        ];
+        tableRows.push(scheduleData);
+    });
+    
+    autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: 30,
+    });
+    
+    doc.save(`Horario_Docente_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
 
   const renderWeekView = () => (
     <div className="w-full overflow-x-auto">
@@ -282,7 +324,7 @@ export default function HorariosPage() {
                             <p className="text-sm text-muted-foreground">{entry.grupo} - {entry.docente}</p>
                         </div>
                          <div className="text-right">
-                             <p className="font-semibold text-sm">{entry.horaInicio} - {entry.horaFin}</p>
+                             <p className="font-semibold text-sm">{entry.horaInicio} - ${entry.horaFin}</p>
                              <p className="text-xs text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
                          </div>
                     </CardHeader>
@@ -315,10 +357,12 @@ export default function HorariosPage() {
                 </div>
               </div>
             </div>
-            <Button variant="outline" onClick={() => setShowSchedule(false)}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Volver
-            </Button>
+             {showSchedule && (
+                <Button variant="outline" onClick={() => setShowSchedule(false)}>
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Volver
+                </Button>
+            )}
           </div>
         </CardHeader>
       </Card>
@@ -348,7 +392,7 @@ export default function HorariosPage() {
                     </div>
                     <div className="space-y-2 md:col-span-1">
                         <label className="text-sm font-medium">Grupo</label>
-                        <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || grupos.length === 0}>
+                        <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || (filterMateria !== 'all' && grupos.length === 0)}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Filtrar por grupo" />
                             </SelectTrigger>
@@ -359,9 +403,13 @@ export default function HorariosPage() {
                         </Select>
                     </div>
                     <div className="flex gap-2 md:col-span-2">
-                        <Button onClick={handleShowSchedule} className="w-full">
+                        <Button onClick={handleShowSchedule} className="w-full" disabled={filterMateria === 'all' && filterGrupo === 'all'}>
                             <Eye className="mr-2 h-4 w-4"/>
                             Ver Horario
+                        </Button>
+                         <Button onClick={handleClearFilters} variant="outline" className="w-full">
+                            <XCircle className="mr-2 h-4 w-4"/>
+                            Limpiar Filtros
                         </Button>
                     </div>
                 </div>
@@ -370,7 +418,7 @@ export default function HorariosPage() {
                         <ListFilter className="h-4 w-4" />
                         <AlertTitle>Guía de uso</AlertTitle>
                         <AlertDescription>
-                            Seleccione un grupo o materia en los filtros para visualizar su horario de clases.
+                           Seleccione un grupo o materia en los filtros para visualizar su horario de clases.
                         </AlertDescription>
                     </Alert>
                 </div>
@@ -398,7 +446,7 @@ export default function HorariosPage() {
                     )}
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="secondary">
+                    <Button variant="secondary" onClick={handleDownloadPDF}>
                         <Download className="mr-2 h-4 w-4"/>
                         Descargar
                     </Button>
