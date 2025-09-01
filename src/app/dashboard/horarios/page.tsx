@@ -30,46 +30,67 @@ export default function SchedulePage() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
+    const storedUserRole = localStorage.getItem('userRole');
+    const storedUserEmail = localStorage.getItem('userEmail');
     setUserId(storedUserId);
+    setUserRole(storedUserRole);
+    setUserEmail(storedUserEmail);
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userRole || (!userId && !userEmail)) return;
 
     const fetchSchedule = async () => {
       setIsLoading(true);
       try {
         const gruposRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-        const studentGroups: DocumentData[] = [];
+        let userGroupsQuery;
+
+        if (userRole === 'docente' && userEmail) {
+            userGroupsQuery = query(gruposRef, where("docente.email", "==", userEmail));
+        } else if (userRole === 'estudiante' && userId) {
+            userGroupsQuery = query(gruposRef, where("estudiantes", "array-contains-any", [{id: userId}]));
+        } else {
+            setIsLoading(false);
+            return;
+        }
         
-        const querySnapshot = await getDocs(gruposRef);
+        const querySnapshot = await getDocs(userGroupsQuery);
+        
+        const studentGroups: DocumentData[] = [];
         querySnapshot.forEach(doc => {
-            const group = doc.data();
-            if (group.estudiantes && group.estudiantes.some((est: any) => est.id === userId)) {
-                studentGroups.push({ id: doc.id, ...group });
+            const groupData = doc.data();
+            // Need to double-check for student role, as array-contains-any can be broad
+            if (userRole === 'estudiante' && groupData.estudiantes && !groupData.estudiantes.some((est: any) => est.id === userId)) {
+                return;
             }
+            studentGroups.push(doc.data());
         });
 
         const parsedSchedule: ScheduleEntry[] = [];
         studentGroups.forEach(group => {
-          group.horario.forEach((slot: { dia: string; hora: string }) => {
-            const [startTime, endTime] = slot.hora.split(" - ");
-            const startHour = parseInt(startTime.split(":")[0]);
-            const endHour = parseInt(endTime.split(":")[0]);
-            const duration = endHour - startHour;
+          if(group.horario) {
+              group.horario.forEach((slot: { dia: string; hora: string }) => {
+                const [startTime, endTime] = slot.hora.split(" - ");
+                const startHour = parseInt(startTime.split(":")[0]);
+                const endHour = parseInt(endTime.split(":")[0]);
+                const duration = endHour - startHour;
 
-            parsedSchedule.push({
-              dia: slot.dia,
-              hora: startTime.replace(" AM", "").replace(" PM", ""),
-              materia: group.materia.nombre,
-              grupo: group.codigoGrupo,
-              docente: group.docente.nombre,
-              duracion: duration,
-            });
-          });
+                parsedSchedule.push({
+                  dia: slot.dia,
+                  hora: startTime.replace(" AM", "").replace(" PM", ""),
+                  materia: group.materia.nombre,
+                  grupo: group.codigoGrupo,
+                  docente: group.docente.nombre,
+                  duracion: duration,
+                });
+              });
+          }
         });
         
         setSchedule(parsedSchedule);
@@ -81,7 +102,7 @@ export default function SchedulePage() {
     };
 
     fetchSchedule();
-  }, [userId]);
+  }, [userId, userRole, userEmail]);
 
   const scheduleGrid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
 
