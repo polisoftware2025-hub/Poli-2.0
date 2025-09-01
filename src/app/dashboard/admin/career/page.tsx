@@ -14,10 +14,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 
 const careers = [
   {
     id: "sistemas",
+    slug: "ingenieria-de-sistemas",
     name: "Ingeniería de Sistemas",
     faculty: "Facultad de Ingenierías",
     students: 350,
@@ -26,6 +28,7 @@ const careers = [
   },
   {
     id: "admin",
+    slug: "administracion-de-empresas",
     name: "Administración de Empresas",
     faculty: "Facultad de Ciencias Económicas",
     students: 420,
@@ -34,6 +37,7 @@ const careers = [
   },
   {
     id: "mercadeo",
+    slug: "mercadeo-y-publicidad",
     name: "Mercadeo y Publicidad",
     faculty: "Facultad de Ciencias Económicas",
     students: 280,
@@ -42,6 +46,7 @@ const careers = [
   },
   {
     id: "contaduria",
+    slug: "contaduria-publica",
     name: "Contaduría Pública",
     faculty: "Facultad de Ciencias Económicas",
     students: 310,
@@ -50,6 +55,7 @@ const careers = [
   },
   {
     id: "gastronomia",
+    slug: "gastronomia",
     name: "Gastronomía",
     faculty: "Facultad de Hospitalidad y Turismo",
     students: 150,
@@ -58,6 +64,7 @@ const careers = [
   },
   {
     id: "psicologia",
+    slug: "psicologia",
     name: "Psicología",
     faculty: "Facultad de Ciencias Sociales",
     students: 220,
@@ -114,9 +121,11 @@ export default function CareerAdminPage() {
                                     <Edit className="mr-2 h-4 w-4" />
                                     Editar
                                 </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    Ver Pensum
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/dashboard/admin/career/${career.slug}`}>
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        Ver Pensum
+                                    </Link>
                                 </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
