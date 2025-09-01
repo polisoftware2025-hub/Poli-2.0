@@ -69,7 +69,7 @@ const cityCountryValidation = z.string({ required_error: "Por favor, selecciona 
 
 const step1Schema = z.object({
   firstName: nameValidation,
-  segundoNombre: z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.").optional().or(z.literal('')),
+  segundoNombre: z.string().max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "Solo se permiten letras y espacios.").optional().transform(e => e === "" ? undefined : e),
   lastName: lastNameValidation,
   segundoApellido: lastNameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
@@ -939,5 +939,3 @@ const Step7_Confirm = () => (
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
     </div>
 );
-
-    

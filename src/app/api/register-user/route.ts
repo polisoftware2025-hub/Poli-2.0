@@ -11,7 +11,7 @@ const cityCountryValidation = z.string().min(2);
 
 const registerUserSchema = z.object({
     firstName: nameValidation,
-    segundoNombre: z.string().min(2).max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/).optional().or(z.literal('')),
+    segundoNombre: z.string().min(2).max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/).optional(),
     lastName: lastNameValidation,
     segundoApellido: lastNameValidation,
     tipoIdentificacion: z.string(),
@@ -54,7 +54,7 @@ async function emailExists(email: string): Promise<boolean> {
 async function generateUniqueInstitutionalEmail(firstName: string, segundoNombre: string | undefined, lastName1: string, lastName2: string): Promise<string> {
     const domain = "@pi.edu.co";
     
-    // Construir la base del correo, ignorando el segundo nombre si está vacío.
+    // Construir la base del correo, ignorando el segundo nombre si está vacío o es undefined.
     const nameParts = [
         firstName.toLowerCase().split(' ')[0],
         segundoNombre ? segundoNombre.toLowerCase().split(' ')[0] : '',
@@ -136,7 +136,7 @@ export async function POST(req: Request) {
 
         await setDoc(estudianteDocRef, estudianteData);
         
-        return NextResponse.json({ message: "Usuario registrado exitosamente." }, { status: 201 });
+        return NextResponse.json({ message: "Usuario registrado exitosamente.", correoInstitucional }, { status: 201 });
 
     } catch (error) {
         console.error("Error en /api/register-user:", error);
