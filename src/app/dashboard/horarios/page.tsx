@@ -297,7 +297,7 @@ export default function HorariosPage() {
                           <p className="font-bold">{entry.materia}</p>
                           <p className="font-mono text-xs">{entry.grupo} - {entry.aula.salon}</p>
                           <p className="mt-1 text-xs opacity-80">{entry.docente}</p>
-                          <p className="mt-1 font-semibold text-xs">{entry.horaInicio} - {entry.horaFin}</p>
+                          <p className="mt-1 font-semibold text-xs">{entry.horaInicio} - ${entry.horaFin}</p>
                         </div>
                       )}
                     </TableCell>
