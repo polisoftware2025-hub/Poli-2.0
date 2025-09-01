@@ -1,7 +1,8 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { CheckSquare, Filter, MoreHorizontal, Check, X } from "lucide-react";
+import { ClipboardList, Filter, MoreHorizontal, Check, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -23,10 +24,10 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const requests = [
-    { id: 'req001', studentName: 'Laura Gómez', studentId: 'est007', type: 'Convalidación de materias', date: '2024-08-18', status: 'Pendiente' },
-    { id: 'req002', studentName: 'David Martínez', studentId: 'est008', type: 'Cambio de carrera', date: '2024-08-15', status: 'Aprobado' },
-    { id: 'req003', studentName: 'Sofia Castro', studentId: 'est009', type: 'Retiro temporal', date: '2024-08-12', status: 'Rechazado' },
-    { id: 'req004', studentName: 'Mateo Vargas', studentId: 'est010', type: 'Permiso especial', date: '2024-08-10', status: 'Pendiente' },
+    { id: 'req001', studentName: 'Laura Gómez', studentId: 'est007', type: 'Ingeniería de Sistemas', date: '2024-08-18', status: 'Pendiente' },
+    { id: 'req002', studentName: 'David Martínez', studentId: 'est008', type: 'Administración de Empresas', date: '2024-08-15', status: 'Aprobado' },
+    { id: 'req003', studentName: 'Sofia Castro', studentId: 'est009', type: 'Mercadeo y Publicidad', date: '2024-08-12', status: 'Rechazado' },
+    { id: 'req004', studentName: 'Mateo Vargas', studentId: 'est010', type: 'Contaduría Pública', date: '2024-08-10', status: 'Pendiente' },
 ];
 
 const getInitials = (name: string) => {
@@ -40,36 +41,36 @@ const statusBadgeVariant: { [key: string]: "default" | "secondary" | "destructiv
   "Rechazado": "destructive",
 };
 
-export default function RequestsPage() {
+export default function PreRegisterPage() {
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title="Gestión de Solicitudes"
-        description="Revisa, aprueba o rechaza las solicitudes enviadas por los estudiantes."
-        icon={<CheckSquare className="h-8 w-8 text-primary" />}
+        title="Gestión de Preinscripciones"
+        description="Revisa, aprueba o rechaza las solicitudes de los nuevos aspirantes."
+        icon={<ClipboardList className="h-8 w-8 text-primary" />}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Bandeja de Solicitudes</CardTitle>
+          <CardTitle>Bandeja de Solicitudes de Preinscripción</CardTitle>
           <CardDescription>
-            Listado de trámites y solicitudes pendientes de revisión.
+            Listado de aspirantes pendientes de revisión.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <Input placeholder="Buscar por estudiante o tipo de solicitud..." className="flex-grow" />
+            <Input placeholder="Buscar por aspirante o carrera..." className="flex-grow" />
             <Select defaultValue="all">
               <SelectTrigger className="w-full sm:w-56">
                  <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filtrar por tipo" />
+                <SelectValue placeholder="Filtrar por estado" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las solicitudes</SelectItem>
-                <SelectItem value="convalidacion">Convalidación de materias</SelectItem>
-                <SelectItem value="cambio-carrera">Cambio de carrera</SelectItem>
-                <SelectItem value="retiro">Retiro temporal</SelectItem>
+                <SelectItem value="all">Todos los estados</SelectItem>
+                <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="aprobado">Aprobado</SelectItem>
+                <SelectItem value="rechazado">Rechazado</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -77,9 +78,9 @@ export default function RequestsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Estudiante</TableHead>
-                  <TableHead>Tipo de Solicitud</TableHead>
-                  <TableHead>Fecha</TableHead>
+                  <TableHead>Aspirante</TableHead>
+                  <TableHead>Carrera de Interés</TableHead>
+                  <TableHead>Fecha de Solicitud</TableHead>
                   <TableHead className="text-center">Estado</TableHead>
                   <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>

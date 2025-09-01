@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Users, BookOpen, UserCheck, Calendar, FileText, CheckSquare, Send, Edit, Search, Bell, TrendingUp, BarChart2, PieChart, Clock, ArrowRight } from "lucide-react";
+import { Users, BookOpen, UserCheck, Calendar, FileText, CheckSquare, Send, Edit, Search, Bell, TrendingUp, BarChart2, PieChart, Clock, ArrowRight, ClipboardList } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -24,7 +24,7 @@ import {
 
 const quickAccessTools = [
     { title: "Revisar Pagos Pendientes", icon: CheckSquare, href: "/dashboard/gestor/payments", color: "text-orange-500", bgColor: "bg-orange-50" },
-    { title: "Aprobar Solicitudes Académicas", icon: Edit, href: "/dashboard/gestor/requests", color: "text-purple-500", bgColor: "bg-purple-50" },
+    { title: "Aprobar Preinscripciones", icon: ClipboardList, href: "/dashboard/gestor/pre-register", color: "text-purple-500", bgColor: "bg-purple-50" },
     { title: "Generar Reporte Académico", icon: FileText, href: "/dashboard/gestor/reports", color: "text-green-500", bgColor: "bg-green-50" },
     { title: "Enviar Anuncio", icon: Send, href: "/dashboard/gestor/announcements", color: "text-red-500", bgColor: "bg-red-50" },
 ];
