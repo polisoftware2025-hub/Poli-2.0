@@ -103,6 +103,20 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ title, description, icon }: PageHeaderProps) => {
   const router = useRouter();
+  const pathname = usePathname();
+
+  const handleBack = () => {
+    const segments = pathname.split('/').filter(Boolean);
+    // If we are in a sub-page like /dashboard/admin/users, go to /dashboard/admin
+    // If we are in a detail page like /dashboard/admin/users/123, go to /dashboard/admin/users
+    if (segments.length > 2) {
+      const parentPath = `/${segments.slice(0, segments.length - 1).join('/')}`;
+      router.push(parentPath);
+    } else {
+      // Fallback to history back if it's a top-level page in the dashboard
+      router.back();
+    }
+  };
 
   return (
     <Card>
@@ -124,7 +138,7 @@ export const PageHeader = ({ title, description, icon }: PageHeaderProps) => {
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button variant="outline" onClick={handleBack}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
           </Button>
