@@ -164,6 +164,7 @@ export default function DashboardLayout({
       { href: "/dashboard/gestor/grades", label: "Gestión de Notas", icon: Edit },
       { href: "/dashboard/gestor/reports", label: "Reportes", icon: FileText },
       { href: "/dashboard/gestor/announcements", label: "Anuncios", icon: Send },
+      { href: "/dashboard/gestor/notifications", label: "Notificaciones", icon: Bell },
   ];
 
   const getMenuItems = (role: UserRole) => {
