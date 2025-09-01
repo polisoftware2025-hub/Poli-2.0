@@ -295,9 +295,9 @@ export default function SchedulePage() {
                   </div>
                   <div className="space-y-2">
                      <label className="text-sm font-medium">Grupo</label>
-                      <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || filterMateria === 'all'}>
+                      <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading}>
                           <SelectTrigger>
-                              <SelectValue placeholder={filterMateria === 'all' ? "Selecciona una materia primero" : "Filtrar por grupo"} />
+                              <SelectValue placeholder="Filtrar por grupo" />
                           </SelectTrigger>
                           <SelectContent>
                                <SelectItem value="all">Todos los grupos</SelectItem>
