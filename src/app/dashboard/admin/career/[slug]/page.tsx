@@ -209,6 +209,13 @@ export default function ProgramDetailPage() {
     });
   };
 
+  const handleRemoveCycle = (cycleNumber: number) => {
+    setProgramDetails((prevDetails: any) => ({
+        ...prevDetails,
+        ciclos: prevDetails.ciclos.filter((c: any) => c.numero !== cycleNumber)
+    }));
+  };
+
   return (
     <form className="flex flex-col gap-8">
       <PageHeader
@@ -307,7 +314,22 @@ export default function ProgramDetailPage() {
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
             {programDetails.ciclos.map((ciclo: any) => (
               <AccordionItem value={`ciclo-${ciclo.numero}`} key={ciclo.numero}>
-                <AccordionTrigger className="text-lg font-semibold hover:no-underline">Ciclo {ciclo.numero}</AccordionTrigger>
+                <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                  <div className="flex items-center gap-4 w-full">
+                    <span>Ciclo {ciclo.numero}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveCycle(ciclo.numero);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </AccordionTrigger>
                 <AccordionContent>
                   <ul className="space-y-3 pt-2">
                     {ciclo.materias.map((materia: any) => (
