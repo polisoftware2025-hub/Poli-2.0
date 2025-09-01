@@ -1,35 +1,32 @@
 
 'use server';
 /**
- * @fileOverview A Genkit flow to automatically enroll a student in subjects for their current academic cycle.
+ * @fileOverview A system to automatically enroll a student in subjects for their current academic cycle.
  *
  * - enrollStudentInCurrentCycleSubjects - A function that calculates the student's current cycle and enrolls them in the corresponding subjects.
  * - EnrollStudentInput - The input type for the enrollStudentInCurrentCycleSubjects function.
  * - EnrollStudentOutput - The return type for the enrollStudentInCurrentCycleSubjects function.
  */
 
-import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { carreraData } from '@/lib/seed'; // Assuming seed data contains the academic structure
 
-const EnrollStudentInputSchema = z.object({
-  studentId: z.string().describe('The unique identifier for the student.'),
-  enrollmentDate: z.string().datetime().describe('The initial date the student was enrolled, in ISO 8601 format.'),
-});
-export type EnrollStudentInput = z.infer<typeof EnrollStudentInputSchema>;
+// Input and Output types defined using TypeScript interfaces
+export interface EnrollStudentInput {
+  studentId: string;
+  enrollmentDate: string; // ISO 8601 datetime string
+}
 
-const EnrollStudentOutputSchema = z.object({
-  studentId: z.string(),
-  calculatedCycle: z.number().describe('The calculated academic cycle for the student.'),
-  enrolledSubjects: z.array(z.object({
-    id: z.string(),
-    nombre: z.string(),
-    creditos: z.number(),
-  })).describe('List of mandatory subjects the student has been enrolled in.'),
-  requiresElectiveSelection: z.boolean().describe('Whether the student needs to manually select elective subjects.'),
-  message: z.string().describe('A summary message of the enrollment result.'),
-});
-export type EnrollStudentOutput = z.infer<typeof EnrollStudentOutputSchema>;
+export interface EnrollStudentOutput {
+  studentId: string;
+  calculatedCycle: number;
+  enrolledSubjects: Array<{
+    id: string;
+    nombre: string;
+    creditos: number;
+  }>;
+  requiresElectiveSelection: boolean;
+  message: string;
+}
 
 /**
  * Calculates the student's current academic cycle based on their enrollment date.
@@ -77,13 +74,12 @@ function calculateCurrentCycle(enrollmentDate: Date, currentDate: Date): number 
   return Math.max(1, Math.min(currentCycle, maxCycle));
 }
 
-const enrollStudentFlow = ai.defineFlow(
-  {
-    name: 'enrollStudentFlow',
-    inputSchema: EnrollStudentInputSchema,
-    outputSchema: EnrollStudentOutputSchema,
-  },
-  async (input) => {
+/**
+ * Main function to handle the automatic enrollment logic without using Genkit.
+ * @param input The student and enrollment date information.
+ * @returns The result of the enrollment process.
+ */
+export async function enrollStudentInCurrentCycleSubjects(input: EnrollStudentInput): Promise<EnrollStudentOutput> {
     const enrollmentDate = new Date(input.enrollmentDate);
     const currentDate = new Date();
 
@@ -92,16 +88,16 @@ const enrollStudentFlow = ai.defineFlow(
     const cycleInfo = carreraData.ciclos.find(c => c.numero === currentCycle);
 
     if (!cycleInfo) {
-      throw new Error(`Academic cycle ${currentCycle} not found in the program structure.`);
+      throw new Error(`El ciclo académico ${currentCycle} no fue encontrado en la estructura del programa.`);
     }
 
     const mandatorySubjects = cycleInfo.materias.filter(m => !m.nombre.toLowerCase().includes('electiva'));
     const hasElectives = cycleInfo.materias.some(m => m.nombre.toLowerCase().includes('electiva'));
     
-    // Here would be the logic to update the student's document in Firestore with the new subjects.
+    // In a real application, this is where you would update the student's document in Firestore.
     // For this example, we just return the result.
-    console.log(`Enrolling student ${input.studentId} in cycle ${currentCycle}.`);
-    console.log('Mandatory subjects:', mandatorySubjects.map(m => m.nombre));
+    console.log(`Inscribiendo al estudiante ${input.studentId} en el ciclo ${currentCycle}.`);
+    console.log('Materias obligatorias:', mandatorySubjects.map(m => m.nombre));
 
     let message = `El estudiante ha sido inscrito en ${mandatorySubjects.length} materias obligatorias del ciclo ${currentCycle}.`;
     if (hasElectives) {
@@ -115,10 +111,4 @@ const enrollStudentFlow = ai.defineFlow(
       requiresElectiveSelection: hasElectives,
       message: message,
     };
-  }
-);
-
-
-export async function enrollStudentInCurrentCycleSubjects(input: EnrollStudentInput): Promise<EnrollStudentOutput> {
-  return await enrollStudentFlow(input);
 }
