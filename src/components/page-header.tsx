@@ -99,21 +99,24 @@ interface PageHeaderProps {
   title: string;
   description?: string;
   icon: React.ReactNode;
+  backPath?: string;
 }
 
-export const PageHeader = ({ title, description, icon }: PageHeaderProps) => {
+export const PageHeader = ({ title, description, icon, backPath }: PageHeaderProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
   const handleBack = () => {
+    if (backPath) {
+        router.push(backPath);
+        return;
+    }
+
     const segments = pathname.split('/').filter(Boolean);
-    // If we are in a sub-page like /dashboard/admin/users, go to /dashboard/admin
-    // If we are in a detail page like /dashboard/admin/users/123, go to /dashboard/admin/users
     if (segments.length > 2) {
       const parentPath = `/${segments.slice(0, segments.length - 1).join('/')}`;
       router.push(parentPath);
     } else {
-      // Fallback to history back if it's a top-level page in the dashboard
       router.back();
     }
   };

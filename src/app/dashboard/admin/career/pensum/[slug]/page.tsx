@@ -193,6 +193,7 @@ export default function PensumDetailPage() {
         title={`Pensum de ${program.nombre}`}
         description="Visualiza el plan de estudios completo de este programa."
         icon={<BookOpen className="h-8 w-8 text-primary" />}
+        backPath="/dashboard/admin/career"
       />
 
       <Card className="overflow-hidden">
