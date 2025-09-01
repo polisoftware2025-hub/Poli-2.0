@@ -313,17 +313,15 @@ export default function SchedulePage() {
         </CardContent>
       </Card>
       
-      {!showSchedule && (
+      {!showSchedule ? (
          <Alert className="border-primary/20 bg-primary/5">
              <ArrowRight className="h-4 w-4" />
             <AlertTitle className="font-semibold">¡Comienza a explorar tu horario!</AlertTitle>
             <AlertDescription>
-                👉 Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.
+                Seleccione un grupo o materia en los filtros para visualizar su horario de clases.
             </AlertDescription>
         </Alert>
-      )}
-
-      {showSchedule && (
+      ) : (
         <Card>
             <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
                 <div className="flex items-center gap-2">
