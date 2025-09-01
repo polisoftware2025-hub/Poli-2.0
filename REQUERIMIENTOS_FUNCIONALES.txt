@@ -1,0 +1,53 @@
+# Requerimientos Funcionales - Sistema de Gestión Académica "Poli 2.0"
+
+## 1. Módulo de Autenticación y Cuentas de Usuario
+
+- **RF-001:** El sistema debe permitir a un aspirante registrarse como nuevo estudiante a través de un formulario de inscripción de múltiples pasos.
+- **RF-002:** El sistema debe permitir a los usuarios (estudiantes, docentes, administradores, gestores) iniciar sesión utilizando su correo institucional y una contraseña segura.
+- **RF-003:** El sistema debe ofrecer una funcionalidad para que los usuarios puedan solicitar un enlace de restablecimiento de contraseña, el cual será enviado a su correo electrónico.
+- **RF-004:** El sistema debe permitir a los usuarios cambiar su contraseña desde la sección de perfil una vez que han iniciado sesión.
+- **RF-005:** El sistema debe cerrar la sesión del usuario de forma segura para proteger su información.
+
+## 2. Módulo Público y de Admisiones
+
+- **RF-006:** El sistema debe mostrar una página de inicio (Landing Page) con información general sobre la institución, programas académicos destacados, y llamados a la acción claros.
+- **RF-007:** El sistema debe permitir a los visitantes ver una lista completa de los programas académicos ofrecidos.
+- **RF-008:** El sistema debe mostrar una página de detalle para cada programa académico, incluyendo descripción, perfil profesional, plan de estudios (pensum), duración y costos.
+- **RF-009:** Durante el registro, el sistema debe asignar automáticamente las materias obligatorias del ciclo seleccionado y permitir al estudiante elegir entre las materias electivas si las hubiera.
+- **RF-010:** El sistema debe validar que la suma de créditos de las materias (obligatorias + electivas) seleccionadas por el estudiante sea exactamente 10 para poder continuar con el registro.
+
+## 3. Módulo del Estudiante
+
+- **RF-011:** El estudiante debe poder ver un panel principal (dashboard) con un resumen de sus materias actuales, tareas pendientes y un calendario con próximos eventos.
+- **RF-012:** El estudiante debe poder consultar la lista de materias en las que está inscrito, con la opción de verlas en formato de cuadrícula o lista.
+- **RF-013:** El estudiante debe poder ver sus calificaciones detalladas por materia, incluyendo el promedio ponderado y el total de créditos aprobados.
+- **RF-014:** El estudiante debe poder visualizar su horario de clases semanal en un formato de calendario claro.
+- **RF-015:** El estudiante debe poder consultar su historial de asistencias y faltas para cada materia.
+- **RF-016:** El estudiante debe poder ver su historial de pagos, transacciones y consultar su saldo pendiente.
+- **RF-017:** El sistema debe permitir al estudiante evaluar a sus docentes al final de cada período académico.
+- **RF-018:** El estudiante debe poder ver y actualizar su información personal y de contacto desde su perfil.
+- **RF-019:** El sistema debe mostrar un calendario académico con fechas importantes, festivos y eventos institucionales.
+
+## 4. Módulo del Docente
+
+- **RF-020:** El docente debe poder ver un panel principal (dashboard) con accesos directos a sus herramientas, un resumen de sus grupos y próximas actividades.
+- **RF-021:** El docente debe poder consultar la lista de grupos que tiene asignados y ver el listado de estudiantes inscritos en cada uno.
+- **RF-022:** El sistema debe permitir al docente registrar las calificaciones finales de los estudiantes para cada uno de sus grupos.
+- **RF-023:** El sistema debe proporcionar una interfaz para que el docente pueda tomar y registrar la asistencia de los estudiantes en sus clases.
+
+## 5. Módulo del Administrador
+
+- **RF-024:** El administrador debe tener un panel de control con estadísticas clave del sistema (total de usuarios, carreras, etc.) y herramientas de gestión.
+- **RF-025:** El administrador debe poder gestionar usuarios del sistema, incluyendo la creación, visualización, edición y deshabilitación de cuentas para todos los roles.
+- **RF-026:** El administrador debe poder gestionar los programas académicos (carreras), incluyendo la creación de nuevas carreras, la edición de su información (nombre, descripción, pensum) y la modificación de ciclos y materias.
+- **RF-027:** El administrador debe poder gestionar el catálogo de materias de la institución.
+- **RF-028:** El administrador debe poder gestionar las solicitudes de pre-registro, aprobando o rechazando a los aspirantes.
+- **RF-029:** El administrador debe poder supervisar y gestionar las facturas y pagos de todos los estudiantes.
+- **RF-030:** El administrador debe poder visualizar y gestionar los horarios y la asignación de aulas en las diferentes sedes.
+- **RF-031:** El administrador debe poder ver reportes y analíticas sobre el rendimiento académico, uso de la plataforma y otras métricas clave.
+- **RF-032:** El administrador debe poder poblar la base de datos con datos iniciales (seeding) para la configuración del sistema.
+
+## 6. Módulo de Gestión (Gestor Académico)
+
+- **RF-033:** El gestor debe tener un panel de control con acceso a las principales funciones de gestión académica, como la administración de carreras y grupos.
+- **RF-034:** El gestor debe poder revisar y validar los pagos realizados por los estudiantes.
