@@ -324,7 +324,7 @@ export default function SchedulePage() {
       </Card>
       
       {!showSchedule ? (
-         <Alert className="border-primary/20 bg-primary/5">
+         <Alert className="border-primary/20 bg-primary/5 text-center">
              <ArrowRight className="h-4 w-4" />
             <AlertTitle className="font-semibold">¡Comienza a explorar tu horario!</AlertTitle>
             <AlertDescription>
