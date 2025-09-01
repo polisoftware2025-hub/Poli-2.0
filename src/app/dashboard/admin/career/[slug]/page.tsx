@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import Link from 'next/link';
 import {
   Dialog,
   DialogContent,
@@ -418,7 +419,9 @@ export default function ProgramDetailPage() {
       
       <Card>
         <CardFooter className="p-6 bg-gray-50 rounded-b-xl border-t flex justify-end gap-4">
-             <Button type="button" variant="outline">Cancelar</Button>
+             <Button asChild type="button" variant="outline">
+                <Link href="/dashboard/admin/career">Cancelar</Link>
+             </Button>
              <Button type="submit">Guardar Cambios</Button>
         </CardFooter>
       </Card>
