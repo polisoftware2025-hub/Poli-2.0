@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Clock, Download, CalendarDays, Search, ArrowRight, XCircle, Edit } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Download, CalendarDays, Search, ArrowRight, XCircle, Edit, ListFilter, Eye } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { es } from "date-fns/locale";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface ScheduleEntry {
   dia: string;
@@ -252,7 +253,6 @@ export default function SchedulePage() {
 
     return (
         <div className="space-y-4">
-            <h3 className="text-xl font-semibold text-center">{dayName}, {selectedDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</h3>
             {dayEntries.length > 0 ? dayEntries.map((entry, index) => (
                  <Card key={index} className={`border-l-4 ${entry.color}`}>
                     <CardHeader className="flex flex-row justify-between items-center p-4">
@@ -317,27 +317,47 @@ export default function SchedulePage() {
                     </div>
                     <div className="flex gap-2 md:col-span-2">
                         <Button onClick={handleShowSchedule} className="w-full">
-                            <Search className="mr-2 h-4 w-4"/>
+                            <Eye className="mr-2 h-4 w-4"/>
                             Ver Horario
                         </Button>
                     </div>
                 </div>
-                <div className="mt-6 text-center text-muted-foreground">
-                    <p>Seleccione un grupo o materia en los filtros para visualizar su horario de clases.</p>
+                <div className="mt-6">
+                    <Alert>
+                        <ListFilter className="h-4 w-4" />
+                        <AlertTitle>Guía de uso</AlertTitle>
+                        <AlertDescription>
+                            Seleccione un grupo o materia en los filtros para visualizar su horario de clases.
+                        </AlertDescription>
+                    </Alert>
                 </div>
             </CardContent>
         </Card>
       ) : (
         <Card>
             <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4 border-b">
-                <div className="flex items-center gap-2">
-                    <Button variant={viewMode === 'semana' ? 'default' : 'outline'} onClick={() => setViewMode('semana')}>Semana</Button>
-                    <Button variant={viewMode === 'dia' ? 'default' : 'outline'} onClick={() => setViewMode('dia')}>Día</Button>
+                 <div className="flex items-center gap-4">
+                    <div className="w-48">
+                         <Select value={viewMode} onValueChange={(value) => setViewMode(value as "semana" | "dia")}>
+                            <SelectTrigger>
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="semana">Vista semanal</SelectItem>
+                                <SelectItem value="dia">Vista diaria</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    {viewMode === "dia" && (
+                        <h3 className="font-semibold text-lg text-center">
+                            {selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </h3>
+                    )}
                 </div>
                 <div className="flex items-center gap-2">
                     <Button variant="secondary">
                         <Download className="mr-2 h-4 w-4"/>
-                        Descargar Horario
+                        Descargar
                     </Button>
                      <Button variant="outline" onClick={handleClearFilters}>
                         <Edit className="mr-2 h-4 w-4"/>
