@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -182,20 +183,36 @@ const programData: { [key: string]: any } = {
   }
 };
 
-
 export default function ProgramDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const program = programData[slug];
+  const initialProgram = programData[slug];
+  
+  const [programDetails, setProgramDetails] = useState(initialProgram);
 
-  if (!program) {
+  if (!programDetails) {
     notFound();
   }
+
+  const handleAddCycle = () => {
+    setProgramDetails((prevDetails: any) => {
+        const lastCycle = prevDetails.ciclos[prevDetails.ciclos.length - 1];
+        const newCycleNumber = lastCycle ? lastCycle.numero + 1 : 1;
+        const newCycle = {
+            numero: newCycleNumber,
+            materias: []
+        };
+        return {
+            ...prevDetails,
+            ciclos: [...prevDetails.ciclos, newCycle]
+        };
+    });
+  };
 
   return (
     <form className="flex flex-col gap-8">
       <PageHeader
-        title={program.nombre}
+        title={programDetails.nombre}
         description="Modifica los detalles de este programa académico."
         icon={<Edit className="h-8 w-8 text-primary" />}
       />
@@ -203,8 +220,8 @@ export default function ProgramDetailPage() {
       <Card className="overflow-hidden">
         <div className="relative h-64 w-full">
           <Image
-            src={program.imagenURL}
-            alt={`Imagen de ${program.nombre}`}
+            src={programDetails.imagenURL}
+            alt={`Imagen de ${programDetails.nombre}`}
             fill
             style={{ objectFit: "cover" }}
           />
@@ -218,11 +235,11 @@ export default function ProgramDetailPage() {
         <CardContent className="p-6 space-y-4">
             <div>
                 <Label htmlFor="programName">Nombre de la Carrera</Label>
-                <Input id="programName" defaultValue={program.nombre}/>
+                <Input id="programName" defaultValue={programDetails.nombre}/>
             </div>
             <div>
                 <Label htmlFor="programDescription">Descripción General</Label>
-                <Textarea id="programDescription" defaultValue={program.descripcionGeneral} rows={5}/>
+                <Textarea id="programDescription" defaultValue={programDetails.descripcionGeneral} rows={5}/>
             </div>
         </CardContent>
       </Card>
@@ -236,7 +253,7 @@ export default function ProgramDetailPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Textarea defaultValue={program.perfilProfesional} rows={8}/>
+            <Textarea defaultValue={programDetails.perfilProfesional} rows={8}/>
           </CardContent>
         </Card>
 
@@ -251,16 +268,16 @@ export default function ProgramDetailPage() {
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <Label htmlFor="investment">Inversión por ciclo</Label>
-                    <Input id="investment" type="number" defaultValue={program.inversion} />
+                    <Input id="investment" type="number" defaultValue={programDetails.inversion} />
                 </div>
                  <div>
                     <Label htmlFor="duration">Duración (Ciclos)</Label>
-                    <Input id="duration" defaultValue={program.duracionCiclo.split(" ")[0]}/>
+                    <Input id="duration" defaultValue={programDetails.duracionCiclo.split(" ")[0]}/>
                 </div>
             </div>
              <div>
                 <Label htmlFor="degreeTitle">Título Otorgado</Label>
-                <Input id="degreeTitle" defaultValue={program.titulo} />
+                <Input id="degreeTitle" defaultValue={programDetails.titulo} />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 font-semibold text-gray-700">
@@ -268,7 +285,7 @@ export default function ProgramDetailPage() {
                   <span>Créditos Totales:</span>
               </div>
               <span className="text-gray-800 font-bold">
-                {program.ciclos.reduce((totalCreds: number, ciclo: any) => 
+                {programDetails.ciclos.reduce((totalCreds: number, ciclo: any) => 
                     totalCreds + ciclo.materias.reduce((cycleCreds: number, materia: any) => cycleCreds + materia.creditos, 0), 0)
                 }
               </span>
@@ -283,7 +300,7 @@ export default function ProgramDetailPage() {
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
-            {program.ciclos.map((ciclo: any) => (
+            {programDetails.ciclos.map((ciclo: any) => (
               <AccordionItem value={`ciclo-${ciclo.numero}`} key={ciclo.numero}>
                 <AccordionTrigger className="text-lg font-semibold hover:no-underline">Ciclo {ciclo.numero}</AccordionTrigger>
                 <AccordionContent>
@@ -365,7 +382,7 @@ export default function ProgramDetailPage() {
               </AccordionItem>
             ))}
           </Accordion>
-           <Button variant="secondary" className="mt-6">
+           <Button variant="secondary" className="mt-6" onClick={handleAddCycle} type="button">
                 <Plus className="mr-2 h-4 w-4"/>
                 Agregar Nuevo Ciclo
             </Button>
@@ -382,5 +399,3 @@ export default function ProgramDetailPage() {
     </form>
   );
 }
-
-    
