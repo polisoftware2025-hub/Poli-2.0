@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter, Search, ArrowRight } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View, Filter, Search, ArrowRight, XCircle } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -75,11 +75,9 @@ export default function SchedulePage() {
   }, [allSchedule]);
 
   const grupos = useMemo(() => {
-    const uniqueGrupos = [...new Set(allSchedule
-      .filter(s => filterMateria === 'all' || s.materia === filterMateria)
-      .map(s => s.grupo))];
+    const uniqueGrupos = [...new Set(allSchedule.map(g => g.grupo))];
     return uniqueGrupos.map(g => ({ value: g, label: g }));
-  }, [allSchedule, filterMateria]);
+  }, [allSchedule]);
 
 
   useEffect(() => {
@@ -199,6 +197,12 @@ export default function SchedulePage() {
   const handleShowSchedule = () => {
     setShowSchedule(true);
   };
+  
+  const handleClearFilters = () => {
+    setFilterMateria('all');
+    setFilterGrupo('all');
+    setShowSchedule(false);
+  }
 
   const renderWeekView = () => (
     <div className="w-full overflow-x-auto">
@@ -280,10 +284,10 @@ export default function SchedulePage() {
             <CardDescription>Selecciona los filtros para visualizar el horario.</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                  <div className="space-y-2">
+             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+                  <div className="space-y-2 md:col-span-1">
                      <label className="text-sm font-medium">Materia</label>
-                      <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('all'); }} disabled={isLoading}>
+                      <Select value={filterMateria} onValueChange={setFilterMateria} disabled={isLoading}>
                           <SelectTrigger>
                               <SelectValue placeholder="Filtrar por materia" />
                           </SelectTrigger>
@@ -293,7 +297,7 @@ export default function SchedulePage() {
                           </SelectContent>
                       </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-1">
                      <label className="text-sm font-medium">Grupo</label>
                       <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading}>
                           <SelectTrigger>
@@ -305,10 +309,16 @@ export default function SchedulePage() {
                           </SelectContent>
                       </Select>
                   </div>
-                  <Button onClick={handleShowSchedule} className="w-full md:w-auto">
-                    <Search className="mr-2 h-4 w-4"/>
-                    Ver Horario
-                  </Button>
+                  <div className="flex gap-2 md:col-span-2">
+                    <Button onClick={handleShowSchedule} className="w-full">
+                        <Search className="mr-2 h-4 w-4"/>
+                        Ver Horario
+                    </Button>
+                     <Button onClick={handleClearFilters} variant="outline" className="w-full">
+                        <XCircle className="mr-2 h-4 w-4"/>
+                        Limpiar Filtros
+                    </Button>
+                  </div>
               </div>
         </CardContent>
       </Card>
