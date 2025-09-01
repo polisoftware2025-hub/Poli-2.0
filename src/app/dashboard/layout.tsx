@@ -133,6 +133,7 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/payments", label: "Gestión Pagos", icon: CreditCard },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar },
     { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3 },
+    { href: "/dashboard/admin/notifications", label: "Notificaciones", icon: Bell },
   ];
 
   const studentMenuItems = [
