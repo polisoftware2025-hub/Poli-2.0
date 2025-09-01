@@ -33,7 +33,7 @@ const Breadcrumbs = () => {
       'estudiante': 'Estudiante',
       'gestor': 'Gestor',
       'users': 'Usuarios',
-      'pre-register': 'Preinscripción',
+      'pre-register': 'Pre-Inscripción',
       'subjects': 'Materias',
       'payments': userRole === 'admin' ? 'Gestión de Pagos' : 'Revisión de Pagos',
       'schedules': 'Horarios',
