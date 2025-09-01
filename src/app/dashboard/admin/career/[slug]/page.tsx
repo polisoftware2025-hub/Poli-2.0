@@ -223,6 +223,7 @@ export default function ProgramDetailPage() {
         title={programDetails.nombre}
         description="Modifica los detalles de este programa académico."
         icon={<Edit className="h-8 w-8 text-primary" />}
+        backPath="/dashboard/admin/career"
       />
 
       <Card className="overflow-hidden">
@@ -429,3 +430,5 @@ export default function ProgramDetailPage() {
     </form>
   );
 }
+
+    
