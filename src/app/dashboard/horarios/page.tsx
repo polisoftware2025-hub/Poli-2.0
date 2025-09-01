@@ -1,30 +1,57 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar, Clock } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Download, CalendarDays, View } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { es } from "date-fns/locale";
 
 interface ScheduleEntry {
   dia: string;
-  hora: string;
+  horaInicio: string;
+  horaFin: string;
   materia: string;
   grupo: string;
   docente: string;
+  aula: { sede: string; salon: string };
   duracion: number;
+  color: string;
 }
 
 const timeSlots = Array.from({ length: 15 }, (_, i) => {
   const hour = 7 + i;
-  return `${hour.toString().padStart(2, '0')}:00`;
+  return `${hour.toString().padStart(2, "0")}:00`;
 });
 
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+const colorPalette = [
+  "bg-blue-100 border-blue-500 text-blue-800",
+  "bg-green-100 border-green-500 text-green-800",
+  "bg-yellow-100 border-yellow-500 text-yellow-800",
+  "bg-purple-100 border-purple-500 text-purple-800",
+  "bg-pink-100 border-pink-500 text-pink-800",
+  "bg-indigo-100 border-indigo-500 text-indigo-800",
+  "bg-teal-100 border-teal-500 text-teal-800",
+];
+let colorIndex = 0;
+const subjectColorMap = new Map<string, string>();
+
+const getSubjectColor = (subject: string) => {
+    if (!subjectColorMap.has(subject)) {
+        subjectColorMap.set(subject, colorPalette[colorIndex % colorPalette.length]);
+        colorIndex++;
+    }
+    return subjectColorMap.get(subject)!;
+};
+
 
 export default function SchedulePage() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
@@ -32,6 +59,8 @@ export default function SchedulePage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"semana" | "mes" | "dia">("semana");
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -52,47 +81,49 @@ export default function SchedulePage() {
         let userGroupsQuery;
 
         if (userRole === 'docente' && userEmail) {
-            userGroupsQuery = query(gruposRef, where("docente.email", "==", userEmail));
+          userGroupsQuery = query(gruposRef, where("docente.email", "==", userEmail));
         } else if (userRole === 'estudiante' && userId) {
-            userGroupsQuery = query(gruposRef, where("estudiantes", "array-contains-any", [{id: userId}]));
+          userGroupsQuery = query(gruposRef, where("estudiantes", "array-contains-any", [{ id: userId }]));
         } else {
-            setIsLoading(false);
-            return;
+          setIsLoading(false);
+          return;
         }
-        
+
         const querySnapshot = await getDocs(userGroupsQuery);
-        
+
         const studentGroups: DocumentData[] = [];
         querySnapshot.forEach(doc => {
-            const groupData = doc.data();
-            // Need to double-check for student role, as array-contains-any can be broad
-            if (userRole === 'estudiante' && groupData.estudiantes && !groupData.estudiantes.some((est: any) => est.id === userId)) {
-                return;
-            }
-            studentGroups.push(doc.data());
+          const groupData = doc.data();
+          if (userRole === 'estudiante' && groupData.estudiantes && !groupData.estudiantes.some((est: any) => est.id === userId)) {
+            return;
+          }
+          studentGroups.push(doc.data());
         });
 
         const parsedSchedule: ScheduleEntry[] = [];
         studentGroups.forEach(group => {
-          if(group.horario) {
-              group.horario.forEach((slot: { dia: string; hora: string }) => {
-                const [startTime, endTime] = slot.hora.split(" - ");
-                const startHour = parseInt(startTime.split(":")[0]);
-                const endHour = parseInt(endTime.split(":")[0]);
-                const duration = endHour - startHour;
+          if (group.horario) {
+            group.horario.forEach((slot: { dia: string; hora: string }) => {
+              const [startTime, endTime] = slot.hora.split(" - ");
+              const startHour = parseInt(startTime.split(":")[0]);
+              const endHour = parseInt(endTime.split(":")[0]);
+              const duration = endHour - startHour;
 
-                parsedSchedule.push({
-                  dia: slot.dia,
-                  hora: startTime.replace(" AM", "").replace(" PM", ""),
-                  materia: group.materia.nombre,
-                  grupo: group.codigoGrupo,
-                  docente: group.docente.nombre,
-                  duracion: duration,
-                });
+              parsedSchedule.push({
+                dia: slot.dia,
+                horaInicio: startTime.replace(" AM", "").replace(" PM", ""),
+                horaFin: endTime.replace(" AM", "").replace(" PM", ""),
+                materia: group.materia.nombre,
+                grupo: group.codigoGrupo,
+                docente: group.docente.nombre,
+                aula: group.aula,
+                duracion: duration,
+                color: getSubjectColor(group.materia.nombre),
               });
+            });
           }
         });
-        
+
         setSchedule(parsedSchedule);
       } catch (error) {
         console.error("Error fetching schedule:", error);
@@ -103,22 +134,129 @@ export default function SchedulePage() {
 
     fetchSchedule();
   }, [userId, userRole, userEmail]);
+  
+  const scheduleGrid = useMemo(() => {
+    const grid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
+    schedule.forEach(entry => {
+      const dayIndex = daysOfWeek.indexOf(entry.dia);
+      const timeIndex = timeSlots.indexOf(entry.horaInicio);
 
-  const scheduleGrid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
-
-  schedule.forEach(entry => {
-    const dayIndex = daysOfWeek.indexOf(entry.dia);
-    const timeIndex = timeSlots.indexOf(entry.hora);
-
-    if (dayIndex !== -1 && timeIndex !== -1) {
-      scheduleGrid[timeIndex][dayIndex] = entry;
-      for (let i = 1; i < entry.duracion; i++) {
-        if (timeIndex + i < timeSlots.length) {
-          scheduleGrid[timeIndex + i][dayIndex] = { ...entry, materia: 'SPAN' }; // Mark as spanned
+      if (dayIndex !== -1 && timeIndex !== -1) {
+        grid[timeIndex][dayIndex] = entry;
+        for (let i = 1; i < entry.duracion; i++) {
+          if (timeIndex + i < timeSlots.length) {
+            grid[timeIndex + i][dayIndex] = { ...entry, materia: 'SPAN' };
+          }
         }
       }
-    }
-  });
+    });
+    return grid;
+  }, [schedule]);
+
+  const eventsByDay = useMemo(() => {
+    const events: { [key: string]: ScheduleEntry[] } = {};
+    schedule.forEach(entry => {
+      if (!events[entry.dia]) {
+        events[entry.dia] = [];
+      }
+      events[entry.dia].push(entry);
+    });
+    return events;
+  }, [schedule]);
+
+  const markedDays = useMemo(() => {
+      const dates: Date[] = [];
+      const today = new Date();
+      const currentDayOfWeek = today.getDay(); // Sunday - 0, Monday - 1, ...
+      
+      schedule.forEach(entry => {
+        const dayIndex = daysOfWeek.indexOf(entry.dia); // Lunes - 0
+        if (dayIndex !== -1) {
+          // Adjust dayIndex to match getDay() (Lunes should be 1)
+          const targetDay = dayIndex + 1;
+          const date = new Date(today);
+          date.setDate(today.getDate() - currentDayOfWeek + targetDay);
+          dates.push(date);
+        }
+      });
+      return dates;
+  }, [schedule]);
+
+  const renderWeekView = () => (
+    <div className="w-full overflow-x-auto">
+        <Table className="min-w-full border">
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
+              {daysOfWeek.map(day => (
+                <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {timeSlots.map((time, timeIndex) => (
+              <TableRow key={time}>
+                <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
+                {daysOfWeek.map((day, dayIndex) => {
+                  const entry = scheduleGrid[timeIndex][dayIndex];
+                  if (entry && entry.materia === 'SPAN') {
+                    return null;
+                  }
+                  return (
+                    <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-24 ${entry ? 'bg-muted/30' : ''}`}>
+                      {entry && (
+                        <div className={`p-2 rounded-md border-l-4 h-full flex flex-col justify-center text-xs ${entry.color}`}>
+                          <p className="font-bold">{entry.materia}</p>
+                          <p className="font-mono text-xs">{entry.grupo}</p>
+                          <p>{entry.docente}</p>
+                           <p className="mt-1 text-xs opacity-80">{entry.aula.sede} - {entry.aula.salon}</p>
+                        </div>
+                      )}
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+    </div>
+  );
+  
+  const renderMonthView = () => (
+     <Calendar
+        mode="single"
+        locale={es}
+        selected={selectedDate}
+        onSelect={setSelectedDate}
+        className="p-0 w-full"
+        markedDays={markedDays}
+      />
+  );
+  
+  const renderDayView = () => {
+    const dayName = daysOfWeek[selectedDate.getDay() - 1];
+    const dayEntries = (eventsByDay[dayName] || []).sort((a,b) => a.horaInicio.localeCompare(b.horaInicio));
+
+    return (
+        <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-center">{dayName}, {selectedDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}</h3>
+            {dayEntries.length > 0 ? dayEntries.map((entry, index) => (
+                 <Card key={index} className={`border-l-4 ${entry.color}`}>
+                    <CardHeader className="flex flex-row justify-between items-center p-4">
+                        <div>
+                            <p className="font-bold">{entry.materia}</p>
+                            <p className="text-sm text-muted-foreground">{entry.grupo} - {entry.docente}</p>
+                        </div>
+                         <div className="text-right">
+                             <p className="font-semibold text-sm">{entry.horaInicio} - {entry.horaFin}</p>
+                             <p className="text-xs text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
+                         </div>
+                    </CardHeader>
+                 </Card>
+            )) : <p className="text-center text-muted-foreground pt-8">No hay clases programadas para este día.</p>}
+        </div>
+    )
+  };
 
 
   return (
@@ -126,10 +264,21 @@ export default function SchedulePage() {
       <PageHeader
         title="Mi Horario"
         description="Consulta tu horario de clases de la semana."
-        icon={<Calendar className="h-8 w-8 text-primary" />}
+        icon={<CalendarDays className="h-8 w-8 text-primary" />}
       />
-
-       <Card>
+      
+      <Card>
+        <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div className="flex items-center gap-2">
+                 <Button variant={viewMode === 'semana' ? 'default' : 'outline'} onClick={() => setViewMode('semana')}>Semana</Button>
+                 <Button variant={viewMode === 'mes' ? 'default' : 'outline'} onClick={() => setViewMode('mes')}>Mes</Button>
+                 <Button variant={viewMode === 'dia' ? 'default' : 'outline'} onClick={() => setViewMode('dia')}>Día</Button>
+            </div>
+             <Button variant="secondary">
+                <Download className="mr-2 h-4 w-4"/>
+                Descargar Horario
+            </Button>
+        </CardHeader>
         <CardContent className="p-4 md:p-6">
           {isLoading ? (
             <div className="space-y-4">
@@ -137,51 +286,20 @@ export default function SchedulePage() {
               <Skeleton className="h-64 w-full" />
             </div>
           ) : schedule.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table className="min-w-full border">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
-                    {daysOfWeek.map(day => (
-                      <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {timeSlots.map((time, timeIndex) => (
-                    <TableRow key={time}>
-                      <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
-                      {daysOfWeek.map((day, dayIndex) => {
-                        const entry = scheduleGrid[timeIndex][dayIndex];
-                        if (entry && entry.materia === 'SPAN') {
-                          return null; // Don't render cell for spanned entries
-                        }
-                        return (
-                          <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5' : ''}`}>
-                            {entry && (
-                              <div className="bg-white p-2 rounded-md border-l-4 border-primary shadow-sm h-full flex flex-col justify-center">
-                                <p className="font-bold text-xs text-primary">{entry.materia}</p>
-                                <p className="text-xs text-muted-foreground">{entry.grupo}</p>
-                                <p className="text-xs text-muted-foreground">{entry.docente}</p>
-                              </div>
-                            )}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <>
+              {viewMode === 'semana' && renderWeekView()}
+              {viewMode === 'mes' && renderMonthView()}
+              {viewMode === 'dia' && renderDayView()}
+            </>
           ) : (
             <div className="text-center text-muted-foreground py-16">
-              <Clock className="mx-auto h-12 w-12 text-gray-400"/>
+              <Clock className="mx-auto h-12 w-12 text-gray-400" />
               <h3 className="mt-2 text-lg font-medium">Horario Vacío</h3>
               <p className="mt-1 text-sm text-gray-500">No tienes clases programadas en tu horario.</p>
             </div>
           )}
         </CardContent>
-       </Card>
+      </Card>
     </div>
   );
 }
