@@ -123,7 +123,7 @@ export default function SchedulesAdminPage() {
       
       {selectedSede && selectedSalon ? (
         <Card>
-            <CardHeader className="flex justify-between items-center">
+            <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div>
                     <CardTitle>Horario para {salonesPorSede[selectedSede].find(s => s.id === selectedSalon)?.nombre}</CardTitle>
                     <CardDescription>Sede: {sedes.find(s => s.id === selectedSede)?.nombre}</CardDescription>
