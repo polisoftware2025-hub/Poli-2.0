@@ -295,7 +295,35 @@ export default function ProgramDetailPage() {
                             <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full ml-2">{materia.creditos} créditos</span>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" size="icon" className="h-8 w-8"><Edit className="h-4 w-4"/></Button>
+                            <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" size="icon" className="h-8 w-8"><Edit className="h-4 w-4"/></Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Editar Materia</DialogTitle>
+                                        <DialogDescription>Modifica los datos de la materia.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div>
+                                            <Label htmlFor="editSubjectName">Nombre de la Materia</Label>
+                                            <Input id="editSubjectName" defaultValue={materia.nombre}/>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="editSubjectCode">Código</Label>
+                                            <Input id="editSubjectCode" defaultValue={materia.codigo || "N/A"}/>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="editSubjectCredits">Créditos</Label>
+                                            <Input id="editSubjectCredits" type="number" defaultValue={materia.creditos}/>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline">Cancelar</Button>
+                                        <Button>Guardar Cambios</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                             <Button variant="destructive" size="icon" className="h-8 w-8"><Trash2 className="h-4 w-4"/></Button>
                         </div>
                       </li>
@@ -354,3 +382,5 @@ export default function ProgramDetailPage() {
     </form>
   );
 }
+
+    
