@@ -137,6 +137,27 @@ export default function RegisterPage() {
   const methods = useForm<AllStepsData>({
     resolver: zodResolver(currentSchema),
     mode: "onChange",
+    defaultValues: {
+        firstName: "",
+        segundoNombre: "",
+        lastName: "",
+        segundoApellido: "",
+        tipoIdentificacion: "",
+        numeroIdentificacion: "",
+        gender: "",
+        birthDate: undefined,
+        phone: "",
+        address: "",
+        country: "",
+        city: "",
+        correoPersonal: "",
+        carreraId: "",
+        modalidad: "",
+        grupo: "",
+        password: "",
+        confirmPassword: "",
+        metodoPago: "",
+    },
   });
 
   const { handleSubmit, trigger, formState: { isSubmitting } } = methods;
