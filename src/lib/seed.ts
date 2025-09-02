@@ -176,7 +176,7 @@ export async function seedCarrera() {
   try {
     const carrerasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
     
-    const q = query(carrerasRef, where("nombre", "==", carreraData.nombre));
+    const q = query(carrerasRef, where("slug", "==", carreraData.slug));
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
