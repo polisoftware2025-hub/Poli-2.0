@@ -23,7 +23,7 @@ const preRegisterUserSchema = z.object({
     country: cityCountryValidation,
     city: cityCountryValidation,
     correoPersonal: z.string().email(),
-    program: z.string(),
+    carreraId: z.string({ required_error: "La carrera es obligatoria." }),
     modalidad: z.string(),
     grupo: z.string(),
     password: z.string().min(8),
@@ -144,13 +144,13 @@ export async function POST(req: Request) {
           usuarioId: newUserDocRef.id,
           nombreCompleto: usuarioData.nombreCompleto,
           documento: data.numeroIdentificacion,
-          carrera: data.program,
+          carrera: data.carreraId,
           modalidad: data.modalidad,
           grupo: data.grupo,
           correoInstitucional: "", // Initially empty, filled on approval
           cicloActual: null, // Initially null, set on approval
           materiasInscritas: [],
-          estado: "activo", // Set to 'activo' as per requirement
+          estado: "pendiente", 
           fechaRegistro: serverTimestamp()
         };
         await setDoc(estudianteRef, estudianteData);

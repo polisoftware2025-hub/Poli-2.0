@@ -91,7 +91,7 @@ const step2Schema = z.object({
 });
 
 const step3Schema = z.object({
-  program: z.string({ required_error: "Por favor, selecciona una carrera." }),
+  carreraId: z.string({ required_error: "Por favor, selecciona una carrera." }),
   modalidad: z.string({ required_error: "Por favor, selecciona una modalidad." }),
   grupo: z.string({ required_error: "Por favor, selecciona un grupo." }),
 });
@@ -165,7 +165,7 @@ export default function RegisterPage() {
       city: undefined,
       country: undefined,
       correoPersonal: "",
-      program: undefined,
+      carreraId: undefined,
       modalidad: undefined,
       grupo: undefined,
       password: "",
@@ -210,10 +210,7 @@ export default function RegisterPage() {
         const response = await fetch('/api/register-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ...result.data,
-            birthDate: result.data.birthDate ? format(result.data.birthDate, 'yyyy-MM-dd') : undefined
-          }),
+          body: JSON.stringify(result.data),
         });
 
         const responseData = await response.json();
@@ -595,7 +592,7 @@ const Step3 = () => {
     <div className="space-y-6">
       <FormField
         control={control}
-        name="program"
+        name="carreraId"
         render={({ field }) => (
           <FormItem>
             <FormLabel>Carrera</FormLabel>
