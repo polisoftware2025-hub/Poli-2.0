@@ -12,7 +12,7 @@ import { BookCopy, Search, MoreVertical, LayoutGrid, List } from "lucide-react";
 import Image from "next/image";
 import { PageHeader } from "@/components/page-header";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
+import { doc, getDoc, DocumentData } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Course {
@@ -50,26 +50,25 @@ export default function CoursesPage() {
     const fetchCourses = async () => {
         setIsLoading(true);
         try {
-            const gruposRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-            const studentGroups: DocumentData[] = [];
-            
-            const querySnapshot = await getDocs(gruposRef);
-            querySnapshot.forEach(doc => {
-                const group = doc.data();
-                if (group.estudiantes && group.estudiantes.some((est: any) => est.id === userId)) {
-                    studentGroups.push({ id: doc.id, ...group });
-                }
-            });
+            const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+            const studentSnap = await getDoc(studentRef);
 
-            const fetchedCourses = studentGroups.map((group, index) => ({
-                id: group.id,
-                title: group.materia.nombre.toUpperCase(),
-                code: group.codigoGrupo,
-                progress: Math.floor(Math.random() * 100), // Placeholder progress
-                ...placeholderImages[index % placeholderImages.length]
-            }));
+            if (studentSnap.exists()) {
+                const studentData = studentSnap.data();
+                const studentCourses = studentData.materiasInscritas || [];
 
-            setCourses(fetchedCourses);
+                const fetchedCourses = studentCourses.map((materia: any, index: number) => ({
+                    id: materia.id,
+                    title: materia.nombre.toUpperCase(),
+                    code: materia.id.toUpperCase(),
+                    progress: Math.floor(Math.random() * 100), // Placeholder progress
+                    ...placeholderImages[index % placeholderImages.length]
+                }));
+                setCourses(fetchedCourses);
+            } else {
+                console.log("No se encontró el documento del estudiante.");
+                setCourses([]);
+            }
         } catch (error) {
             console.error("Error fetching student courses: ", error);
         } finally {
