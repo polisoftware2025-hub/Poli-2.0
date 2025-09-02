@@ -192,44 +192,45 @@ export default function HorariosPage() {
   };
 
   const renderFilterView = () => (
-    <Card className="max-w-2xl mx-auto">
+    <Card className="max-w-2xl mx-auto w-full">
         <CardHeader>
             <CardTitle>Filtro de Horario</CardTitle>
             <CardDescription>Selecciona una materia o grupo para cargar el horario correspondiente.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-            <div className="flex-1 w-full space-y-2">
-                <label className="text-sm font-medium">Materia</label>
-                <Select value={filterMateria} onValueChange={setFilterMateria}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por materia"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todas las materias</SelectItem>
-                        {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+        <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Materia</label>
+                    <Select value={filterMateria} onValueChange={setFilterMateria}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Filtrar por materia"/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas las materias</SelectItem>
+                            {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Grupo</label>
+                    <Select value={filterGrupo} onValueChange={setFilterGrupo}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Filtrar por grupo"/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todos los grupos</SelectItem>
+                            {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
             </div>
-             <div className="flex-1 w-full space-y-2">
-                <label className="text-sm font-medium">Grupo</label>
-                <Select value={filterGrupo} onValueChange={setFilterGrupo}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por grupo"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos los grupos</SelectItem>
-                        {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-            </div>
-            <div className="flex justify-end gap-2 pt-4">
-                <Button onClick={() => { setFilterMateria('all'); setFilterGrupo('all'); }} variant="outline">
-                    <RotateCw className="mr-2 h-4 w-4"/>
-                    Limpiar Filtros
-                </Button>
-                <Button onClick={() => setViewState('schedule')}>
+            <div className="flex flex-col items-center gap-4 pt-4">
+                <Button onClick={() => setViewState('schedule')} size="lg" className="w-full md:w-auto">
                     <Search className="mr-2 h-4 w-4" />
                     Buscar Horario
+                </Button>
+                <Button onClick={() => { setFilterMateria('all'); setFilterGrupo('all'); }} variant="link" className="text-muted-foreground">
+                    Limpiar filtros
                 </Button>
             </div>
         </CardContent>
@@ -324,5 +325,3 @@ export default function HorariosPage() {
     </div>
   );
 }
-
-    
