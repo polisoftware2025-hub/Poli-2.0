@@ -115,7 +115,7 @@ export async function POST(req: Request) {
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(data.password, saltRounds);
         
-        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoNombre);
+        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoApellido);
 
         const newUserId = data.numeroIdentificacion; // Use identification number as document ID
         
@@ -188,3 +188,5 @@ export async function POST(req: Request) {
         }, { status: 500 });
     }
 }
+
+    
