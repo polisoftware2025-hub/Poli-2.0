@@ -66,8 +66,8 @@ export default function HorariosPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const [filterMateria, setFilterMateria] = useState('');
-  const [filterGrupo, setFilterGrupo] = useState('');
+  const [filterMateria, setFilterMateria] = useState('todos');
+  const [filterGrupo, setFilterGrupo] = useState('todos');
   
   const [showSchedule, setShowSchedule] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -116,11 +116,11 @@ export default function HorariosPage() {
   
     const groupsToProcess = allGroups.filter(group => {
       // If a specific group is selected, only consider that group.
-      if (filterGrupo) {
+      if (filterGrupo && filterGrupo !== 'todos') {
         return group.id === filterGrupo;
       }
       // If a specific materia is selected (but no group), consider all groups of that materia.
-      if (filterMateria) {
+      if (filterMateria && filterMateria !== 'todos') {
         return group.materia.nombre === filterMateria;
       }
       // If neither is selected, show all groups.
@@ -158,7 +158,7 @@ export default function HorariosPage() {
 
   const grupos = useMemo(() => {
       let filteredGroups = allGroups;
-      if (filterMateria) {
+      if (filterMateria && filterMateria !== 'todos') {
           filteredGroups = allGroups.filter(g => g.materia.nombre === filterMateria);
       }
       return filteredGroups.map(g => ({ value: g.id, label: g.codigoGrupo }));
@@ -180,8 +180,8 @@ export default function HorariosPage() {
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-    const materiaTitle = filterMateria ? filterMateria : 'Completo';
-    const grupoTitle = filterGrupo ? grupos.find(g => g.value === filterGrupo)?.label : 'Todos';
+    const materiaTitle = filterMateria && filterMateria !== 'todos' ? filterMateria : 'Completo';
+    const grupoTitle = filterGrupo && filterGrupo !== 'todos' ? grupos.find(g => g.value === filterGrupo)?.label : 'Todos';
     doc.text(`Mi Horario de Clases - Materia: ${materiaTitle}, Grupo: ${grupoTitle}`, 14, 16);
     autoTable(doc, {
         head: [['Hora', ...daysOfWeek]],
@@ -198,7 +198,7 @@ export default function HorariosPage() {
   };
   
   const handleShowSchedule = () => {
-    if (!filterMateria && !filterGrupo) {
+    if ((!filterMateria || filterMateria === 'todos') && (!filterGrupo || filterGrupo === 'todos')) {
       setShowAlert(true);
       return;
     }
@@ -211,8 +211,8 @@ export default function HorariosPage() {
   }
   
   const handleResetFilters = () => {
-    setFilterMateria("");
-    setFilterGrupo("");
+    setFilterMateria("todos");
+    setFilterGrupo("todos");
     setShowAlert(false);
   }
 
@@ -226,31 +226,31 @@ export default function HorariosPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label htmlFor="materia-select">Materia</Label>
-                    <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo(''); setShowAlert(false); }}>
+                    <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('todos'); setShowAlert(false); }}>
                         <SelectTrigger id="materia-select">
                             <SelectValue placeholder="Selecciona una materia"/>
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">Todas las materias</SelectItem>
+                            <SelectItem value="todos">Todas las materias</SelectItem>
                             {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                 
-                {filterMateria && (
+                
                   <div className="space-y-2">
                       <Label htmlFor="grupo-select">Grupo</Label>
-                      <Select value={filterGrupo} onValueChange={(value) => { setFilterGrupo(value); setShowAlert(false); }} disabled={isLoading || !filterMateria || grupos.length === 0}>
+                      <Select value={filterGrupo} onValueChange={(value) => { setFilterGrupo(value); setShowAlert(false); }} disabled={isLoading || grupos.length === 0}>
                           <SelectTrigger id="grupo-select">
                               <SelectValue placeholder="Selecciona un grupo"/>
                           </SelectTrigger>
                           <SelectContent>
-                               <SelectItem value="">Todos los grupos</SelectItem>
+                               <SelectItem value="todos">Todos los grupos</SelectItem>
                               {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
                           </SelectContent>
                       </Select>
                   </div>
-                )}
+                
             </div>
             
             {showAlert && (
@@ -264,7 +264,7 @@ export default function HorariosPage() {
             )}
         </CardContent>
         <CardFooter className="flex items-center justify-center pt-4 p-6">
-            {(filterMateria && filterGrupo) && (
+            {((filterMateria && filterMateria !== 'todos') || (filterGrupo && filterGrupo !== 'todos')) && (
                 <Button onClick={handleShowSchedule} size="lg">
                     <Search className="mr-2 h-4 w-4"/>
                     Ver Horario
