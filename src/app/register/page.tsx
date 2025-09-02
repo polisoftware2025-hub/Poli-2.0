@@ -128,6 +128,29 @@ const steps = [
 
 const LOCAL_STORAGE_KEY = 'registrationFormData';
 
+const defaultFormValues: AllStepsData = {
+    firstName: "",
+    segundoNombre: "",
+    lastName: "",
+    segundoApellido: "",
+    tipoIdentificacion: "",
+    numeroIdentificacion: "",
+    gender: "",
+    birthDate: undefined as any,
+    phone: "",
+    address: "",
+    country: "",
+    city: "",
+    correoPersonal: "",
+    carreraId: "",
+    modalidad: "",
+    grupo: "",
+    password: "",
+    confirmPassword: "",
+    metodoPago: "",
+};
+
+
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
@@ -139,27 +162,7 @@ export default function RegisterPage() {
   const methods = useForm<AllStepsData>({
     resolver: zodResolver(currentSchema),
     mode: "onChange",
-    defaultValues: {
-        firstName: "",
-        segundoNombre: "",
-        lastName: "",
-        segundoApellido: "",
-        tipoIdentificacion: "",
-        numeroIdentificacion: "",
-        gender: "",
-        birthDate: undefined,
-        phone: "",
-        address: "",
-        country: "",
-        city: "",
-        correoPersonal: "",
-        carreraId: "",
-        modalidad: "",
-        grupo: "",
-        password: "",
-        confirmPassword: "",
-        metodoPago: "",
-    },
+    defaultValues: defaultFormValues,
   });
 
   const { handleSubmit, trigger, formState: { isSubmitting }, watch, reset } = methods;
@@ -171,11 +174,11 @@ export default function RegisterPage() {
       try {
         const { formData, currentStep: savedStep } = JSON.parse(savedData);
         if (formData) {
-            // Ensure date fields are correctly parsed back into Date objects
-            if (formData.birthDate) {
-              formData.birthDate = new Date(formData.birthDate);
+            const parsedData = { ...defaultFormValues, ...formData };
+            if (parsedData.birthDate) {
+              parsedData.birthDate = new Date(parsedData.birthDate);
             }
-            reset(formData, { keepDefaultValues: true });
+            reset(parsedData);
         }
         if (savedStep && typeof savedStep === 'number' && savedStep <= totalSteps) {
             setCurrentStep(savedStep);
