@@ -18,6 +18,7 @@ import { es } from 'date-fns/locale';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 
 interface ScheduleEntry {
@@ -127,7 +128,7 @@ export default function HorariosPage() {
         });
       }
     });
-    return schedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.horaInicio.localeCompare(b.horaInicio));
+    return schedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.horaInicio.localeCompare(a.horaInicio));
   }, [allGroups, filterMateria, filterGrupo]);
 
   const materias = useMemo(() => {
