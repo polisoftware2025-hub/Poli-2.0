@@ -1,3 +1,4 @@
+
 import { db } from './firebase'; 
 import { collection, addDoc, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
 import bcrypt from "bcrypt";
@@ -337,6 +338,7 @@ export async function seedInitialUsers() {
   try {
     const batch = writeBatch(db);
     const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+    const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
 
     const existingUsersSnapshot = await getDocs(usersRef);
     const existingEmails = new Set(
@@ -360,6 +362,27 @@ export async function seedInitialUsers() {
           fechaRegistro: new Date(),
         };
         batch.set(userDocRef, finalUserData);
+
+        if (userData.rol.id === 'estudiante') {
+            const studentDocRef = doc(studentsRef, userData.id);
+            // Asigna las materias del primer ciclo al estudiante de prueba
+            const assignedSubjects = carreraData.ciclos[0].materias.map(m => ({ id: m.id, nombre: m.nombre, creditos: m.creditos }));
+            batch.set(studentDocRef, {
+                usuarioId: userData.id,
+                nombreCompleto: finalUserData.nombreCompleto,
+                documento: finalUserData.identificacion,
+                carreraId: "comercio-exterior", // ID de ejemplo
+                modalidad: "Virtual",
+                grupo: "G-001",
+                correoInstitucional: userData.correoInstitucional,
+                cicloActual: 1,
+                materiasInscritas: assignedSubjects,
+                estaInscrito: true,
+                estado: "aprobado",
+                fechaRegistro: new Date()
+            });
+        }
+
       } else {
         console.log(
           `El usuario ${userData.correoInstitucional} ya existe. Omitiendo.`
