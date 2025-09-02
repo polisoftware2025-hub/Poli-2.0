@@ -37,16 +37,23 @@ const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string 
     'passport': { id: 'passport', descripcion: 'Pasaporte' },
 };
 
-async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2?: string): Promise<string> {
+async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, segundoNombre?: string, segundoApellido?: string): Promise<string> {
     const domain = "@pi.edu.co";
     
     let nameParts = [
         firstName.toLowerCase().split(' ')[0],
-        lastName1.toLowerCase().split(' ')[0]
     ];
-    if (lastName2 && lastName2.trim() !== '') {
-        nameParts.push(lastName2.toLowerCase().split(' ')[0]);
+
+    if (segundoNombre && segundoNombre.trim() !== '') {
+        nameParts.push(segundoNombre.toLowerCase().split(' ')[0]);
     }
+    
+    nameParts.push(lastName1.toLowerCase().split(' ')[0]);
+
+    if (segundoApellido && segundoApellido.trim() !== '') {
+        nameParts.push(segundoApellido.toLowerCase().split(' ')[0]);
+    }
+    
     const baseEmail = nameParts.join('.');
 
     const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
@@ -95,7 +102,7 @@ export async function POST(req: Request) {
         const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
         const newUserDocRef = doc(collection(politecnicoDocRef, "usuarios"));
         
-        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName!, data.lastName!, data.segundoApellido);
+        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName!, data.lastName!, data.segundoNombre, data.segundoApellido);
 
         const usuarioData = {
           nombreCompleto: `${data.firstName} ${data.segundoNombre || ''} ${data.lastName} ${data.segundoApellido}`.replace(/\s+/g, ' ').trim(),
