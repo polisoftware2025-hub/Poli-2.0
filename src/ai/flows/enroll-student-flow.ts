@@ -1,114 +1,153 @@
 
 'use server';
 /**
- * @fileOverview A system to automatically enroll a student in subjects for their current academic cycle.
+ * @fileOverview A system to finalize a student's enrollment after admin approval.
  *
- * - enrollStudentInCurrentCycleSubjects - A function that calculates the student's current cycle and enrolls them in the corresponding subjects.
- * - EnrollStudentInput - The input type for the enrollStudentInCurrentCycleSubjects function.
- * - EnrollStudentOutput - The return type for the enrollStudentInCurrentCycleSubjects function.
+ * - processStudentEnrollment - A function that activates a student, assigns a cycle and subjects, and sends a welcome email.
+ * - ProcessStudentEnrollmentInput - The input type for the function.
+ * - ProcessStudentEnrollmentOutput - The return type for the function.
  */
 
-import { carreraData } from '@/lib/seed'; // Assuming seed data contains the academic structure
+import { carreraData } from '@/lib/seed';
+import { db } from "@/lib/firebase";
+import { collection, doc, getDoc, updateDoc, query, where, getDocs } from "firebase/firestore";
+import { sendWelcomeEmail } from './send-welcome-email';
 
-// Input and Output types defined using TypeScript interfaces
-export interface EnrollStudentInput {
-  studentId: string;
-  enrollmentDate: string; // ISO 8601 datetime string
-}
-
-export interface EnrollStudentOutput {
-  studentId: string;
-  calculatedCycle: number;
-  enrolledSubjects: Array<{
-    id: string;
-    nombre: string;
-    creditos: number;
-  }>;
-  requiresElectiveSelection: boolean;
-  message: string;
-}
-
-/**
- * Calculates the student's current academic cycle based on their enrollment date.
- * @param enrollmentDate The student's initial enrollment date.
- * @param currentDate The current date to calculate against.
- * @returns The current academic cycle number.
- */
-function calculateCurrentCycle(enrollmentDate: Date, currentDate: Date): number {
-  const enrollmentYear = enrollmentDate.getFullYear();
-  const currentYear = currentDate.getFullYear();
-  
-  // Semester definition: Feb-Jun is 1st, Aug-Nov is 2nd.
-  // Months are 0-indexed (Jan=0, Jun=5, Jul=6, Nov=10)
-  const enrollmentMonth = enrollmentDate.getMonth();
-  const currentMonth = currentDate.getMonth();
-
-  const getSemester = (month: number): number => {
-    // Before August (i.e., Feb-Jun period, plus Jan)
-    if (month < 7) { 
-        return 1;
+// Helper function to generate a secure temporary password
+const generateTemporaryPassword = (length = 12) => {
+    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()";
+    let password = "";
+    for (let i = 0, n = charset.length; i < n; ++i) {
+        password += charset.charAt(Math.floor(Math.random() * n));
     }
-    // August-November period, plus Dec
-    return 2; 
-  };
+    return password;
+};
 
-  const enrollmentSemester = getSemester(enrollmentMonth);
-  const currentSemester = getSemester(currentMonth);
-
-  const yearDifference = currentYear - enrollmentYear;
-  
-  let semestersPassed = yearDifference * 2;
-
-  if (currentSemester > enrollmentSemester) {
-    semestersPassed += 1;
-  } else if (currentSemester < enrollmentSemester) {
-    semestersPassed -= 1;
-  }
-
-  // The cycle is the number of semesters passed + 1 (for the initial cycle)
-  const currentCycle = semestersPassed + 1;
-
-  // The maximum cycle is defined by the academic program.
-  const maxCycle = carreraData.ciclos.length;
-
-  return Math.max(1, Math.min(currentCycle, maxCycle));
+async function emailExists(email: string): Promise<boolean> {
+    const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+    const q = query(usuariosRef, where("correoInstitucional", "==", email));
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
 }
 
-/**
- * Main function to handle the automatic enrollment logic without using Genkit.
- * @param input The student and enrollment date information.
- * @returns The result of the enrollment process.
- */
-export async function enrollStudentInCurrentCycleSubjects(input: EnrollStudentInput): Promise<EnrollStudentOutput> {
-    const enrollmentDate = new Date(input.enrollmentDate);
-    const currentDate = new Date();
-
-    const currentCycle = calculateCurrentCycle(enrollmentDate, currentDate);
-
-    const cycleInfo = carreraData.ciclos.find(c => c.numero === currentCycle);
-
-    if (!cycleInfo) {
-      throw new Error(`El ciclo académico ${currentCycle} no fue encontrado en la estructura del programa.`);
-    }
-
-    const mandatorySubjects = cycleInfo.materias.filter(m => !m.nombre.toLowerCase().includes('electiva'));
-    const hasElectives = cycleInfo.materias.some(m => m.nombre.toLowerCase().includes('electiva'));
+async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2: string): Promise<string> {
+    const domain = "@pi.edu.co";
+    const baseEmail = [
+        firstName.toLowerCase().split(' ')[0],
+        lastName1.toLowerCase().split(' ')[0],
+        lastName2.toLowerCase().split(' ')[0]
+    ].join('.');
     
-    // In a real application, this is where you would update the student's document in Firestore.
-    // For this example, we just return the result.
-    console.log(`Inscribiendo al estudiante ${input.studentId} en el ciclo ${currentCycle}.`);
-    console.log('Materias obligatorias:', mandatorySubjects.map(m => m.nombre));
+    let finalEmail = `${baseEmail}${domain}`;
+    let counter = 1;
 
-    let message = `El estudiante ha sido inscrito en ${mandatorySubjects.length} materias obligatorias del ciclo ${currentCycle}.`;
-    if (hasElectives) {
-        message += ' Se requiere selección manual de materias electivas.';
+    while (await emailExists(finalEmail)) {
+        finalEmail = `${baseEmail}${counter}${domain}`;
+        counter++;
     }
+    return finalEmail;
+}
 
-    return {
-      studentId: input.studentId,
-      calculatedCycle: currentCycle,
-      enrolledSubjects: mandatorySubjects,
-      requiresElectiveSelection: hasElectives,
-      message: message,
-    };
+
+// Input and Output types
+export interface ProcessStudentEnrollmentInput {
+  studentId: string; // The document ID of the student in the 'estudiantes' collection
+}
+
+export interface ProcessStudentEnrollmentOutput {
+  success: boolean;
+  message: string;
+  studentId?: string;
+  calculatedCycle?: number;
+  enrolledSubjectsCount?: number;
+  institutionalEmail?: string;
+}
+
+function calculateStartCycle(currentDate: Date): number {
+  const currentMonth = currentDate.getMonth(); // 0-indexed (Jan=0, Jul=6)
+  // If enrollment happens in the first half of the year (before July), they start in Cycle 1 of that year.
+  // If in the second half, they also start in Cycle 1 (as it's their first semester).
+  // The logic simplifies to always starting in cycle 1.
+  return 1;
+}
+
+export async function processStudentEnrollment(input: ProcessStudentEnrollmentInput): Promise<ProcessStudentEnrollmentOutput> {
+    const { studentId } = input;
+
+    try {
+        const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", studentId);
+
+        const studentSnap = await getDoc(studentRef);
+        const userSnap = await getDoc(userRef);
+
+        if (!studentSnap.exists() || !userSnap.exists()) {
+            throw new Error("No se encontró al estudiante o al usuario correspondiente.");
+        }
+
+        const studentData = studentSnap.data();
+        const userData = userSnap.data();
+        
+        if (studentData.estado === 'inscrito') {
+            return { success: false, message: 'Este estudiante ya ha sido inscrito.' };
+        }
+
+        // 1. Calculate Cycle and Assign Subjects
+        const currentDate = new Date();
+        const startCycle = calculateStartCycle(currentDate);
+        const cycleInfo = carreraData.ciclos.find(c => c.numero === startCycle);
+
+        if (!cycleInfo) {
+            throw new Error(`El ciclo de inicio ${startCycle} no fue encontrado en la malla curricular.`);
+        }
+        
+        const assignedSubjects = cycleInfo.materias;
+
+        // 2. Generate Institutional Email & Temporary Password
+        const institutionalEmail = await generateUniqueInstitutionalEmail(userData.nombre1, userData.apellido1, userData.apellido2);
+        const temporaryPassword = generateTemporaryPassword();
+        
+        // In a real scenario, you would HASH this password before storing it.
+        // For now, we assume a separate step or API handles that.
+        // Let's just update the user doc with the email.
+        
+        // 3. Update Firestore Documents
+        await updateDoc(studentRef, {
+            estado: 'inscrito',
+            cicloActual: startCycle,
+            materiasInscritas: assignedSubjects,
+            correoInstitucional: institutionalEmail,
+            fechaActualizacion: new Date(),
+        });
+        
+        await updateDoc(userRef, {
+            correoInstitucional: institutionalEmail,
+            rol: { id: "estudiante", descripcion: "Estudiante" },
+            // Here you would store the HASHED temporaryPassword
+            // contrasena: await bcrypt.hash(temporaryPassword, 10),
+            fechaActualizacion: new Date(),
+        });
+
+        // 4. Send Welcome Email
+        await sendWelcomeEmail({
+            name: userData.nombre1,
+            email: userData.correo,
+            institutionalEmail: institutionalEmail,
+            temporaryPassword: temporaryPassword, // Send the plain text password
+        });
+
+        return {
+            success: true,
+            message: "El estudiante ha sido inscrito exitosamente. Se ha enviado un correo de bienvenida.",
+            studentId: studentId,
+            calculatedCycle: startCycle,
+            enrolledSubjectsCount: assignedSubjects.length,
+            institutionalEmail: institutionalEmail
+        };
+
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Ocurrió un error desconocido.";
+        console.error("Error processing enrollment:", error);
+        return { success: false, message };
+    }
 }

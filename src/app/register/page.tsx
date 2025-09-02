@@ -92,27 +92,11 @@ const step2Schema = z.object({
 
 const step3Schema = z.object({
   program: z.string({ required_error: "Por favor, selecciona una carrera." }),
-  ciclo: z.string({ required_error: "Por favor, selecciona un ciclo." }),
+  modalidad: z.string({ required_error: "Por favor, selecciona una modalidad." }),
   grupo: z.string({ required_error: "Por favor, selecciona un grupo." }),
-  jornada: z.string({ required_error: "Por favor, selecciona una jornada." }),
 });
 
 const step4Object = z.object({
-  selectedSubjects: z.array(z.any()).refine(value => value.length > 0, {
-    message: 'Debes seleccionar al menos una materia.'
-  })
-});
-
-const step4Schema_materias = step4Object.refine((data) => {
-    const totalCredits = data.selectedSubjects.reduce((acc, subject) => acc + subject.creditos, 0);
-    return totalCredits === 10;
-}, {
-    message: 'La suma de créditos debe ser exactamente 10.',
-    path: ['selectedSubjects'],
-});
-
-
-const step5Object = z.object({
   password: z.string().min(8, "Mínimo 8 caracteres.")
     .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
     .regex(/[a-z]/, "Debe contener al menos una minúscula.")
@@ -121,26 +105,25 @@ const step5Object = z.object({
   confirmPassword: z.string(),
 });
 
-const step5Schema = step5Object.refine((data) => data.password === data.confirmPassword, {
+const step4Schema = step4Object.refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
 });
 
 
-const step6Schema = z.object({
+const step5Schema = z.object({
   metodoPago: z.string({ required_error: "Por favor, selecciona un método de pago." }),
 });
 
-const step7Schema = z.object({});
+const step6Schema = z.object({});
 
 
 const allStepsSchema = z.object({
   ...step1Schema.shape,
   ...step2Schema.shape,
   ...step3Schema.shape,
-  ...step4Object.shape,
-  ...step5Schema.shape,
-  ...step6Schema.shape
+  ...step4Schema.shape,
+  ...step5Schema.shape
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden.",
   path: ["confirmPassword"],
@@ -152,15 +135,14 @@ const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
     { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
-    { number: 4, title: "Selección de Materias", icon: ListChecks, schema: step4Schema_materias, fields: Object.keys(step4Object.shape) as (keyof AllStepsData)[] },
-    { number: 5, title: "Datos de Acceso", icon: KeyRound, schema: step5Schema, fields: Object.keys(step5Object.shape) as (keyof AllStepsData)[] },
-    { number: 6, title: "Datos de Inscripción", icon: CreditCard, schema: step6Schema, fields: Object.keys(step6Schema.shape) as (keyof AllStepsData)[] },
-    { number: 7, title: "Confirmación", icon: CheckCircle, schema: step7Schema, fields: [] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys(step4Object.shape) as (keyof AllStepsData)[] },
+    { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema, fields: Object.keys(step5Schema.shape) as (keyof AllStepsData)[] },
+    { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
 ];
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 7;
+  const totalSteps = 6;
   const { toast } = useToast();
   const router = useRouter();
   
@@ -184,47 +166,18 @@ export default function RegisterPage() {
       country: undefined,
       correoPersonal: "",
       program: undefined,
-      ciclo: undefined,
+      modalidad: undefined,
       grupo: undefined,
-      jornada: undefined,
-      selectedSubjects: [],
       password: "",
       confirmPassword: "",
       metodoPago: undefined,
     },
   });
 
-  const { getValues, setError, trigger, watch, formState: { isSubmitting } } = methods;
-  
-  const selectedCiclo = watch("ciclo");
-  const cycleHasElectives = useMemo(() => {
-    if (!selectedCiclo) return false;
-    const cicloData = staticCarreraData.ciclos.find(c => c.numero.toString() === selectedCiclo);
-    if (!cicloData) return false;
-    return cicloData.materias.some(m => m.nombre.toLowerCase().includes('electiva'));
-  }, [selectedCiclo]);
-
+  const { getValues, trigger, formState: { isSubmitting } } = methods;
 
   const nextStep = async () => {
     const fields = steps[currentStep - 1].fields;
-
-    // Skip subject selection if cycle has no electives
-    if (currentStep === 3) {
-      const isValid = await trigger(fields as any, { shouldFocus: true });
-      if (isValid) {
-        if (!cycleHasElectives) {
-          // If no electives, auto-populate subjects and skip to next step
-          const cicloData = staticCarreraData.ciclos.find(c => c.numero.toString() === getValues("ciclo"));
-          if (cicloData) {
-            methods.setValue("selectedSubjects", cicloData.materias);
-          }
-          setCurrentStep(5); // Skip to step 5
-        } else {
-          setCurrentStep(4);
-        }
-      }
-      return;
-    }
     
     if (fields.length === 0) {
       if (currentStep < totalSteps) {
@@ -232,6 +185,7 @@ export default function RegisterPage() {
       }
       return;
     }
+
     const isValid = await trigger(fields as any, { shouldFocus: true });
   
     if (isValid) {
@@ -240,16 +194,10 @@ export default function RegisterPage() {
       }
     }
   };
-  
 
   const prevStep = () => {
     if (currentStep > 1) {
-      // If we are on step 5 and the previous cycle had no electives, go back to step 3
-      if(currentStep === 5 && !cycleHasElectives) {
-        setCurrentStep(3);
-      } else {
-        setCurrentStep(currentStep - 1);
-      }
+      setCurrentStep(currentStep - 1);
     }
   };
   
@@ -272,13 +220,11 @@ export default function RegisterPage() {
 
         if (response.ok) {
           toast({
-            title: "¡Registro exitoso!",
+            title: "¡Solicitud de registro enviada!",
             description: responseData.message,
           });
-
-          localStorage.setItem('userEmail', responseData.correoInstitucional);
-          localStorage.setItem('userRole', 'estudiante');
-          router.push("/dashboard");
+          // Redirect to a confirmation or home page instead of dashboard
+          router.push("/"); 
         } else {
           toast({
             variant: "destructive",
@@ -302,7 +248,7 @@ export default function RegisterPage() {
       });
       // Find the first step with an error and navigate to it
       for (const step of steps) {
-        const hasError = step.fields.some(field => result.error.formErrors.fieldErrors[field]);
+        const hasError = step.fields.some(field => result.error.formErrors.fieldErrors[field as keyof typeof result.error.formErrors.fieldErrors]);
         if (hasError) {
           setCurrentStep(step.number);
           break;
@@ -311,9 +257,7 @@ export default function RegisterPage() {
     }
   };
 
-
   const progress = (currentStep / totalSteps) * 100;
-
   const CurrentStepIcon = steps[currentStep - 1].icon;
 
   return (
@@ -352,10 +296,9 @@ export default function RegisterPage() {
                 {currentStep === 1 && <Step1 />}
                 {currentStep === 2 && <Step2 />}
                 {currentStep === 3 && <Step3 />}
-                {currentStep === 4 && <Step4_Materias />}
-                {currentStep === 5 && <Step5_Access />}
-                {currentStep === 6 && <Step6_Payment />}
-                {currentStep === 7 && <Step7_Confirm />}
+                {currentStep === 4 && <Step4_Access />}
+                {currentStep === 5 && <Step5_Payment />}
+                {currentStep === 6 && <Step6_Confirm />}
             </CardContent>
             <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
               <Button
@@ -618,46 +561,37 @@ const Step2 = () => {
 interface Carrera {
     id: string;
     nombre: string;
-    ciclos?: { numero: number; materias: any[] }[];
+}
+interface Grupo {
+    id: string;
+    codigoGrupo: string;
 }
 
 const Step3 = () => {
-    const { control, setValue } = useFormContext();
+    const { control } = useFormContext();
     const [carreras, setCarreras] = useState<Carrera[]>([]);
-    const [ciclos, setCiclos] = useState<{ numero: number }[]>([]);
+    const [grupos, setGrupos] = useState<Grupo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const selectedProgramId = useWatch({ control, name: "program" });
-
     useEffect(() => {
-        const fetchCarreras = async () => {
+        const fetchData = async () => {
             setIsLoading(true);
             try {
-                // Simulating fetch with static data
-                const fetchedCarreras = [{
-                  id: "TCNI01", // Example ID
-                  ...staticCarreraData
-                }];
-                setCarreras(fetchedCarreras as any);
+                const carrerasSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+                const fetchedCarreras = carrerasSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre }));
+                setCarreras(fetchedCarreras);
+
+                const gruposSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
+                const fetchedGrupos = gruposSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo }));
+                setGrupos(fetchedGrupos);
             } catch (error) {
-                console.error("Error fetching carreras:", error);
+                console.error("Error fetching data:", error);
             } finally {
                 setIsLoading(false);
             }
         };
-
-        fetchCarreras();
+        fetchData();
     }, []);
-
-    useEffect(() => {
-      if (selectedProgramId) {
-          const selectedCarrera = carreras.find(c => c.id === selectedProgramId);
-          setCiclos(selectedCarrera?.ciclos || []);
-          setValue("ciclo", undefined, { shouldValidate: true });
-      } else {
-          setCiclos([]);
-      }
-    }, [selectedProgramId, carreras, setValue]);
 
   return (
     <div className="space-y-6">
@@ -670,7 +604,7 @@ const Step3 = () => {
             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={isLoading ? "Cargando carreras..." : "Selecciona una carrera"} />
+                  <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona una carrera"} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
@@ -683,36 +617,12 @@ const Step3 = () => {
           </FormItem>
         )}
       />
-
-       <FormField
-        control={control}
-        name="ciclo"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Ciclo Académico</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedProgramId || ciclos.length === 0}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={!selectedProgramId ? "Selecciona una carrera primero" : "Selecciona un ciclo"} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {ciclos.map(ciclo => (
-                    <SelectItem key={ciclo.numero} value={ciclo.numero.toString()}>Ciclo {ciclo.numero}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
       <FormField
         control={control}
-        name="jornada"
+        name="modalidad"
         render={({ field }) => (
           <FormItem className="space-y-3">
-            <FormLabel>Jornada y Modalidad</FormLabel>
+            <FormLabel>Modalidad</FormLabel>
             <FormControl>
               <RadioGroup
                 onValueChange={field.onChange}
@@ -727,39 +637,30 @@ const Step3 = () => {
                   <FormControl><RadioGroupItem value="nocturna_virtual" /></FormControl>
                   <FormLabel className="font-normal">Nocturna - Virtual</FormLabel>
                 </FormItem>
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="especial_findesemana" /></FormControl>
-                  <FormLabel className="font-normal">Especial - Fin de semana</FormLabel>
-                </FormItem>
               </RadioGroup>
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-
       <FormField
         control={control}
         name="grupo"
         render={({ field }) => (
-          <FormItem className="space-y-3">
+          <FormItem>
             <FormLabel>Grupo</FormLabel>
-            <FormControl>
-              <RadioGroup
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                className="flex flex-col space-y-1"
-              >
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="grupo1" /></FormControl>
-                  <FormLabel className="font-normal">Grupo 1</FormLabel>
-                </FormItem>
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="grupo2" /></FormControl>
-                  <FormLabel className="font-normal">Grupo 2</FormLabel>
-                </FormItem>
-              </RadioGroup>
-            </FormControl>
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona un grupo"} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {grupos.map(grupo => (
+                    <SelectItem key={grupo.id} value={grupo.id}>{grupo.codigoGrupo}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
@@ -768,89 +669,7 @@ const Step3 = () => {
   );
 };
 
-const Step4_Materias = () => {
-    const { control, watch, setValue, formState: { errors } } = useFormContext<AllStepsData>();
-    const selectedCiclo = watch("ciclo");
-    const selectedSubjects = watch("selectedSubjects") || [];
-
-    const { mandatory, electives } = useMemo(() => {
-        if (!selectedCiclo) return { mandatory: [], electives: [] };
-        const cycleData = staticCarreraData.ciclos.find(c => c.numero.toString() === selectedCiclo);
-        if (!cycleData) return { mandatory: [], electives: [] };
-
-        const mandatory = cycleData.materias.filter(m => !m.nombre.toLowerCase().includes('electiva'));
-        const electives = cycleData.materias.filter(m => m.nombre.toLowerCase().includes('electiva'));
-        return { mandatory, electives };
-    }, [selectedCiclo]);
-    
-    useEffect(() => {
-        // Automatically set mandatory subjects
-        setValue("selectedSubjects", mandatory, { shouldValidate: true });
-    }, [mandatory, setValue]);
-    
-    const totalCredits = useMemo(() => {
-        return selectedSubjects.reduce((acc, subject) => acc + subject.creditos, 0);
-    }, [selectedSubjects]);
-
-    const handleElectiveChange = (subject: any, checked: boolean) => {
-        const currentSelection = watch("selectedSubjects") || [];
-        let newSelection;
-        if (checked) {
-            newSelection = [...currentSelection, subject];
-        } else {
-            newSelection = currentSelection.filter(s => s.id !== subject.id);
-        }
-        setValue("selectedSubjects", newSelection, { shouldValidate: true });
-    };
-
-    return (
-        <div className="space-y-6">
-            <div>
-                <h4 className="font-semibold text-lg mb-2">Materias Obligatorias</h4>
-                <div className="space-y-2 rounded-md border p-4">
-                    {mandatory.length > 0 ? mandatory.map(subject => (
-                        <div key={subject.id} className="flex justify-between items-center">
-                            <span>{subject.nombre}</span>
-                            <span className="font-semibold">{subject.creditos} créditos</span>
-                        </div>
-                    )) : <p className="text-muted-foreground">No hay materias obligatorias para este ciclo.</p>}
-                </div>
-            </div>
-
-            {electives.length > 0 && (
-                <div>
-                    <h4 className="font-semibold text-lg mb-2">Materias Electivas</h4>
-                    <div className="space-y-2 rounded-md border p-4">
-                        {electives.map(subject => (
-                            <div key={subject.id} className="flex items-center space-x-3">
-                                <Checkbox
-                                    id={subject.id}
-                                    onCheckedChange={(checked) => handleElectiveChange(subject, !!checked)}
-                                    checked={selectedSubjects.some(s => s.id === subject.id)}
-                                />
-                                <label htmlFor={subject.id} className="flex-1 flex justify-between items-center cursor-pointer">
-                                    <span>{subject.nombre}</span>
-                                    <span className="font-semibold">{subject.creditos} créditos</span>
-                                </label>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-            
-            <Alert variant={totalCredits === 10 ? "default" : "destructive"} className={totalCredits === 10 ? 'border-green-500' : ''}>
-                <AlertTitle className="font-bold">Créditos Seleccionados</AlertTitle>
-                <AlertDescription>
-                    Total de créditos: {totalCredits} / 10. Debes seleccionar exactamente 10 créditos para continuar.
-                </AlertDescription>
-            </Alert>
-             {errors.selectedSubjects && <p className="text-sm font-medium text-destructive">{(errors.selectedSubjects as any).message}</p>}
-        </div>
-    );
-};
-
-
-const Step5_Access = () => {
+const Step4_Access = () => {
   const { control } = useFormContext();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -899,7 +718,7 @@ const Step5_Access = () => {
   );
 };
 
-const Step6_Payment = () => {
+const Step5_Payment = () => {
   const { control } = useFormContext();
   return (
     <div className="space-y-6">
@@ -931,7 +750,7 @@ const Step6_Payment = () => {
   );
 };
 
-const Step7_Confirm = () => (
+const Step6_Confirm = () => (
     <div className="text-center flex flex-col items-center gap-4 py-8">
         <CheckCircle className="h-16 w-16 text-green-500" />
         <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>

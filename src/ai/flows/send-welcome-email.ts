@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow to generate and "send" a welcome email with credentials.
@@ -51,5 +52,6 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<st
   const { output } = await welcomeEmailPrompt(input);
   // In a real application, you would use a service like Nodemailer or SendGrid here.
   // For this demo, we'll just return the HTML content.
+  console.log("Generated Welcome Email HTML:", output);
   return output!;
 }
