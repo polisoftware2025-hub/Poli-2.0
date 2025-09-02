@@ -35,9 +35,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
-import { useForm, FormProvider, useFormContext, useWatch } from "react-hook-form";
-import * as z from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, FormProvider, useFormContext, useWatch, FieldValues, Path } from "react-hook-form";
 import {
   FormField,
   FormItem,
@@ -55,75 +53,35 @@ import { es } from "date-fns/locale";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 
-// Shared validation schemas
-const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres.").max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
-const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres.").max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
-const cityCountryValidation = z.string({ required_error: "Por favor, selecciona una opción." }).min(2, "Debe tener al menos 2 caracteres");
-
-// Schemas for each step
-const step1Schema = z.object({
-  firstName: nameValidation,
-  segundoNombre: z.string().max(50).optional(),
-  lastName: lastNameValidation,
-  segundoApellido: lastNameValidation,
-  tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
-  numeroIdentificacion: z.string().min(5, "El número de identificación es obligatorio.").max(15, "No puede tener más de 15 caracteres.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
-  gender: z.string({ required_error: "Por favor, selecciona un género." }),
-  birthDate: z.date({ required_error: "Por favor, introduce una fecha válida." }),
-});
-
-const step2Schema = z.object({
-  phone: z.string().regex(/^\d{7,15}$/, "Debe ser un número de teléfono válido."),
-  address: z.string().min(5, "La dirección debe tener al menos 5 caracteres."),
-  country: cityCountryValidation,
-  city: cityCountryValidation,
-  correoPersonal: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
-});
-
-const step3Schema = z.object({
-  carreraId: z.string({ required_error: "Por favor, selecciona una carrera." }),
-  modalidad: z.string({ required_error: "Por favor, selecciona una modalidad." }),
-  grupo: z.string({ required_error: "Por favor, selecciona un grupo." }),
-});
-
-const step4Object = z.object({
-  password: z.string().min(8, "Mínimo 8 caracteres.")
-    .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
-    .regex(/[a-z]/, "Debe contener al menos una minúscula.")
-    .regex(/[0-9]/, "Debe contener al menos un número.")
-    .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
-  confirmPassword: z.string(),
-});
-
-const step4Schema = step4Object.refine((data) => data.password === data.confirmPassword, {
-  message: "Las contraseñas no coinciden.",
-  path: ["confirmPassword"],
-});
-
-
-const step5Schema = z.object({
-  metodoPago: z.string({ required_error: "Por favor, selecciona un método de pago." }),
-});
-
-const step6Schema = z.object({});
-
-const allStepsSchema = z.object({
-  ...step1Schema.shape,
-  ...step2Schema.shape,
-  ...step3Schema.shape,
-  ...step4Schema.shape,
-  ...step5Schema.shape
-});
-
-type AllStepsData = z.infer<typeof allStepsSchema>;
+interface AllStepsData extends FieldValues {
+    firstName: string;
+    segundoNombre?: string;
+    lastName: string;
+    segundoApellido: string;
+    tipoIdentificacion: string;
+    numeroIdentificacion: string;
+    gender: string;
+    birthDate?: Date;
+    phone: string;
+    address: string;
+    country: string;
+    city: string;
+    correoPersonal: string;
+    carreraId: string;
+    modalidad: string;
+    grupo: string;
+    password: string;
+    confirmPassword: string;
+    metodoPago: string;
+}
 
 const steps = [
-    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: Object.keys(step1Schema.shape) as (keyof AllStepsData)[] },
-    { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: Object.keys(step2Schema.shape) as (keyof AllStepsData)[] },
-    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: Object.keys(step3Schema.shape) as (keyof AllStepsData)[] },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: Object.keys(step4Object.shape) as (keyof AllStepsData)[] },
-    { number: 5, title: "Datos de Inscripción", icon: CreditCard, schema: step5Schema, fields: Object.keys(step5Schema.shape) as (keyof AllStepsData)[] },
-    { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
+    { number: 1, title: "Datos Personales", icon: User },
+    { number: 2, title: "Datos de Contacto", icon: Phone },
+    { number: 3, title: "Inscripción Académica", icon: BookOpen },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound },
+    { number: 5, title: "Datos de Inscripción", icon: CreditCard },
+    { number: 6, title: "Confirmación", icon: CheckCircle },
 ];
 
 const LOCAL_STORAGE_KEY = 'registrationFormData';
@@ -136,7 +94,7 @@ const defaultFormValues: AllStepsData = {
     tipoIdentificacion: "",
     numeroIdentificacion: "",
     gender: "",
-    birthDate: undefined as any,
+    birthDate: undefined,
     phone: "",
     address: "",
     country: "",
@@ -157,17 +115,49 @@ export default function RegisterPage() {
   const { toast } = useToast();
   const router = useRouter();
   
-  const currentSchema = useMemo(() => steps[currentStep - 1].schema, [currentStep]);
-
   const methods = useForm<AllStepsData>({
-    resolver: zodResolver(currentSchema),
     mode: "onChange",
     defaultValues: defaultFormValues,
   });
 
-  const { handleSubmit, trigger, formState: { isSubmitting }, watch, reset } = methods;
+  const { handleSubmit, trigger, formState: { isSubmitting }, watch, reset, setError } = methods;
 
-  // Load data from localStorage on initial render
+  const validateStep = async (step: number) => {
+    const { getValues } = methods;
+    const data = getValues();
+    let isValid = true;
+    
+    // Clear previous errors for the current step
+    const fieldsToValidate = steps[step - 1];
+
+    if (step === 1) {
+        if (!data.firstName) { setError("firstName", { type: 'manual', message: 'El primer nombre es requerido.' }); isValid = false; }
+        if (!data.lastName) { setError("lastName", { type: 'manual', message: 'El primer apellido es requerido.' }); isValid = false; }
+        if (!data.segundoApellido) { setError("segundoApellido", { type: 'manual', message: 'El segundo apellido es requerido.' }); isValid = false; }
+        if (!data.tipoIdentificacion) { setError("tipoIdentificacion", { type: 'manual', message: 'Selecciona un tipo.' }); isValid = false; }
+        if (!data.numeroIdentificacion) { setError("numeroIdentificacion", { type: 'manual', message: 'El número es requerido.' }); isValid = false; }
+        if (!data.gender) { setError("gender", { type: 'manual', message: 'Selecciona un género.' }); isValid = false; }
+        if (!data.birthDate) { setError("birthDate", { type: 'manual', message: 'La fecha es requerida.' }); isValid = false; }
+    } else if (step === 2) {
+        if (!data.phone || !/^\d{7,15}$/.test(data.phone)) { setError("phone", { type: 'manual', message: 'Teléfono inválido.' }); isValid = false; }
+        if (!data.address) { setError("address", { type: 'manual', message: 'Dirección requerida.' }); isValid = false; }
+        if (!data.country) { setError("country", { type: 'manual', message: 'País requerido.' }); isValid = false; }
+        if (!data.city) { setError("city", { type: 'manual', message: 'Ciudad requerida.' }); isValid = false; }
+        if (!data.correoPersonal || !/\S+@\S+\.\S+/.test(data.correoPersonal)) { setError("correoPersonal", { type: 'manual', message: 'Correo inválido.' }); isValid = false; }
+    } else if (step === 3) {
+        if (!data.carreraId) { setError("carreraId", { type: 'manual', message: 'Selecciona una carrera.' }); isValid = false; }
+        if (!data.modalidad) { setError("modalidad", { type: 'manual', message: 'Selecciona una modalidad.' }); isValid = false; }
+        if (!data.grupo) { setError("grupo", { type: 'manual', message: 'Selecciona un grupo.' }); isValid = false; }
+    } else if (step === 4) {
+        if (!data.password || data.password.length < 8) { setError("password", { type: 'manual', message: 'Mínimo 8 caracteres.' }); isValid = false; }
+        if (data.password !== data.confirmPassword) { setError("confirmPassword", { type: 'manual', message: 'Las contraseñas no coinciden.' }); isValid = false; }
+    } else if (step === 5) {
+        if (!data.metodoPago) { setError("metodoPago", { type: 'manual', message: 'Selecciona un método de pago.' }); isValid = false; }
+    }
+
+    return isValid;
+  }
+  
   useEffect(() => {
     const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (savedData) {
@@ -190,8 +180,6 @@ export default function RegisterPage() {
     }
   }, [reset]);
 
-
-  // Watch for form changes and save to localStorage
   useEffect(() => {
     const subscription = watch((value) => {
       try {
@@ -213,12 +201,7 @@ export default function RegisterPage() {
   };
 
   const nextStep = async () => {
-    const fields = steps[currentStep - 1].fields;
-    
-    const isValid = fields.length > 0 
-      ? await trigger(fields, { shouldFocus: true }) 
-      : true;
-  
+    const isValid = await validateStep(currentStep);
     if (isValid) {
       if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
@@ -247,7 +230,7 @@ export default function RegisterPage() {
             title: "¡Solicitud de registro enviada!",
             description: responseData.message,
           });
-          localStorage.removeItem(LOCAL_STORAGE_KEY); // Clean up on success
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
           router.push("/register/pending"); 
         } else {
           toast({

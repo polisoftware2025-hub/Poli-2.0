@@ -2,32 +2,37 @@
 import { db } from "@/lib/firebase";
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
-// Schema for backend validation.
-const UserRegistrationSchema = z.object({
-    firstName: z.string().min(1, "El primer nombre es requerido."),
-    segundoNombre: z.string().optional(),
-    lastName: z.string().min(1, "El primer apellido es requerido."),
-    segundoApellido: z.string().min(1, "El segundo apellido es requerido."),
-    tipoIdentificacion: z.string().min(1),
-    numeroIdentificacion: z.string().min(5, "El número de identificación es requerido."),
-    gender: z.string().min(1),
-    birthDate: z.preprocess((arg) => {
-        if (typeof arg == "string" || arg instanceof Date) return new Date(arg);
-    }, z.date()),
-    phone: z.string().min(7, "El teléfono no es válido."),
-    address: z.string().min(5, "La dirección es requerida."),
-    country: z.string().min(1),
-    city: z.string().min(1),
-    correoPersonal: z.string().email("El correo personal no es válido."),
-    carreraId: z.string().min(1),
-    modalidad: z.string().min(1),
-    grupo: z.string().min(1),
-    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
-    metodoPago: z.string().min(1),
-});
+// Manual validation function instead of Zod
+const validateRegistrationData = (data: any) => {
+    const errors: { [key: string]: string } = {};
+
+    if (!data.firstName || typeof data.firstName !== 'string' || data.firstName.trim().length < 1) errors.firstName = "El primer nombre es requerido.";
+    if (!data.lastName || typeof data.lastName !== 'string' || data.lastName.trim().length < 1) errors.lastName = "El primer apellido es requerido.";
+    if (!data.segundoApellido || typeof data.segundoApellido !== 'string' || data.segundoApellido.trim().length < 1) errors.segundoApellido = "El segundo apellido es requerido.";
+    if (!data.tipoIdentificacion) errors.tipoIdentificacion = "El tipo de identificación es requerido.";
+    if (!data.numeroIdentificacion || typeof data.numeroIdentificacion !== 'string' || data.numeroIdentificacion.trim().length < 5) errors.numeroIdentificacion = "El número de identificación es requerido.";
+    if (!data.gender) errors.gender = "El género es requerido.";
+    if (!data.birthDate) errors.birthDate = "La fecha de nacimiento es requerida.";
+    if (!data.phone || !/^\d{7,15}$/.test(data.phone)) errors.phone = "El teléfono no es válido.";
+    if (!data.address || typeof data.address !== 'string' || data.address.trim().length < 5) errors.address = "La dirección es requerida.";
+    if (!data.country) errors.country = "El país es requerido.";
+    if (!data.city) errors.city = "La ciudad es requerida.";
+    if (!data.correoPersonal || !/\S+@\S+\.\S+/.test(data.correoPersonal)) errors.correoPersonal = "El correo personal no es válido.";
+    if (!data.carreraId) errors.carreraId = "La carrera es requerida.";
+    if (!data.modalidad) errors.modalidad = "La modalidad es requerida.";
+    if (!data.grupo) errors.grupo = "El grupo es requerido.";
+    if (!data.password || typeof data.password !== 'string' || data.password.length < 8) errors.password = "La contraseña debe tener al menos 8 caracteres.";
+    if (!data.metodoPago) errors.metodoPago = "El método de pago es requerido.";
+    
+    if (Object.keys(errors).length > 0) {
+        return { isValid: false, errors };
+    }
+    
+    return { isValid: true, errors: null };
+};
+
 
 export async function POST(req: Request) {
     let rawBody;
@@ -38,17 +43,17 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "El cuerpo de la solicitud no es un JSON válido." }, { status: 400 });
     }
 
-    const validation = UserRegistrationSchema.safeParse(rawBody);
+    const { isValid, errors } = validateRegistrationData(rawBody);
 
-    if (!validation.success) {
-        console.error("[API Register] Zod Validation Errors:", validation.error.flatten());
+    if (!isValid) {
+        console.error("[API Register] Manual Validation Errors:", errors);
         return NextResponse.json({ 
             message: "Datos de entrada inválidos. Por favor, revisa los campos.", 
-            errors: validation.error.flatten().fieldErrors 
+            errors
         }, { status: 400 });
     }
     
-    const data = validation.data;
+    const data = rawBody;
 
     try {
         const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
@@ -59,7 +64,6 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Ya existe un usuario con este número de identificación." }, { status: 409 });
         }
         
-        // Use identification number as the document ID for consistency
         const newUserId = data.numeroIdentificacion;
         
         const usuarioData = {
@@ -71,18 +75,17 @@ export async function POST(req: Request) {
           tipoIdentificacion: data.tipoIdentificacion,
           identificacion: data.numeroIdentificacion,
           genero: data.gender,
-          fechaNacimiento: Timestamp.fromDate(data.birthDate),
+          fechaNacimiento: Timestamp.fromDate(new Date(data.birthDate)), // Convert string to Date, then to Timestamp
           telefono: data.phone,
           direccion: data.address,
           ciudad: data.city,
           pais: data.country,
           correo: data.correoPersonal,
-          correoInstitucional: "", // To be generated upon approval
+          correoInstitucional: "",
           rol: { id: "aspirante", descripcion: "Aspirante" },
           estado: "pendiente",
           fechaRegistro: serverTimestamp(),
           fechaActualizacion: serverTimestamp(),
-          // We don't store the password in the user doc until they are approved
         };
         
         const estudianteData = {
@@ -92,15 +95,13 @@ export async function POST(req: Request) {
           carreraId: data.carreraId,
           modalidad: data.modalidad,
           grupo: data.grupo,
-          correoInstitucional: "", // To be generated upon approval
+          correoInstitucional: "",
           cicloActual: null,
           materiasInscritas: [],
           estado: "pendiente",
-          estaInscrito: false, // Default to false as required
+          estaInscrito: false,
           fechaRegistro: serverTimestamp(),
           metodoPago: data.metodoPago,
-          // Store password temporarily here until approval. In production, this should be handled
-          // more securely, e.g., by sending a one-time password or reset link.
           initialPassword: data.password,
         };
         
@@ -109,7 +110,6 @@ export async function POST(req: Request) {
         const newUserDocRef = doc(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios"), newUserId);
         const newStudentDocRef = doc(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes"), newUserId);
 
-        // Sanitize data before writing
         batch.set(newUserDocRef, sanitizeForFirestore(usuarioData));
         batch.set(newStudentDocRef, sanitizeForFirestore(estudianteData));
         
