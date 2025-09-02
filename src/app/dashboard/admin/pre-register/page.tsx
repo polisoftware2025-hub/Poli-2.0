@@ -31,7 +31,7 @@ interface PreRegisteredUser {
   correo?: string;
   carreraId: string;
   carreraNombre?: string; 
-  fechaRegistro: any;
+  fechaRegistro: Date | null;
   estado: "pendiente" | "aprobado" | "rechazado";
 }
 
@@ -85,7 +85,7 @@ export default function PreRegisterPage() {
                 correo: data.correo,
                 carreraId: data.carreraId,
                 carreraNombre: carrerasMap.get(data.carreraId) || 'Carrera no encontrada',
-                fechaRegistro: data.fechaRegistro,
+                fechaRegistro: data.fechaRegistro?.toDate() ?? null,
                 estado: data.estado
             }
         });
@@ -210,9 +210,9 @@ export default function PreRegisterPage() {
                       </TableCell>
                       <TableCell>{user.carreraNombre}</TableCell>
                        <TableCell>
-                        {user.fechaRegistro?.toDate().toLocaleDateString('es-ES', {
+                        {user.fechaRegistro ? new Date(user.fechaRegistro).toLocaleDateString('es-ES', {
                           year: 'numeric', month: 'long', day: 'numeric'
-                        }) || 'N/A'}
+                        }) : 'N/A'}
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusBadgeVariant[user.estado]}>
