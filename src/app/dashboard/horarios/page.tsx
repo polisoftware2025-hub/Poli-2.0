@@ -55,14 +55,9 @@ export default function HorariosPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [filterMateria, setFilterMateria] = useState('all');
+  const [filterGrupo, setFilterGrupo] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [showFilters, setShowFilters] = useState(true);
-
-  const materias = useMemo(() => {
-    const uniqueMaterias = [...new Set(allSchedule.map(s => s.materia))];
-    return uniqueMaterias.map(m => ({ value: m, label: m }));
-  }, [allSchedule]);
-
+  
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     const storedUserRole = localStorage.getItem('userRole');
@@ -130,29 +125,45 @@ export default function HorariosPage() {
     fetchSchedule();
   }, [userId, userRole, userEmail]);
   
+  const filteredSchedule = useMemo(() => {
+      return allSchedule.filter(entry => {
+          const materiaMatch = filterMateria === 'all' || entry.materia === filterMateria;
+          const grupoMatch = filterGrupo === 'all' || entry.grupo === filterGrupo;
+          return materiaMatch && grupoMatch;
+      });
+  }, [allSchedule, filterMateria, filterGrupo]);
+  
   const scheduleForSelectedDay = useMemo(() => {
     if (!selectedDate) return [];
     const dayOfWeek = daysOfWeek[selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1];
-    return allSchedule
+    return filteredSchedule
       .filter(entry => entry.dia === dayOfWeek)
-      .filter(entry => filterMateria === 'all' || entry.materia === filterMateria)
       .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
-  }, [allSchedule, selectedDate, filterMateria]);
+  }, [filteredSchedule, selectedDate]);
 
+  const materias = useMemo(() => {
+    const uniqueMaterias = [...new Set(allSchedule.map(s => s.materia))];
+    return uniqueMaterias.map(m => ({ value: m, label: m }));
+  }, [allSchedule]);
+
+  const grupos = useMemo(() => {
+      const uniqueGrupos = [...new Set(allSchedule.map(s => s.grupo))];
+      return uniqueGrupos.map(g => ({ value: g, label: g }));
+  }, [allSchedule]);
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-    const teacherName = allSchedule.length > 0 ? allSchedule[0].docente : 'Docente';
+    const userName = userEmail || 'Usuario';
     const date = new Date().toLocaleDateString('es-CO');
 
-    doc.text(`Horario de Clases - ${userRole === 'docente' ? teacherName : (userEmail || 'Estudiante')}`, 14, 16);
+    doc.text(`Horario de Clases - ${userName}`, 14, 16);
     doc.setFontSize(10);
     doc.text(`Generado el: ${date}`, 14, 22);
 
     const tableColumn = ["Día", "Hora", "Materia", "Grupo", "Aula", "Docente"];
     const tableRows: (string|null)[][] = [];
 
-    allSchedule.sort((a,b) => {
+    filteredSchedule.sort((a,b) => {
         const dayA = daysOfWeek.indexOf(a.dia);
         const dayB = daysOfWeek.indexOf(b.dia);
         if(dayA !== dayB) return dayA - dayB;
@@ -178,23 +189,17 @@ export default function HorariosPage() {
     doc.save(`Horario_${userRole}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  const handleLoadSchedule = () => {
-      // Logic to fetch/filter schedule would go here.
-      // For this maquette, we just hide the filters.
-      setShowFilters(false);
-  }
-
-  const renderFilters = () => (
+  const renderTeacherFilters = () => (
     <Card>
         <CardHeader>
             <CardTitle>Filtro de Horario</CardTitle>
             <CardDescription>Selecciona una materia o grupo para cargar el horario correspondiente.</CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-2">
-                <ListFilter className="h-5 w-5 text-muted-foreground"/>
+        <CardContent className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1 w-full">
+                <label className="text-sm font-medium">Materia</label>
                 <Select value={filterMateria} onValueChange={setFilterMateria}>
-                    <SelectTrigger className="w-full">
+                    <SelectTrigger>
                         <SelectValue placeholder="Filtrar por materia"/>
                     </SelectTrigger>
                     <SelectContent>
@@ -203,83 +208,105 @@ export default function HorariosPage() {
                     </SelectContent>
                 </Select>
             </div>
-             <Button onClick={handleLoadSchedule} className="w-full md:w-auto">
-                Cargar Horario
+             <div className="flex-1 w-full">
+                <label className="text-sm font-medium">Grupo</label>
+                <Select value={filterGrupo} onValueChange={setFilterGrupo}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Filtrar por grupo"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Todos los grupos</SelectItem>
+                        {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            <Button onClick={() => { setFilterMateria('all'); setFilterGrupo('all'); }} variant="outline">
+                <RotateCw className="mr-2 h-4 w-4"/>
+                Limpiar Filtros
             </Button>
         </CardContent>
     </Card>
   );
 
-  const renderScheduleView = () => (
-     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        <div className="lg:col-span-1">
-          <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              className="p-0 w-full"
-              markedDays={allSchedule.map(entry => {
-                  // This is a naive implementation. For a real app, you'd need a robust date library.
-                  // This just marks days of the week that have events.
-                  const targetDayIndex = daysOfWeek.indexOf(entry.dia);
-                  const today = new Date();
-                  const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
-                  const date = new Date(today);
-                  date.setDate(today.getDate() - currentDayIndex + targetDayIndex);
-                  return date;
-              })}
-          />
-        </div>
-
-        <div className="lg:col-span-3">
-          <Card>
-            <CardHeader className="flex flex-row justify-between items-center">
-               <CardTitle>
-                Clases para el {selectedDate ? selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'día seleccionado'}
-              </CardTitle>
-              {userRole === 'docente' && (
-                <Button variant="outline" onClick={() => setShowFilters(true)}>
-                    <RotateCw className="mr-2 h-4 w-4"/>
-                    Cambiar Filtros
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-24 w-full" />
-                  <Skeleton className="h-24 w-full" />
-                </div>
-              ) : scheduleForSelectedDay.length > 0 ? (
-                 <div className="space-y-6">
-                    {scheduleForSelectedDay.map((entry, index) => (
-                        <div key={index} className={`p-4 rounded-lg border-l-4 ${getSubjectColor(entry.materia)}`}>
-                            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-2">
-                                <h3 className="font-bold text-lg">{entry.materia}</h3>
-                                <p className="font-mono font-semibold text-sm flex items-center gap-2"><Clock className="h-4 w-4"/> {entry.horaInicio} - {entry.horaFin}</p>
-                            </div>
-                            <div className="text-sm text-muted-foreground space-y-1">
-                                <p className="flex items-center gap-2"><User className="h-4 w-4"/> Docente: {entry.docente}</p>
-                                <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> Aula: {entry.aula.sede} - {entry.aula.salon}</p>
-                            </div>
-                        </div>
-                    ))}
-                 </div>
-              ) : (
-                <Alert>
-                    <CalendarIcon className="h-4 w-4"/>
-                    <AlertTitle>Día Libre</AlertTitle>
+  const renderScheduleView = () => {
+    const noFiltersApplied = filterMateria === 'all' && filterGrupo === 'all';
+    
+    return (
+        <div className="space-y-6">
+            {userRole === 'docente' && noFiltersApplied && (
+                 <Alert>
+                    <ListFilter className="h-4 w-4"/>
+                    <AlertTitle>Filtra tu horario</AlertTitle>
                     <AlertDescription>
-                        No tienes clases programadas para este día.
+                        Selecciona un grupo o materia para visualizar tu horario.
                     </AlertDescription>
                 </Alert>
-              )}
-            </CardContent>
-          </Card>
+            )}
+            
+            {((userRole === 'docente' && !noFiltersApplied) || userRole !== 'docente') && (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                    <div className="lg:col-span-1">
+                    <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        className="p-0 w-full rounded-md border"
+                        markedDays={filteredSchedule.map(entry => {
+                            const targetDayIndex = daysOfWeek.indexOf(entry.dia);
+                            const today = new Date();
+                            const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
+                            const date = new Date(today);
+                            date.setDate(today.getDate() - currentDayIndex + targetDayIndex);
+                            return date;
+                        })}
+                    />
+                    </div>
+    
+                    <div className="lg:col-span-3">
+                    <Card>
+                        <CardHeader>
+                        <CardTitle>
+                            Clases para el {selectedDate ? selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'día seleccionado'}
+                        </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                        {isLoading ? (
+                            <div className="space-y-4">
+                            <Skeleton className="h-24 w-full" />
+                            <Skeleton className="h-24 w-full" />
+                            </div>
+                        ) : scheduleForSelectedDay.length > 0 ? (
+                            <div className="space-y-6">
+                                {scheduleForSelectedDay.map((entry, index) => (
+                                    <div key={index} className={`p-4 rounded-lg border-l-4 ${getSubjectColor(entry.materia)}`}>
+                                        <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-2">
+                                            <h3 className="font-bold text-lg">{entry.materia}</h3>
+                                            <p className="font-mono font-semibold text-sm flex items-center gap-2"><Clock className="h-4 w-4"/> {entry.horaInicio} - {entry.horaFin}</p>
+                                        </div>
+                                        <div className="text-sm text-muted-foreground space-y-1">
+                                            {userRole !== 'docente' && <p className="flex items-center gap-2"><User className="h-4 w-4"/> Docente: {entry.docente}</p>}
+                                            <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> Aula: {entry.aula.sede} - {entry.aula.salon}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <Alert>
+                                <CalendarIcon className="h-4 w-4"/>
+                                <AlertTitle>Día Libre</AlertTitle>
+                                <AlertDescription>
+                                    No tienes clases programadas para este día según los filtros aplicados.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+                        </CardContent>
+                    </Card>
+                    </div>
+                </div>
+            )}
         </div>
-      </div>
-  );
-
+    );
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -289,14 +316,14 @@ export default function HorariosPage() {
         icon={<CalendarIcon className="h-8 w-8 text-primary" />}
       />
 
-       {userRole !== 'docente' && (
-            <Card>
-                <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
+       <Card>
+        <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                {userRole === 'docente' ? renderTeacherFilters() : (
+                    <div className="flex items-center gap-2 w-full md:w-auto">
                         <ListFilter className="h-5 w-5 text-muted-foreground"/>
                         <Select value={filterMateria} onValueChange={setFilterMateria}>
-                            <SelectTrigger className="w-full md:w-56">
+                            <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Filtrar por materia"/>
                             </SelectTrigger>
                             <SelectContent>
@@ -305,20 +332,16 @@ export default function HorariosPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button variant="secondary" onClick={handleDownloadPDF} className="w-full md:w-auto">
-                        <Download className="mr-2 h-4 w-4"/>
-                        Descargar Horario PDF
-                    </Button>
-                </div>
-                </CardContent>
-            </Card>
-       )}
-
-      {userRole === 'docente' ? (
-        showFilters ? renderFilters() : renderScheduleView()
-      ) : (
-        renderScheduleView()
-      )}
+                )}
+                <Button variant="secondary" onClick={handleDownloadPDF} className="w-full md:w-auto">
+                    <Download className="mr-2 h-4 w-4"/>
+                    Descargar Horario PDF
+                </Button>
+            </div>
+        </CardContent>
+      </Card>
+      
+      {renderScheduleView()}
       
     </div>
   );
