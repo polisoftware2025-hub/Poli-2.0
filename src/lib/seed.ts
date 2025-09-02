@@ -1,4 +1,3 @@
-
 import { db } from './firebase'; 
 import { collection, addDoc, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
 import bcrypt from "bcrypt";
@@ -296,4 +295,87 @@ export async function seedInitialData() {
         console.error("Error en seedInitialData:", error);
         return { success: false, message: errorMessage };
     }
+}
+
+export async function seedInitialUsers() {
+  const saltRounds = 10;
+  const testUsers = [
+    {
+      id: "admin01",
+      nombre1: "Admin",
+      apellido1: "User",
+      correoInstitucional: "admin@example.com",
+      rol: { id: "admin", descripcion: "Administrador" },
+      contrasena: "Admin123.",
+    },
+    {
+      id: "gestor01",
+      nombre1: "Gestor",
+      apellido1: "User",
+      correoInstitucional: "gestor@example.com",
+      rol: { id: "gestor", descripcion: "Gestor" },
+      contrasena: "Gestor123.",
+    },
+    {
+      id: "docente01",
+      nombre1: "Docente",
+      apellido1: "User",
+      correoInstitucional: "docente@example.com",
+      rol: { id: "docente", descripcion: "Docente" },
+      contrasena: "Docente123.",
+    },
+    {
+      id: "est001",
+      nombre1: "Estudiante",
+      apellido1: "User",
+      correoInstitucional: "estudiante@example.com",
+      rol: { id: "estudiante", descripcion: "Estudiante" },
+      contrasena: "Estudiante123.",
+    },
+  ];
+
+  try {
+    const batch = writeBatch(db);
+    const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+
+    const existingUsersSnapshot = await getDocs(usersRef);
+    const existingEmails = new Set(
+      existingUsersSnapshot.docs.map((doc) => doc.data().correoInstitucional)
+    );
+
+    for (const userData of testUsers) {
+      if (!existingEmails.has(userData.correoInstitucional)) {
+        const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
+
+        const userDocRef = doc(usersRef, userData.id);
+        const finalUserData: any = {
+          nombreCompleto: `${userData.nombre1} ${userData.apellido1}`,
+          nombre1: userData.nombre1,
+          apellido1: userData.apellido1,
+          identificacion: `ID-${userData.id}`,
+          correoInstitucional: userData.correoInstitucional,
+          rol: userData.rol,
+          contrasena: hashedPassword,
+          estado: "activo",
+          fechaRegistro: new Date(),
+        };
+        batch.set(userDocRef, finalUserData);
+      } else {
+        console.log(
+          `El usuario ${userData.correoInstitucional} ya existe. Omitiendo.`
+        );
+      }
+    }
+
+    await batch.commit();
+    return {
+      success: true,
+      message: "Usuarios de prueba creados o verificados exitosamente.",
+    };
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Un error desconocido ocurrió.";
+    console.error("Error en seedInitialUsers:", error);
+    return { success: false, message: errorMessage };
+  }
 }

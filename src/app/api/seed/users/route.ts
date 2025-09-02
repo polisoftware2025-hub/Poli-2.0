@@ -1,4 +1,3 @@
-
 import { seedInitialUsers } from "@/lib/seed";
 import { NextResponse } from "next/server";
 
