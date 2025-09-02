@@ -224,54 +224,52 @@ export default function HorariosPage() {
 
   const renderFilters = () => (
     <div className="w-full max-w-4xl mx-auto my-8">
-      <div className="bg-white rounded-lg shadow-md p-6 sm:p-8">
-        <div className="space-y-6">
+      <div className="bg-white rounded-lg shadow-md p-6 sm:p-8 space-y-6">
+          <div className="space-y-2">
+              <Label htmlFor="materia-select" className="text-base font-medium">Materia</Label>
+              <Select value={filterMateria} onValueChange={(value) => { 
+                  setFilterMateria(value);
+                  setFilterGrupo(undefined);
+                  setStatusMessage("Ahora selecciona un grupo.");
+                  setMessageType("info");
+              }}>
+                  <SelectTrigger id="materia-select" className="py-6 text-base">
+                      <SelectValue placeholder="Selecciona una materia"/>
+                  </SelectTrigger>
+                  <SelectContent>
+                      <SelectItem value="todos">Todas mis materias</SelectItem>
+                      {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+              </Select>
+          </div>
+          
+          {filterMateria && (
             <div className="space-y-2">
-                <Label htmlFor="materia-select" className="text-base font-medium">Materia</Label>
-                <Select value={filterMateria} onValueChange={(value) => { 
-                    setFilterMateria(value);
-                    setFilterGrupo(undefined);
-                    setStatusMessage("Ahora selecciona un grupo.");
-                    setMessageType("info");
-                }}>
-                    <SelectTrigger id="materia-select" className="py-6 text-base">
-                        <SelectValue placeholder="Selecciona una materia"/>
+                <Label htmlFor="grupo-select" className="text-base font-medium">Grupo</Label>
+                <Select value={filterGrupo} onValueChange={(value) => { 
+                    setFilterGrupo(value);
+                    if (value) {
+                        setStatusMessage("Todo listo para ver tu horario.");
+                        setMessageType("success");
+                    }
+                }} disabled={isLoading}>
+                    <SelectTrigger id="grupo-select" className="py-6 text-base">
+                        <SelectValue placeholder="Selecciona un grupo"/>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="todos">Todas mis materias</SelectItem>
-                        {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                         <SelectItem value="todos">Todos los grupos</SelectItem>
+                        {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
-            
-            {filterMateria && (
-              <div className="space-y-2">
-                  <Label htmlFor="grupo-select" className="text-base font-medium">Grupo</Label>
-                  <Select value={filterGrupo} onValueChange={(value) => { 
-                      setFilterGrupo(value);
-                      if (value) {
-                          setStatusMessage("Todo listo para ver tu horario.");
-                          setMessageType("success");
-                      }
-                  }} disabled={isLoading}>
-                      <SelectTrigger id="grupo-select" className="py-6 text-base">
-                          <SelectValue placeholder="Selecciona un grupo"/>
-                      </SelectTrigger>
-                      <SelectContent>
-                           <SelectItem value="todos">Todos los grupos</SelectItem>
-                          {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                      </SelectContent>
-                  </Select>
-              </div>
-            )}
-            
-            {filterMateria && filterGrupo && (
-                <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-md text-base py-6 bg-[#002147] hover:bg-[#00346e]">
-                    Ver Horario
-                </Button>
-            )}
+          )}
+          
+          {filterMateria && filterGrupo && (
+              <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-md text-base py-6 bg-[#002147] hover:bg-[#00346e]">
+                  Ver Horario
+              </Button>
+          )}
 
-        </div>
       </div>
         <div className={`text-center text-sm mt-4 min-h-[20px] ${
             messageType === 'error' ? 'text-red-500 font-semibold' : 
