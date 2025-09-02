@@ -2,7 +2,7 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookOpen, User, CheckCircle, GraduationCap, DollarSign, Clock, Award } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
@@ -10,6 +10,9 @@ import Image from "next/image";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import Link from 'next/link';
+
 
 interface Career {
   id?: string;
@@ -96,6 +99,9 @@ export default function PensumDetailPage() {
         <CardContent className="p-6 space-y-2">
             <h2 className="text-2xl font-bold text-primary">{program.nombre}</h2>
             <p className="text-gray-700 leading-relaxed">{program.descripcionGeneral}</p>
+             <Button asChild className="mt-4">
+                <Link href={`/dashboard/admin/career/${program.slug}`}>Editar Carrera</Link>
+             </Button>
         </CardContent>
       </Card>
 
@@ -159,6 +165,7 @@ export default function PensumDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>Plan de Estudios (Pensum)</CardTitle>
+          <CardDescription>Explora las materias que verás en cada ciclo.</CardDescription>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
@@ -185,4 +192,3 @@ export default function PensumDetailPage() {
     </div>
   );
 }
-

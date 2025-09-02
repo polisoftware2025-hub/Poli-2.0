@@ -35,7 +35,7 @@ interface Career {
   slug: string;
   nombre: string;
   inversion?: number;
-  estudiantes: number; // Changed to always be a number
+  estudiantes: number;
   ciclos?: any[];
   status?: string;
 }
@@ -163,6 +163,12 @@ export default function CareerAdminPage() {
                                             <Link href={`/dashboard/admin/career/${career.slug}`}>
                                                 <Edit className="mr-2 h-4 w-4" />
                                                 Editar
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/admin/career/pensum/${career.slug}`}>
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                Ver Pensum
                                             </Link>
                                         </DropdownMenuItem>
                                          <AlertDialogTrigger asChild>
