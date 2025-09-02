@@ -1,63 +1,65 @@
 
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, serverTimestamp, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, query, where, getDocs, writeBatch, Timestamp } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { z } from "zod";
-import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
-// Shared validation logic to ensure consistency
-const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
-const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
-
-const preRegisterUserSchema = z.object({
-    firstName: nameValidation,
-    segundoNombre: z.string().max(50).optional().or(z.literal('')),
-    lastName: lastNameValidation,
-    segundoApellido: lastNameValidation,
+// ========================================================================================
+// 1. DATA VALIDATION (Zod Schema)
+// This schema defines the expected shape and types of data from the frontend.
+// It acts as the first line of defense.
+// ========================================================================================
+const UserRegistrationSchema = z.object({
+    firstName: z.string().min(2, "El primer nombre es requerido."),
+    segundoNombre: z.string().optional(),
+    lastName: z.string().min(2, "El primer apellido es requerido."),
+    segundoApellido: z.string().min(2, "El segundo apellido es requerido."),
     tipoIdentificacion: z.string(),
-    numeroIdentificacion: z.string().min(1).max(15).refine(val => !/\s/.test(val)),
+    numeroIdentificacion: z.string().min(5, "El número de identificación es requerido."),
     gender: z.string(),
-    birthDate: z.union([z.date(), z.string().transform((str) => new Date(str))]),
-    phone: z.string().regex(/^\d{7,15}$/),
-    address: z.string().min(5),
-    country: z.string().min(2),
-    city: z.string().min(2),
-    correoPersonal: z.string().email(),
-    carreraId: z.string({ required_error: "La carrera es obligatoria." }),
+    birthDate: z.union([z.date(), z.string().transform(str => new Date(str))]),
+    phone: z.string().regex(/^\d{7,15}$/, "El teléfono no es válido."),
+    address: z.string().min(5, "La dirección es requerida."),
+    country: z.string(),
+    city: z.string(),
+    correoPersonal: z.string().email("El correo personal no es válido."),
+    carreraId: z.string(),
     modalidad: z.string(),
     grupo: z.string(),
-    password: z.string().min(8),
+    password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
 });
 
-const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string } } = {
-    'cc': { id: 'cc', descripcion: 'Cédula de Ciudadanía' },
-    'ti': { id: 'ti', descripcion: 'Tarjeta de Identidad' },
-    'ce': { id: 'ce', descripcion: 'Cédula de Extranjería' },
-    'passport': { id: 'passport', descripcion: 'Pasaporte' },
-};
 
-async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, segundoNombre?: string, segundoApellido?: string): Promise<string> {
+// ========================================================================================
+// 2. DATA SANITIZATION FUNCTION
+// This function cleans the data object to make it Firestore-compatible.
+// It removes 'undefined' values and can be extended to normalize types.
+// ========================================================================================
+function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
+  const sanitized = { ...obj };
+  for (const key in sanitized) {
+    if (sanitized[key] === undefined) {
+      delete sanitized[key];
+    }
+  }
+  return sanitized;
+}
+
+// ========================================================================================
+// 3. HELPER FUNCTIONS
+// - generateUniqueInstitutionalEmail: Creates a unique email for the student.
+// ========================================================================================
+async function generateUniqueInstitutionalEmail(nombre1: string, apellido1: string, apellido2?: string): Promise<string> {
     const domain = "@pi.edu.co";
+    // Ensure parts are lowercase and use only the first word if there are spaces
+    const namePart = nombre1.toLowerCase().split(' ')[0];
+    const lastName1Part = apellido1.toLowerCase().split(' ')[0];
+    const lastName2Part = apellido2 ? apellido2.toLowerCase().split(' ')[0] : '';
     
-    let nameParts = [
-        firstName.toLowerCase().split(' ')[0],
-    ];
-
-    if (segundoNombre && segundoNombre.trim() !== '') {
-        nameParts.push(segundoNombre.toLowerCase().split(' ')[0]);
-    }
+    const baseEmail = [namePart, lastName1Part, lastName2Part].filter(Boolean).join('.');
     
-    nameParts.push(lastName1.toLowerCase().split(' ')[0]);
-
-    if (segundoApellido && segundoApellido.trim() !== '') {
-        nameParts.push(segundoApellido.toLowerCase().split(' ')[0]);
-    }
-    
-    const baseEmail = nameParts.join('.');
-
     const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
-    
     let finalEmail = `${baseEmail}${domain}`;
     let counter = 1;
     let emailExists = true;
@@ -76,18 +78,26 @@ async function generateUniqueInstitutionalEmail(firstName: string, lastName1: st
 }
 
 
+// ========================================================================================
+// 4. MAIN API ENDPOINT (POST)
+// ========================================================================================
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const validation = preRegisterUserSchema.safeParse(body);
 
+        // Step 1: Validate incoming data with Zod
+        const validation = UserRegistrationSchema.safeParse(body);
         if (!validation.success) {
-            console.error("Errores de validación en API:", validation.error.format());
-            return NextResponse.json({ message: "Datos de entrada inválidos. Por favor, revise todos los campos.", errors: validation.error.flatten().fieldErrors }, { status: 400 });
+            console.error("Zod Validation Errors:", validation.error.flatten());
+            return NextResponse.json({ 
+                message: "Datos de entrada inválidos.", 
+                errors: validation.error.flatten().fieldErrors 
+            }, { status: 400 });
         }
         
-        const data = sanitizeForFirestore(validation.data);
+        let data = validation.data;
 
+        // Step 2: Check if user already exists
         const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
         const q = query(usuariosRef, where("identificacion", "==", data.numeroIdentificacion));
         const existingUserSnapshot = await getDocs(q);
@@ -96,24 +106,24 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Ya existe un usuario con este número de identificación." }, { status: 409 });
         }
         
+        // Step 3: Prepare and Sanitize data for Firestore
         const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(data.password!, saltRounds);
+        const hashedPassword = await bcrypt.hash(data.password, saltRounds);
         
-        const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
-        const newUserDocRef = doc(collection(politecnicoDocRef, "usuarios"));
-        
-        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName!, data.lastName!, data.segundoNombre, data.segundoApellido);
+        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoApellido);
 
-        const usuarioData = {
+        const newUserId = data.numeroIdentificacion; // Use identification number as document ID
+        
+        const usuarioData = sanitizeForFirestore({
           nombreCompleto: `${data.firstName} ${data.segundoNombre || ''} ${data.lastName} ${data.segundoApellido}`.replace(/\s+/g, ' ').trim(),
           nombre1: data.firstName,
-          nombre2: data.segundoNombre || "",
+          nombre2: data.segundoNombre || "", // Ensure it's a string, not undefined
           apellido1: data.lastName,
           apellido2: data.segundoApellido,
-          tipoIdentificacion: tipoIdentificacionMap[data.tipoIdentificacion!],
+          tipoIdentificacion: data.tipoIdentificacion,
           identificacion: data.numeroIdentificacion,
           genero: data.gender,
-          fechaNacimiento: new Date(data.birthDate!),
+          fechaNacimiento: Timestamp.fromDate(new Date(data.birthDate)), // Normalize to Firestore Timestamp
           telefono: data.phone,
           direccion: data.address,
           ciudad: data.city,
@@ -125,43 +135,50 @@ export async function POST(req: Request) {
           estado: "pendiente",
           fechaRegistro: serverTimestamp(),
           fechaActualizacion: serverTimestamp(),
-        };
+        });
         
-        const estudianteData = {
-          usuarioId: newUserDocRef.id,
+        const estudianteData = sanitizeForFirestore({
+          usuarioId: newUserId,
           nombreCompleto: usuarioData.nombreCompleto,
           documento: data.numeroIdentificacion,
           carreraId: data.carreraId,
           modalidad: data.modalidad,
           grupo: data.grupo,
-          correoInstitucional: "", // Initially empty, filled on approval
-          cicloActual: null, // Initially null, set on approval
+          correoInstitucional: "", 
+          cicloActual: null,
           materiasInscritas: [],
           estado: "pendiente", 
           fechaRegistro: serverTimestamp()
-        };
+        });
         
+        // Step 4: Write to Firestore using a transaction (batch)
         const batch = writeBatch(db);
-        batch.set(newUserDocRef, usuarioData);
-        batch.set(doc(collection(politecnicoDocRef, "estudiantes"), newUserDocRef.id), estudianteData);
+        const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
         
-        try {
-            await batch.commit();
-        } catch (dbError: any) {
-             console.error("Error al escribir en Firestore:", {
-                code: dbError.code,
-                message: dbError.message,
-                stack: dbError.stack,
-            });
-            // Return a more specific server error
-            return NextResponse.json({ message: `Error interno al guardar en la base de datos: ${dbError.message}` }, { status: 500 });
-        }
-        
-        const message = "Solicitud de registro enviada exitosamente. Un administrador revisará tu solicitud.";
-        return NextResponse.json({ message, userId: newUserDocRef.id }, { status: 201 });
+        const newUserDocRef = doc(collection(politecnicoDocRef, "usuarios"), newUserId);
+        const newStudentDocRef = doc(collection(politecnicoDocRef, "estudiantes"), newUserId);
 
-    } catch (error) {
-        console.error("Error en /api/register-user:", error);
-        return NextResponse.json({ message: "Error interno del servidor. No se pudo completar el registro." }, { status: 500 });
+        batch.set(newUserDocRef, usuarioData);
+        batch.set(newStudentDocRef, estudianteData);
+        
+        await batch.commit();
+        
+        return NextResponse.json({ 
+            message: "Solicitud de registro enviada exitosamente. Un administrador revisará tu solicitud.", 
+            userId: newUserId 
+        }, { status: 201 });
+
+    } catch (error: any) {
+        // Step 5: Detailed Error Logging
+        console.error("Error en /api/register-user:", {
+            code: error.code || 'UNKNOWN_CODE',
+            message: error.message || 'Unknown error occurred.',
+            stack: error.stack
+        });
+
+        // Provide a generic but informative error to the client
+        return NextResponse.json({ 
+            message: "Error interno del servidor. No se pudo completar el registro." 
+        }, { status: 500 });
     }
 }

@@ -63,11 +63,11 @@ const cityCountryValidation = z.string({ required_error: "Por favor, selecciona 
 // Schemas for each step
 const step1Schema = z.object({
   firstName: nameValidation,
-  segundoNombre: z.string().max(50).optional().or(z.literal('')),
+  segundoNombre: z.string().max(50).optional(),
   lastName: lastNameValidation,
   segundoApellido: lastNameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
-  numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio.").max(15, "No puede tener más de 15 caracteres.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
+  numeroIdentificacion: z.string().min(5, "El número de identificación es obligatorio.").max(15, "No puede tener más de 15 caracteres.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
   birthDate: z.date({ required_error: "Por favor, introduce una fecha válida." }),
 });
