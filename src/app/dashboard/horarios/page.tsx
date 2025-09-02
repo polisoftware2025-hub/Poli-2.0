@@ -15,7 +15,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { addWeeks, startOfWeek, endOfWeek, format, getDay } from 'date-fns';
+import { addWeeks, startOfWeek, endOfWeek, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
@@ -66,12 +66,14 @@ export default function HorariosPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const [filterMateria, setFilterMateria] = useState('todos');
-  const [filterGrupo, setFilterGrupo] = useState('todos');
+  const [filterMateria, setFilterMateria] = useState<string | undefined>(undefined);
+  const [filterGrupo, setFilterGrupo] = useState<string | undefined>(undefined);
   
   const [showSchedule, setShowSchedule] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [statusMessage, setStatusMessage] = useState("Selecciona una materia para ver los grupos disponibles.");
+  const [messageType, setMessageType] = useState<"info" | "error" | "success">("info");
+
 
   const { toast } = useToast();
 
@@ -115,16 +117,16 @@ export default function HorariosPage() {
     const schedule: ScheduleEntry[] = [];
   
     const groupsToProcess = allGroups.filter(group => {
-      // If a specific group is selected, only consider that group.
       if (filterGrupo && filterGrupo !== 'todos') {
         return group.id === filterGrupo;
       }
-      // If a specific materia is selected (but no group), consider all groups of that materia.
       if (filterMateria && filterMateria !== 'todos') {
         return group.materia.nombre === filterMateria;
       }
-      // If neither is selected, show all groups.
-      return true;
+      if (filterMateria === 'todos') {
+        return true;
+      }
+      return false;
     });
   
     groupsToProcess.forEach(group => {
@@ -198,11 +200,13 @@ export default function HorariosPage() {
   };
   
   const handleShowSchedule = () => {
-    if ((!filterMateria || filterMateria === 'todos') && (!filterGrupo || filterGrupo === 'todos')) {
-      setShowAlert(true);
+    if (!filterMateria || !filterGrupo) {
+        setStatusMessage("Por favor completa todos los campos antes de continuar.");
+        setMessageType("error");
       return;
     }
-    setShowAlert(false);
+    setMessageType("success");
+    setStatusMessage("Cargando tu horario...");
     toast({
         title: "Cargando tu horario...",
         description: "Un momento mientras preparamos la vista de tu horario.",
@@ -211,66 +215,73 @@ export default function HorariosPage() {
   }
   
   const handleResetFilters = () => {
-    setFilterMateria("todos");
-    setFilterGrupo("todos");
-    setShowAlert(false);
+    setFilterMateria(undefined);
+    setFilterGrupo(undefined);
+    setShowSchedule(false);
+    setStatusMessage("Selecciona una materia para ver los grupos disponibles.");
+    setMessageType("info");
   }
 
   const renderFilters = () => (
-    <Card className="max-w-2xl mx-auto w-full">
+    <Card className="max-w-md mx-auto w-full">
         <CardHeader>
-            <CardTitle className="flex items-center gap-3 text-2xl"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
-            <CardDescription>Selecciona una materia y/o grupo para visualizar el horario correspondiente.</CardDescription>
+            <CardTitle className="text-center flex items-center justify-center gap-3 text-2xl"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
         </CardHeader>
-        <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <Label htmlFor="materia-select">Materia</Label>
-                    <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('todos'); setShowAlert(false); }}>
-                        <SelectTrigger id="materia-select">
-                            <SelectValue placeholder="Selecciona una materia"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="todos">Todas las materias</SelectItem>
-                            {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                
-                
-                  <div className="space-y-2">
-                      <Label htmlFor="grupo-select">Grupo</Label>
-                      <Select value={filterGrupo} onValueChange={(value) => { setFilterGrupo(value); setShowAlert(false); }} disabled={isLoading || grupos.length === 0}>
-                          <SelectTrigger id="grupo-select">
-                              <SelectValue placeholder="Selecciona un grupo"/>
-                          </SelectTrigger>
-                          <SelectContent>
-                               <SelectItem value="todos">Todos los grupos</SelectItem>
-                              {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                          </SelectContent>
-                      </Select>
-                  </div>
-                
+        <CardContent className="p-6 flex flex-col gap-6">
+             <div className="space-y-2">
+                <Label htmlFor="materia-select">Materia</Label>
+                <Select value={filterMateria} onValueChange={(value) => { 
+                    setFilterMateria(value);
+                    setFilterGrupo(undefined); // Reset group when subject changes
+                    setStatusMessage(value ? "Ahora selecciona un grupo." : "Selecciona una materia para ver los grupos disponibles.");
+                    setMessageType("info");
+                }}>
+                    <SelectTrigger id="materia-select">
+                        <SelectValue placeholder="Selecciona una materia"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="todos">Todas mis materias</SelectItem>
+                        {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
             </div>
             
-            {showAlert && (
-              <Alert variant="destructive">
-                  <Info className="h-4 w-4"/>
-                  <AlertTitle>Campos requeridos</AlertTitle>
-                  <AlertDescription>
-                      Por favor selecciona todos los campos antes de continuar.
-                  </AlertDescription>
-              </Alert>
+            {filterMateria && (
+              <div className="space-y-2">
+                  <Label htmlFor="grupo-select">Grupo</Label>
+                  <Select value={filterGrupo} onValueChange={(value) => { 
+                      setFilterGrupo(value);
+                      if (value) {
+                          setStatusMessage("Todo listo para ver tu horario.");
+                          setMessageType("info");
+                      }
+                  }} disabled={isLoading}>
+                      <SelectTrigger id="grupo-select">
+                          <SelectValue placeholder="Selecciona un grupo"/>
+                      </SelectTrigger>
+                      <SelectContent>
+                           <SelectItem value="todos">Todos los grupos</SelectItem>
+                          {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                      </SelectContent>
+                  </Select>
+              </div>
             )}
-        </CardContent>
-        <CardFooter className="flex items-center justify-center pt-4 p-6">
-            {((filterMateria && filterMateria !== 'todos') || (filterGrupo && filterGrupo !== 'todos')) && (
-                <Button onClick={handleShowSchedule} size="lg">
-                    <Search className="mr-2 h-4 w-4"/>
+            
+            {filterMateria && filterGrupo && (
+                <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-full text-base py-6">
                     Ver Horario
                 </Button>
             )}
-        </CardFooter>
+
+             <div className={`text-center text-sm min-h-[20px] ${
+                messageType === 'error' ? 'text-red-500' : 
+                messageType === 'success' ? 'text-green-500' : 
+                'text-muted-foreground'
+             }`}>
+                {statusMessage}
+            </div>
+
+        </CardContent>
     </Card>
   );
 
@@ -294,7 +305,7 @@ export default function HorariosPage() {
                     <Download className="mr-2 h-4 w-4"/>
                     Descargar
                 </Button>
-                <Button variant="ghost" onClick={() => setShowSchedule(false)}>
+                <Button variant="ghost" onClick={handleResetFilters}>
                     Cambiar Filtros
                 </Button>
             </div>
