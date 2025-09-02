@@ -32,8 +32,6 @@ import {
   CalendarIcon,
   Eye,
   EyeOff,
-  Users,
-  ListChecks,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
@@ -54,32 +52,28 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { Label } from "@/components/ui/label";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { carreraData as staticCarreraData } from "@/lib/seed";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { collection, getDocs } from "firebase/firestore";
 
-
+// Shared validation schemas
 const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres.").max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
 const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres.").max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
 const cityCountryValidation = z.string({ required_error: "Por favor, selecciona una opción." }).min(2, "Debe tener al menos 2 caracteres");
 
-
+// Schemas for each step
 const step1Schema = z.object({
   firstName: nameValidation,
-  segundoNombre: z.string().max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/).optional().transform(e => e === "" ? undefined : e),
+  segundoNombre: z.string().max(50).optional(),
   lastName: lastNameValidation,
   segundoApellido: lastNameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
-  numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio.").max(15, "El número de identificación no puede tener más de 15 caracteres.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
+  numeroIdentificacion: z.string().min(1, "El número de identificación es obligatorio.").max(15, "No puede tener más de 15 caracteres.").refine(val => !/\s/.test(val), { message: "No se permiten espacios." }),
   gender: z.string({ required_error: "Por favor, selecciona un género." }),
   birthDate: z.date({ required_error: "Por favor, introduce una fecha válida." }),
 });
 
 const step2Schema = z.object({
-  phone: z.string().regex(/^\d{7,15}$/, "Debe ser un número de teléfono válido entre 7 y 15 dígitos."),
+  phone: z.string().regex(/^\d{7,15}$/, "Debe ser un número de teléfono válido."),
   address: z.string().min(5, "La dirección debe tener al menos 5 caracteres."),
   country: cityCountryValidation,
   city: cityCountryValidation,
@@ -113,16 +107,12 @@ const step5Schema = z.object({
 
 const step6Schema = z.object({});
 
-
 const allStepsSchema = z.object({
   ...step1Schema.shape,
   ...step2Schema.shape,
   ...step3Schema.shape,
   ...step4Schema.shape,
   ...step5Schema.shape
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Las contraseñas no coinciden.",
-  path: ["confirmPassword"],
 });
 
 type AllStepsData = z.infer<typeof allStepsSchema>;
@@ -147,42 +137,16 @@ export default function RegisterPage() {
   const methods = useForm<AllStepsData>({
     resolver: zodResolver(currentSchema),
     mode: "onChange",
-    defaultValues: {
-      firstName: "",
-      segundoNombre: "",
-      lastName: "",
-      segundoApellido: "",
-      tipoIdentificacion: undefined,
-      numeroIdentificacion: "",
-      gender: undefined,
-      birthDate: undefined,
-      phone: "",
-      address: "",
-      city: undefined,
-      country: undefined,
-      correoPersonal: "",
-      carreraId: undefined,
-      modalidad: undefined,
-      grupo: undefined,
-      password: "",
-      confirmPassword: "",
-      metodoPago: undefined,
-    },
   });
 
-  const { getValues, trigger, formState: { isSubmitting } } = methods;
+  const { handleSubmit, trigger, formState: { isSubmitting } } = methods;
 
   const nextStep = async () => {
     const fields = steps[currentStep - 1].fields;
     
-    if (fields.length === 0) {
-      if (currentStep < totalSteps) {
-        setCurrentStep(currentStep + 1);
-      }
-      return;
-    }
-
-    const isValid = await trigger(fields as any, { shouldFocus: true });
+    const isValid = fields.length > 0 
+      ? await trigger(fields, { shouldFocus: true }) 
+      : true;
   
     if (isValid) {
       if (currentStep < totalSteps) {
@@ -197,16 +161,12 @@ export default function RegisterPage() {
     }
   };
   
-  const handleFinalSubmit = async () => {
-    const allData = getValues();
-    const result = await allStepsSchema.safeParseAsync(allData);
-
-    if (result.success) {
+  const processSubmit = async (data: AllStepsData) => {
       try {
         const response = await fetch('/api/register-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(result.data),
+          body: JSON.stringify(data),
         });
 
         const responseData = await response.json();
@@ -228,24 +188,10 @@ export default function RegisterPage() {
         console.error("Error during registration: ", error);
         toast({
           variant: "destructive",
-          title: "Error en el registro",
-          description: "Ha ocurrido un error de red. Por favor, inténtalo de nuevo.",
+          title: "Error de conexión",
+          description: "No se pudo comunicar con el servidor. Por favor, inténtalo de nuevo más tarde.",
         });
       }
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Error de Validación",
-        description: "Por favor, revisa todos los pasos y corrige los errores.",
-      });
-      for (const step of steps) {
-        const hasError = step.fields.some(field => result.error.formErrors.fieldErrors[field as keyof typeof result.error.formErrors.fieldErrors]);
-        if (hasError) {
-          setCurrentStep(step.number);
-          break;
-        }
-      }
-    }
   };
 
   const progress = (currentStep / totalSteps) * 100;
@@ -275,46 +221,48 @@ export default function RegisterPage() {
                   Sigue los pasos para completar tu inscripción.
               </CardDescription>
           </CardHeader>
-            <CardContent className="p-6">
-              <div className="mb-6 space-y-4">
-                  <Progress value={progress} className="w-full h-2 bg-gray-200" />
-                  <div className="flex items-center justify-center gap-2 text-lg font-semibold text-[#004aad]">
-                      <CurrentStepIcon className="h-6 w-6"/>
-                      <span>Paso {currentStep}: {steps[currentStep - 1].title}</span>
+            <form onSubmit={handleSubmit(processSubmit)}>
+                <CardContent className="p-6">
+                  <div className="mb-6 space-y-4">
+                      <Progress value={progress} className="w-full h-2 bg-gray-200" />
+                      <div className="flex items-center justify-center gap-2 text-lg font-semibold text-[#004aad]">
+                          <CurrentStepIcon className="h-6 w-6"/>
+                          <span>Paso {currentStep}: {steps[currentStep - 1].title}</span>
+                      </div>
                   </div>
-              </div>
-              
-                {currentStep === 1 && <Step1 />}
-                {currentStep === 2 && <Step2 />}
-                {currentStep === 3 && <Step3 />}
-                {currentStep === 4 && <Step4_Access />}
-                {currentStep === 5 && <Step5_Payment />}
-                {currentStep === 6 && <Step6_Confirm />}
-            </CardContent>
-            <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className="rounded-full px-6 py-3"
-              >
-                Anterior
-              </Button>
-              {currentStep < totalSteps ? (
-                <Button
-                  type="button"
-                  onClick={nextStep}
-                  className="rounded-full bg-[#004aad] px-6 py-3 text-white transition-transform hover:scale-105 hover:bg-blue-700"
-                >
-                  Siguiente
-                </Button>
-              ) : (
-                <Button type="button" onClick={handleFinalSubmit} disabled={isSubmitting} className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
-                  {isSubmitting ? "Finalizando..." : "Finalizar Registro"}
-                </Button>
-              )}
-            </CardFooter>
+                  
+                    {currentStep === 1 && <Step1 />}
+                    {currentStep === 2 && <Step2 />}
+                    {currentStep === 3 && <Step3 />}
+                    {currentStep === 4 && <Step4_Access />}
+                    {currentStep === 5 && <Step5_Payment />}
+                    {currentStep === 6 && <Step6_Confirm />}
+                </CardContent>
+                <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={prevStep}
+                    disabled={currentStep === 1}
+                    className="rounded-full px-6 py-3"
+                  >
+                    Anterior
+                  </Button>
+                  {currentStep < totalSteps ? (
+                    <Button
+                      type="button"
+                      onClick={nextStep}
+                      className="rounded-full bg-[#004aad] px-6 py-3 text-white transition-transform hover:scale-105 hover:bg-blue-700"
+                    >
+                      Siguiente
+                    </Button>
+                  ) : (
+                    <Button type="submit" disabled={isSubmitting} className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
+                      {isSubmitting ? "Finalizando..." : "Finalizar Registro"}
+                    </Button>
+                  )}
+                </CardFooter>
+            </form>
         </Card>
       </div>
     </FormProvider>
@@ -733,8 +681,8 @@ const Step5_Payment = () => {
         )}
       />
       <div className="space-y-2">
-        <Label htmlFor="valorInscripcion">Valor de la Inscripción</Label>
-        <Input id="valorInscripcion" value="$150,000 COP" disabled className="bg-gray-100"/>
+        <FormLabel>Valor de la Inscripción</FormLabel>
+        <Input value="$150,000 COP" disabled className="bg-gray-100"/>
         <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
       </div>
     </div>
@@ -746,5 +694,6 @@ const Step6_Confirm = () => (
         <CheckCircle className="h-16 w-16 text-green-500" />
         <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>
         <p className="text-gray-600">Revisa que toda tu información sea correcta antes de finalizar.</p>
+        <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );

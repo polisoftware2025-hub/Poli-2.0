@@ -1,17 +1,18 @@
 
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, serverTimestamp, query, where, getDocs, writeBatch, updateDoc } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 
+// Shared validation logic to ensure consistency
 const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
 const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
-const cityCountryValidation = z.string().min(2);
 
+// This schema must be kept in sync with the frontend schema
 const preRegisterUserSchema = z.object({
     firstName: nameValidation,
-    segundoNombre: z.string().max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/).optional().transform(e => e === "" ? undefined : e),
+    segundoNombre: z.string().max(50).optional(),
     lastName: lastNameValidation,
     segundoApellido: lastNameValidation,
     tipoIdentificacion: z.string(),
@@ -20,14 +21,14 @@ const preRegisterUserSchema = z.object({
     birthDate: z.union([z.date(), z.string().transform((str) => new Date(str))]),
     phone: z.string().regex(/^\d{7,15}$/),
     address: z.string().min(5),
-    country: cityCountryValidation,
-    city: cityCountryValidation,
+    country: z.string().min(2),
+    city: z.string().min(2),
     correoPersonal: z.string().email(),
     carreraId: z.string({ required_error: "La carrera es obligatoria." }),
     modalidad: z.string(),
     grupo: z.string(),
     password: z.string().min(8),
-}).passthrough();
+});
 
 const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string } } = {
     'cc': { id: 'cc', descripcion: 'Cédula de Ciudadanía' },
@@ -36,14 +37,18 @@ const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string 
     'passport': { id: 'passport', descripcion: 'Pasaporte' },
 };
 
-async function generateUniqueInstitutionalEmail(firstName: string, lastName: string, segundoApellido: string): Promise<string> {
+async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2?: string): Promise<string> {
     const domain = "@pi.edu.co";
-    const baseEmail = [
-        firstName.toLowerCase().split(' ')[0],
-        lastName.toLowerCase().split(' ')[0],
-        segundoApellido.toLowerCase().split(' ')[0]
-    ].join('.');
     
+    let nameParts = [
+        firstName.toLowerCase().split(' ')[0],
+        lastName1.toLowerCase().split(' ')[0]
+    ];
+    if (lastName2) {
+        nameParts.push(lastName2.toLowerCase().split(' ')[0]);
+    }
+    const baseEmail = nameParts.join('.');
+
     const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
     
     let finalEmail = `${baseEmail}${domain}`;
@@ -70,8 +75,8 @@ export async function POST(req: Request) {
         const validation = preRegisterUserSchema.safeParse(body);
 
         if (!validation.success) {
-            console.error("Errores de validación:", validation.error.format());
-            return NextResponse.json({ message: "Datos de entrada inválidos. Por favor, revise todos los campos.", error: validation.error.format() }, { status: 400 });
+            console.error("Errores de validación en API:", validation.error.format());
+            return NextResponse.json({ message: "Datos de entrada inválidos. Por favor, revise todos los campos.", errors: validation.error.flatten().fieldErrors }, { status: 400 });
         }
         
         const { data } = validation;
@@ -81,36 +86,14 @@ export async function POST(req: Request) {
         const existingUserSnapshot = await getDocs(q);
 
         if (!existingUserSnapshot.empty) {
-            // User exists, update their data
-            const userDocRef = existingUserSnapshot.docs[0].ref;
-            const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userDocRef.id);
-            
-            const batch = writeBatch(db);
-
-            const usuarioUpdateData = {
-                // Fields to update go here, for now, we'll just set the status to pending
-                estado: "pendiente",
-                fechaActualizacion: serverTimestamp()
-            };
-            batch.update(userDocRef, usuarioUpdateData);
-
-            const estudianteUpdateData = {
-                 estado: "pendiente",
-                 // update other fields if necessary
-            };
-            batch.update(studentDocRef, estudianteUpdateData);
-
-            await batch.commit();
-
-            return NextResponse.json({ message: "Tu solicitud de reinscripción ha sido enviada exitosamente. Un administrador la revisará.", userId: userDocRef.id }, { status: 200 });
+            return NextResponse.json({ message: "Ya existe un usuario con este número de identificación." }, { status: 409 });
         }
         
-        // New user, create documents
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(data.password, saltRounds);
         
         const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
-        const newUserDocRef = doc(usuariosRef);
+        const newUserDocRef = doc(collection(politecnicoDocRef, "usuarios"));
         
         const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoApellido);
 
@@ -123,7 +106,7 @@ export async function POST(req: Request) {
           tipoIdentificacion: tipoIdentificacionMap[data.tipoIdentificacion],
           identificacion: data.numeroIdentificacion,
           genero: data.gender,
-          fechaNacimiento: data.birthDate,
+          fechaNacimiento: new Date(data.birthDate),
           telefono: data.phone,
           direccion: data.address,
           ciudad: data.city,
@@ -137,8 +120,6 @@ export async function POST(req: Request) {
           fechaActualizacion: serverTimestamp(),
         };
         
-        await setDoc(newUserDocRef, usuarioData);
-
         const estudianteRef = doc(collection(politecnicoDocRef, "estudiantes"), newUserDocRef.id);
         const estudianteData = {
           usuarioId: newUserDocRef.id,
@@ -153,7 +134,12 @@ export async function POST(req: Request) {
           estado: "pendiente", 
           fechaRegistro: serverTimestamp()
         };
-        await setDoc(estudianteRef, estudianteData);
+        
+        const batch = writeBatch(db);
+        batch.set(newUserDocRef, usuarioData);
+        batch.set(estudianteRef, estudianteData);
+        
+        await batch.commit();
         
         const message = "Solicitud de registro enviada exitosamente. Un administrador revisará tu solicitud.";
         return NextResponse.json({ message, userId: newUserDocRef.id }, { status: 201 });
