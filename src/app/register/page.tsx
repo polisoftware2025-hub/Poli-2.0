@@ -126,6 +126,8 @@ const steps = [
     { number: 6, title: "Confirmación", icon: CheckCircle, schema: step6Schema, fields: [] },
 ];
 
+const LOCAL_STORAGE_KEY = 'registrationFormData';
+
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 6;
@@ -137,30 +139,49 @@ export default function RegisterPage() {
   const methods = useForm<AllStepsData>({
     resolver: zodResolver(currentSchema),
     mode: "onChange",
-    defaultValues: {
-        firstName: "",
-        segundoNombre: "",
-        lastName: "",
-        segundoApellido: "",
-        tipoIdentificacion: "",
-        numeroIdentificacion: "",
-        gender: "",
-        birthDate: undefined,
-        phone: "",
-        address: "",
-        country: "",
-        city: "",
-        correoPersonal: "",
-        carreraId: "",
-        modalidad: "",
-        grupo: "",
-        password: "",
-        confirmPassword: "",
-        metodoPago: "",
-    },
   });
 
-  const { handleSubmit, trigger, formState: { isSubmitting } } = methods;
+  const { handleSubmit, trigger, formState: { isSubmitting }, watch, reset } = methods;
+
+  // Load data from localStorage on initial render
+  useEffect(() => {
+    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedData) {
+      try {
+        const { formData, currentStep: savedStep } = JSON.parse(savedData);
+        if (formData) {
+            // Ensure date fields are correctly parsed back into Date objects
+            if (formData.birthDate) {
+              formData.birthDate = new Date(formData.birthDate);
+            }
+            reset(formData, { keepDefaultValues: true });
+        }
+        if (savedStep && typeof savedStep === 'number' && savedStep <= totalSteps) {
+            setCurrentStep(savedStep);
+        }
+      } catch (e) {
+        console.error("Failed to parse registration data from localStorage", e);
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+    }
+  }, [reset]);
+
+
+  // Watch for form changes and save to localStorage
+  useEffect(() => {
+    const subscription = watch((value) => {
+      try {
+        const dataToSave = {
+          formData: value,
+          currentStep: currentStep
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+      } catch (e) {
+        console.error("Failed to save registration data to localStorage", e);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, currentStep]);
 
   const nextStep = async () => {
     const fields = steps[currentStep - 1].fields;
@@ -197,6 +218,7 @@ export default function RegisterPage() {
             title: "¡Solicitud de registro enviada!",
             description: responseData.message,
           });
+          localStorage.removeItem(LOCAL_STORAGE_KEY); // Clean up on success
           router.push("/register/pending"); 
         } else {
           toast({
@@ -718,3 +740,5 @@ const Step6_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
+
+    
