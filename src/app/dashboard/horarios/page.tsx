@@ -223,7 +223,8 @@ export default function HorariosPage() {
   }
 
   const renderFilters = () => (
-    <div className="w-full max-w-4xl mx-auto my-8 p-6 sm:p-8 bg-white rounded-lg shadow-md">
+    <div className="w-full max-w-4xl mx-auto my-8">
+      <div className="bg-white rounded-lg shadow-md p-6 sm:p-8">
         <div className="space-y-6">
             <div className="space-y-2">
                 <Label htmlFor="materia-select" className="text-base font-medium">Materia</Label>
@@ -270,13 +271,14 @@ export default function HorariosPage() {
                 </Button>
             )}
 
-            <div className={`text-center text-sm min-h-[20px] ${
-                messageType === 'error' ? 'text-red-500 font-semibold' : 
-                messageType === 'success' ? 'text-green-600 font-semibold' : 
-                'text-muted-foreground'
-            }`}>
-                {statusMessage}
-            </div>
+        </div>
+      </div>
+        <div className={`text-center text-sm mt-4 min-h-[20px] ${
+            messageType === 'error' ? 'text-red-500 font-semibold' : 
+            messageType === 'success' ? 'text-green-600 font-semibold' : 
+            'text-muted-foreground'
+        }`}>
+            {statusMessage}
         </div>
     </div>
   );
@@ -450,5 +452,3 @@ export default function HorariosPage() {
     </div>
   );
 }
-
-    
