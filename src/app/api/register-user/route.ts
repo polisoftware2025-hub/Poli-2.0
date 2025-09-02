@@ -5,13 +5,13 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { z } from "zod";
 
-const nameValidation = z.string().min(2).max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/);
-const lastNameValidation = z.string().min(2).max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ]+$/);
+const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
+const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
 const cityCountryValidation = z.string().min(2);
 
 const registerUserSchema = z.object({
     firstName: nameValidation,
-    segundoNombre: z.string().min(2).max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/).optional(),
+    segundoNombre: z.string().max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/).optional().transform(e => e === "" ? undefined : e),
     lastName: lastNameValidation,
     segundoApellido: lastNameValidation,
     tipoIdentificacion: z.string(),
