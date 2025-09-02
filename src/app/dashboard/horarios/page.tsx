@@ -198,27 +198,14 @@ export default function HorariosPage() {
   };
   
   const handleShowSchedule = () => {
-    if (!filterMateria) {
-        toast({ variant: "destructive", title: "Campo requerido", description: "Por favor, selecciona una materia."});
-        return;
-    }
-    toast({
-        title: "Cargando tu horario...",
-        description: "Un momento mientras preparamos la vista de tu horario.",
-    });
     setShowSchedule(true);
-  }
-  
-  const handleResetFilters = () => {
-    setFilterMateria(undefined);
-    setFilterGrupo(undefined);
-    setShowSchedule(false);
   }
 
   const renderFilters = () => (
-    <Card>
+    <div className="w-full max-w-4xl mx-auto space-y-4">
+      <Card>
         <CardHeader>
-            <CardTitle>Filtro de Horario</CardTitle>
+          <CardTitle>Filtro de Horario</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="space-y-2">
@@ -254,7 +241,8 @@ export default function HorariosPage() {
                 Ver Horario
             </Button>
         </CardContent>
-    </Card>
+      </Card>
+    </div>
   );
 
   const renderScheduleView = () => (
@@ -277,7 +265,7 @@ export default function HorariosPage() {
                     <Download className="mr-2 h-4 w-4"/>
                     Descargar
                 </Button>
-                <Button variant="ghost" onClick={handleResetFilters}>
+                <Button variant="ghost" onClick={() => setShowSchedule(false)}>
                     Cambiar Filtros
                 </Button>
             </div>
@@ -416,10 +404,12 @@ export default function HorariosPage() {
       
       {userRole === 'docente' ? (
         showSchedule ? renderScheduleView() : (
-          <div className="w-full max-w-2xl mx-auto space-y-4">
-              {renderFilters()}
+          <>
+            {renderFilters()}
+            {!showSchedule && (
               <p className="text-center text-sm text-muted-foreground">Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.</p>
-          </div>
+            )}
+          </>
         )
       ) : userRole === 'estudiante' ? (
         renderForStudent()
@@ -434,5 +424,3 @@ export default function HorariosPage() {
     </div>
   );
 }
-
-    
