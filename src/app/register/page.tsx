@@ -62,14 +62,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
-const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
-const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres").max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
+const nameValidation = z.string().min(2, "Debe tener al menos 2 caracteres.").max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
+const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres.").max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/, "Solo se permiten letras y espacios.");
 const cityCountryValidation = z.string({ required_error: "Por favor, selecciona una opción." }).min(2, "Debe tener al menos 2 caracteres");
 
 
 const step1Schema = z.object({
   firstName: nameValidation,
-  segundoNombre: z.string().max(50).regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "Solo se permiten letras y espacios.").optional().transform(e => e === "" ? undefined : e),
+  segundoNombre: z.string().max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "Solo se permiten letras y espacios.").optional().transform(e => e === "" ? undefined : e),
   lastName: lastNameValidation,
   segundoApellido: lastNameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
@@ -194,7 +194,7 @@ export default function RegisterPage() {
     },
   });
 
-  const { getValues, setError, trigger, watch } = methods;
+  const { getValues, setError, trigger, watch, formState: { isSubmitting } } = methods;
   
   const selectedCiclo = watch("ciclo");
   const cycleHasElectives = useMemo(() => {
@@ -261,9 +261,7 @@ export default function RegisterPage() {
       try {
         const response = await fetch('/api/register-user', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             ...result.data,
             birthDate: format(result.data.birthDate, 'yyyy-MM-dd')
@@ -275,7 +273,7 @@ export default function RegisterPage() {
         if (response.ok) {
           toast({
             title: "¡Registro exitoso!",
-            description: "Tu cuenta ha sido creada. Serás redirigido.",
+            description: responseData.message,
           });
 
           localStorage.setItem('userEmail', responseData.correoInstitucional);
@@ -302,13 +300,14 @@ export default function RegisterPage() {
         title: "Error de Validación",
         description: "Por favor, revisa todos los pasos y corrige los errores.",
       });
-      result.error.errors.forEach((err) => {
-        const fieldName = err.path[0] as keyof AllStepsData;
-        setError(fieldName, {
-          type: "manual",
-          message: err.message,
-        });
-      });
+      // Find the first step with an error and navigate to it
+      for (const step of steps) {
+        const hasError = step.fields.some(field => result.error.formErrors.fieldErrors[field]);
+        if (hasError) {
+          setCurrentStep(step.number);
+          break;
+        }
+      }
     }
   };
 
@@ -377,8 +376,8 @@ export default function RegisterPage() {
                   Siguiente
                 </Button>
               ) : (
-                <Button type="button" onClick={handleFinalSubmit} className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
-                  Finalizar Registro
+                <Button type="button" onClick={handleFinalSubmit} disabled={isSubmitting} className="rounded-full bg-[#2ecc71] px-6 py-3 text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600">
+                  {isSubmitting ? "Finalizando..." : "Finalizar Registro"}
                 </Button>
               )}
             </CardFooter>
