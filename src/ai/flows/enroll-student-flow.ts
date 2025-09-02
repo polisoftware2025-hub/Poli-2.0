@@ -10,7 +10,7 @@
 
 import { carreraData } from '@/lib/seed';
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, updateDoc, query, where, getDocs, writeBatch } from "firebase/firestore";
+import { collection, doc, getDoc, updateDoc, query, where, getDocs, writeBatch, serverTimestamp } from "firebase/firestore";
 import { sendWelcomeEmail } from './send-welcome-email';
 import bcrypt from "bcrypt";
 
