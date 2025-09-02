@@ -78,10 +78,7 @@ export default function HorariosPage() {
   }, []);
 
   useEffect(() => {
-    if (userRole !== 'docente' || !userEmail) {
-        setIsLoading(false);
-        return;
-    };
+    if (!userEmail) return;
 
     const fetchGroups = async () => {
       setIsLoading(true);
@@ -143,8 +140,10 @@ export default function HorariosPage() {
   }, [allGroups]);
 
   const grupos = useMemo(() => {
-      if (filterMateria === 'all') return [];
-      const filteredGroups = allGroups.filter(g => g.materia.nombre === filterMateria);
+      let filteredGroups = allGroups;
+      if (filterMateria !== 'all') {
+          filteredGroups = allGroups.filter(g => g.materia.nombre === filterMateria);
+      }
       return filteredGroups.map(g => ({ value: g.id, label: g.codigoGrupo }));
   }, [allGroups, filterMateria]);
   
@@ -206,16 +205,16 @@ export default function HorariosPage() {
                         <SelectValue placeholder="Filtrar por materia"/>
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">Todas las materias y grupos</SelectItem>
+                        <SelectItem value="all">Todas las materias</SelectItem>
                         {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Grupo</label>
-                <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={filterMateria === 'all'}>
+                <Select value={filterGrupo} onValueChange={setFilterGrupo}>
                     <SelectTrigger>
-                        <SelectValue placeholder={filterMateria === 'all' ? "Selecciona una materia primero" : "Todos los grupos"}/>
+                        <SelectValue placeholder="Todos los grupos"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los grupos</SelectItem>
@@ -362,7 +361,6 @@ export default function HorariosPage() {
             </div>
         </CardHeader>
         <CardContent>
-            {/* Aquí iría la lógica de renderizado del horario para estudiantes */}
              <Alert>
                 <CalendarIcon className="h-4 w-4"/>
                 <AlertTitle>Horario de Estudiante</AlertTitle>
