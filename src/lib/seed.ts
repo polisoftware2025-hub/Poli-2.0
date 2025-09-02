@@ -1,6 +1,7 @@
 
 import { db } from './firebase'; 
-import { collection, addDoc, getDocs, query, where, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
+import bcrypt from "bcrypt";
 
 export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
@@ -206,124 +207,93 @@ export async function seedGrupos() {
     }
 }
 
-
-export async function seedInitialData() {
-    const batch = writeBatch(db);
-    const politecnicoRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+export async function seedInitialUsers() {
+    const saltRounds = 10;
+    const testUsers = [
+        {
+            id: "admin01",
+            nombre1: "Admin",
+            apellido1: "User",
+            correoInstitucional: "admin@example.com",
+            rol: { id: "admin", descripcion: "Administrador" },
+            contrasena: "Admin123."
+        },
+        {
+            id: "gestor01",
+            nombre1: "Gestor",
+            apellido1: "User",
+            correoInstitucional: "gestor@example.com",
+            rol: { id: "gestor", descripcion: "Gestor" },
+            contrasena: "Gestor123."
+        },
+        {
+            id: "docente01",
+            nombre1: "Docente",
+            apellido1: "User",
+            correoInstitucional: "docente@example.com",
+            rol: { id: "docente", descripcion: "Docente" },
+            contrasena: "Docente123."
+        },
+        {
+            id: "est001",
+            nombre1: "Estudiante",
+            apellido1: "User",
+            correoInstitucional: "estudiante@example.com",
+            rol: { id: "estudiante", descripcion: "Estudiante" },
+            contrasena: "Estudiante123."
+        }
+    ];
 
     try {
-        // Simple check to avoid re-seeding. Checks if the first user exists.
-        const q = query(politecnicoRef, where("identificacion", "==", "123456789"));
-        const querySnapshot = await getDocs(q);
-        if (!querySnapshot.empty) {
-            throw new Error("Los datos iniciales ya parecen existir en la base de datos.");
+        const batch = writeBatch(db);
+        const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+
+        for (const userData of testUsers) {
+            const userQuery = query(usersRef, where("correoInstitucional", "==", userData.correoInstitucional));
+            const existingUsers = await getDocs(userQuery);
+
+            if (existingUsers.empty) {
+                const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
+                const userDocRef = doc(usersRef, userData.id);
+                
+                const finalUserData: any = {
+                    ...userData,
+                    nombreCompleto: `${userData.nombre1} ${userData.apellido1}`,
+                    identificacion: `ID-${userData.id}`,
+                    contrasena: hashedPassword,
+                    estado: "activo",
+                    fechaRegistro: new Date()
+                };
+
+                batch.set(userDocRef, finalUserData);
+
+                if (userData.rol.id === 'estudiante') {
+                    const studentDocRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes/${userData.id}`);
+                    batch.set(studentDocRef, {
+                        usuarioId: userData.id,
+                        nombreCompleto: finalUserData.nombreCompleto,
+                        documento: finalUserData.identificacion,
+                        carrera: "Carrera de Prueba",
+                        modalidad: "Virtual",
+                        grupo: "G-001",
+                        correoInstitucional: userData.correoInstitucional,
+                        cicloActual: 1,
+                        materiasInscritas: [],
+                        estado: "activo",
+                        fechaRegistro: new Date()
+                    });
+                }
+            } else {
+                 console.log(`El usuario ${userData.correoInstitucional} ya existe. Omitiendo.`);
+            }
         }
 
-        // 1. Usuarios
-        const usuarioEstudianteRef = collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/usuarios');
-        const newUserRef = addDoc(usuarioEstudianteRef, {
-            nombre1: "Juan",
-            nombre2: "Carlos",
-            apellido1: "Perez",
-            apellido2: "Gomez",
-            tipoIdentificacion: { id: "cc", descripcion: "Cédula de Ciudadanía" },
-            identificacion: "123456789",
-            genero: "M",
-            telefono: "3001234567",
-            direccion: "Calle Falsa 123",
-            ciudad: "Bogotá",
-            pais: "Colombia",
-            correo: "juan.perez@test.com",
-            correoInstitucional: "juan.perez@pi.edu.co",
-            contrasena: "$2b$10$abcdefghijklmnopqrstuv", // Placeholder bcrypt hash
-            rol: { id: "estudiante", descripcion: "Estudiante" },
-            estaInscrito: true,
-            fechaCreacion: new Date()
-        });
-
-        // For other collections, we will create refs and set data inside the batch
-        // In a real scenario, you'd create more complex and related data.
-        // For now, we'll add one sample document to each to ensure collections are created.
-
-        // 2. Estudiantes (referencing the user created above)
-        // This part is tricky without knowing the ID beforehand.
-        // For simplicity, we'll do this after the user is created.
-        // Let's assume we have a fixed ID for the seed user.
-        const studentId = "seededStudent01";
-        const studentRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes/${studentId}`);
-        batch.set(studentRef, {
-            usuarioId: studentId,
-            estado: "activo",
-            fechaCreacion: new Date()
-        });
-
-        // 3. Docentes
-        const docenteId = "seededDocente01";
-        const docenteRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/docentes/${docenteId}`);
-        batch.set(docenteRef, {
-            usuarioId: docenteId,
-            estado: "activo",
-            fechaCreacion: new Date()
-        });
-
-        // 4. Pagos
-        const pagoRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/pagos'));
-        batch.set(pagoRef, {
-            estudianteId: studentId,
-            carreraId: "TCNI01",
-            periodo: "2024-1",
-            monto: 3500000,
-            metodo: "PSE",
-            estado: "Pagado",
-            fechaPago: new Date()
-        });
-
-        // 5. Notas
-        const notaRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/notas'));
-        batch.set(notaRef, {
-            estudianteId: studentId,
-            grupoId: "C1-MB-001",
-            notaFinal: 4.5
-        });
-
-        // 6. Asistencias
-        const asistenciaRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/asistencias'));
-        batch.set(asistenciaRef, {
-            estudianteId: studentId,
-            grupoId: "C1-MB-001",
-            estado: "Presente",
-            fecha: new Date()
-        });
-
-        // 7. Evaluaciones Docentes
-        const evaluacionRef = doc(collection(db, 'Politecnico/mzIX7rzezDezczAV6pQ7/evaluaciones_docentes'));
-        batch.set(evaluacionRef, {
-            estudianteId: studentId,
-            docenteId: docenteId,
-            grupoId: "C1-MB-001",
-            fecha: new Date(),
-            calificacion: 5,
-            comentario: "Excelente docente."
-        });
-
-        // For collections with subcollections, you'd add them similarly.
-        // Example for estudiante's subcollection:
-        const carreraInscritaRef = doc(collection(studentRef, 'carreras_inscritas'));
-        batch.set(carreraInscritaRef, {
-            carreraId: "TCNI01",
-            periodo: "2024-1",
-            fechaInscripcion: new Date(),
-            estadoEstudianteCarrera: "activo"
-        });
-
         await batch.commit();
+        return { success: true, message: "Usuarios de prueba creados o verificados exitosamente." };
 
-        return { success: true, message: "Datos iniciales (usuarios, estudiantes, etc.) insertados exitosamente." };
     } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió al poblar los datos iniciales.";
-        console.error("Error en seedInitialData:", error);
+        const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió.";
+        console.error("Error en seedInitialUsers:", error);
         return { success: false, message: errorMessage };
     }
 }
-
-    
