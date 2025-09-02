@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
       }
     ],
   },
+  experimental: {
+    serverComponentsExternalPackages: ['bcrypt'],
+  },
 };
 
 export default nextConfig;
