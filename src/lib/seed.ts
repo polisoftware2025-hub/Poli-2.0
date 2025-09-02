@@ -14,11 +14,17 @@ const createSlug = (name: string) => {
 
 export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
+  slug: "tecnologia-en-comercio-exterior-y-negocios-internacionales",
   duracionCiclo: "9 Ciclos",
   modalidad: "Virtual / Presencial",
   descripcionGeneral: "Gestiona los procesos de importación definitiva (para consumo, con franquicia, en cumplimiento de garantía y reimportaciones) de productos al país, a partir de la planificación logística de sus operaciones, integrando y adecuando documentos, costos, medios de pago y requisitos conformes con la normatividad vigente en Colombia, con el fin de generar procesos rentables y eficientes.",
   perfilProfesional: "El Tecnólogo en Comercio Exterior y Negocios Internacionales, gestiona procesos de importación, exportación y logística de las operaciones de comercio nacional e internacional, cumpliendo con los requerimientos de la normatividad vigente y las oportunidades comerciales para apoyar los procesos de negociación, diseñando e implementando proyectos de desarrollo empresarial en comercio internacional.",
   imagenURL: "https://placehold.co/800x400/002147/FFFFFF?text=Comercio+Exterior",
+  titulo: "Tecnólogo en Comercio Exterior y Negocios Internacionales",
+  precioPorCiclo: {
+    "1": 2800000, "2": 2850000, "3": 2900000, "4": 2950000, "5": 3000000,
+    "6": 3050000, "7": 3100000, "8": 3150000, "9": 3200000
+  },
   ciclos: [
     {
       numero: 1,
@@ -177,10 +183,7 @@ export async function seedCarrera() {
       throw new Error("La carrera 'Tecnología en Comercio Exterior y Negocios Internacionales' ya existe.");
     }
     
-    const slug = createSlug(carreraData.nombre);
-    const dataToSeed = { ...carreraData, slug };
-    
-    await addDoc(carrerasRef, dataToSeed);
+    await addDoc(carrerasRef, carreraData);
     return { success: true, message: "Datos de carrera insertados exitosamente." };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió.";
@@ -413,5 +416,3 @@ export async function seedInitialUsers() {
     return { success: false, message: errorMessage };
   }
 }
-
-    

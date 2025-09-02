@@ -8,9 +8,8 @@
  * - ProcessStudentEnrollmentOutput - The return type for the function.
  */
 
-import { carreraData } from '@/lib/seed';
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, updateDoc, query, where, getDocs, writeBatch, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDoc, updateDoc, query, where, getDocs, writeBatch, serverTimestamp, addDoc, Timestamp } from "firebase/firestore";
 import { sendWelcomeEmail } from './send-welcome-email';
 import bcrypt from "bcryptjs";
 
@@ -100,19 +99,62 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
             throw new Error("No se encontró la contraseña inicial para el estudiante. No se puede proceder.");
         }
 
+        // Fetch career data
+        const careerRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", studentData.carreraId);
+        const careerSnap = await getDoc(careerRef);
+        if (!careerSnap.exists()) {
+            throw new Error(`No se encontró la carrera con ID ${studentData.carreraId}`);
+        }
+        const careerData = careerSnap.data();
+
         const currentDate = new Date();
         const startCycle = calculateStartCycle(currentDate);
-        const cycleInfo = carreraData.ciclos.find(c => c.numero === startCycle);
+        const cycleInfo = careerData.ciclos.find((c: any) => c.numero === startCycle);
 
         if (!cycleInfo) {
             throw new Error(`El ciclo de inicio ${startCycle} no fue encontrado en la malla curricular.`);
         }
         
-        const assignedSubjects = cycleInfo.materias.map(m => ({ id: m.id, nombre: m.nombre, creditos: m.creditos }));
+        const assignedSubjects = cycleInfo.materias.map((m: any) => ({ id: m.id, nombre: m.nombre, creditos: m.creditos }));
         const institutionalEmail = await generateUniqueInstitutionalEmail(userData.nombre1, userData.apellido1, userData.apellido2);
-        const temporaryPassword = studentData.initialPassword; // Use the password they registered with
+        const temporaryPassword = studentData.initialPassword; 
         const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
         
+        // Handle invoice generation
+        const cyclePrice = careerData.precioPorCiclo?.[startCycle];
+        const paymentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
+        const invoiceDate = new Date();
+        const dueDate = new Date(invoiceDate);
+        dueDate.setDate(dueDate.getDate() + 30);
+
+        if (cyclePrice === undefined || cyclePrice === null) {
+            console.error(`Precio para el ciclo ${startCycle} no encontrado en la carrera ${studentData.carreraId}.`);
+            // Create invoice with 0 amount and 'incomplete' status
+            const newPaymentDoc = doc(paymentsRef);
+            batch.set(newPaymentDoc, {
+                idEstudiante: studentId,
+                idCarrera: studentData.carreraId,
+                ciclo: startCycle,
+                monto: 0,
+                estado: "incompleta",
+                fechaGeneracion: Timestamp.fromDate(invoiceDate),
+                fechaMaximaPago: Timestamp.fromDate(dueDate),
+                fechaPago: null
+            });
+        } else {
+            const newPaymentDoc = doc(paymentsRef);
+            batch.set(newPaymentDoc, {
+                idEstudiante: studentId,
+                idCarrera: studentData.carreraId,
+                ciclo: startCycle,
+                monto: Number(cyclePrice) || 0,
+                estado: "pendiente",
+                fechaGeneracion: Timestamp.fromDate(invoiceDate),
+                fechaMaximaPago: Timestamp.fromDate(dueDate),
+                fechaPago: null
+            });
+        }
+
         batch.update(studentRef, {
             estado: 'aprobado',
             estaInscrito: true,
@@ -120,7 +162,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
             materiasInscritas: assignedSubjects,
             correoInstitucional: institutionalEmail,
             fechaActualizacion: serverTimestamp(),
-            initialPassword: null, // Remove temporary password after use
+            initialPassword: null, 
         });
         
         batch.update(userRef, {
@@ -141,7 +183,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         });
 
         const finalMessage = emailResult.success
-            ? "El estudiante ha sido inscrito exitosamente y se ha enviado un correo de bienvenida."
+            ? "El estudiante ha sido inscrito exitosamente, se ha generado su factura y se ha enviado un correo de bienvenida."
             : `El estudiante fue inscrito, pero hubo un error al enviar el correo: ${emailResult.message}`;
 
         return {

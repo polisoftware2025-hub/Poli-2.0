@@ -28,7 +28,6 @@ import {
   KeyRound,
   CheckCircle,
   ArrowLeft,
-  CreditCard,
   CalendarIcon,
   Eye,
   EyeOff,
@@ -72,7 +71,6 @@ interface AllStepsData extends FieldValues {
     grupo: string;
     password: string;
     confirmPassword: string;
-    metodoPago: string;
 }
 
 const steps = [
@@ -80,8 +78,7 @@ const steps = [
     { number: 2, title: "Datos de Contacto", icon: Phone },
     { number: 3, title: "Inscripción Académica", icon: BookOpen },
     { number: 4, title: "Datos de Acceso", icon: KeyRound },
-    { number: 5, title: "Datos de Inscripción", icon: CreditCard },
-    { number: 6, title: "Confirmación", icon: CheckCircle },
+    { number: 5, title: "Confirmación", icon: CheckCircle },
 ];
 
 const LOCAL_STORAGE_KEY = 'registrationFormData';
@@ -105,13 +102,13 @@ const defaultFormValues: AllStepsData = {
     grupo: "",
     password: "",
     confirmPassword: "",
-    metodoPago: "",
+    metodoPago: "N/A", // Default as payment is no longer in registration
 };
 
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 6;
+  const totalSteps = 5; // Reduced from 6
   const { toast } = useToast();
   const router = useRouter();
   
@@ -120,7 +117,7 @@ export default function RegisterPage() {
     defaultValues: defaultFormValues,
   });
 
-  const { handleSubmit, trigger, formState: { isSubmitting }, watch, reset, setError } = methods;
+  const { handleSubmit, formState: { isSubmitting }, watch, reset, setError } = methods;
 
   const validateStep = async (step: number) => {
     const { getValues } = methods;
@@ -151,8 +148,6 @@ export default function RegisterPage() {
     } else if (step === 4) {
         if (!data.password || data.password.length < 8) { setError("password", { type: 'manual', message: 'Mínimo 8 caracteres.' }); isValid = false; }
         if (data.password !== data.confirmPassword) { setError("confirmPassword", { type: 'manual', message: 'Las contraseñas no coinciden.' }); isValid = false; }
-    } else if (step === 5) {
-        if (!data.metodoPago) { setError("metodoPago", { type: 'manual', message: 'Selecciona un método de pago.' }); isValid = false; }
     }
 
     return isValid;
@@ -291,8 +286,7 @@ export default function RegisterPage() {
                     {currentStep === 2 && <Step2 />}
                     {currentStep === 3 && <Step3 />}
                     {currentStep === 4 && <Step4_Access />}
-                    {currentStep === 5 && <Step5_Payment />}
-                    {currentStep === 6 && <Step6_Confirm />}
+                    {currentStep === 5 && <Step5_Confirm />}
                 </CardContent>
                 <CardFooter className="flex justify-between p-6 bg-gray-50 rounded-b-xl">
                   <Button
@@ -713,39 +707,7 @@ const Step4_Access = () => {
   );
 };
 
-const Step5_Payment = () => {
-  const { control } = useFormContext();
-  return (
-    <div className="space-y-6">
-      <FormField control={control} name="metodoPago" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Método de Pago</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un método de pago" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                <SelectItem value="pse">PSE</SelectItem>
-                <SelectItem value="tc">Tarjeta de Crédito</SelectItem>
-                <SelectItem value="efectivo">Efectivo</SelectItem>
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <div className="space-y-2">
-        <FormLabel>Valor de la Inscripción</FormLabel>
-        <Input value="$150,000 COP" disabled className="bg-gray-100"/>
-        <p className="text-xs text-muted-foreground">Valor fijo autocalculado por el sistema.</p>
-      </div>
-    </div>
-  );
-};
-
-const Step6_Confirm = () => (
+const Step5_Confirm = () => (
     <div className="text-center flex flex-col items-center gap-4 py-8">
         <CheckCircle className="h-16 w-16 text-green-500" />
         <h3 className="text-2xl font-bold font-poppins text-gray-800">¡Todo listo!</h3>

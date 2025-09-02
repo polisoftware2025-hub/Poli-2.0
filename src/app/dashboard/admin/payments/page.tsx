@@ -1,78 +1,52 @@
+
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { DollarSign, Search, Filter, MoreHorizontal, Eye, CheckCircle, Bell, TrendingUp, AlertCircle, FileText } from "lucide-react";
+import { DollarSign, Search, Filter, TrendingUp, AlertCircle, Bell, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, DocumentData, Timestamp } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const invoices = [
-  {
-    id: "INV-001",
-    studentName: "Laura Gómez",
-    studentId: "est007",
-    program: "Ingeniería de Sistemas",
-    issueDate: "2024-08-01",
-    dueDate: "2024-08-31",
-    amount: 3500000,
-    status: "Pagado",
-  },
-  {
-    id: "INV-002",
-    studentName: "David Martínez",
-    studentId: "est008",
-    program: "Administración de Empresas",
-    issueDate: "2024-08-01",
-    dueDate: "2024-08-31",
-    status: "Pendiente",
-    amount: 3200000,
-  },
-  {
-    id: "INV-003",
-    studentName: "Sofia Castro",
-    studentId: "est009",
-    program: "Mercadeo y Publicidad",
-    issueDate: "2024-07-15",
-    dueDate: "2024-08-15",
-    status: "Vencido",
-    amount: 3000000,
-  },
-  {
-    id: "INV-004",
-    studentName: "Mateo Vargas",
-    studentId: "est010",
-    program: "Contaduría Pública",
-    issueDate: "2024-08-05",
-    dueDate: "2024-09-05",
-    status: "Pendiente",
-    amount: 2800000,
-  },
-];
+interface Invoice {
+  id: string;
+  idEstudiante: string;
+  nombreEstudiante?: string;
+  ciclo: number;
+  monto: number;
+  estado: "pendiente" | "pagado" | "vencido" | "incompleta";
+  fechaGeneracion: Timestamp;
+  fechaMaximaPago: Timestamp;
+}
 
-const getInitials = (name: string) => {
+const getInitials = (name: string = "") => {
   const names = name.split(' ');
   if (names.length > 1) {
     return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
   }
-  return name.substring(0, 2).toUpperCase();
+  return name ? name.substring(0, 2).toUpperCase() : 'U';
 }
 
 const statusBadgeVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
-  "Pendiente": "outline",
-  "Pagado": "secondary",
-  "Vencido": "destructive",
+  "pendiente": "outline",
+  "pagado": "secondary",
+  "vencido": "destructive",
+  "incompleta": "default",
 };
+
+const statusColors: { [key: string]: string } = {
+    "pendiente": "bg-yellow-100 text-yellow-800",
+    "pagado": "bg-green-100 text-green-800",
+    "vencido": "bg-red-100 text-red-800",
+    "incompleta": "bg-gray-100 text-gray-800",
+};
+
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-CO', {
@@ -85,6 +59,52 @@ const formatCurrency = (value: number) => {
 
 export default function PaymentsAdminPage() {
   const [filter, setFilter] = useState("all");
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchInvoices = async () => {
+        setIsLoading(true);
+        try {
+            // 1. Fetch all users to map IDs to names
+            const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+            const usersSnapshot = await getDocs(usersRef);
+            const userMap = new Map<string, string>();
+            usersSnapshot.forEach(doc => {
+                userMap.set(doc.id, doc.data().nombreCompleto || 'Nombre no disponible');
+            });
+
+            // 2. Fetch invoices and apply filter if not 'all'
+            const invoicesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
+            let q = query(invoicesRef);
+            if (filter !== "all") {
+                q = query(invoicesRef, where("estado", "==", filter));
+            }
+            const invoicesSnapshot = await getDocs(q);
+
+            const fetchedInvoices = invoicesSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    nombreEstudiante: userMap.get(data.idEstudiante) || 'Estudiante Desconocido',
+                } as Invoice;
+            });
+            
+            setInvoices(fetchedInvoices);
+        } catch (error) {
+            console.error("Error fetching invoices:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchInvoices();
+  }, [filter]);
+
+  const totalRecaudado = invoices.filter(i => i.estado === 'pagado').reduce((sum, i) => sum + i.monto, 0);
+  const totalPendiente = invoices.filter(i => i.estado === 'pendiente' || i.estado === 'incompleta').reduce((sum, i) => sum + i.monto, 0);
+  const facturasVencidas = invoices.filter(i => i.estado === 'vencido').reduce((sum, i) => sum + i.monto, 0);
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -97,12 +117,12 @@ export default function PaymentsAdminPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Recaudado (Mes)</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Recaudado</CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold text-green-600">{formatCurrency(3500000)}</div>
-                <p className="text-xs text-muted-foreground">+5.2% vs el mes pasado</p>
+                <div className="text-2xl font-bold text-green-600">{formatCurrency(totalRecaudado)}</div>
+                <p className="text-xs text-muted-foreground">Suma de facturas pagadas</p>
             </CardContent>
         </Card>
         <Card>
@@ -111,8 +131,8 @@ export default function PaymentsAdminPage() {
                 <AlertCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(6000000)}</div>
-                <p className="text-xs text-muted-foreground">Total en 2 facturas pendientes</p>
+                <div className="text-2xl font-bold">{formatCurrency(totalPendiente)}</div>
+                <p className="text-xs text-muted-foreground">Suma de facturas por pagar</p>
             </CardContent>
         </Card>
          <Card>
@@ -121,8 +141,8 @@ export default function PaymentsAdminPage() {
                 <Bell className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold text-red-600">{formatCurrency(3000000)}</div>
-                <p className="text-xs text-muted-foreground">1 factura vencida</p>
+                <div className="text-2xl font-bold text-red-600">{formatCurrency(facturasVencidas)}</div>
+                <p className="text-xs text-muted-foreground">Total en facturas vencidas</p>
             </CardContent>
         </Card>
       </div>
@@ -147,83 +167,67 @@ export default function PaymentsAdminPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="Pagado">Pagado</SelectItem>
-                <SelectItem value="Pendiente">Pendiente</SelectItem>
-                <SelectItem value="Vencido">Vencido</SelectItem>
+                <SelectItem value="pagado">Pagado</SelectItem>
+                <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="vencido">Vencido</SelectItem>
+                <SelectItem value="incompleta">Incompleta</SelectItem>
               </SelectContent>
             </Select>
-            <Button>
-                <FileText className="mr-2 h-4 w-4" />
-                Generar Factura
-            </Button>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Factura ID</TableHead>
                   <TableHead>Estudiante</TableHead>
-                  <TableHead>Fecha de Vencimiento</TableHead>
+                  <TableHead>Factura ID</TableHead>
+                  <TableHead>Ciclo</TableHead>
+                  <TableHead>Fecha Máx. Pago</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead className="text-center">Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {invoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-mono text-xs">{invoice.id}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback>{getInitials(invoice.studentName)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{invoice.studentName}</p>
-                          <p className="text-sm text-muted-foreground">{invoice.program}</p>
+                {isLoading ? (
+                    Array.from({length: 4}).map((_, i) => (
+                        <TableRow key={i}>
+                            <TableCell><Skeleton className="h-10 w-48" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                            <TableCell className="text-right"><Skeleton className="h-5 w-20" /></TableCell>
+                            <TableCell className="text-center"><Skeleton className="h-6 w-24" /></TableCell>
+                        </TableRow>
+                    ))
+                ) : (
+                    invoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                        <TableCell>
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-9 w-9">
+                            <AvatarFallback>{getInitials(invoice.nombreEstudiante)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                            <p className="font-medium">{invoice.nombreEstudiante}</p>
+                            <p className="text-sm text-muted-foreground">{invoice.idEstudiante}</p>
+                            </div>
                         </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(invoice.dueDate).toLocaleDateString('es-ES', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                      })}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">{formatCurrency(invoice.amount)}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant={statusBadgeVariant[invoice.status]} className={
-                          invoice.status === 'Pagado' ? 'bg-green-100 text-green-800' :
-                          invoice.status === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                      }>
-                        {invoice.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                       <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Ver Detalle
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-green-600 focus:text-green-600 focus:bg-green-50">
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Marcar como Pagado
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Bell className="mr-2 h-4 w-4" />
-                            Enviar Recordatorio
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{invoice.id}</TableCell>
+                        <TableCell className="text-center">{invoice.ciclo}</TableCell>
+                        <TableCell>
+                        {invoice.fechaMaximaPago.toDate().toLocaleDateString('es-ES', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        })}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">{formatCurrency(invoice.monto)}</TableCell>
+                        <TableCell className="text-center">
+                        <Badge variant={statusBadgeVariant[invoice.estado]} className={statusColors[invoice.estado]}>
+                            {invoice.estado.charAt(0).toUpperCase() + invoice.estado.slice(1)}
+                        </Badge>
+                        </TableCell>
+                    </TableRow>
+                    ))
+                )}
               </TableBody>
             </Table>
           </div>

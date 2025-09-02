@@ -1,43 +1,37 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { CreditCard, DollarSign, CalendarClock, Download } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, Timestamp, doc, updateDoc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-const paymentHistory = [
-  {
-    id: "TRN-001",
-    concept: "Matrícula 2024-2",
-    date: "2024-07-15",
-    amount: 3500000,
-    status: "Pagado",
-  },
-  {
-    id: "TRN-002",
-    concept: "Cuota 1 - Ingeniería de Sistemas",
-    date: "2024-08-01",
-    amount: 875000,
-    status: "Pagado",
-  },
-  {
-    id: "TRN-003",
-    concept: "Cuota 2 - Ingeniería de Sistemas",
-    date: "2024-09-01",
-    amount: 875000,
-    status: "Pendiente",
-  },
-  {
-    id: "TRN-004",
-    concept: "Derechos de grado",
-    date: "2025-06-01",
-    amount: 450000,
-    status: "Pendiente",
-  },
-];
+interface Invoice {
+    id: string;
+    ciclo: number;
+    monto: number;
+    estado: "pendiente" | "pagado" | "vencido" | "incompleta";
+    fechaGeneracion: Timestamp;
+    fechaMaximaPago: Timestamp;
+}
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-CO', {
@@ -48,13 +42,70 @@ const formatCurrency = (value: number) => {
 };
 
 export default function PaymentsPage() {
-  const totalPaid = paymentHistory
-    .filter(p => p.status === "Pagado")
-    .reduce((acc, p) => acc + p.amount, 0);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const storedUserId = localStorage.getItem('userId');
+    if (storedUserId) {
+        setUserId(storedUserId);
+    } else {
+        setIsLoading(false);
+    }
+  }, []);
+
+  const fetchInvoices = async () => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+        const invoicesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
+        const q = query(invoicesRef, where("idEstudiante", "==", userId));
+        const querySnapshot = await getDocs(q);
+        const fetchedInvoices = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as Invoice));
+        setInvoices(fetchedInvoices);
+    } catch (error) {
+        console.error("Error fetching invoices:", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar tus facturas." });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [userId]);
+
+  const handlePayment = async (invoiceId: string) => {
+    try {
+        const invoiceRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos", invoiceId);
+        await updateDoc(invoiceRef, {
+            estado: "pagado",
+            fechaPago: Timestamp.now()
+        });
+        toast({ title: "Pago Exitoso", description: "Tu pago ha sido registrado." });
+        fetchInvoices(); // Refresh the list
+    } catch (error) {
+        console.error("Error processing payment:", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudo registrar tu pago." });
+    }
+  };
+
+  const totalPaid = invoices
+    .filter(p => p.estado === "pagado")
+    .reduce((acc, p) => acc + p.monto, 0);
   
-  const totalPending = paymentHistory
-    .filter(p => p.status === "Pendiente")
-    .reduce((acc, p) => acc + p.amount, 0);
+  const totalPending = invoices
+    .filter(p => p.estado === "pendiente" || p.estado === "incompleta" || p.estado === "vencido")
+    .reduce((acc, p) => acc + p.monto, 0);
+  
+  const nextDueDate = invoices
+    .filter(p => p.estado === "pendiente")
+    .sort((a,b) => a.fechaMaximaPago.toMillis() - b.fechaMaximaPago.toMillis())[0]?.fechaMaximaPago.toDate();
 
   return (
     <div className="flex flex-col gap-8">
@@ -91,7 +142,9 @@ export default function PaymentsPage() {
                 <CalendarClock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">01 de Sept, 2024</div>
+                <div className="text-2xl font-bold">
+                    {nextDueDate ? nextDueDate.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric'}) : "N/A"}
+                </div>
                 <p className="text-xs text-muted-foreground">Fecha límite para tu próxima cuota.</p>
             </CardContent>
         </Card>
@@ -103,54 +156,86 @@ export default function PaymentsPage() {
                 <CardTitle>Historial de Transacciones</CardTitle>
                 <CardDescription>Aquí puedes ver todos tus movimientos financieros.</CardDescription>
             </div>
-            <Button className="mt-4 md:mt-0">
-                <CreditCard className="mr-2 h-4 w-4"/>
-                Realizar un Pago
-            </Button>
         </CardHeader>
         <CardContent>
-             <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID Transacción</TableHead>
-                  <TableHead>Concepto</TableHead>
-                  <TableHead>Fecha de Pago</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
-                  <TableHead className="text-center">Estado</TableHead>
-                  <TableHead className="text-right">Acción</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paymentHistory.map((payment) => (
-                  <TableRow key={payment.id}>
-                    <TableCell className="font-mono text-xs">{payment.id}</TableCell>
-                    <TableCell className="font-medium">{payment.concept}</TableCell>
-                    <TableCell>
-                      {new Date(payment.date).toLocaleDateString('es-ES', {
-                        year: 'numeric', month: 'long', day: 'numeric'
-                      })}
-                    </TableCell>
-                    <TableCell className="text-right">{formatCurrency(payment.amount)}</TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        className={payment.status === "Pagado" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}
-                      >
-                        {payment.status}
-                      </Badge>
-                    </TableCell>
-                     <TableCell className="text-right">
-                       <Button variant="ghost" size="icon">
-                           <Download className="h-4 w-4"/>
-                           <span className="sr-only">Descargar Comprobante</span>
-                       </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {isLoading ? (
+                <div className="space-y-2">
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            ) : invoices.length > 0 ? (
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Factura ID</TableHead>
+                    <TableHead>Concepto</TableHead>
+                    <TableHead>Fecha Máx. Pago</TableHead>
+                    <TableHead className="text-right">Monto</TableHead>
+                    <TableHead className="text-center">Estado</TableHead>
+                    <TableHead className="text-right">Acción</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {invoices.map((invoice) => (
+                    <TableRow key={invoice.id}>
+                        <TableCell className="font-mono text-xs">{invoice.id}</TableCell>
+                        <TableCell className="font-medium">Matrícula Ciclo {invoice.ciclo}</TableCell>
+                        <TableCell>
+                        {invoice.fechaMaximaPago.toDate().toLocaleDateString('es-ES', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        })}
+                        </TableCell>
+                        <TableCell className="text-right">{formatCurrency(invoice.monto)}</TableCell>
+                        <TableCell className="text-center">
+                        <Badge
+                            className={
+                                invoice.estado === "pagado" ? "bg-green-100 text-green-800" : 
+                                invoice.estado === "pendiente" ? "bg-yellow-100 text-yellow-800" :
+                                invoice.estado === "vencido" ? "bg-red-100 text-red-800" :
+                                "bg-gray-100 text-gray-800"
+                            }
+                        >
+                            {invoice.estado.charAt(0).toUpperCase() + invoice.estado.slice(1)}
+                        </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                        {invoice.estado === 'pendiente' ? (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button size="sm">Pagar</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Confirmar Pago</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            Estás a punto de registrar el pago de {formatCurrency(invoice.monto)} para la matrícula del ciclo {invoice.ciclo}. 
+                                            Esta es una simulación y marcará la factura como pagada.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handlePayment(invoice.id)}>Confirmar Pago</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        ) : invoice.estado === 'pagado' ? (
+                            <Button variant="ghost" size="icon">
+                                <Download className="h-4 w-4"/>
+                                <span className="sr-only">Descargar Comprobante</span>
+                            </Button>
+                        ) : null}
+                        </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+                </Table>
+            ) : (
+                <div className="text-center text-muted-foreground py-10">
+                    No tienes facturas pendientes ni historial de pagos.
+                </div>
+            )}
         </CardContent>
       </Card>
-
     </div>
   );
 }

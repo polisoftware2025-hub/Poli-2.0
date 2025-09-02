@@ -30,11 +30,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Career {
   id: string;
   nombre: string;
-  inversion?: number;
+  slug?: string;
   estudiantes: number;
   ciclos?: any[];
   status?: string;
@@ -62,7 +63,6 @@ export default function CareerAdminPage() {
       studentsSnapshot.forEach(doc => {
         const student = doc.data();
         const careerId = student.carreraId;
-        // The careerId in students collection should match the document ID from careers collection
         if (careerId) {
           studentCounts[careerId] = (studentCounts[careerId] || 0) + 1;
         }
@@ -71,7 +71,7 @@ export default function CareerAdminPage() {
       const careersWithStudentCounts = careersList.map(career => ({
           ...career,
           estudiantes: studentCounts[career.id] || 0,
-      })) as Career[];
+      })).filter(c => c.slug) as Career[]; // Ensure slug exists
 
       setCareers(careersWithStudentCounts);
 
@@ -140,7 +140,21 @@ export default function CareerAdminPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
-              Array.from({ length: 3 }).map((_, i) => <Card key={i} className="h-48 animate-pulse bg-muted" />)
+                Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i} className="h-56">
+                        <CardHeader>
+                            <Skeleton className="h-5 w-3/4"/>
+                            <Skeleton className="h-4 w-1/2"/>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            <Skeleton className="h-4 w-full"/>
+                            <Skeleton className="h-4 w-full"/>
+                        </CardContent>
+                        <CardFooter>
+                            <Skeleton className="h-6 w-20"/>
+                        </CardFooter>
+                    </Card>
+                ))
             ) : (
                 careers.map((career) => (
                     <Card key={career.id} className="flex flex-col">

@@ -24,7 +24,6 @@ const validateRegistrationData = (data: any) => {
     if (!data.modalidad) errors.modalidad = "La modalidad es requerida.";
     if (!data.grupo) errors.grupo = "El grupo es requerido.";
     if (!data.password || typeof data.password !== 'string' || data.password.length < 8) errors.password = "La contraseña debe tener al menos 8 caracteres.";
-    if (!data.metodoPago) errors.metodoPago = "El método de pago es requerido.";
     
     if (Object.keys(errors).length > 0) {
         return { isValid: false, errors };
@@ -43,7 +42,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "El cuerpo de la solicitud no es un JSON válido." }, { status: 400 });
     }
 
-    const { isValid, errors } = validateRegistrationData(rawBody);
+    // Remove metodoPago from validation, as it's no longer part of the form
+    const { metodoPago, ...dataToValidate } = rawBody;
+    const { isValid, errors } = validateRegistrationData(dataToValidate);
 
     if (!isValid) {
         console.error("[API Register] Manual Validation Errors:", errors);
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
         }, { status: 400 });
     }
     
-    const data = rawBody;
+    const data = dataToValidate;
 
     try {
         const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
@@ -101,8 +102,7 @@ export async function POST(req: Request) {
           estado: "pendiente",
           estaInscrito: false,
           fechaRegistro: serverTimestamp(),
-          metodoPago: data.metodoPago,
-          initialPassword: data.password,
+          initialPassword: data.password, // Keep initial password for activation
         };
         
         const batch = writeBatch(db);

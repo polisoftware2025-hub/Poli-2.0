@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookOpen, User, CheckCircle, Plus, Trash2, Edit, Upload } from "lucide-react";
+import { BookOpen, User, CheckCircle, Plus, Trash2, Edit, Upload, DollarSign } from "lucide-react";
 import { useParams, notFound, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -18,16 +18,16 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Materia {
-  id?: string; // Add optional id for keying
+  id?: string; 
   nombre: string;
   codigo?: string;
   creditos: number;
@@ -44,9 +44,9 @@ interface Career {
   imagenURL: string;
   duracionCiclo: string;
   modalidad: string;
-  inversion: number;
   titulo: string;
   ciclos: Ciclo[];
+  precioPorCiclo: { [key: string]: number };
 }
 
 export default function EditCareerPage() {
@@ -90,6 +90,14 @@ export default function EditCareerPage() {
     const { id, value } = e.target;
     setProgramDetails(prev => prev ? { ...prev, [id]: value } : null);
   };
+
+  const handlePriceChange = (cycleNumber: number, value: string) => {
+    if (!programDetails) return;
+    const newPrices = { ...programDetails.precioPorCiclo };
+    const price = parseInt(value, 10);
+    newPrices[cycleNumber] = isNaN(price) ? 0 : price;
+    setProgramDetails({ ...programDetails, precioPorCiclo: newPrices });
+  };
   
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,19 +128,27 @@ export default function EditCareerPage() {
             numero: newCycleNumber,
             materias: []
         };
+        const newPrecios = { ...prevDetails.precioPorCiclo, [newCycleNumber]: 0 };
         return {
             ...prevDetails,
-            ciclos: [...prevDetails.ciclos, newCycle]
+            ciclos: [...prevDetails.ciclos, newCycle],
+            precioPorCiclo: newPrecios,
         };
     });
   };
 
   const handleRemoveCycle = (cycleNumber: number) => {
     if (!programDetails) return;
-    setProgramDetails((prevDetails) => (prevDetails ? {
-        ...prevDetails,
-        ciclos: prevDetails.ciclos.filter((c) => c.numero !== cycleNumber)
-    } : null));
+    setProgramDetails((prevDetails) => {
+        if (!prevDetails) return null;
+        const newPrecios = { ...prevDetails.precioPorCiclo };
+        delete newPrecios[cycleNumber];
+        return {
+            ...prevDetails,
+            ciclos: prevDetails.ciclos.filter((c) => c.numero !== cycleNumber),
+            precioPorCiclo: newPrecios,
+        };
+    });
   };
   
   const handleAddMateria = () => {
@@ -154,8 +170,18 @@ export default function EditCareerPage() {
   };
   
    if (isLoading) {
-    return <div className="text-center p-8">Cargando detalles del programa...</div>;
-  }
+    return (
+        <div className="space-y-4 p-8">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-80 w-full" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+                <Skeleton className="h-64"/>
+                <Skeleton className="h-64"/>
+            </div>
+            <Skeleton className="h-96 w-full mt-8"/>
+        </div>
+    );
+   }
 
   if (!programDetails) {
     notFound();
@@ -226,10 +252,6 @@ export default function EditCareerPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                   <div>
-                      <Label htmlFor="inversion">Inversión por ciclo</Label>
-                      <Input id="inversion" type="number" value={programDetails.inversion} onChange={(e) => setProgramDetails(p => p ? {...p, inversion: parseInt(e.target.value)} : null)} />
-                  </div>
-                  <div>
                       <Label htmlFor="duracionCiclo">Duración (Ciclos)</Label>
                       <Input id="duracionCiclo" value={programDetails.duracionCiclo} onChange={handleChange}/>
                   </div>
@@ -244,7 +266,7 @@ export default function EditCareerPage() {
 
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Plan de Estudios (Pensum)</CardTitle>
+            <CardTitle>Plan de Estudios y Precios</CardTitle>
           </CardHeader>
           <CardContent>
             <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
@@ -268,50 +290,69 @@ export default function EditCareerPage() {
                       </Button>
                     </div>
                   <AccordionContent>
-                    <ul className="space-y-3 pt-2">
-                      {ciclo.materias.map((materia, materiaIndex) => (
-                        <li key={materia.id || materiaIndex} className="flex justify-between items-center text-gray-700 p-2 rounded-md hover:bg-gray-100">
-                          <div className="flex-grow">
-                              <span>{materia.nombre}</span>
-                              <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full ml-2">{materia.creditos} créditos</span>
-                          </div>
-                          <Button variant="destructive" size="icon" className="h-8 w-8" type="button" onClick={() => handleRemoveMateria(cycleIndex, materiaIndex)}>
-                            <Trash2 className="h-4 w-4"/>
-                          </Button>
-                        </li>
-                      ))}
-                    </ul>
-                     <Dialog open={isDialogOpen && currentCycleIndex === cycleIndex} onOpenChange={(isOpen) => { if(!isOpen) setCurrentCycleIndex(null); setIsDialogOpen(isOpen); }}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" className="mt-4" type="button" onClick={() => { setCurrentCycleIndex(cycleIndex); setIsDialogOpen(true); }}>
-                                <Plus className="mr-2 h-4 w-4"/>
-                                Agregar Materia
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div>
-                                    <Label htmlFor="subjectName">Nombre de la Materia</Label>
-                                    <Input id="subjectName" placeholder="Ej: Cálculo Integral" value={newMateria.nombre} onChange={(e) => setNewMateria({...newMateria, nombre: e.target.value})}/>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 className="font-semibold mb-2">Materias</h4>
+                            <ul className="space-y-3 pt-2">
+                            {ciclo.materias.map((materia, materiaIndex) => (
+                                <li key={materia.id || materiaIndex} className="flex justify-between items-center text-gray-700 p-2 rounded-md hover:bg-gray-100">
+                                <div className="flex-grow">
+                                    <span>{materia.nombre}</span>
+                                    <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full ml-2">{materia.creditos} créditos</span>
                                 </div>
-                                <div>
-                                    <Label htmlFor="subjectCode">Código</Label>
-                                    <Input id="subjectCode" placeholder="Ej: MAT-102" value={newMateria.codigo} onChange={(e) => setNewMateria({...newMateria, codigo: e.target.value})}/>
-                                </div>
-                                <div>
-                                    <Label htmlFor="subjectCredits">Créditos</Label>
-                                    <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                                <Button type="button" onClick={handleAddMateria}>Guardar Materia</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                <Button variant="destructive" size="icon" className="h-8 w-8" type="button" onClick={() => handleRemoveMateria(cycleIndex, materiaIndex)}>
+                                    <Trash2 className="h-4 w-4"/>
+                                </Button>
+                                </li>
+                            ))}
+                            </ul>
+                            <Dialog open={isDialogOpen && currentCycleIndex === cycleIndex} onOpenChange={(isOpen) => { if(!isOpen) setCurrentCycleIndex(null); setIsDialogOpen(isOpen); }}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="mt-4" type="button" onClick={() => { setCurrentCycleIndex(cycleIndex); setIsDialogOpen(true); }}>
+                                        <Plus className="mr-2 h-4 w-4"/>
+                                        Agregar Materia
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div>
+                                            <Label htmlFor="subjectName">Nombre de la Materia</Label>
+                                            <Input id="subjectName" placeholder="Ej: Cálculo Integral" value={newMateria.nombre} onChange={(e) => setNewMateria({...newMateria, nombre: e.target.value})}/>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="subjectCode">Código</Label>
+                                            <Input id="subjectCode" placeholder="Ej: MAT-102" value={newMateria.codigo} onChange={(e) => setNewMateria({...newMateria, codigo: e.target.value})}/>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="subjectCredits">Créditos</Label>
+                                            <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                                        <Button type="button" onClick={handleAddMateria}>Guardar Materia</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                        <div>
+                             <h4 className="font-semibold mb-2">Precio del Ciclo</h4>
+                             <div className="relative">
+                                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                                <Input 
+                                    id={`price-${ciclo.numero}`}
+                                    type="number"
+                                    value={programDetails.precioPorCiclo[ciclo.numero] || ''}
+                                    onChange={(e) => handlePriceChange(ciclo.numero, e.target.value)}
+                                    placeholder="Ej: 3500000"
+                                    className="pl-9"
+                                />
+                             </div>
+                        </div>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               ))}

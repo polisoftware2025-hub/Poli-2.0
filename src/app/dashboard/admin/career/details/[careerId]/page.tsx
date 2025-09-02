@@ -23,9 +23,9 @@ interface Career {
   imagenURL: string;
   duracionCiclo: string;
   modalidad: string;
-  inversion: number;
   titulo: string;
   ciclos: { numero: number; materias: { nombre: string; codigo?: string; creditos: number }[] }[];
+  precioPorCiclo?: { [key: string]: number };
 }
 
 
@@ -144,13 +144,6 @@ export default function CareerDetailsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-             <div className="flex items-center justify-between border-b pb-2">
-                <div className="flex items-center gap-2 font-semibold text-gray-700">
-                    <DollarSign className="h-5 w-5 text-green-600" />
-                    <span>Inversión por ciclo:</span>
-                </div>
-                <span className="text-gray-800 font-bold">{formatCurrency(program.inversion)}</span>
-            </div>
             <div className="flex items-center justify-between border-b pb-2">
                 <div className="flex items-center gap-2 font-semibold text-gray-700">
                     <Clock className="h-5 w-5 text-blue-600" />
@@ -180,15 +173,22 @@ export default function CareerDetailsPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Plan de Estudios (Pensum)</CardTitle>
-          <CardDescription>Explora las materias que se ven en cada ciclo.</CardDescription>
+          <CardTitle>Plan de Estudios y Precios</CardTitle>
+          <CardDescription>Explora las materias y costos de cada ciclo.</CardDescription>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
             {program.ciclos.map((ciclo: any) => (
               <AccordionItem value={`ciclo-${ciclo.numero}`} key={ciclo.numero}>
                 <AccordionTrigger className="text-lg font-semibold hover:no-underline">
-                    Ciclo {ciclo.numero}
+                    <div className="flex justify-between w-full pr-4">
+                        <span>Ciclo {ciclo.numero}</span>
+                        {program.precioPorCiclo && program.precioPorCiclo[ciclo.numero] !== undefined && (
+                            <span className="text-base font-bold text-green-600">
+                                {formatCurrency(program.precioPorCiclo[ciclo.numero])}
+                            </span>
+                        )}
+                    </div>
                 </AccordionTrigger>
                 <AccordionContent>
                   <ul className="space-y-3 pt-2">
