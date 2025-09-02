@@ -3,19 +3,21 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, Search, ArrowLeft, ArrowRight, View, Filter, RotateCcw, List, Calendar, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Download, ArrowLeft, ArrowRight, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { addWeeks, startOfWeek, endOfWeek, format, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 interface ScheduleEntry {
   dia: string;
@@ -235,7 +237,7 @@ export default function HorariosPage() {
         </CardContent>
         <CardContent className="flex flex-col items-center gap-2 pt-0 p-6">
              <Button onClick={handleShowSchedule} size="lg" className="w-full md:w-auto">
-                <Calendar className="mr-2 h-4 w-4"/>
+                <CalendarIcon className="mr-2 h-4 w-4"/>
                 Ver Horario
             </Button>
             <Button variant="link" size="sm" onClick={handleClearFilters} className="text-muted-foreground">
@@ -289,7 +291,9 @@ export default function HorariosPage() {
                 </TabsList>
                 <TabsContent value="week">
                     {isLoading ? (
-                        <p>Cargando horario...</p>
+                        <div className="space-y-2">
+                           <Skeleton className="h-48 w-full" />
+                        </div>
                     ) : filteredSchedule.length > 0 ? (
                          <div className="overflow-x-auto relative">
                             <Table className="min-w-full border">
