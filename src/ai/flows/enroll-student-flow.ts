@@ -10,8 +10,10 @@
 
 import { carreraData } from '@/lib/seed';
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, updateDoc, query, where, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, updateDoc, query, where, getDocs, writeBatch } from "firebase/firestore";
 import { sendWelcomeEmail } from './send-welcome-email';
+import bcrypt from "bcrypt";
+
 
 // Helper function to generate a secure temporary password
 const generateTemporaryPassword = (length = 12) => {
@@ -30,13 +32,13 @@ async function emailExists(email: string): Promise<boolean> {
     return !querySnapshot.empty;
 }
 
-async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2: string): Promise<string> {
+async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2?: string): Promise<string> {
     const domain = "@pi.edu.co";
-    const baseEmail = [
-        firstName.toLowerCase().split(' ')[0],
-        lastName1.toLowerCase().split(' ')[0],
-        lastName2.toLowerCase().split(' ')[0]
-    ].join('.');
+    const namePart = firstName.toLowerCase().split(' ')[0];
+    const lastName1Part = lastName1.toLowerCase().split(' ')[0];
+    const lastName2Part = lastName2 ? lastName2.toLowerCase().split(' ')[0] : '';
+    
+    const baseEmail = [namePart, lastName1Part, lastName2Part].filter(Boolean).join('.');
     
     let finalEmail = `${baseEmail}${domain}`;
     let counter = 1;
@@ -64,15 +66,12 @@ export interface ProcessStudentEnrollmentOutput {
 }
 
 function calculateStartCycle(currentDate: Date): number {
-  const currentMonth = currentDate.getMonth(); // 0-indexed (Jan=0, Jul=6)
-  // If enrollment happens in the first half of the year (before July), they start in Cycle 1 of that year.
-  // If in the second half, they also start in Cycle 1 (as it's their first semester).
-  // The logic simplifies to always starting in cycle 1.
   return 1;
 }
 
 export async function processStudentEnrollment(input: ProcessStudentEnrollmentInput): Promise<ProcessStudentEnrollmentOutput> {
     const { studentId } = input;
+    const batch = writeBatch(db);
 
     try {
         const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
@@ -88,11 +87,10 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         const studentData = studentSnap.data();
         const userData = userSnap.data();
         
-        if (studentData.estado === 'inscrito') {
-            return { success: false, message: 'Este estudiante ya ha sido inscrito.' };
+        if (studentData.estado === 'inscrito' || userData.estado === 'activo') {
+            return { success: false, message: 'Este estudiante ya ha sido inscrito y activado.' };
         }
 
-        // 1. Calculate Cycle and Assign Subjects
         const currentDate = new Date();
         const startCycle = calculateStartCycle(currentDate);
         const cycleInfo = carreraData.ciclos.find(c => c.numero === startCycle);
@@ -102,38 +100,34 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         }
         
         const assignedSubjects = cycleInfo.materias;
-
-        // 2. Generate Institutional Email & Temporary Password
         const institutionalEmail = await generateUniqueInstitutionalEmail(userData.nombre1, userData.apellido1, userData.apellido2);
         const temporaryPassword = generateTemporaryPassword();
+        const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
         
-        // In a real scenario, you would HASH this password before storing it.
-        // For now, we assume a separate step or API handles that.
-        // Let's just update the user doc with the email.
-        
-        // 3. Update Firestore Documents
-        await updateDoc(studentRef, {
+        batch.update(studentRef, {
             estado: 'inscrito',
+            estaInscrito: true,
             cicloActual: startCycle,
-            materiasInscritas: assignedSubjects,
+            materiasInscritas: assignedSubjects.map(m => ({materiaId: m.id, nombre: m.nombre})),
             correoInstitucional: institutionalEmail,
             fechaActualizacion: new Date(),
         });
         
-        await updateDoc(userRef, {
+        batch.update(userRef, {
             correoInstitucional: institutionalEmail,
             rol: { id: "estudiante", descripcion: "Estudiante" },
-            // Here you would store the HASHED temporaryPassword
-            // contrasena: await bcrypt.hash(temporaryPassword, 10),
+            contrasena: hashedPassword,
+            estado: "activo",
             fechaActualizacion: new Date(),
         });
 
-        // 4. Send Welcome Email
+        await batch.commit();
+
         await sendWelcomeEmail({
             name: userData.nombre1,
             email: userData.correo,
             institutionalEmail: institutionalEmail,
-            temporaryPassword: temporaryPassword, // Send the plain text password
+            temporaryPassword: temporaryPassword,
         });
 
         return {
@@ -147,7 +141,10 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
 
     } catch (error) {
         const message = error instanceof Error ? error.message : "Ocurrió un error desconocido.";
-        console.error("Error processing enrollment:", error);
+        console.error(`[enroll-student-flow] Error processing enrollment for ${studentId}:`, {
+            code: (error as any).code,
+            message: message,
+        });
         return { success: false, message };
     }
 }

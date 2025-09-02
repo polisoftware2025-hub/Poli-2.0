@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
-import { ClipboardList, MoreHorizontal, Check, X, Search, Filter } from "lucide-react";
+import { ClipboardList, MoreHorizontal, Check, X, Search, Filter, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -19,18 +19,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
+import { collection, query, where, getDocs, DocumentData, doc, updateDoc } from "firebase/firestore";
 import { processStudentEnrollment } from "@/ai/flows/enroll-student-flow";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 interface PreRegisteredUser {
-  id: string; // This will be the document ID from Firestore
+  id: string; 
   nombreCompleto: string;
   correo: string;
-  carreraId: string; // The ID of the career
-  carreraNombre?: string; // To be fetched
-  fechaRegistro: any; // Firestore Timestamp
+  carreraId: string;
+  carreraNombre?: string; 
+  fechaRegistro: any;
   estado: "pendiente" | "aprobado" | "rechazado";
 }
 
@@ -53,23 +54,37 @@ export default function PreRegisterPage() {
   const [users, setUsers] = useState<PreRegisteredUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  
+  const [isProcessing, startTransition] = useTransition();
+
   useEffect(() => {
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
-        const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
-        const q = query(usersRef, where("estado", "==", filter));
+        // Fetch careers to map IDs to names
+        const carrerasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+        const carrerasSnapshot = await getDocs(carrerasRef);
+        const carrerasMap = new Map<string, string>();
+        carrerasSnapshot.forEach(doc => {
+            carrerasMap.set(doc.id, doc.data().nombre);
+        });
+
+        // Fetch students and map career name
+        const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+        const q = query(studentsRef, where("estado", "==", filter));
         const querySnapshot = await getDocs(q);
 
-        const fetchedUsers: PreRegisteredUser[] = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            nombreCompleto: doc.data().nombreCompleto,
-            correo: doc.data().correo,
-            carreraId: doc.data().carrera, // Assuming career ID is stored here
-            fechaRegistro: doc.data().fechaRegistro,
-            estado: doc.data().estado
-        }));
+        const fetchedUsers: PreRegisteredUser[] = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                nombreCompleto: data.nombreCompleto,
+                correo: data.correo,
+                carreraId: data.carreraId,
+                carreraNombre: carrerasMap.get(data.carreraId) || 'Carrera no encontrada',
+                fechaRegistro: data.fechaRegistro,
+                estado: data.estado
+            }
+        });
         setUsers(fetchedUsers);
       } catch (error) {
           console.error("Error fetching pre-registered users:", error);
@@ -82,17 +97,34 @@ export default function PreRegisterPage() {
   }, [filter, toast]);
 
   const handleApprove = async (studentId: string) => {
-    try {
-        const result = await processStudentEnrollment({ studentId });
-        if (result.success) {
-            toast({ title: "Éxito", description: result.message });
-            setUsers(prev => prev.filter(u => u.id !== studentId)); // Remove from list
-        } else {
-            throw new Error(result.message);
+    startTransition(async () => {
+        try {
+            const result = await processStudentEnrollment({ studentId });
+            if (result.success) {
+                toast({ title: "Éxito", description: result.message });
+                setUsers(prev => prev.filter(u => u.id !== studentId)); // Remove from list
+            } else {
+                throw new Error(result.message);
+            }
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error al Aprobar", description: error.message });
         }
-    } catch (error: any) {
-        toast({ variant: "destructive", title: "Error al Aprobar", description: error.message });
-    }
+    });
+  }
+
+  const handleReject = async (studentId: string) => {
+      startTransition(async () => {
+        try {
+            const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
+            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", studentId);
+            await updateDoc(studentRef, { estado: 'rechazado' });
+            await updateDoc(userRef, { estado: 'rechazado' });
+            toast({ title: "Solicitud Rechazada", description: "El aspirante ha sido marcado como rechazado." });
+            setUsers(prev => prev.filter(u => u.id !== studentId));
+        } catch (error: any) {
+             toast({ variant: "destructive", title: "Error al Rechazar", description: error.message });
+        }
+      });
   }
 
   return (
@@ -102,6 +134,14 @@ export default function PreRegisterPage() {
         description="Gestiona las solicitudes de los aspirantes que han completado el formulario de pre-registro."
         icon={<ClipboardList className="h-8 w-8 text-primary" />}
       />
+
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Flujo de Aprobación</AlertTitle>
+        <AlertDescription>
+            Al aprobar una solicitud, el sistema automáticamente inscribirá al estudiante, le asignará un ciclo y materias, y le enviará un correo de bienvenida con sus credenciales.
+        </AlertDescription>
+      </Alert>
 
       <Card>
         <CardHeader>
@@ -158,7 +198,7 @@ export default function PreRegisterPage() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell>{user.carreraId || 'No especificada'}</TableCell>
+                      <TableCell>{user.carreraNombre}</TableCell>
                        <TableCell>
                         {user.fechaRegistro?.toDate().toLocaleDateString('es-ES', {
                           year: 'numeric', month: 'long', day: 'numeric'
@@ -172,7 +212,7 @@ export default function PreRegisterPage() {
                       <TableCell className="text-right">
                          <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
+                            <Button variant="ghost" size="icon" disabled={isProcessing}>
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
@@ -181,7 +221,7 @@ export default function PreRegisterPage() {
                               <Check className="mr-2 h-4 w-4" />
                               Aprobar
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                            <DropdownMenuItem onSelect={() => handleReject(user.id)} className="text-red-600 focus:text-red-600 focus:bg-red-50">
                               <X className="mr-2 h-4 w-4" />
                               Rechazar
                             </DropdownMenuItem>

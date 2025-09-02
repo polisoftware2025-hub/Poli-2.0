@@ -13,12 +13,6 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'placehold.co',
-      },
-      // This pattern allows images from any domain.
-      // Useful for development, but for production, it's recommended to be more specific.
-      {
-        protocol: 'https',
         hostname: '**',
       },
        {

@@ -52,6 +52,6 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<st
   const { output } = await welcomeEmailPrompt(input);
   // In a real application, you would use a service like Nodemailer or SendGrid here.
   // For this demo, we'll just return the HTML content.
-  console.log("Generated Welcome Email HTML:", output);
+  console.log(`Generated Welcome Email HTML for ${input.email}:`, output ? 'HTML content generated' : 'No HTML content');
   return output!;
 }
