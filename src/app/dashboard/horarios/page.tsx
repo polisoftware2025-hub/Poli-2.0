@@ -66,8 +66,8 @@ export default function HorariosPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  const [filterMateria, setFilterMateria] = useState('all');
-  const [filterGrupo, setFilterGrupo] = useState('all');
+  const [filterMateria, setFilterMateria] = useState('');
+  const [filterGrupo, setFilterGrupo] = useState('');
   
   const [showSchedule, setShowSchedule] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
@@ -113,33 +113,40 @@ export default function HorariosPage() {
   
   const filteredSchedule = useMemo(() => {
     const schedule: ScheduleEntry[] = [];
-
+  
     const groupsToProcess = allGroups.filter(group => {
-      const materiaMatch = filterMateria === 'all' || group.materia.nombre === filterMateria;
-      const grupoMatch = filterGrupo === 'all' || group.id === filterGrupo;
-      return materiaMatch && grupoMatch;
+      // If a specific group is selected, only consider that group.
+      if (filterGrupo) {
+        return group.id === filterGrupo;
+      }
+      // If a specific materia is selected (but no group), consider all groups of that materia.
+      if (filterMateria) {
+        return group.materia.nombre === filterMateria;
+      }
+      // If neither is selected, show all groups.
+      return true;
     });
-
+  
     groupsToProcess.forEach(group => {
-        if (group.horario) {
-            group.horario.forEach((slot: { dia: string; hora: string }) => {
-                const [startTimeStr, endTimeStr] = slot.hora.split(" - ");
-                const start = new Date(`1970-01-01T${startTimeStr}:00`);
-                const end = new Date(`1970-01-01T${endTimeStr}:00`);
-                const duracion = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-
-                schedule.push({
-                    dia: slot.dia,
-                    horaInicio: startTimeStr,
-                    horaFin: endTimeStr,
-                    duracion: Math.max(1, Math.round(duracion)),
-                    materia: group.materia.nombre,
-                    grupo: group.codigoGrupo,
-                    docente: group.docente.nombre,
-                    aula: group.aula,
-                });
-            });
-        }
+      if (group.horario) {
+        group.horario.forEach((slot: { dia: string; hora: string }) => {
+          const [startTimeStr, endTimeStr] = slot.hora.split(" - ");
+          const start = new Date(`1970-01-01T${startTimeStr}:00`);
+          const end = new Date(`1970-01-01T${endTimeStr}:00`);
+          const duracion = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+  
+          schedule.push({
+            dia: slot.dia,
+            horaInicio: startTimeStr,
+            horaFin: endTimeStr,
+            duracion: Math.max(1, Math.round(duracion)),
+            materia: group.materia.nombre,
+            grupo: group.codigoGrupo,
+            docente: group.docente.nombre,
+            aula: group.aula,
+          });
+        });
+      }
     });
     return schedule.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
   }, [allGroups, filterMateria, filterGrupo]);
@@ -151,7 +158,7 @@ export default function HorariosPage() {
 
   const grupos = useMemo(() => {
       let filteredGroups = allGroups;
-      if (filterMateria !== 'all') {
+      if (filterMateria) {
           filteredGroups = allGroups.filter(g => g.materia.nombre === filterMateria);
       }
       return filteredGroups.map(g => ({ value: g.id, label: g.codigoGrupo }));
@@ -173,7 +180,9 @@ export default function HorariosPage() {
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
-    doc.text(`Mi Horario de Clases - ${filterMateria === 'all' ? 'Completo' : filterMateria}`, 14, 16);
+    const materiaTitle = filterMateria ? filterMateria : 'Completo';
+    const grupoTitle = filterGrupo ? grupos.find(g => g.value === filterGrupo)?.label : 'Todos';
+    doc.text(`Mi Horario de Clases - Materia: ${materiaTitle}, Grupo: ${grupoTitle}`, 14, 16);
     autoTable(doc, {
         head: [['Hora', ...daysOfWeek]],
         body: timeSlots.map((time, rowIndex) => [
@@ -189,7 +198,7 @@ export default function HorariosPage() {
   };
   
   const handleShowSchedule = () => {
-    if (filterMateria === 'all' && filterGrupo === 'all') {
+    if (!filterMateria && !filterGrupo) {
       setShowAlert(true);
       return;
     }
@@ -200,44 +209,48 @@ export default function HorariosPage() {
     });
     setShowSchedule(true);
   }
+  
+  const handleResetFilters = () => {
+    setFilterMateria("");
+    setFilterGrupo("");
+    setShowAlert(false);
+  }
 
   const renderFilters = () => (
-    <Card className="max-w-3xl mx-auto w-full">
+    <Card className="max-w-xl mx-auto w-full">
         <CardHeader>
             <CardTitle className="flex items-center gap-3 text-2xl"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
-            <CardDescription>Selecciona una materia para ver los grupos disponibles y luego consulta el horario.</CardDescription>
+            <CardDescription>Selecciona una materia y/o grupo para visualizar el horario correspondiente.</CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
                 <div className="space-y-2">
                     <Label htmlFor="materia-select">Materia</Label>
-                    <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('all'); setShowAlert(false); }}>
+                    <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo(''); setShowAlert(false); }}>
                         <SelectTrigger id="materia-select">
                             <SelectValue placeholder="Selecciona una materia"/>
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">Todas las materias</SelectItem>
                             {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
-
-                {filterMateria !== 'all' && (
-                    <div className="space-y-2">
-                        <Label htmlFor="grupo-select">Grupo</Label>
-                        <Select value={filterGrupo} onValueChange={(value) => { setFilterGrupo(value); setShowAlert(false); }} disabled={isLoading || filterMateria === 'all' || grupos.length === 0}>
-                            <SelectTrigger id="grupo-select">
-                                <SelectValue placeholder="Selecciona un grupo"/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los grupos de esta materia</SelectItem>
-                                {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                
+                {filterMateria && (
+                  <div className="space-y-2">
+                      <Label htmlFor="grupo-select">Grupo</Label>
+                      <Select value={filterGrupo} onValueChange={(value) => { setFilterGrupo(value); setShowAlert(false); }} disabled={isLoading || !filterMateria || grupos.length === 0}>
+                          <SelectTrigger id="grupo-select">
+                              <SelectValue placeholder="Selecciona un grupo"/>
+                          </SelectTrigger>
+                          <SelectContent>
+                              {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                          </SelectContent>
+                      </Select>
+                  </div>
                 )}
             </div>
-
+            
             {showAlert && (
               <Alert variant="destructive">
                   <Info className="h-4 w-4"/>
@@ -249,11 +262,16 @@ export default function HorariosPage() {
             )}
         </CardContent>
         <CardFooter className="flex flex-col items-center justify-center gap-4 pt-4 p-6">
-            {(filterMateria !== 'all' && filterGrupo !== 'all') && (
-                <Button onClick={handleShowSchedule} size="lg" className="w-full md:w-auto">
+            {(filterMateria && filterGrupo) && (
+              <>
+                <Button onClick={handleShowSchedule} size="lg" className="w-full">
                     <Search className="mr-2 h-4 w-4"/>
                     Ver Horario
                 </Button>
+                <Button variant="link" onClick={handleResetFilters} className="text-sm text-muted-foreground">
+                    Limpiar filtros
+                </Button>
+              </>
             )}
         </CardFooter>
     </Card>
