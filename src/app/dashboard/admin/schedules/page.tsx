@@ -135,41 +135,43 @@ export default function SchedulesAdminPage() {
             </CardHeader>
             <CardContent className="p-4 md:p-6">
                 {scheduleForSalon.length > 0 ? (
-                    <div className="w-full overflow-x-auto">
-                        <Table className="min-w-full border">
-                            <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
-                                {daysOfWeek.map(day => (
-                                <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
-                                ))}
-                            </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                            {timeSlots.map((time, timeIndex) => (
-                                <TableRow key={time}>
-                                <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
-                                {daysOfWeek.map((day, dayIndex) => {
-                                    const entry = scheduleGrid[timeIndex][dayIndex];
-                                    if (entry && entry.materia === 'SPAN') {
-                                    return null;
-                                    }
-                                    return (
-                                    <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5 cursor-pointer hover:bg-primary/10' : 'hover:bg-gray-50 cursor-pointer'}`}>
-                                        {entry && (
-                                        <div className="bg-white p-2 rounded-md border-l-4 border-blue-500 shadow-sm h-full flex flex-col justify-center">
-                                            <p className="font-bold text-xs text-blue-800">{entry.materia}</p>
-                                            <p className="text-xs text-muted-foreground">{entry.grupo}</p>
-                                            <p className="text-xs text-muted-foreground">{entry.docente}</p>
-                                        </div>
-                                        )}
-                                    </TableCell>
-                                    );
-                                })}
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                        <div className="col-span-1 md:col-span-3 lg:col-span-4">
+                            <Table className="min-w-full border">
+                                <TableHeader>
+                                <TableRow>
+                                    <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
+                                    {daysOfWeek.map(day => (
+                                    <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
+                                    ))}
                                 </TableRow>
-                            ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                {timeSlots.map((time, timeIndex) => (
+                                    <TableRow key={time}>
+                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
+                                    {daysOfWeek.map((day, dayIndex) => {
+                                        const entry = scheduleGrid[timeIndex][dayIndex];
+                                        if (entry && entry.materia === 'SPAN') {
+                                        return null;
+                                        }
+                                        return (
+                                        <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5 cursor-pointer hover:bg-primary/10' : 'hover:bg-gray-50 cursor-pointer'}`}>
+                                            {entry && (
+                                            <div className="bg-white p-2 rounded-md border-l-4 border-blue-500 shadow-sm h-full flex flex-col justify-center">
+                                                <p className="font-bold text-xs text-blue-800">{entry.materia}</p>
+                                                <p className="text-xs text-muted-foreground">{entry.grupo}</p>
+                                                <p className="text-xs text-muted-foreground">{entry.docente}</p>
+                                            </div>
+                                            )}
+                                        </TableCell>
+                                        );
+                                    })}
+                                    </TableRow>
+                                ))}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </div>
                 ) : (
                     <Alert>
