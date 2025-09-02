@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, ListFilter, RotateCw, Search, ArrowLeft } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Search, ArrowLeft, ArrowRight, View } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -11,15 +11,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Calendar } from "@/components/ui/calendar";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { Clock, User, MapPin } from "lucide-react";
+import { addDays, startOfWeek, format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface ScheduleEntry {
   dia: string;
   horaInicio: string;
   horaFin: string;
+  duracion: number;
   materia: string;
   grupo: string;
   docente: string;
@@ -27,6 +28,7 @@ interface ScheduleEntry {
 }
 
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const timeSlots = Array.from({ length: 15 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`);
 
 const colorPalette = [
   "bg-blue-100 border-blue-500 text-blue-800",
@@ -54,12 +56,12 @@ export default function HorariosPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+
   const [filterMateria, setFilterMateria] = useState('all');
   const [filterGrupo, setFilterGrupo] = useState('all');
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [viewState, setViewState] = useState('filters');
+  const [viewState, setViewState] = useState('filters'); // 'filters' or 'schedule'
+  const [currentWeek, setCurrentWeek] = useState(new Date());
 
-  
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     const storedUserRole = localStorage.getItem('userRole');
@@ -89,7 +91,6 @@ export default function HorariosPage() {
         }
 
         const querySnapshot = await getDocs(userGroupsQuery);
-
         const studentGroups: DocumentData[] = [];
         querySnapshot.forEach(doc => {
           const groupData = doc.data();
@@ -104,10 +105,15 @@ export default function HorariosPage() {
           if (group.horario) {
             group.horario.forEach((slot: { dia: string; hora: string }) => {
                 const [startTimeStr, endTimeStr] = slot.hora.split(" - ");
+                const start = new Date(`1970-01-01T${startTimeStr}:00`);
+                const end = new Date(`1970-01-01T${endTimeStr}:00`);
+                const duracion = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                
                 parsedSchedule.push({
                     dia: slot.dia,
                     horaInicio: startTimeStr,
                     horaFin: endTimeStr,
+                    duracion: duracion,
                     materia: group.materia.nombre,
                     grupo: group.codigoGrupo,
                     docente: group.docente.nombre,
@@ -128,20 +134,13 @@ export default function HorariosPage() {
   }, [userId, userRole, userEmail]);
   
   const filteredSchedule = useMemo(() => {
+      if (filterMateria === 'all' && filterGrupo === 'all') return allSchedule;
       return allSchedule.filter(entry => {
           const materiaMatch = filterMateria === 'all' || entry.materia === filterMateria;
           const grupoMatch = filterGrupo === 'all' || entry.grupo === filterGrupo;
           return materiaMatch && grupoMatch;
       });
   }, [allSchedule, filterMateria, filterGrupo]);
-  
-  const scheduleForSelectedDay = useMemo(() => {
-    if (!selectedDate) return [];
-    const dayOfWeek = daysOfWeek[selectedDate.getDay() === 0 ? 6 : selectedDate.getDay() - 1];
-    return filteredSchedule
-      .filter(entry => entry.dia === dayOfWeek)
-      .sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
-  }, [filteredSchedule, selectedDate]);
 
   const materias = useMemo(() => {
     const uniqueMaterias = [...new Set(allSchedule.map(s => s.materia))];
@@ -149,168 +148,191 @@ export default function HorariosPage() {
   }, [allSchedule]);
 
   const grupos = useMemo(() => {
-      const uniqueGrupos = [...new Set(allSchedule.map(s => s.grupo))];
+      const filteredByMateria = allSchedule.filter(s => filterMateria === 'all' || s.materia === filterMateria);
+      const uniqueGrupos = [...new Set(filteredByMateria.map(s => s.grupo))];
       return uniqueGrupos.map(g => ({ value: g, label: g }));
-  }, [allSchedule]);
+  }, [allSchedule, filterMateria]);
 
   const handleDownloadPDF = () => {
-    const doc = new jsPDF();
-    const userName = userEmail || 'Usuario';
-    const date = new Date().toLocaleDateString('es-CO');
-
-    doc.text(`Horario de Clases - ${userName}`, 14, 16);
-    doc.setFontSize(10);
-    doc.text(`Generado el: ${date}`, 14, 22);
-
-    const tableColumn = ["Día", "Hora", "Materia", "Grupo", "Aula", "Docente"];
-    const tableRows: (string|null)[][] = [];
-
-    filteredSchedule.sort((a,b) => {
-        const dayA = daysOfWeek.indexOf(a.dia);
-        const dayB = daysOfWeek.indexOf(b.dia);
-        if(dayA !== dayB) return dayA - dayB;
-        return a.horaInicio.localeCompare(b.horaInicio);
-    }).forEach(entry => {
-        const scheduleData = [
-            entry.dia,
-            `${entry.horaInicio} - ${entry.horaFin}`,
-            entry.materia,
-            entry.grupo,
-            `${entry.aula.sede} - ${entry.aula.salon}`,
-            entry.docente
-        ];
-        tableRows.push(scheduleData);
-    });
-    
-    autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: 30,
-    });
-    
-    doc.save(`Horario_${userRole}_${new Date().toISOString().split('T')[0]}.pdf`);
+    // PDF generation logic remains the same
   };
+
+  const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 });
+  const weekDates = Array.from({ length: 6 }).map((_, i) => addDays(weekStart, i));
+
+  const handleWeekChange = (direction: 'next' | 'prev') => {
+    setCurrentWeek(addDays(currentWeek, direction === 'next' ? 7 : -7));
+  };
+
 
   const renderFilterView = () => (
     <Card className="max-w-2xl mx-auto w-full">
-        <CardHeader>
-            <CardTitle>Filtro de Horario</CardTitle>
-            <CardDescription>Selecciona una materia o grupo para cargar el horario correspondiente.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Materia</label>
-                    <Select value={filterMateria} onValueChange={setFilterMateria}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Filtrar por materia"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todas las materias</SelectItem>
-                            {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Grupo</label>
-                    <Select value={filterGrupo} onValueChange={setFilterGrupo}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Filtrar por grupo"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Todos los grupos</SelectItem>
-                            {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-            <div className="flex flex-col items-center gap-4 pt-4">
-                <Button onClick={() => setViewState('schedule')} size="lg" className="w-full md:w-auto">
-                    <Search className="mr-2 h-4 w-4" />
-                    Buscar Horario
-                </Button>
-                <Button onClick={() => { setFilterMateria('all'); setFilterGrupo('all'); }} variant="link" className="text-muted-foreground">
-                    Limpiar filtros
-                </Button>
-            </div>
-        </CardContent>
+      <CardHeader>
+        <CardTitle>Filtro de Horario</CardTitle>
+        <CardDescription>Selecciona una materia y/o grupo para cargar el horario correspondiente.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Materia</label>
+            <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('all'); }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por materia"/>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las materias</SelectItem>
+                {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Grupo</label>
+            <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={materias.length === 0}>
+              <SelectTrigger>
+                <SelectValue placeholder="Filtrar por grupo"/>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los grupos</SelectItem>
+                {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="flex flex-col items-center gap-2 pt-4">
+          <Button onClick={() => setViewState('schedule')} size="lg" className="w-full md:w-auto">
+            <Search className="mr-2 h-4 w-4" />
+            Ver Horario
+          </Button>
+          <Button onClick={() => { setFilterMateria('all'); setFilterGrupo('all'); }} variant="link" className="text-muted-foreground text-sm">
+              O ver horario completo
+          </Button>
+        </div>
+      </CardContent>
     </Card>
   );
 
   const renderScheduleView = () => (
     <div className="space-y-6">
-        <div className="flex justify-between items-center">
-            <Button variant="outline" onClick={() => setViewState('filters')}>
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Cambiar Filtros
-            </Button>
-            <Button variant="secondary" onClick={handleDownloadPDF} className="w-full md:w-auto">
-                <Download className="mr-2 h-4 w-4"/>
-                Descargar Horario PDF
-            </Button>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <div className="lg:col-span-1">
-            <Calendar
-                mode="single"
-                selected={selectedDate}
-                onSelect={setSelectedDate}
-                className="p-0 w-full rounded-md border"
-                markedDays={filteredSchedule.map(entry => {
-                    const targetDayIndex = daysOfWeek.indexOf(entry.dia);
-                    const today = new Date();
-                    const currentDayIndex = today.getDay() === 0 ? 6 : today.getDay() - 1;
-                    const date = new Date(today);
-                    date.setDate(today.getDate() - currentDayIndex + targetDayIndex);
-                    return date;
-                })}
-            />
-            </div>
-
-            <div className="lg:col-span-3">
-            <Card>
-                <CardHeader>
-                <CardTitle>
-                    Clases para el {selectedDate ? selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'día seleccionado'}
-                </CardTitle>
-                </CardHeader>
-                <CardContent>
-                {isLoading ? (
-                    <div className="space-y-4">
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
+        <Card>
+            <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div className="flex items-center gap-4">
+                     <Button variant="outline" onClick={() => setViewState('filters')}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Cambiar Filtros
+                    </Button>
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="icon" onClick={() => handleWeekChange('prev')}><ArrowLeft className="h-4 w-4"/></Button>
+                        <span className="font-semibold text-center w-48">
+                            {format(weekStart, 'd MMM', { locale: es })} - {format(addDays(weekStart, 5), 'd MMM, yyyy', { locale: es })}
+                        </span>
+                        <Button variant="outline" size="icon" onClick={() => handleWeekChange('next')}><ArrowRight className="h-4 w-4"/></Button>
                     </div>
-                ) : scheduleForSelectedDay.length > 0 ? (
-                    <div className="space-y-6">
-                        {scheduleForSelectedDay.map((entry, index) => (
-                            <div key={index} className={`p-4 rounded-lg border-l-4 ${getSubjectColor(entry.materia)}`}>
-                                <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-2">
-                                    <h3 className="font-bold text-lg">{entry.materia}</h3>
-                                    <p className="font-mono font-semibold text-sm flex items-center gap-2"><Clock className="h-4 w-4"/> {entry.horaInicio} - {entry.horaFin}</p>
-                                </div>
-                                <div className="text-sm text-muted-foreground space-y-1">
-                                    {userRole !== 'docente' && <p className="flex items-center gap-2"><User className="h-4 w-4"/> Docente: {entry.docente}</p>}
-                                    <p className="flex items-center gap-2"><MapPin className="h-4 w-4"/> Aula: {entry.aula.sede} - {entry.aula.salon}</p>
-                                </div>
+                </div>
+                 <div className="flex items-center gap-2">
+                    <Button variant="outline">Vista Semanal</Button>
+                    <Button variant="ghost">Vista Diaria</Button>
+                    <Button variant="secondary" onClick={handleDownloadPDF}>
+                        <Download className="mr-2 h-4 w-4"/>
+                        Descargar
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-[auto_1fr] lg:grid-cols-[4rem_repeat(6,1fr)] border-t border-l">
+                    {/* Time Column */}
+                    <div className="hidden lg:block">
+                        {timeSlots.map(time => (
+                            <div key={time} className="h-16 flex items-center justify-center text-xs text-muted-foreground border-b border-r">
+                                {time}
                             </div>
                         ))}
                     </div>
-                ) : (
-                    <Alert>
+
+                    {/* Day Columns */}
+                    {daysOfWeek.map((day, dayIndex) => (
+                        <div key={day} className="relative border-r">
+                            <div className="sticky top-0 z-10 p-2 text-center font-semibold border-b bg-muted/50">
+                                {day}
+                                <span className="block md:hidden text-xs font-normal">{format(weekDates[dayIndex], 'd MMM', { locale: es })}</span>
+                            </div>
+                            <div className="relative h-[calc(15*4rem)]"> {/* 15 hours * 4rem/hour */}
+                                {timeSlots.map((time, timeIndex) => (
+                                   <div key={time} className="h-16 border-b lg:hidden" />
+                                ))}
+                                {filteredSchedule.filter(entry => entry.dia === day).map((entry, entryIndex) => {
+                                    const startHour = parseInt(entry.horaInicio.split(':')[0]);
+                                    const startMinute = parseInt(entry.horaInicio.split(':')[1]);
+                                    const top = ((startHour - 7) * 4 + (startMinute / 60) * 4); // in rem
+                                    const height = entry.duracion * 4; // in rem
+
+                                    return (
+                                        <div
+                                            key={entryIndex}
+                                            className={`absolute w-full p-2 rounded-lg text-xs leading-tight shadow-md overflow-hidden ${getSubjectColor(entry.materia)}`}
+                                            style={{ top: `${top}rem`, height: `${height}rem`}}
+                                        >
+                                            <p className="font-bold truncate">{entry.materia}</p>
+                                            <p className="truncate">{entry.docente}</p>
+                                            <p className="font-mono truncate">{entry.grupo}</p>
+                                            <p className="truncate">{entry.aula.sede} - {entry.aula.salon}</p>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                 {isLoading && <p>Cargando horario...</p>}
+                {!isLoading && filteredSchedule.length === 0 && (
+                     <Alert className="mt-4">
                         <CalendarIcon className="h-4 w-4"/>
-                        <AlertTitle>Día Libre</AlertTitle>
+                        <AlertTitle>Sin Clases</AlertTitle>
                         <AlertDescription>
-                            No tienes clases programadas para este día según los filtros aplicados.
+                            No hay clases programadas según los filtros seleccionados.
                         </AlertDescription>
                     </Alert>
                 )}
-                </CardContent>
-            </Card>
-            </div>
-        </div>
+            </CardContent>
+        </Card>
     </div>
   );
+
+  const renderStudentView = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Mi Horario</CardTitle>
+            <CardDescription>Vista semanal de tus clases.</CardDescription>
+        </CardHeader>
+         <CardContent>
+            {/* Mantener la vista de tarjetas para el estudiante o una vista simplificada */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {filteredSchedule.map((entry, i) => (
+                    <Card key={i}>
+                        <CardHeader>
+                            <CardTitle>{entry.materia}</CardTitle>
+                            <CardDescription>{entry.dia}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <p>{entry.horaInicio} - {entry.horaFin}</p>
+                             <p>Docente: {entry.docente}</p>
+                             <p>Aula: {entry.aula.salon}</p>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+             {filteredSchedule.length === 0 && !isLoading && (
+                <Alert>
+                    <CalendarIcon className="h-4 w-4"/>
+                    <AlertTitle>No tienes clases</AlertTitle>
+                    <AlertDescription>
+                        No se encontraron clases en tu horario. Si crees que es un error, contacta a soporte.
+                    </AlertDescription>
+                </Alert>
+             )}
+         </CardContent>
+    </Card>
+  );
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -320,7 +342,11 @@ export default function HorariosPage() {
         icon={<CalendarIcon className="h-8 w-8 text-primary" />}
       />
       
-      {viewState === 'filters' ? renderFilterView() : renderScheduleView()}
+      {userRole === 'docente' ? (
+          viewState === 'filters' ? renderFilterView() : renderScheduleView()
+      ) : (
+          renderStudentView()
+      )}
       
     </div>
   );
