@@ -450,9 +450,9 @@ export default function HorariosPage() {
                     <Skeleton className="h-64 w-full" />
                 </div>
             ) : schedule.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
                     {viewMode === 'dia' && (
-                        <div className="lg:col-span-1">
+                        <div className="md:col-span-1">
                             <Calendar
                                 mode="single"
                                 locale={es}
@@ -463,7 +463,7 @@ export default function HorariosPage() {
                             />
                         </div>
                     )}
-                    <div className={viewMode === 'dia' ? 'lg:col-span-3' : 'lg:col-span-4'}>
+                    <div className={viewMode === 'dia' ? 'md:col-span-2 lg:col-span-3' : 'col-span-1 md:col-span-3 lg:col-span-4'}>
                         {viewMode === 'semana' && renderWeekView()}
                         {viewMode === 'dia' && renderDayView()}
                     </div>
