@@ -207,6 +207,11 @@ export default function RegisterPage() {
     return () => subscription.unsubscribe();
   }, [watch, currentStep]);
 
+  const handleGoBack = () => {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    router.push('/');
+  };
+
   const nextStep = async () => {
     const fields = steps[currentStep - 1].fields;
     
@@ -268,13 +273,14 @@ export default function RegisterPage() {
     <FormProvider {...methods}>
       <div className="relative flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 pt-16 font-roboto sm:p-6">
         <div className="absolute top-4 left-4 z-10">
-          <Link
-            href="/"
+          <Button
+            variant="ghost"
+            onClick={handleGoBack}
             className="flex items-center gap-2 rounded-full border bg-white px-3 py-2 text-sm text-gray-700 shadow-sm transition-all hover:bg-gray-100 hover:shadow-md active:scale-95 sm:px-4"
           >
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Volver</span>
-          </Link>
+          </Button>
         </div>
         <Card className="w-full max-w-2xl rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
           <CardHeader className="text-center">
