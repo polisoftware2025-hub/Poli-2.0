@@ -69,7 +69,7 @@ const cityCountryValidation = z.string({ required_error: "Por favor, selecciona 
 
 const step1Schema = z.object({
   firstName: nameValidation,
-  segundoNombre: z.string().max(50, "Máximo 50 caracteres.").regex(/^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/, "Solo se permiten letras y espacios.").optional().transform(e => e === "" ? undefined : e),
+  segundoNombre: z.string().max(50, "Máximo 50 caracteres.").optional().transform(e => e === "" ? undefined : e),
   lastName: lastNameValidation,
   segundoApellido: lastNameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
