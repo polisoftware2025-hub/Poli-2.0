@@ -80,11 +80,7 @@ const step1Schema = z.object({
 
 const step2Schema = z.object({
   phone: z.string().regex(/^\d{7,15}$/, "Debe ser un número de teléfono válido entre 7 y 15 dígitos."),
-  address: z.string().min(5, "La dirección debe tener al menos 5 caracteres.")
-    .regex(/^[a-zA-Z0-9\s#.,-]+$/, "La dirección contiene caracteres inválidos.")
-    .refine(val => !/^[#.,-]/.test(val), { message: "La dirección no puede empezar con un carácter especial." })
-    .refine(val => val.includes('#'), { message: "La dirección debe contener el símbolo '#' para indicar el número." })
-    .refine(val => !/\s{2,}/.test(val), { message: "No se permiten múltiples espacios consecutivos." }),
+  address: z.string().min(5, "La dirección debe tener al menos 5 caracteres."),
   country: cityCountryValidation,
   city: cityCountryValidation,
   correoPersonal: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
