@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, ArrowLeft, ArrowRight, Info, Clock, User, Building, BookOpen } from "lucide-react";
+import { Calendar as CalendarIcon, Download, ArrowLeft, Info, Clock, User, Building, BookOpen, Filter, View } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -151,7 +151,7 @@ export default function HorariosPage() {
         return;
     }
     setMessageType("success");
-    setMessage("Cargando horario...");
+    setMessage("Cargando tu horario...");
     toast({
       title: "Cargando horario...",
       description: "Tu horario se está preparando.",
@@ -185,8 +185,8 @@ export default function HorariosPage() {
 
 
   const renderFilters = () => (
-     <div className="w-full max-w-4xl mx-auto space-y-4">
-      <div className="bg-card p-6 md:p-8 rounded-lg shadow-sm border border-border">
+    <>
+      <div className="w-full max-w-4xl mx-auto space-y-4 bg-card p-6 md:p-8 rounded-lg shadow-sm border border-border">
         <div className="space-y-6">
           <div className="space-y-2">
               <Label htmlFor="materia-select" className="text-base font-semibold">Materia</Label>
@@ -242,21 +242,32 @@ export default function HorariosPage() {
       )}>
         {message}
       </p>
-    </div>
+    </>
   );
 
   const renderScheduleView = () => (
     <div className="space-y-8">
-        <div className="flex justify-end">
-            <Button variant="outline" onClick={() => setShowSchedule(false)}>
-                <ArrowLeft className="mr-2 h-4 w-4"/>
-                Volver a Filtros
-            </Button>
-        </div>
         <Card>
             <CardHeader>
-                <CardTitle>Horario de Clases</CardTitle>
-                <CardDescription>Selecciona un día del calendario para ver el detalle de tus clases.</CardDescription>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                     <CardTitle>Horario de Clases</CardTitle>
+                     <div className="flex items-center gap-2">
+                        <Select defaultValue="daily">
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="daily">Vista diaria</SelectItem>
+                                <SelectItem value="weekly">Vista semanal</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button variant="outline"><Download className="mr-2 h-4 w-4"/>Descargar</Button>
+                        <Button variant="outline" onClick={() => setShowSchedule(false)}>
+                            <Filter className="mr-2 h-4 w-4"/>
+                            Cambiar Filtro
+                        </Button>
+                     </div>
+                </div>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-1">
