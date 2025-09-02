@@ -5,7 +5,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookOpen, User, CheckCircle, GraduationCap, DollarSign, Clock, Award, Plus, Trash2, Edit, Upload } from "lucide-react";
+import { BookOpen, User, CheckCircle, Plus, Trash2, Edit, Upload } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +21,33 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
 
-const initialProgram = {
+interface Materia {
+  nombre: string;
+  codigo?: string;
+  creditos: number;
+}
+interface Ciclo {
+  numero: number;
+  materias: Materia[];
+}
+interface Career {
+  nombre: string;
+  slug: string;
+  descripcionGeneral: string;
+  perfilProfesional: string;
+  imagenURL: string;
+  duracionCiclo: string;
+  modalidad: string;
+  inversion: number;
+  titulo: string;
+  ciclos: Ciclo[];
+}
+
+const initialProgram: Career = {
     nombre: "",
     slug: "",
     descripcionGeneral: "",
@@ -46,6 +67,10 @@ export default function NewProgramPage() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentCycleIndex, setCurrentCycleIndex] = useState<number | null>(null);
+  const [newMateria, setNewMateria] = useState<Materia>({ nombre: "", codigo: "", creditos: 0 });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -104,6 +129,23 @@ export default function NewProgramPage() {
       } finally {
           setIsLoading(false);
       }
+  };
+
+  const handleAddMateria = () => {
+    if (currentCycleIndex !== null) {
+      const updatedCiclos = [...programDetails.ciclos];
+      updatedCiclos[currentCycleIndex].materias.push(newMateria);
+      setProgramDetails({ ...programDetails, ciclos: updatedCiclos });
+      setNewMateria({ nombre: "", codigo: "", creditos: 0 });
+      setIsDialogOpen(false);
+      setCurrentCycleIndex(null);
+    }
+  };
+
+  const handleRemoveMateria = (cycleIndex: number, materiaIndex: number) => {
+    const updatedCiclos = [...programDetails.ciclos];
+    updatedCiclos[cycleIndex].materias.splice(materiaIndex, 1);
+    setProgramDetails({ ...programDetails, ciclos: updatedCiclos });
   };
 
 
@@ -193,7 +235,7 @@ export default function NewProgramPage() {
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
-            {programDetails.ciclos.map((ciclo: any) => (
+            {programDetails.ciclos.map((ciclo, cycleIndex) => (
               <AccordionItem value={`ciclo-${ciclo.numero}`} key={ciclo.numero}>
                 <div className="flex items-center w-full">
                     <AccordionTrigger className="text-lg font-semibold hover:no-underline flex-grow">
@@ -214,47 +256,49 @@ export default function NewProgramPage() {
                   </div>
                 <AccordionContent>
                   <ul className="space-y-3 pt-2">
-                    {ciclo.materias.map((materia: any) => (
+                    {ciclo.materias.map((materia, materiaIndex) => (
                       <li key={materia.codigo || materia.nombre} className="flex justify-between items-center text-gray-700 p-2 rounded-md hover:bg-gray-100">
                         <div className="flex-grow">
                             <span>{materia.nombre}</span>
                             <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full ml-2">{materia.creditos} créditos</span>
                         </div>
-                        <Button variant="destructive" size="icon" className="h-8 w-8" type="button"><Trash2 className="h-4 w-4"/></Button>
+                        <Button variant="destructive" size="icon" className="h-8 w-8" type="button" onClick={() => handleRemoveMateria(cycleIndex, materiaIndex)}>
+                          <Trash2 className="h-4 w-4"/>
+                        </Button>
                       </li>
                     ))}
                   </ul>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="mt-4" type="button">
-                            <Plus className="mr-2 h-4 w-4"/>
-                            Agregar Materia
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                             <div>
-                                <Label htmlFor="subjectName">Nombre de la Materia</Label>
-                                <Input id="subjectName" placeholder="Ej: Cálculo Integral"/>
+                   <Dialog open={isDialogOpen && currentCycleIndex === cycleIndex} onOpenChange={(isOpen) => { if(!isOpen) setCurrentCycleIndex(null); setIsDialogOpen(isOpen); }}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" className="mt-4" type="button" onClick={() => { setCurrentCycleIndex(cycleIndex); setIsDialogOpen(true); }}>
+                                <Plus className="mr-2 h-4 w-4"/>
+                                Agregar Materia
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <Label htmlFor="subjectName">Nombre de la Materia</Label>
+                                    <Input id="subjectName" placeholder="Ej: Cálculo Integral" value={newMateria.nombre} onChange={(e) => setNewMateria({...newMateria, nombre: e.target.value})}/>
+                                </div>
+                                <div>
+                                    <Label htmlFor="subjectCode">Código</Label>
+                                    <Input id="subjectCode" placeholder="Ej: MAT-102" value={newMateria.codigo} onChange={(e) => setNewMateria({...newMateria, codigo: e.target.value})}/>
+                                </div>
+                                <div>
+                                    <Label htmlFor="subjectCredits">Créditos</Label>
+                                    <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
+                                </div>
                             </div>
-                             <div>
-                                <Label htmlFor="subjectCode">Código</Label>
-                                <Input id="subjectCode" placeholder="Ej: MAT-102"/>
-                            </div>
-                             <div>
-                                <Label htmlFor="subjectCredits">Créditos</Label>
-                                <Input id="subjectCredits" type="number" placeholder="Ej: 3"/>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <Button variant="outline" type="button">Cancelar</Button>
-                            <Button type="button">Guardar Materia</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
+                            <DialogFooter>
+                                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                                <Button type="button" onClick={handleAddMateria}>Guardar Materia</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </AccordionContent>
               </AccordionItem>
             ))}

@@ -165,12 +165,6 @@ export default function CareerAdminPage() {
                                                 Editar
                                             </Link>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
-                                            <Link href={`/programas/${career.slug}`} target="_blank">
-                                                <FileText className="mr-2 h-4 w-4" />
-                                                Ver Pensum
-                                            </Link>
-                                        </DropdownMenuItem>
                                          <AlertDialogTrigger asChild>
                                             <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
                                                 <Trash2 className="mr-2 h-4 w-4" />
