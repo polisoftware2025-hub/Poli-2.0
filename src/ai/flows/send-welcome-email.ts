@@ -3,12 +3,12 @@
 /**
  * @fileOverview A Genkit flow to generate and "send" a welcome email with credentials.
  *
- * - sendWelcomeEmail - A function that generates an HTML email with login details.
- * - SendWelcomeEmailInput - The input type for the sendWelcomeEmail function.
+ * - sendWelcomeEmail - A function that generates and sends an HTML email with login details.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import { transporter, mailOptions } from "@/lib/nodemailer";
 
 const SendWelcomeEmailInputSchema = z.object({
   email: z.string().email().describe('The recipient\'s personal email address.'),
@@ -19,7 +19,7 @@ const SendWelcomeEmailInputSchema = z.object({
 
 export type SendWelcomeEmailInput = z.infer<typeof SendWelcomeEmailInputSchema>;
 
-export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<string> {
+export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<{ success: boolean, message: string }> {
     const welcomeEmailPrompt = ai.definePrompt({
         name: 'welcomeEmailPrompt',
         input: { schema: SendWelcomeEmailInputSchema },
@@ -50,8 +50,27 @@ export async function sendWelcomeEmail(input: SendWelcomeEmailInput): Promise<st
     });
 
   const { output } = await welcomeEmailPrompt(input);
-  // In a real application, you would use a service like Nodemailer or SendGrid here.
-  // For this demo, we'll just return the HTML content.
-  console.log(`Generated Welcome Email HTML for ${input.email}:`, output ? 'HTML content generated' : 'No HTML content');
-  return output!;
+  
+  if (!output) {
+    const errorMessage = "No se pudo generar el contenido del correo electrónico.";
+    console.error(`[send-welcome-email] ${errorMessage}`);
+    return { success: false, message: errorMessage };
+  }
+
+  try {
+    await transporter.sendMail({
+        ...mailOptions,
+        to: input.email,
+        subject: "¡Bienvenido a Poli 2.0! Tus Credenciales de Acceso",
+        html: output,
+    });
+    console.log(`[send-welcome-email] Welcome email sent successfully to ${input.email}`);
+    return { success: true, message: "Correo de bienvenida enviado exitosamente." };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Error desconocido al enviar el correo.";
+    console.error(`[send-welcome-email] Failed to send email to ${input.email}:`, error);
+    // Aunque el correo falle, no queremos que falle todo el proceso de inscripción.
+    // El flujo principal puede decidir cómo manejar este fallo.
+    return { success: false, message: `No se pudo enviar el correo de bienvenida: ${message}` };
+  }
 }

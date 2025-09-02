@@ -92,7 +92,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         const studentData = studentSnap.data();
         const userData = userSnap.data();
         
-        if (studentData.estado === 'inscrito' || studentData.estado === 'aprobado' || userData.estado === 'activo') {
+        if (studentData.estado === 'aprobado' || userData.estado === 'activo') {
             return { success: false, message: 'Este estudiante ya ha sido inscrito y activado.' };
         }
         
@@ -133,16 +133,20 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
 
         await batch.commit();
 
-        await sendWelcomeEmail({
+        const emailResult = await sendWelcomeEmail({
             name: userData.nombre1,
             email: userData.correo,
             institutionalEmail: institutionalEmail,
             temporaryPassword: temporaryPassword,
         });
 
+        const finalMessage = emailResult.success
+            ? "El estudiante ha sido inscrito exitosamente y se ha enviado un correo de bienvenida."
+            : `El estudiante fue inscrito, pero hubo un error al enviar el correo: ${emailResult.message}`;
+
         return {
             success: true,
-            message: "El estudiante ha sido inscrito exitosamente. Se ha enviado un correo de bienvenida.",
+            message: finalMessage,
             studentId: studentId,
             calculatedCycle: startCycle,
             enrolledSubjectsCount: assignedSubjects.length,
