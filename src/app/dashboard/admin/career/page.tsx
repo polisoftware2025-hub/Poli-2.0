@@ -35,7 +35,7 @@ interface Career {
   slug: string;
   nombre: string;
   inversion?: number;
-  estudiantes?: number;
+  estudiantes: number; // Changed to always be a number
   ciclos?: any[];
   status?: string;
 }
@@ -48,13 +48,34 @@ export default function CareerAdminPage() {
   const fetchCareers = async () => {
     setIsLoading(true);
     try {
+      // 1. Fetch all careers
       const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
-      const querySnapshot = await getDocs(careersCollection);
-      const careersList = querySnapshot.docs.map(doc => ({
+      const careersSnapshot = await getDocs(careersCollection);
+      const careersList = careersSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      } as Career));
-      setCareers(careersList);
+      }));
+
+      // 2. Fetch all students to count them
+      const studentsCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+      const studentsSnapshot = await getDocs(studentsCollection);
+      const studentCounts: { [key: string]: number } = {};
+
+      studentsSnapshot.forEach(doc => {
+        const student = doc.data();
+        if (student.carreraId) {
+          studentCounts[student.carreraId] = (studentCounts[student.carreraId] || 0) + 1;
+        }
+      });
+      
+      // 3. Combine career data with student counts
+      const careersWithStudentCounts = careersList.map(career => ({
+          ...career,
+          estudiantes: studentCounts[career.id] || 0,
+      })) as Career[];
+
+      setCareers(careersWithStudentCounts);
+
     } catch (error) {
       console.error("Error fetching careers: ", error);
       toast({
@@ -177,7 +198,7 @@ export default function CareerAdminPage() {
                         <CardContent className="flex-grow space-y-4">
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Estudiantes:</span>
-                                <span className="font-semibold">{career.estudiantes || 0}</span>
+                                <span className="font-semibold">{career.estudiantes}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Ciclos:</span>
@@ -205,4 +226,3 @@ export default function CareerAdminPage() {
     </div>
   );
 }
-
