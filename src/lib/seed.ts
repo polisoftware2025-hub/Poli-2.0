@@ -1,7 +1,16 @@
 
 import { db } from './firebase'; 
 import { collection, addDoc, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
-import bcrypt from "bcryptjs";
+import bcryptjs from "bcryptjs";
+
+const createSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/ñ/g, 'n')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+};
+
 
 export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
@@ -168,7 +177,10 @@ export async function seedCarrera() {
       throw new Error("La carrera 'Tecnología en Comercio Exterior y Negocios Internacionales' ya existe.");
     }
     
-    await addDoc(carrerasRef, carreraData);
+    const slug = createSlug(carreraData.nombre);
+    const dataToSeed = { ...carreraData, slug };
+    
+    await addDoc(carrerasRef, dataToSeed);
     return { success: true, message: "Datos de carrera insertados exitosamente." };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió.";
@@ -254,7 +266,7 @@ export async function seedInitialData() {
 
         for (const userData of testUsers) {
             if (!existingEmails.has(userData.correoInstitucional)) {
-                const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
+                const hashedPassword = await bcryptjs.hash(userData.contrasena, saltRounds);
                 
                 const userDocRef = doc(usersRef, userData.id);
                 const finalUserData: any = {
@@ -347,7 +359,7 @@ export async function seedInitialUsers() {
 
     for (const userData of testUsers) {
       if (!existingEmails.has(userData.correoInstitucional)) {
-        const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
+        const hashedPassword = await bcryptjs.hash(userData.contrasena, saltRounds);
 
         const userDocRef = doc(usersRef, userData.id);
         const finalUserData: any = {
@@ -365,13 +377,12 @@ export async function seedInitialUsers() {
 
         if (userData.rol.id === 'estudiante') {
             const studentDocRef = doc(studentsRef, userData.id);
-            // Asigna las materias del primer ciclo al estudiante de prueba
             const assignedSubjects = carreraData.ciclos[0].materias.map(m => ({ id: m.id, nombre: m.nombre, creditos: m.creditos }));
             batch.set(studentDocRef, {
                 usuarioId: userData.id,
                 nombreCompleto: finalUserData.nombreCompleto,
                 documento: finalUserData.identificacion,
-                carreraId: "comercio-exterior", // ID de ejemplo
+                carreraId: createSlug(carreraData.nombre),
                 modalidad: "Virtual",
                 grupo: "G-001",
                 correoInstitucional: userData.correoInstitucional,
@@ -402,3 +413,5 @@ export async function seedInitialUsers() {
     return { success: false, message: errorMessage };
   }
 }
+
+    

@@ -48,16 +48,16 @@ export default function CareerAdminPage() {
   const fetchCareers = async () => {
     setIsLoading(true);
     try {
-      // 1. Fetch all careers
       const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
       const careersSnapshot = await getDocs(careersCollection);
-      const careersList = careersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        slug: doc.data().slug,
-        ...doc.data()
-      }));
+      const careersList = careersSnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          slug: doc.data().slug,
+          ...doc.data()
+        }))
+        .filter(career => career.slug); // Ensure career has a slug
 
-      // 2. Fetch all students to count them
       const studentsCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
       const studentsSnapshot = await getDocs(studentsCollection);
       const studentCounts: { [key: string]: number } = {};
@@ -69,7 +69,6 @@ export default function CareerAdminPage() {
         }
       });
       
-      // 3. Combine career data with student counts
       const careersWithStudentCounts = careersList.map(career => ({
           ...career,
           estudiantes: studentCounts[career.id] || 0,
@@ -100,7 +99,7 @@ export default function CareerAdminPage() {
         title: "Éxito",
         description: "La carrera ha sido eliminada.",
       });
-      fetchCareers(); // Re-fetch careers after deletion
+      fetchCareers(); 
     } catch (error) {
       console.error("Error deleting career: ", error);
       toast({
@@ -227,3 +226,5 @@ export default function CareerAdminPage() {
     </div>
   );
 }
+
+    
