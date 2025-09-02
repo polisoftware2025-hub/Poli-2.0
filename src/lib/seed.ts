@@ -207,7 +207,7 @@ export async function seedGrupos() {
     }
 }
 
-export async function seedInitialUsers() {
+export async function seedInitialData() {
     const saltRounds = 10;
     const testUsers = [
         {
@@ -247,15 +247,16 @@ export async function seedInitialUsers() {
     try {
         const batch = writeBatch(db);
         const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+        const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+
+        const existingUsersSnapshot = await getDocs(usersRef);
+        const existingEmails = new Set(existingUsersSnapshot.docs.map(doc => doc.data().correoInstitucional));
 
         for (const userData of testUsers) {
-            const userQuery = query(usersRef, where("correoInstitucional", "==", userData.correoInstitucional));
-            const existingUsers = await getDocs(userQuery);
-
-            if (existingUsers.empty) {
+            if (!existingEmails.has(userData.correoInstitucional)) {
                 const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
-                const userDocRef = doc(usersRef, userData.id);
                 
+                const userDocRef = doc(usersRef, userData.id);
                 const finalUserData: any = {
                     ...userData,
                     nombreCompleto: `${userData.nombre1} ${userData.apellido1}`,
@@ -264,11 +265,10 @@ export async function seedInitialUsers() {
                     estado: "activo",
                     fechaRegistro: new Date()
                 };
-
                 batch.set(userDocRef, finalUserData);
 
                 if (userData.rol.id === 'estudiante') {
-                    const studentDocRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes/${userData.id}`);
+                    const studentDocRef = doc(studentsRef, userData.id);
                     batch.set(studentDocRef, {
                         usuarioId: userData.id,
                         nombreCompleto: finalUserData.nombreCompleto,
@@ -289,11 +289,11 @@ export async function seedInitialUsers() {
         }
 
         await batch.commit();
-        return { success: true, message: "Usuarios de prueba creados o verificados exitosamente." };
+        return { success: true, message: "Datos iniciales (usuarios y estudiantes) creados o verificados exitosamente." };
 
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió.";
-        console.error("Error en seedInitialUsers:", error);
+        console.error("Error en seedInitialData:", error);
         return { success: false, message: errorMessage };
     }
 }

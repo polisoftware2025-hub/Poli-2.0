@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-type SeedType = 'carrera' | 'grupos' | 'initial-data' | 'users';
+type SeedType = 'carrera' | 'grupos' | 'initial-data';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -123,9 +123,9 @@ export default function AdminDashboardPage() {
             <Button onClick={() => handleSeed('grupos')} disabled={isSeeding['grupos']}>
                 {isSeeding['grupos'] ? 'Poblando...' : 'Poblar Grupos'}
             </Button>
-            <Button onClick={() => handleSeed('users')} disabled={isSeeding['users']}>
+             <Button onClick={() => handleSeed('initial-data')} disabled={isSeeding['initial-data']}>
                 <Sparkles className="mr-2 h-4 w-4" />
-                {isSeeding['users'] ? 'Poblando...' : 'Poblar Usuarios de Prueba'}
+                {isSeeding['initial-data'] ? 'Poblando...' : 'Poblar Datos Iniciales (Usuarios y Estudiantes)'}
             </Button>
         </CardContent>
       </Card>
