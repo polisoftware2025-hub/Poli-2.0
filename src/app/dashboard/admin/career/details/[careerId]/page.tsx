@@ -2,22 +2,22 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookOpen, User, CheckCircle, GraduationCap, DollarSign, Clock, Award } from "lucide-react";
+import { BookOpen, User, CheckCircle, GraduationCap, DollarSign, Clock, Award, Edit } from "lucide-react";
 import { useParams, notFound, useRouter } from "next/navigation";
 import Image from "next/image";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
+import { Skeleton } from "@/components/ui/skeleton";
 
 
 interface Career {
   id?: string;
   nombre: string;
-  slug: string;
   descripcionGeneral: string;
   perfilProfesional: string;
   imagenURL: string;
@@ -30,6 +30,7 @@ interface Career {
 
 
 const formatCurrency = (value: number) => {
+  if (isNaN(value)) return "N/A";
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
@@ -38,27 +39,25 @@ const formatCurrency = (value: number) => {
 };
 
 
-export default function PensumDetailPage() {
+export default function CareerDetailsPage() {
   const params = useParams();
-  const slug = params.slug as string;
+  const careerId = params.careerId as string;
   const [program, setProgram] = useState<Career | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchProgram = async () => {
-      if (!slug) return;
+      if (!careerId) return;
       setIsLoading(true);
       try {
-        const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
-        const q = query(careersRef, where("slug", "==", slug));
-        const querySnapshot = await getDocs(q);
+        const careerDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", careerId);
+        const programDoc = await getDoc(careerDocRef);
 
-        if (querySnapshot.empty) {
+        if (!programDoc.exists()) {
           notFound();
           return;
         } 
         
-        const programDoc = querySnapshot.docs[0];
         setProgram({ id: programDoc.id, ...programDoc.data() } as Career);
 
       } catch (error) {
@@ -68,22 +67,34 @@ export default function PensumDetailPage() {
       }
     };
     fetchProgram();
-  }, [slug]);
+  }, [careerId]);
 
   if (isLoading) {
-    return <div className="text-center p-8">Cargando pensum...</div>;
+    return (
+      <div className="space-y-4 p-8">
+        <Skeleton className="h-12 w-1/2" />
+        <Skeleton className="h-8 w-3/4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+            <Skeleton className="h-64"/>
+            <Skeleton className="h-64"/>
+        </div>
+        <Skeleton className="h-96 w-full mt-8"/>
+      </div>
+    );
   }
 
   if (!program) {
-    // This case will be hit if the slug is invalid, and fetchProgram will call notFound().
-    return null;
+    return notFound();
   }
+  
+  const totalCredits = program.ciclos.reduce((totalCreds: number, ciclo: any) => 
+    totalCreds + ciclo.materias.reduce((cycleCreds: number, materia: any) => cycleCreds + materia.creditos, 0), 0);
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title={`Pensum de ${program.nombre}`}
-        description="Visualiza el plan de estudios completo de este programa."
+        title={`Detalle de ${program.nombre}`}
+        description="Visualiza la información completa de este programa."
         icon={<BookOpen className="h-8 w-8 text-primary" />}
         backPath="/dashboard/admin/career"
       />
@@ -101,10 +112,15 @@ export default function PensumDetailPage() {
         <CardContent className="p-6 space-y-2">
             <h2 className="text-2xl font-bold text-primary">{program.nombre}</h2>
             <p className="text-gray-700 leading-relaxed">{program.descripcionGeneral}</p>
-             <Button asChild className="mt-4">
-                <Link href={`/dashboard/admin/career/${program.slug}`}>Editar Carrera</Link>
-             </Button>
         </CardContent>
+         <CardFooter>
+             <Button asChild>
+                <Link href={`/dashboard/admin/career/edit/${program.id}`}>
+                    <Edit className="mr-2 h-4 w-4"/>
+                    Editar Carrera
+                </Link>
+             </Button>
+         </CardFooter>
       </Card>
 
       <div className="grid md:grid-cols-2 gap-8">
@@ -155,9 +171,7 @@ export default function PensumDetailPage() {
                   <span>Créditos Totales:</span>
               </div>
               <span className="text-gray-800 font-bold">
-                {program.ciclos.reduce((totalCreds: number, ciclo: any) => 
-                    totalCreds + ciclo.materias.reduce((cycleCreds: number, materia: any) => cycleCreds + materia.creditos, 0), 0)
-                }
+                {totalCredits}
               </span>
             </div>
           </CardContent>
@@ -167,7 +181,7 @@ export default function PensumDetailPage() {
       <Card>
         <CardHeader>
           <CardTitle>Plan de Estudios (Pensum)</CardTitle>
-          <CardDescription>Explora las materias que verás en cada ciclo.</CardDescription>
+          <CardDescription>Explora las materias que se ven en cada ciclo.</CardDescription>
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
@@ -178,8 +192,8 @@ export default function PensumDetailPage() {
                 </AccordionTrigger>
                 <AccordionContent>
                   <ul className="space-y-3 pt-2">
-                    {ciclo.materias.map((materia: any) => (
-                      <li key={materia.codigo || materia.nombre} className="flex justify-between items-center text-gray-700 p-3 rounded-md bg-gray-50 border">
+                    {ciclo.materias.map((materia: any, index: number) => (
+                      <li key={materia.id || index} className="flex justify-between items-center text-gray-700 p-3 rounded-md bg-gray-50 border">
                         <span>{materia.nombre}</span>
                         <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full">{materia.creditos} créditos</span>
                       </li>

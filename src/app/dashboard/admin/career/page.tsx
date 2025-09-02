@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2 } from "lucide-react";
+import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -32,7 +33,6 @@ import {
 
 interface Career {
   id: string;
-  slug: string;
   nombre: string;
   inversion?: number;
   estudiantes: number;
@@ -50,13 +50,10 @@ export default function CareerAdminPage() {
     try {
       const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
       const careersSnapshot = await getDocs(careersCollection);
-      const careersList = careersSnapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          slug: doc.data().slug,
-          ...doc.data()
-        }))
-        .filter(career => career.slug); // Ensure career has a slug
+      const careersList = careersSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
       const studentsCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
       const studentsSnapshot = await getDocs(studentsCollection);
@@ -64,8 +61,10 @@ export default function CareerAdminPage() {
 
       studentsSnapshot.forEach(doc => {
         const student = doc.data();
-        if (student.carreraId) {
-          studentCounts[student.carreraId] = (studentCounts[student.carreraId] || 0) + 1;
+        const careerId = student.carreraId;
+        // The careerId in students collection should match the document ID from careers collection
+        if (careerId) {
+          studentCounts[careerId] = (studentCounts[careerId] || 0) + 1;
         }
       });
       
@@ -160,17 +159,18 @@ export default function CareerAdminPage() {
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end">
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/dashboard/admin/career/${career.slug}`}>
+                                            <Link href={`/dashboard/admin/career/details/${career.id}`}>
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                Ver Detalles
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/admin/career/edit/${career.id}`}>
                                                 <Edit className="mr-2 h-4 w-4" />
                                                 Editar
                                             </Link>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem asChild>
-                                            <Link href={`/dashboard/admin/career/pensum/${career.slug}`}>
-                                                <FileText className="mr-2 h-4 w-4" />
-                                                Ver Pensum
-                                            </Link>
-                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
                                          <AlertDialogTrigger asChild>
                                             <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
                                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -226,5 +226,3 @@ export default function CareerAdminPage() {
     </div>
   );
 }
-
-    
