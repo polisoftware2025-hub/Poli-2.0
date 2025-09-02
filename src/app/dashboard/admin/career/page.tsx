@@ -53,6 +53,7 @@ export default function CareerAdminPage() {
       const careersSnapshot = await getDocs(careersCollection);
       const careersList = careersSnapshot.docs.map(doc => ({
         id: doc.id,
+        slug: doc.data().slug,
         ...doc.data()
       }));
 
