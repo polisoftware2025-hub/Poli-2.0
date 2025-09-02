@@ -3,10 +3,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, ArrowLeft, ArrowRight, Info, Filter, Search } from "lucide-react";
+import { Calendar as CalendarIcon, Download, ArrowLeft, ArrowRight, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -71,9 +71,6 @@ export default function HorariosPage() {
   
   const [showSchedule, setShowSchedule] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [statusMessage, setStatusMessage] = useState("Seleccione una materia y un grupo para consultar su horario de clases.");
-  const [messageType, setMessageType] = useState<"info" | "error" | "success">("info");
-
 
   const { toast } = useToast();
 
@@ -87,10 +84,11 @@ export default function HorariosPage() {
   }, []);
 
   useEffect(() => {
-    if (!userEmail || userRole !== 'docente') {
+    if (userRole !== 'docente' && userRole !== null) {
       setIsLoading(false);
       return;
-    };
+    }
+    if (!userEmail) return;
 
     const fetchGroups = async () => {
       setIsLoading(true);
@@ -123,7 +121,7 @@ export default function HorariosPage() {
       if (filterMateria && filterMateria !== 'todos') {
         return group.materia.nombre === filterMateria;
       }
-      if (filterMateria === 'todos') {
+      if ((!filterMateria || filterMateria === 'todos') && (!filterGrupo || filterGrupo === 'todos')) {
         return true;
       }
       return false;
@@ -150,7 +148,7 @@ export default function HorariosPage() {
         });
       }
     });
-    return schedule.sort((a, b) => a.horaInicio.localeCompare(b.horaInicio));
+    return schedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.horaInicio.localeCompare(b.horaInicio));
   }, [allGroups, filterMateria, filterGrupo]);
 
   const materias = useMemo(() => {
@@ -200,13 +198,10 @@ export default function HorariosPage() {
   };
   
   const handleShowSchedule = () => {
-    if (!filterMateria || !filterGrupo) {
-        setStatusMessage("Por favor completa todos los campos antes de continuar.");
-        setMessageType("error");
-      return;
+    if (!filterMateria) {
+        toast({ variant: "destructive", title: "Campo requerido", description: "Por favor, selecciona una materia."});
+        return;
     }
-    setMessageType("success");
-    setStatusMessage("Cargando tu horario...");
     toast({
         title: "Cargando tu horario...",
         description: "Un momento mientras preparamos la vista de tu horario.",
@@ -218,67 +213,48 @@ export default function HorariosPage() {
     setFilterMateria(undefined);
     setFilterGrupo(undefined);
     setShowSchedule(false);
-    setStatusMessage("Seleccione una materia y un grupo para consultar su horario de clases.");
-    setMessageType("info");
   }
 
   const renderFilters = () => (
-    <div className="w-full max-w-4xl mx-auto my-8">
-      <div className="bg-white rounded-lg shadow-md p-6 sm:p-8 space-y-6">
-          <div className="space-y-2">
-              <Label htmlFor="materia-select" className="text-base font-medium">Materia</Label>
-              <Select value={filterMateria} onValueChange={(value) => { 
-                  setFilterMateria(value);
-                  setFilterGrupo(undefined);
-                  setStatusMessage("Ahora selecciona un grupo.");
-                  setMessageType("info");
-              }}>
-                  <SelectTrigger id="materia-select" className="py-6 text-base">
-                      <SelectValue placeholder="Selecciona una materia"/>
-                  </SelectTrigger>
-                  <SelectContent>
-                      <SelectItem value="todos">Todas mis materias</SelectItem>
-                      {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                  </SelectContent>
-              </Select>
-          </div>
-          
-          {filterMateria && (
+    <Card>
+        <CardHeader>
+            <CardTitle>Filtro de Horario</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
             <div className="space-y-2">
-                <Label htmlFor="grupo-select" className="text-base font-medium">Grupo</Label>
-                <Select value={filterGrupo} onValueChange={(value) => { 
-                    setFilterGrupo(value);
-                    if (value) {
-                        setStatusMessage("Todo listo para ver tu horario.");
-                        setMessageType("success");
-                    }
-                }} disabled={isLoading}>
-                    <SelectTrigger id="grupo-select" className="py-6 text-base">
+                <Label htmlFor="materia-select">Materia</Label>
+                <Select value={filterMateria} onValueChange={(value) => { 
+                    setFilterMateria(value);
+                    setFilterGrupo(undefined);
+                }}>
+                    <SelectTrigger id="materia-select">
+                        <SelectValue placeholder="Selecciona una materia"/>
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="todos">Todas mis materias</SelectItem>
+                        {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+            </div>
+            
+            <div className="space-y-2">
+                <Label htmlFor="grupo-select">Grupo</Label>
+                <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || !filterMateria}>
+                    <SelectTrigger id="grupo-select">
                         <SelectValue placeholder="Selecciona un grupo"/>
                     </SelectTrigger>
                     <SelectContent>
-                         <SelectItem value="todos">Todos los grupos</SelectItem>
+                        <SelectItem value="todos">Todos los grupos</SelectItem>
                         {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
                     </SelectContent>
                 </Select>
             </div>
-          )}
-          
-          {filterMateria && filterGrupo && (
-              <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-md text-base py-6 bg-[#002147] hover:bg-[#00346e]">
-                  Ver Horario
-              </Button>
-          )}
-
-      </div>
-        <div className={`text-center text-sm mt-4 min-h-[20px] ${
-            messageType === 'error' ? 'text-red-500 font-semibold' : 
-            messageType === 'success' ? 'text-green-600 font-semibold' : 
-            'text-muted-foreground'
-        }`}>
-            {statusMessage}
-        </div>
-    </div>
+            
+            <Button onClick={handleShowSchedule} size="lg" className="w-full">
+                Ver Horario
+            </Button>
+        </CardContent>
+    </Card>
   );
 
   const renderScheduleView = () => (
@@ -346,18 +322,14 @@ export default function HorariosPage() {
                                               {time}
                                           </TableCell>
                                           {daysOfWeek.map((day) => {
-                                              if (renderedInRow[day]) return null;
-
                                               const entry = filteredSchedule.find(e => e.dia === day && e.horaInicio === time);
                                               
                                               if (entry) {
-                                                  for(let i=0; i<entry.duracion; i++){
-                                                    const nextTimeSlot = timeSlots[timeIndex+i];
-                                                    if(nextTimeSlot){
-                                                      const nextDate = new Date(`1970-01-01T${nextTimeSlot}:00`);
-                                                      if (nextDate < new Date(`1970-01-01T${entry.horaFin}:00`)){
-                                                        renderedInRow[day] = true;
-                                                      }
+                                                  // Mark subsequent cells as rendered to handle rowSpan
+                                                  for(let i=1; i<entry.duracion; i++){
+                                                    const nextTime = timeSlots[timeIndex + i];
+                                                    if(nextTime){
+                                                      renderedInRow[day] = true;
                                                     }
                                                   }
 
@@ -372,6 +344,7 @@ export default function HorariosPage() {
                                                     </TableCell>
                                                   );
                                               }
+                                              if (renderedInRow[day]) return null;
                                               
                                               return (<TableCell key={day} className="border-r"></TableCell>)
                                           })}
@@ -442,11 +415,24 @@ export default function HorariosPage() {
       />
       
       {userRole === 'docente' ? (
-        showSchedule ? renderScheduleView() : renderFilters()
-      ) : (
+        showSchedule ? renderScheduleView() : (
+          <div className="w-full max-w-2xl mx-auto space-y-4">
+              {renderFilters()}
+              <p className="text-center text-sm text-muted-foreground">Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.</p>
+          </div>
+        )
+      ) : userRole === 'estudiante' ? (
         renderForStudent()
+      ) : (
+         <Card>
+            <CardContent className="p-6 text-center text-muted-foreground">
+                {isLoading ? "Cargando..." : "La vista de horario no está disponible para tu rol."}
+            </CardContent>
+        </Card>
       )}
 
     </div>
   );
 }
+
+    
