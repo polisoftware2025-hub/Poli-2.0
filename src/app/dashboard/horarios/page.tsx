@@ -195,14 +195,6 @@ export default function HorariosPage() {
     setShowSchedule(true);
   }
 
-  const handleClearFilters = () => {
-    setFilterMateria('all');
-    setFilterGrupo('all');
-  }
-
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
-  
   const renderFilters = () => (
     <Card className="max-w-4xl mx-auto w-full">
         <CardHeader>
@@ -239,9 +231,6 @@ export default function HorariosPage() {
              <Button onClick={handleShowSchedule} size="lg" className="w-full md:w-auto">
                 <CalendarIcon className="mr-2 h-4 w-4"/>
                 Ver Horario
-            </Button>
-            <Button variant="link" size="sm" onClick={handleClearFilters} className="text-muted-foreground">
-                Limpiar filtros
             </Button>
         </CardContent>
          {!showSchedule && (
@@ -452,6 +441,9 @@ export default function HorariosPage() {
         </CardContent>
       </Card>
   );
+
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
 
   return (
     <div className="flex flex-col gap-8">
