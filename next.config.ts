@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -13,9 +14,17 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
       },
+      // This pattern allows images from any domain.
+      // Useful for development, but for production, it's recommended to be more specific.
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+       {
+        protocol: 'http',
+        hostname: '**',
+      }
     ],
   },
 };

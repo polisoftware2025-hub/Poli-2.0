@@ -7,11 +7,12 @@ import { z } from "zod";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
 // ========================================================================================
-// 1. DATA VALIDATION (Zod Schema)
-// This schema defines the expected shape and types of data from the frontend.
-// It acts as the first line of defense.
+// 1. DATA VALIDATION SCHEMA (Zod)
+// This schema defines the expected shape and types for the registration data.
+// It's the single source of truth for validation on the backend.
 // ========================================================================================
 const UserRegistrationSchema = z.object({
+    // --- Personal Info ---
     firstName: z.string().min(2, "El primer nombre es requerido."),
     segundoNombre: z.string().optional(),
     lastName: z.string().min(2, "El primer apellido es requerido."),
@@ -19,73 +20,89 @@ const UserRegistrationSchema = z.object({
     tipoIdentificacion: z.string(),
     numeroIdentificacion: z.string().min(5, "El número de identificación es requerido."),
     gender: z.string(),
-    birthDate: z.union([z.date(), z.string().transform(str => new Date(str))]),
+    birthDate: z.date({ invalid_type_error: "La fecha de nacimiento no es válida." }),
+    // --- Contact Info ---
     phone: z.string().regex(/^\d{7,15}$/, "El teléfono no es válido."),
     address: z.string().min(5, "La dirección es requerida."),
     country: z.string(),
     city: z.string(),
     correoPersonal: z.string().email("El correo personal no es válido."),
+    // --- Academic Info ---
     carreraId: z.string(),
     modalidad: z.string(),
     grupo: z.string(),
+    // --- Credentials ---
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
 });
 
-
 // ========================================================================================
-// 3. HELPER FUNCTIONS
-// - generateUniqueInstitutionalEmail: Creates a unique email for the student.
+// 2. HELPER FUNCTIONS
+// - generateUniqueInstitutionalEmail: Creates a unique email to avoid collisions.
 // ========================================================================================
 async function generateUniqueInstitutionalEmail(nombre1: string, apellido1: string, apellido2?: string): Promise<string> {
     const domain = "@pi.edu.co";
-    // Ensure parts are lowercase and use only the first word if there are spaces
     const namePart = nombre1.toLowerCase().split(' ')[0];
     const lastName1Part = apellido1.toLowerCase().split(' ')[0];
+    // Use second last name only if it exists and is not an empty string
     const lastName2Part = apellido2 ? apellido2.toLowerCase().split(' ')[0] : '';
     
+    // Construct base email, filtering out any empty parts
     const baseEmail = [namePart, lastName1Part, lastName2Part].filter(Boolean).join('.');
     
     const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
     let finalEmail = `${baseEmail}${domain}`;
     let counter = 1;
-    let emailExists = true;
 
-    while (emailExists) {
+    // Loop until a unique email is found
+    while (true) {
         const q = query(usuariosRef, where("correoInstitucional", "==", finalEmail));
         const querySnapshot = await getDocs(q);
         if (querySnapshot.empty) {
-            emailExists = false;
-        } else {
-            finalEmail = `${baseEmail}${counter}${domain}`;
-            counter++;
+            break; // Email is unique
         }
+        // If email exists, append a counter and check again
+        finalEmail = `${baseEmail}${counter}${domain}`;
+        counter++;
     }
     return finalEmail;
 }
 
 
 // ========================================================================================
-// 4. MAIN API ENDPOINT (POST)
+// 3. MAIN API ENDPOINT (POST)
 // ========================================================================================
 export async function POST(req: Request) {
+    let rawBody;
     try {
-        const body = await req.json();
-        console.log("Body recibido en /api/register-user:", JSON.stringify(body, null, 2));
+        rawBody = await req.json();
+        console.log("Body recibido en /api/register-user:", JSON.stringify(rawBody, null, 2));
+    } catch (error) {
+        return NextResponse.json({ message: "El cuerpo de la solicitud no es un JSON válido." }, { status: 400 });
+    }
 
+    // Step 1: Pre-process and normalize incoming data
+    const processedBody = {
+        ...rawBody,
+        // Ensure date is a Date object, not a string
+        birthDate: rawBody.birthDate ? new Date(rawBody.birthDate) : undefined,
+    };
 
-        // Step 1: Validate incoming data with Zod
-        const validation = UserRegistrationSchema.safeParse(body);
-        if (!validation.success) {
-            console.error("Zod Validation Errors:", validation.error.flatten());
-            return NextResponse.json({ 
-                message: "Datos de entrada inválidos.", 
-                errors: validation.error.flatten().fieldErrors 
-            }, { status: 400 });
-        }
-        
-        let data = validation.data;
+    // Step 2: Validate incoming data with Zod
+    const validation = UserRegistrationSchema.safeParse(processedBody);
 
-        // Step 2: Check if user already exists
+    if (!validation.success) {
+        console.error("Zod Validation Errors:", validation.error.flatten());
+        return NextResponse.json({ 
+            message: "Datos de entrada inválidos. Por favor, revisa los campos marcados.", 
+            errors: validation.error.flatten().fieldErrors 
+        }, { status: 400 });
+    }
+    
+    // From now on, use the validated and typed data
+    const data = validation.data;
+
+    try {
+        // Step 3: Check if user already exists
         const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
         const q = query(usuariosRef, where("identificacion", "==", data.numeroIdentificacion));
         const existingUserSnapshot = await getDocs(q);
@@ -94,11 +111,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Ya existe un usuario con este número de identificación." }, { status: 409 });
         }
         
-        // Step 3: Prepare and Sanitize data for Firestore
+        // Step 4: Prepare and Sanitize data for Firestore
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(data.password, saltRounds);
         
-        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoApellido);
+        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoNombre);
 
         const newUserId = data.numeroIdentificacion; // Use identification number as document ID
         
@@ -111,7 +128,7 @@ export async function POST(req: Request) {
           tipoIdentificacion: data.tipoIdentificacion,
           identificacion: data.numeroIdentificacion,
           genero: data.gender,
-          fechaNacimiento: Timestamp.fromDate(new Date(data.birthDate)), // Normalize to Firestore Timestamp
+          fechaNacimiento: Timestamp.fromDate(data.birthDate), // Convert to Firestore Timestamp
           telefono: data.phone,
           direccion: data.address,
           ciudad: data.city,
@@ -132,20 +149,21 @@ export async function POST(req: Request) {
           carreraId: data.carreraId,
           modalidad: data.modalidad,
           grupo: data.grupo,
-          correoInstitucional: "", 
-          cicloActual: null,
-          materiasInscritas: [],
-          estado: "pendiente", 
+          correoInstitucional: "", // Will be filled upon approval
+          cicloActual: null, // Initial cycle is null
+          materiasInscritas: [], // Empty on registration
+          estado: "pendiente", // Initial state
           fechaRegistro: serverTimestamp()
         };
         
-        // Step 4: Write to Firestore using a transaction (batch)
+        // Step 5: Write to Firestore using a transaction (batch) for atomicity
         const batch = writeBatch(db);
         const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
         
         const newUserDocRef = doc(collection(politecnicoDocRef, "usuarios"), newUserId);
         const newStudentDocRef = doc(collection(politecnicoDocRef, "estudiantes"), newUserId);
 
+        // Sanitize objects before setting them to remove any undefined values
         batch.set(newUserDocRef, sanitizeForFirestore(usuarioData));
         batch.set(newStudentDocRef, sanitizeForFirestore(estudianteData));
         
@@ -157,13 +175,13 @@ export async function POST(req: Request) {
         }, { status: 201 });
 
     } catch (error: any) {
-        // Step 5: Detailed Error Logging
+        // Step 6: Detailed Error Logging for Firestore or other exceptions
         console.error("Error en /api/register-user:", {
-            code: error.code || 'UNKNOWN_CODE',
+            code: error.code || 'UNKNOWN_SERVER_ERROR',
             message: error.message || 'Unknown error occurred.',
             stack: error.stack
         });
-
+        
         // Provide a generic but informative error to the client
         return NextResponse.json({ 
             message: "Error interno del servidor. No se pudo completar el registro." 
