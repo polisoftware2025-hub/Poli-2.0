@@ -3,10 +3,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, ListFilter } from "lucide-react";
+import { Calendar as CalendarIcon, Download, ListFilter, RotateCw } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
@@ -56,7 +56,8 @@ export default function HorariosPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [filterMateria, setFilterMateria] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  
+  const [showFilters, setShowFilters] = useState(true);
+
   const materias = useMemo(() => {
     const uniqueMaterias = [...new Set(allSchedule.map(s => s.materia))];
     return uniqueMaterias.map(m => ({ value: m, label: m }));
@@ -177,21 +178,23 @@ export default function HorariosPage() {
     doc.save(`Horario_${userRole}_${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
-  return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Mi Horario Semanal"
-        description="Visualiza tu agenda de clases y planifica tu semana."
-        icon={<CalendarIcon className="h-8 w-8 text-primary" />}
-      />
+  const handleLoadSchedule = () => {
+      // Logic to fetch/filter schedule would go here.
+      // For this maquette, we just hide the filters.
+      setShowFilters(false);
+  }
 
-       <Card>
-        <CardContent className="p-4 md:p-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-             <div className="flex items-center gap-2">
+  const renderFilters = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Filtro de Horario</CardTitle>
+            <CardDescription>Selecciona una materia o grupo para cargar el horario correspondiente.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+            <div className="flex items-center gap-2">
                 <ListFilter className="h-5 w-5 text-muted-foreground"/>
                 <Select value={filterMateria} onValueChange={setFilterMateria}>
-                    <SelectTrigger className="w-full md:w-56">
+                    <SelectTrigger className="w-full">
                         <SelectValue placeholder="Filtrar por materia"/>
                     </SelectTrigger>
                     <SelectContent>
@@ -200,15 +203,15 @@ export default function HorariosPage() {
                     </SelectContent>
                 </Select>
             </div>
-             <Button variant="secondary" onClick={handleDownloadPDF} className="w-full md:w-auto">
-                <Download className="mr-2 h-4 w-4"/>
-                Descargar Horario PDF
+             <Button onClick={handleLoadSchedule} className="w-full md:w-auto">
+                Cargar Horario
             </Button>
-          </div>
         </CardContent>
-      </Card>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+    </Card>
+  );
+
+  const renderScheduleView = () => (
+     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="lg:col-span-1">
           <Calendar
               mode="single"
@@ -230,10 +233,16 @@ export default function HorariosPage() {
 
         <div className="lg:col-span-3">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row justify-between items-center">
                <CardTitle>
                 Clases para el {selectedDate ? selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'día seleccionado'}
               </CardTitle>
+              {userRole === 'docente' && (
+                <Button variant="outline" onClick={() => setShowFilters(true)}>
+                    <RotateCw className="mr-2 h-4 w-4"/>
+                    Cambiar Filtros
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {isLoading ? (
@@ -269,6 +278,48 @@ export default function HorariosPage() {
           </Card>
         </div>
       </div>
+  );
+
+
+  return (
+    <div className="flex flex-col gap-8">
+      <PageHeader
+        title="Mi Horario Semanal"
+        description="Visualiza tu agenda de clases y planifica tu semana."
+        icon={<CalendarIcon className="h-8 w-8 text-primary" />}
+      />
+
+       {userRole !== 'docente' && (
+            <Card>
+                <CardContent className="p-4 md:p-6">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <ListFilter className="h-5 w-5 text-muted-foreground"/>
+                        <Select value={filterMateria} onValueChange={setFilterMateria}>
+                            <SelectTrigger className="w-full md:w-56">
+                                <SelectValue placeholder="Filtrar por materia"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todas las materias</SelectItem>
+                                {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <Button variant="secondary" onClick={handleDownloadPDF} className="w-full md:w-auto">
+                        <Download className="mr-2 h-4 w-4"/>
+                        Descargar Horario PDF
+                    </Button>
+                </div>
+                </CardContent>
+            </Card>
+       )}
+
+      {userRole === 'docente' ? (
+        showFilters ? renderFilters() : renderScheduleView()
+      ) : (
+        renderScheduleView()
+      )}
+      
     </div>
   );
 }
