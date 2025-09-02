@@ -108,7 +108,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
             throw new Error(`El ciclo de inicio ${startCycle} no fue encontrado en la malla curricular.`);
         }
         
-        const assignedSubjects = cycleInfo.materias;
+        const assignedSubjects = cycleInfo.materias.map(m => ({ id: m.id, nombre: m.nombre, creditos: m.creditos }));
         const institutionalEmail = await generateUniqueInstitutionalEmail(userData.nombre1, userData.apellido1, userData.apellido2);
         const temporaryPassword = studentData.initialPassword; // Use the password they registered with
         const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
@@ -117,7 +117,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
             estado: 'aprobado',
             estaInscrito: true,
             cicloActual: startCycle,
-            materiasInscritas: assignedSubjects.map(m => ({materiaId: m.id, nombre: m.nombre, creditos: m.creditos})),
+            materiasInscritas: assignedSubjects,
             correoInstitucional: institutionalEmail,
             fechaActualizacion: serverTimestamp(),
             initialPassword: null, // Remove temporary password after use
