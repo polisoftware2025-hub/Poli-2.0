@@ -633,12 +633,12 @@ const Step3 = () => {
                 className="flex flex-col space-y-1"
               >
                 <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="diurna_presencial" /></FormControl>
-                  <FormLabel className="font-normal">Diurna - Presencial</FormLabel>
+                  <FormControl><RadioGroupItem value="Presencial" /></FormControl>
+                  <FormLabel className="font-normal">Presencial</FormLabel>
                 </FormItem>
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="nocturna_virtual" /></FormControl>
-                  <FormLabel className="font-normal">Nocturna - Virtual</FormLabel>
+                 <FormItem className="flex items-center space-x-3 space-y-0">
+                  <FormControl><RadioGroupItem value="Virtual" /></FormControl>
+                  <FormLabel className="font-normal">Virtual</FormLabel>
                 </FormItem>
               </RadioGroup>
             </FormControl>

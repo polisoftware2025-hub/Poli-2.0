@@ -1,11 +1,11 @@
 
 import { db } from "@/lib/firebase";
-import { collection, doc, setDoc, serverTimestamp, query, where, getDocs, writeBatch, Timestamp } from "firebase/firestore";
+import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
-// Schema for backend validation, must match the frontend logic.
+// Schema for backend validation.
 const UserRegistrationSchema = z.object({
     firstName: z.string().min(1, "El primer nombre es requerido."),
     segundoNombre: z.string().optional(),
@@ -26,6 +26,7 @@ const UserRegistrationSchema = z.object({
     modalidad: z.string().min(1),
     grupo: z.string().min(1),
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+    metodoPago: z.string().min(1),
 });
 
 export async function POST(req: Request) {
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Ya existe un usuario con este número de identificación." }, { status: 409 });
         }
         
+        // Use identification number as the document ID for consistency
         const newUserId = data.numeroIdentificacion;
         
         const usuarioData = {
@@ -90,14 +92,15 @@ export async function POST(req: Request) {
           carreraId: data.carreraId,
           modalidad: data.modalidad,
           grupo: data.grupo,
-          correoInstitucional: "",
+          correoInstitucional: "", // To be generated upon approval
           cicloActual: null,
           materiasInscritas: [],
           estado: "pendiente",
-          estaInscrito: false, // Default to false
+          estaInscrito: false, // Default to false as required
           fechaRegistro: serverTimestamp(),
-          // Store password temporarily here until approval, or handle it securely otherwise
-          // This is a simplification for the example. In production, use a more secure method.
+          metodoPago: data.metodoPago,
+          // Store password temporarily here until approval. In production, this should be handled
+          // more securely, e.g., by sending a one-time password or reset link.
           initialPassword: data.password,
         };
         
@@ -106,6 +109,7 @@ export async function POST(req: Request) {
         const newUserDocRef = doc(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios"), newUserId);
         const newStudentDocRef = doc(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes"), newUserId);
 
+        // Sanitize data before writing
         batch.set(newUserDocRef, sanitizeForFirestore(usuarioData));
         batch.set(newStudentDocRef, sanitizeForFirestore(estudianteData));
         

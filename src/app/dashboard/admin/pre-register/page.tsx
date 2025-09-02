@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, DocumentData, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, DocumentData, doc, updateDoc, writeBatch } from "firebase/firestore";
 import { processStudentEnrollment } from "@/ai/flows/enroll-student-flow";
 import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -28,7 +28,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 interface PreRegisteredUser {
   id: string; 
   nombreCompleto: string;
-  correo: string;
+  correo?: string;
   carreraId: string;
   carreraNombre?: string; 
   fechaRegistro: any;
@@ -70,7 +70,11 @@ export default function PreRegisterPage() {
 
         // Fetch students and map career name
         const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
-        const q = query(studentsRef, where("estado", "==", filter));
+        let q = query(studentsRef, where("estado", "in", ["pendiente", "rechazado", "aprobado"]));
+        if (filter !== "todos") {
+           q = query(studentsRef, where("estado", "==", filter));
+        }
+        
         const querySnapshot = await getDocs(q);
 
         const fetchedUsers: PreRegisteredUser[] = querySnapshot.docs.map(doc => {
@@ -115,10 +119,15 @@ export default function PreRegisterPage() {
   const handleReject = async (studentId: string) => {
       startTransition(async () => {
         try {
+            const batch = writeBatch(db);
             const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
             const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", studentId);
-            await updateDoc(studentRef, { estado: 'rechazado' });
-            await updateDoc(userRef, { estado: 'rechazado' });
+            
+            batch.update(studentRef, { estado: 'rechazado' });
+            batch.update(userRef, { estado: 'rechazado' });
+            
+            await batch.commit();
+
             toast({ title: "Solicitud Rechazada", description: "El aspirante ha sido marcado como rechazado." });
             setUsers(prev => prev.filter(u => u.id !== studentId));
         } catch (error: any) {
@@ -162,6 +171,7 @@ export default function PreRegisterPage() {
                 <SelectValue placeholder="Filtrar por estado" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
                 <SelectItem value="pendiente">Pendiente</SelectItem>
                 <SelectItem value="aprobado">Aprobado</SelectItem>
                 <SelectItem value="rechazado">Rechazado</SelectItem>
@@ -217,11 +227,11 @@ export default function PreRegisterPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onSelect={() => handleApprove(user.id)} className="text-green-600 focus:text-green-600 focus:bg-green-50">
+                            <DropdownMenuItem onSelect={() => handleApprove(user.id)} className="text-green-600 focus:text-green-600 focus:bg-green-50" disabled={user.estado !== 'pendiente'}>
                               <Check className="mr-2 h-4 w-4" />
                               Aprobar
                             </DropdownMenuItem>
-                            <DropdownMenuItem onSelect={() => handleReject(user.id)} className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                            <DropdownMenuItem onSelect={() => handleReject(user.id)} className="text-red-600 focus:text-red-600 focus:bg-red-50" disabled={user.estado !== 'pendiente'}>
                               <X className="mr-2 h-4 w-4" />
                               Rechazar
                             </DropdownMenuItem>

@@ -38,8 +38,11 @@ async function generateUniqueInstitutionalEmail(firstName: string, lastName1: st
     const lastName1Part = lastName1.toLowerCase().split(' ')[0];
     const lastName2Part = lastName2 ? lastName2.toLowerCase().split(' ')[0] : '';
     
-    const baseEmail = [namePart, lastName1Part, lastName2Part].filter(Boolean).join('.');
+    let baseEmail = [namePart, lastName1Part, lastName2Part].filter(Boolean).join('.');
     
+    // Normalize email by removing accents and special characters
+    baseEmail = baseEmail.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
     let finalEmail = `${baseEmail}${domain}`;
     let counter = 1;
 
@@ -66,6 +69,8 @@ export interface ProcessStudentEnrollmentOutput {
 }
 
 function calculateStartCycle(currentDate: Date): number {
+  // Simple logic: if registering in the first half of the year, cycle is 1, else cycle is 2 for the next year.
+  // This can be made more complex based on specific academic calendar dates.
   return 1;
 }
 
@@ -87,8 +92,12 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         const studentData = studentSnap.data();
         const userData = userSnap.data();
         
-        if (studentData.estado === 'inscrito' || userData.estado === 'activo') {
+        if (studentData.estado === 'inscrito' || studentData.estado === 'aprobado' || userData.estado === 'activo') {
             return { success: false, message: 'Este estudiante ya ha sido inscrito y activado.' };
+        }
+        
+        if (!studentData.initialPassword) {
+            throw new Error("No se encontró la contraseña inicial para el estudiante. No se puede proceder.");
         }
 
         const currentDate = new Date();
@@ -101,16 +110,17 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         
         const assignedSubjects = cycleInfo.materias;
         const institutionalEmail = await generateUniqueInstitutionalEmail(userData.nombre1, userData.apellido1, userData.apellido2);
-        const temporaryPassword = generateTemporaryPassword();
+        const temporaryPassword = studentData.initialPassword; // Use the password they registered with
         const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
         
         batch.update(studentRef, {
-            estado: 'inscrito',
+            estado: 'aprobado',
             estaInscrito: true,
             cicloActual: startCycle,
-            materiasInscritas: assignedSubjects.map(m => ({materiaId: m.id, nombre: m.nombre})),
+            materiasInscritas: assignedSubjects.map(m => ({materiaId: m.id, nombre: m.nombre, creditos: m.creditos})),
             correoInstitucional: institutionalEmail,
-            fechaActualizacion: new Date(),
+            fechaActualizacion: serverTimestamp(),
+            initialPassword: null, // Remove temporary password after use
         });
         
         batch.update(userRef, {
@@ -118,7 +128,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
             rol: { id: "estudiante", descripcion: "Estudiante" },
             contrasena: hashedPassword,
             estado: "activo",
-            fechaActualizacion: new Date(),
+            fechaActualizacion: serverTimestamp(),
         });
 
         await batch.commit();
@@ -144,6 +154,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         console.error(`[enroll-student-flow] Error processing enrollment for ${studentId}:`, {
             code: (error as any).code,
             message: message,
+            stack: (error as any).stack,
         });
         return { success: false, message };
     }
