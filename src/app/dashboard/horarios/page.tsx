@@ -223,7 +223,7 @@ export default function HorariosPage() {
   }
 
   const renderFilters = () => (
-    <Card className="max-w-md mx-auto w-full">
+    <Card className="w-full max-w-2xl mx-auto my-8 shadow-lg">
         <CardHeader>
             <CardTitle className="text-center flex items-center justify-center gap-3 text-2xl"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
         </CardHeader>
@@ -232,7 +232,7 @@ export default function HorariosPage() {
                 <Label htmlFor="materia-select">Materia</Label>
                 <Select value={filterMateria} onValueChange={(value) => { 
                     setFilterMateria(value);
-                    setFilterGrupo(undefined); // Reset group when subject changes
+                    setFilterGrupo(undefined);
                     setStatusMessage(value ? "Ahora selecciona un grupo." : "Selecciona una materia para ver los grupos disponibles.");
                     setMessageType("info");
                 }}>
