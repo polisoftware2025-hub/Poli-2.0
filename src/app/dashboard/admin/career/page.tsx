@@ -166,7 +166,7 @@ export default function CareerAdminPage() {
                                             </Link>
                                         </DropdownMenuItem>
                                         <DropdownMenuItem asChild>
-                                            <Link href={`/dashboard/admin/career/pensum/${career.slug}`}>
+                                            <Link href={`/programas/${career.slug}`} target="_blank">
                                                 <FileText className="mr-2 h-4 w-4" />
                                                 Ver Pensum
                                             </Link>
