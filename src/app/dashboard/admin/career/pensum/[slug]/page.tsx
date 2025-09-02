@@ -54,11 +54,13 @@ export default function PensumDetailPage() {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          setProgram(null);
-        } else {
-          const programDoc = querySnapshot.docs[0];
-          setProgram({ id: programDoc.id, ...programDoc.data() } as Career);
-        }
+          notFound();
+          return;
+        } 
+        
+        const programDoc = querySnapshot.docs[0];
+        setProgram({ id: programDoc.id, ...programDoc.data() } as Career);
+
       } catch (error) {
         console.error("Error fetching program details:", error);
       } finally {
@@ -73,7 +75,7 @@ export default function PensumDetailPage() {
   }
 
   if (!program) {
-    notFound();
+    // This case will be hit if the slug is invalid, and fetchProgram will call notFound().
     return null;
   }
 
