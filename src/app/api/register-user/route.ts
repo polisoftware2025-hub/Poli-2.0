@@ -36,6 +36,34 @@ const tipoIdentificacionMap: { [key: string]: { id: string; descripcion: string 
     'passport': { id: 'passport', descripcion: 'Pasaporte' },
 };
 
+async function generateUniqueInstitutionalEmail(firstName: string, lastName: string, segundoApellido: string): Promise<string> {
+    const domain = "@pi.edu.co";
+    const baseEmail = [
+        firstName.toLowerCase().split(' ')[0],
+        lastName.toLowerCase().split(' ')[0],
+        segundoApellido.toLowerCase().split(' ')[0]
+    ].join('.');
+    
+    const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+    
+    let finalEmail = `${baseEmail}${domain}`;
+    let counter = 1;
+    let emailExists = true;
+
+    while (emailExists) {
+        const q = query(usuariosRef, where("correoInstitucional", "==", finalEmail));
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) {
+            emailExists = false;
+        } else {
+            finalEmail = `${baseEmail}${counter}${domain}`;
+            counter++;
+        }
+    }
+    return finalEmail;
+}
+
+
 export async function POST(req: Request) {
     try {
         const body = await req.json();
@@ -53,14 +81,38 @@ export async function POST(req: Request) {
         const existingUserSnapshot = await getDocs(q);
 
         if (!existingUserSnapshot.empty) {
-            return NextResponse.json({ message: "Ya existe un usuario registrado con este número de identificación." }, { status: 409 });
+            // User exists, update their data
+            const userDocRef = existingUserSnapshot.docs[0].ref;
+            const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userDocRef.id);
+            
+            const batch = writeBatch(db);
+
+            const usuarioUpdateData = {
+                // Fields to update go here, for now, we'll just set the status to pending
+                estado: "pendiente",
+                fechaActualizacion: serverTimestamp()
+            };
+            batch.update(userDocRef, usuarioUpdateData);
+
+            const estudianteUpdateData = {
+                 estado: "pendiente",
+                 // update other fields if necessary
+            };
+            batch.update(studentDocRef, estudianteUpdateData);
+
+            await batch.commit();
+
+            return NextResponse.json({ message: "Tu solicitud de reinscripción ha sido enviada exitosamente. Un administrador la revisará.", userId: userDocRef.id }, { status: 200 });
         }
         
+        // New user, create documents
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(data.password, saltRounds);
         
         const politecnicoDocRef = doc(db, "Politecnico", "mzIX7rzezDezczAV6pQ7");
         const newUserDocRef = doc(usuariosRef);
+        
+        const institutionalEmail = await generateUniqueInstitutionalEmail(data.firstName, data.lastName, data.segundoApellido);
 
         const usuarioData = {
           nombreCompleto: `${data.firstName} ${data.segundoNombre || ''} ${data.lastName} ${data.segundoApellido}`.replace(/\s+/g, ' ').trim(),
@@ -77,11 +129,12 @@ export async function POST(req: Request) {
           ciudad: data.city,
           pais: data.country,
           correo: data.correoPersonal,
+          correoInstitucional: institutionalEmail,
           contrasena: hashedPassword,
           rol: { id: "aspirante", descripcion: "Aspirante" },
           estado: "pendiente",
           fechaRegistro: serverTimestamp(),
-          fechaActualizacion: serverTimestamp()
+          fechaActualizacion: serverTimestamp(),
         };
         
         await setDoc(newUserDocRef, usuarioData);
@@ -91,13 +144,13 @@ export async function POST(req: Request) {
           usuarioId: newUserDocRef.id,
           nombreCompleto: usuarioData.nombreCompleto,
           documento: data.numeroIdentificacion,
-          carrera: data.program, // Store career ID
+          carrera: data.program,
           modalidad: data.modalidad,
-          grupo: data.grupo, // Store group ID
-          correoInstitucional: "",
-          cicloActual: null,
+          grupo: data.grupo,
+          correoInstitucional: "", // Initially empty, filled on approval
+          cicloActual: null, // Initially null, set on approval
           materiasInscritas: [],
-          estado: "pendiente",
+          estado: "activo", // Set to 'activo' as per requirement
           fechaRegistro: serverTimestamp()
         };
         await setDoc(estudianteRef, estudianteData);
