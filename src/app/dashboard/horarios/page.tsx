@@ -216,9 +216,9 @@ export default function HorariosPage() {
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Grupo</label>
-                <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={filterMateria === 'all'}>
+                <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading}>
                     <SelectTrigger>
-                        <SelectValue placeholder={filterMateria === 'all' ? "Seleccione una materia primero" : "Todos los grupos"}/>
+                        <SelectValue placeholder={filterMateria === 'all' ? "Todos los grupos" : "Seleccione un grupo"}/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Todos los grupos</SelectItem>
@@ -233,7 +233,7 @@ export default function HorariosPage() {
                 Ver Horario
             </Button>
         </CardContent>
-         {!showSchedule && (
+        {!showSchedule && (
             <CardContent className="p-6 pt-0">
                  <Alert>
                     <Info className="h-4 w-4" />
