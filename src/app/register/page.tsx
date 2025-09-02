@@ -147,6 +147,7 @@ export default function RegisterPage() {
         tipoIdentificacion: "",
         numeroIdentificacion: "",
         gender: "",
+        birthDate: undefined,
         phone: "",
         address: "",
         country: "",
@@ -760,5 +761,3 @@ const Step6_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
-
-    

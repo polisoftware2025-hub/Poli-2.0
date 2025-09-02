@@ -12,7 +12,7 @@ const lastNameValidation = z.string().min(2, "Debe tener al menos 2 caracteres")
 
 const preRegisterUserSchema = z.object({
     firstName: nameValidation,
-    segundoNombre: z.string().max(50).optional(),
+    segundoNombre: z.string().max(50).optional().or(z.literal('')),
     lastName: lastNameValidation,
     segundoApellido: lastNameValidation,
     tipoIdentificacion: z.string(),
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
           usuarioId: newUserDocRef.id,
           nombreCompleto: usuarioData.nombreCompleto,
           documento: data.numeroIdentificacion,
-          carrera: data.carreraId,
+          carreraId: data.carreraId,
           modalidad: data.modalidad,
           grupo: data.grupo,
           correoInstitucional: "", // Initially empty, filled on approval
