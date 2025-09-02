@@ -44,14 +44,34 @@ export default function AttendancePage() {
     const fetchAttendanceData = async () => {
       setIsLoading(true);
       try {
+        const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+        const studentSnap = await getDoc(studentDocRef);
+
+        if (!studentSnap.exists()) {
+            setIsLoading(false);
+            return;
+        }
+
+        const studentData = studentSnap.data();
+        const enrolledSubjectIds = (studentData.materiasInscritas || []).map((m: any) => m.id);
+
+        if (enrolledSubjectIds.length === 0) {
+            setGrupos([]);
+            setAsistencias([]);
+            setIsLoading(false);
+            return;
+        }
+
         // 1. Obtener los grupos del estudiante
         const gruposRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-        const studentGroupsQuery = query(gruposRef, where("estudiantes", "array-contains-any", [{id: userId}]));
+        // Firestore 'in' query supports up to 30 elements. Split if necessary.
+        const studentGroupsQuery = query(gruposRef, where("materia.id", "in", enrolledSubjectIds));
         const studentGroupsSnapshot = await getDocs(studentGroupsQuery);
+        
         const studentGroups: Grupo[] = [];
         studentGroupsSnapshot.forEach(doc => {
             const groupData = doc.data();
-             if (groupData.estudiantes && groupData.estudiantes.some((est: any) => est.id === userId)) {
+            if (groupData.estudiantes && groupData.estudiantes.some((est: any) => est.id === userId)) {
                 studentGroups.push({ id: doc.id, materia: groupData.materia });
             }
         });
@@ -59,8 +79,6 @@ export default function AttendancePage() {
 
         // 2. Obtener las asistencias del estudiante
         const asistenciasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/asistencias");
-        // Se elimina el `orderBy` para evitar la necesidad de un índice compuesto.
-        // El ordenamiento se hará en el cliente.
         const q = query(
             asistenciasRef, 
             where("estudianteId", "==", userId)
@@ -77,7 +95,6 @@ export default function AttendancePage() {
             } as Asistencia;
         });
         
-        // Ordenar las asistencias en el lado del cliente
         fetchedAsistencias.sort((a, b) => b.fecha.toMillis() - a.fecha.toMillis());
 
         setAsistencias(fetchedAsistencias);

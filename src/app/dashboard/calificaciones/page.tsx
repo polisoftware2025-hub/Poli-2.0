@@ -42,6 +42,19 @@ export default function GradesPage() {
     const fetchGrades = async () => {
       setIsLoading(true);
       try {
+        const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+        const studentSnap = await getDoc(studentDocRef);
+
+        if (!studentSnap.exists()) {
+            setGrades([]);
+            setIsLoading(false);
+            return;
+        }
+        
+        const studentData = studentSnap.data();
+        const studentSubjects = new Map(studentData.materiasInscritas.map((m: any) => [m.id, m]));
+
+
         const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
         const q = query(notesRef, where("estudianteId", "==", userId));
         const querySnapshot = await getDocs(q);
@@ -59,9 +72,8 @@ export default function GradesPage() {
               const groupData = groupSnap.data();
               const materiaId = groupData.materia.id;
               
-              // Asumiendo que podemos obtener los créditos de alguna parte.
-              // Por ahora, usaremos un valor por defecto o buscaremos en carreras.
-              let creditos = 3; // Valor por defecto
+              const subjectDetails = studentSubjects.get(materiaId);
+              const creditos = subjectDetails ? subjectDetails.creditos : 0;
 
               fetchedGrades.push({
                 id: noteDoc.id,
@@ -69,9 +81,8 @@ export default function GradesPage() {
                 codigoGrupo: groupData.codigoGrupo,
                 notaFinal: noteData.nota,
                 creditos: creditos,
-                // El desglose sigue siendo un placeholder
                 desglose: [
-                  { actividad: "Nota registrada por docente", nota: noteData.nota, porcentaje: 100 }
+                  { actividad: noteData.observacion || "Nota registrada por docente", nota: noteData.nota, porcentaje: 100 }
                 ],
               });
             }
@@ -236,7 +247,3 @@ export default function GradesPage() {
     </div>
   );
 }
-
-    
-
-    
