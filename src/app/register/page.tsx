@@ -223,7 +223,6 @@ export default function RegisterPage() {
             title: "¡Solicitud de registro enviada!",
             description: responseData.message,
           });
-          // Redirect to a confirmation or home page instead of dashboard
           router.push("/"); 
         } else {
           toast({
@@ -246,7 +245,6 @@ export default function RegisterPage() {
         title: "Error de Validación",
         description: "Por favor, revisa todos los pasos y corrige los errores.",
       });
-      // Find the first step with an error and navigate to it
       for (const step of steps) {
         const hasError = step.fields.some(field => result.error.formErrors.fieldErrors[field as keyof typeof result.error.formErrors.fieldErrors]);
         if (hasError) {
