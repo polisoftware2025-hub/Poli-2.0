@@ -6,168 +6,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookOpen, User, CheckCircle, GraduationCap, DollarSign, Clock, Award } from "lucide-react";
 import { useParams, notFound } from "next/navigation";
-import { carreraData } from "@/lib/seed"; 
 import Image from "next/image";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { useEffect, useState } from "react";
 
-// En una aplicación real, estos datos vendrían de una API o CMS.
-// Por ahora, usamos los datos de ejemplo del seed y datos simulados.
-const programData: { [key: string]: any } = {
-  "tecnologia-en-comercio-exterior-y-negocios-internacionales": {
-    ...carreraData,
-    inversion: 2800000,
-    titulo: "Tecnólogo en Comercio Exterior y Negocios Internacionales"
-  },
-  "administracion-de-empresas": {
-    nombre: "Administración de Empresas",
-    slug: "administracion-de-empresas",
-    descripcionGeneral: "Forma líderes con visión estratégica para la gestión eficiente y competitiva de organizaciones en un entorno globalizado.",
-    perfilProfesional: "El Administrador de Empresas diseña, implementa y evalúa estrategias gerenciales en áreas como finanzas, marketing, talento humano y operaciones para asegurar el crecimiento y la sostenibilidad de la organización.",
-    imagenURL: "/images/Administacion-de-Empresas.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Presencial / Virtual",
-    inversion: 3200000,
-    titulo: "Administrador de Empresas",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Fundamentos de Administración", creditos: 3 }, { nombre: "Matemáticas I", creditos: 3 }, { nombre: "Contabilidad General", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Procesos Administrativos", creditos: 3 }, { nombre: "Estadística Descriptiva", creditos: 3 }, { nombre: "Microeconomía", creditos: 2 }] }
-    ]
-  },
-  "contaduria-publica": {
-    nombre: "Contaduría Pública",
-    slug: "contaduria-publica",
-    descripcionGeneral: "Prepara expertos en el control financiero, la auditoría y la normativa contable para garantizar la transparencia y la salud financiera de las empresas.",
-    perfilProfesional: "El Contador Público está capacitado para analizar estados financieros, gestionar tributos, realizar auditorías y asegurar el cumplimiento de las normativas contables y fiscales vigentes.",
-    imagenURL: "/images/carousel/accounting-finance.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3000000,
-    titulo: "Contador Público",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Contabilidad Financiera I", creditos: 3 }, { nombre: "Legislación Comercial", creditos: 2 }, { nombre: "Cálculo Diferencial", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Contabilidad de Costos", creditos: 3 }, { nombre: "Tributaria I", creditos: 3 }, { nombre: "Macroeconomía", creditos: 2 }] }
-    ]
-  },
-  "mercadeo-y-publicidad": {
-    nombre: "Mercadeo y Publicidad",
-    slug: "mercadeo-y-publicidad",
-    descripcionGeneral: "Desarrolla estrategias creativas e innovadoras para posicionar marcas, productos y servicios en mercados competitivos, utilizando herramientas digitales y tradicionales.",
-    perfilProfesional: "El profesional en Mercadeo y Publicidad crea y gestiona campañas, investiga mercados, analiza el comportamiento del consumidor y desarrolla estrategias de comunicación 360°.",
-    imagenURL: "/images/carousel/marketing-team.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Virtual",
-    inversion: 3100000,
-    titulo: "Profesional en Mercadeo y Publicidad",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Fundamentos de Mercadeo", creditos: 3 }, { nombre: "Teoría de la Comunicación", creditos: 2 }, { nombre: "Diseño Básico", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Investigación de Mercados", creditos: 3 }, { nombre: "Marketing Digital I", creditos: 3 }, { nombre: "Redacción Publicitaria", creditos: 2 }] }
-    ]
-  },
-  "ingenieria-de-sistemas": {
-    nombre: "Ingeniería de Sistemas",
-    slug: "ingenieria-de-sistemas",
-    descripcionGeneral: "Crea soluciones tecnológicas, de software y de infraestructura para optimizar procesos, gestionar información y resolver problemas complejos en las organizaciones.",
-    perfilProfesional: "El Ingeniero de Sistemas diseña, desarrolla e implementa software, gestiona redes y bases de datos, y lidera proyectos tecnológicos innovadores.",
-    imagenURL: "/images/carousel/software-development.jpg",
-    duracionCiclo: "9 Ciclos",
-    modalidad: "Presencial / Virtual",
-    inversion: 3500000,
-    titulo: "Ingeniero de Sistemas",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Algoritmos y Programación", creditos: 3 }, { nombre: "Cálculo I", creditos: 3 }, { nombre: "Lógica de Programación", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Estructuras de Datos", creditos: 3 }, { nombre: "Bases de Datos I", creditos: 3 }, { nombre: "Sistemas Operativos", creditos: 3 }] }
-    ]
-  },
-  "gastronomia": {
-    nombre: "Gastronomía",
-    slug: "gastronomia",
-    descripcionGeneral: "Fusiona arte, técnica y ciencia culinaria para crear experiencias gastronómicas únicas, gestionando cocinas y negocios de alimentos y bebidas.",
-    perfilProfesional: "El Gastrónomo domina técnicas culinarias nacionales e internacionales, crea menús, gestiona costos y administra restaurantes y eventos con altos estándares de calidad.",
-    imagenURL: "/images/carousel/chef-cooking.jpg",
-    duracionCiclo: "6 Ciclos",
-    modalidad: "Presencial",
-    inversion: 4000000,
-    titulo: "Gastrónomo Profesional",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Técnicas Básicas de Cocina", creditos: 4 }, { nombre: "Higiene y Manipulación de Alimentos", creditos: 2 }, { nombre: "Historia de la Gastronomía", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Cocina Colombiana", creditos: 4 }, { nombre: "Panadería y Pastelería Básica", creditos: 3 }, { nombre: "Costos de Alimentos y Bebidas", creditos: 2 }] }
-    ]
-  },
-  "hoteleria-y-turismo": {
-    nombre: "Hotelería y Turismo",
-    slug: "hoteleria-y-turismo",
-    descripcionGeneral: "Gestiona servicios de hospitalidad, alojamiento y agencias de viajes, creando experiencias turísticas memorables con estándares de calidad internacionales.",
-    perfilProfesional: "El profesional en Hotelería y Turismo administra hoteles, organiza eventos, diseña productos turísticos y promueve destinos de manera sostenible.",
-    imagenURL: "/images/carousel/luxury-hotel.jpg",
-    duracionCiclo: "7 Ciclos",
-    modalidad: "Presencial",
-    inversion: 2900000,
-    titulo: "Profesional en Hotelería y Turismo",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Introducción al Turismo", creditos: 2 }, { nombre: "Gestión de Alojamiento", creditos: 3 }, { nombre: "Geografía Turística", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Servicio al Cliente", creditos: 2 }, { nombre: "Agencias de Viajes y Tour Operadores", creditos: 3 }, { nombre: "Patrimonio Cultural", creditos: 3 }] }
-    ]
-  },
-  "derecho": {
-    nombre: "Derecho",
-    slug: "derecho",
-    descripcionGeneral: "Forma profesionales con sólidos principios éticos y un profundo conocimiento jurídico para asesorar, representar y defender los derechos de personas y empresas.",
-    perfilProfesional: "El Abogado interpreta y aplica el ordenamiento jurídico en diversas áreas como el derecho civil, penal, laboral y administrativo, actuando con justicia y equidad.",
-    imagenURL: "/images/carousel/law-books-courtroom.jpg",
-    duracionCiclo: "10 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3800000,
-    titulo: "Abogado(a)",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Introducción al Derecho", creditos: 3 }, { nombre: "Derecho Romano", creditos: 2 }, { nombre: "Teoría del Estado", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Derecho Civil Personas", creditos: 3 }, { nombre: "Derecho Constitucional", creditos: 3 }, { nombre: "Sociología Jurídica", creditos: 2 }] }
-    ]
-  },
-  "psicologia": {
-    nombre: "Psicología",
-    slug: "psicologia",
-    descripcionGeneral: "Comprende el comportamiento humano desde una perspectiva científica y humanista para evaluar, diagnosticar e intervenir en procesos psicológicos y promover el bienestar.",
-    perfilProfesional: "El Psicólogo aplica sus conocimientos en áreas como la clínica, la educativa, la organizacional y la social, contribuyendo al desarrollo individual y colectivo.",
-    imagenURL: "/images/carousel/therapy-session.jpg",
-    duracionCiclo: "9 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3600000,
-    titulo: "Psicólogo(a)",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Historia de la Psicología", creditos: 2 }, { nombre: "Procesos Psicológicos Básicos", creditos: 3 }, { nombre: "Biología Humana", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Psicología del Desarrollo", creditos: 3 }, { nombre: "Estadística Aplicada", creditos: 3 }, { nombre: "Teorías de la Personalidad", creditos: 3 }] }
-    ]
-  },
-  "enfermeria": {
-    nombre: "Enfermería",
-    slug: "enfermeria",
-    descripcionGeneral: "Forma profesionales para el cuidado integral de la salud del individuo, la familia y la comunidad, con vocación de servicio, ética y humanismo.",
-    perfilProfesional: "El Enfermero(a) participa en la promoción, prevención, tratamiento y rehabilitación de la salud, trabajando en equipos interdisciplinarios en diversos entornos de atención.",
-    imagenURL: "/images/carousel/nurses-hospital.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3700000,
-    titulo: "Enfermero(a) Profesional",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Fundamentos de Enfermería", creditos: 4 }, { nombre: "Anatomía y Fisiología", creditos: 3 }, { nombre: "Bioquímica", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Cuidado Básico del Paciente", creditos: 4 }, { nombre: "Farmacología", creditos: 3 }, { nombre: "Microbiología", creditos: 2 }] }
-    ]
-  },
-  "comunicacion-social": {
-    nombre: "Comunicación Social",
-    slug: "comunicacion-social",
-    descripcionGeneral: "Forma comunicadores estratégicos capaces de crear, gestionar y difundir contenidos en medios masivos, digitales y organizaciones.",
-    perfilProfesional: "El Comunicador Social se desempeña en periodismo, comunicación organizacional, producción audiovisual y gestión de redes sociales, con una visión crítica y creativa.",
-    imagenURL: "/images/carousel/media-broadcast.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Virtual / Presencial",
-    inversion: 3300000,
-    titulo: "Comunicador Social y Periodista",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Teorías de la Comunicación", creditos: 3 }, { nombre: "Redacción para Medios", creditos: 3 }, { nombre: "Fotografía Básica", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Periodismo Informativo", creditos: 3 }, { nombre: "Comunicación Organizacional", creditos: 3 }, { nombre: "Producción de Radio", creditos: 2 }] }
-    ]
-  }
-};
+interface Career {
+  id?: string;
+  nombre: string;
+  slug: string;
+  descripcionGeneral: string;
+  perfilProfesional: string;
+  imagenURL: string;
+  duracionCiclo: string;
+  modalidad: string;
+  inversion: number;
+  titulo: string;
+  ciclos: { numero: number; materias: { nombre: string; codigo?: string; creditos: number }[] }[];
+}
+
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('es-CO', {
@@ -181,10 +38,40 @@ const formatCurrency = (value: number) => {
 export default function PensumDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const program = programData[slug];
+  const [program, setProgram] = useState<Career | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProgram = async () => {
+      if (!slug) return;
+      setIsLoading(true);
+      try {
+        const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+        const q = query(careersRef, where("slug", "==", slug));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          setProgram(null);
+        } else {
+          const programDoc = querySnapshot.docs[0];
+          setProgram({ id: programDoc.id, ...programDoc.data() } as Career);
+        }
+      } catch (error) {
+        console.error("Error fetching program details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProgram();
+  }, [slug]);
+
+  if (isLoading) {
+    return <div className="text-center p-8">Cargando pensum...</div>;
+  }
 
   if (!program) {
     notFound();
+    return null;
   }
 
   return (
@@ -298,3 +185,4 @@ export default function PensumDetailPage() {
     </div>
   );
 }
+

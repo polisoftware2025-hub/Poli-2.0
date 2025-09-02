@@ -12,6 +12,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import { db } from "@/lib/firebase";
+import { collection, addDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -29,7 +33,7 @@ const initialProgram = {
     perfilProfesional: "",
     imagenURL: "https://placehold.co/800x400/002147/FFFFFF?text=Nueva+Carrera",
     duracionCiclo: "",
-    modalidad: "",
+    modalidad: "Presencial / Virtual",
     inversion: 0,
     titulo: "",
     ciclos: [
@@ -39,9 +43,24 @@ const initialProgram = {
 
 export default function NewProgramPage() {
   const [programDetails, setProgramDetails] = useState(initialProgram);
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { id, value } = e.target;
+    setProgramDetails(prev => ({ ...prev, [id]: value }));
+  };
+  
+  const createSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+  };
 
   const handleAddCycle = () => {
-    setProgramDetails((prevDetails: any) => {
+    setProgramDetails((prevDetails) => {
         const lastCycle = prevDetails.ciclos[prevDetails.ciclos.length - 1];
         const newCycleNumber = lastCycle ? lastCycle.numero + 1 : 1;
         const newCycle = {
@@ -56,18 +75,45 @@ export default function NewProgramPage() {
   };
 
   const handleRemoveCycle = (cycleNumber: number) => {
-    setProgramDetails((prevDetails: any) => ({
+    setProgramDetails((prevDetails) => ({
         ...prevDetails,
-        ciclos: prevDetails.ciclos.filter((c: any) => c.numero !== cycleNumber)
+        ciclos: prevDetails.ciclos.filter((c) => c.numero !== cycleNumber)
     }));
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      setIsLoading(true);
+
+      if (!programDetails.nombre) {
+        toast({ variant: "destructive", title: "Error", description: "El nombre de la carrera es obligatorio." });
+        setIsLoading(false);
+        return;
+      }
+      
+      const slug = createSlug(programDetails.nombre);
+
+      try {
+          const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+          await addDoc(careersCollection, { ...programDetails, slug });
+          toast({ title: "Éxito", description: "La carrera ha sido creada correctamente." });
+          router.push("/dashboard/admin/career");
+      } catch (error) {
+          console.error("Error creating career: ", error);
+          toast({ variant: "destructive", title: "Error", description: "No se pudo crear la carrera." });
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+
   return (
-    <form className="flex flex-col gap-8">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
       <PageHeader
         title="Crear Nueva Carrera"
         description="Completa los detalles para agregar un nuevo programa académico."
         icon={<Plus className="h-8 w-8 text-primary" />}
+        backPath="/dashboard/admin/career"
       />
 
       <Card className="overflow-hidden">
@@ -92,12 +138,12 @@ export default function NewProgramPage() {
         </div>
         <CardContent className="p-6 space-y-4">
             <div>
-                <Label htmlFor="programName">Nombre de la Carrera</Label>
-                <Input id="programName" placeholder="Ej: Ingeniería de Software"/>
+                <Label htmlFor="nombre">Nombre de la Carrera</Label>
+                <Input id="nombre" value={programDetails.nombre} onChange={handleChange} placeholder="Ej: Ingeniería de Software"/>
             </div>
             <div>
-                <Label htmlFor="programDescription">Descripción General</Label>
-                <Textarea id="programDescription" placeholder="Describe el programa en general..." rows={5}/>
+                <Label htmlFor="descripcionGeneral">Descripción General</Label>
+                <Textarea id="descripcionGeneral" value={programDetails.descripcionGeneral} onChange={handleChange} placeholder="Describe el programa en general..." rows={5}/>
             </div>
         </CardContent>
       </Card>
@@ -111,7 +157,7 @@ export default function NewProgramPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <Textarea placeholder="Describe el perfil del egresado..." rows={8}/>
+            <Textarea id="perfilProfesional" value={programDetails.perfilProfesional} onChange={handleChange} placeholder="Describe el perfil del egresado..." rows={8}/>
           </CardContent>
         </Card>
 
@@ -125,28 +171,17 @@ export default function NewProgramPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <Label htmlFor="investment">Inversión por ciclo</Label>
-                    <Input id="investment" type="number" placeholder="Ej: 3500000" />
+                    <Label htmlFor="inversion">Inversión por ciclo</Label>
+                    <Input id="inversion" type="number" value={programDetails.inversion} onChange={(e) => setProgramDetails(p => ({...p, inversion: parseInt(e.target.value)}))} placeholder="Ej: 3500000" />
                 </div>
                  <div>
-                    <Label htmlFor="duration">Duración (Ciclos)</Label>
-                    <Input id="duration" placeholder="Ej: 9"/>
+                    <Label htmlFor="duracionCiclo">Duración (Ciclos)</Label>
+                    <Input id="duracionCiclo" value={programDetails.duracionCiclo} onChange={handleChange} placeholder="Ej: 9"/>
                 </div>
             </div>
              <div>
-                <Label htmlFor="degreeTitle">Título Otorgado</Label>
-                <Input id="degreeTitle" placeholder="Ej: Ingeniero de Software" />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-semibold text-gray-700">
-                  <GraduationCap className="h-5 w-5 text-purple-600" />
-                  <span>Créditos Totales:</span>
-              </div>
-              <span className="text-gray-800 font-bold">
-                {programDetails.ciclos.reduce((totalCreds: number, ciclo: any) => 
-                    totalCreds + ciclo.materias.reduce((cycleCreds: number, materia: any) => cycleCreds + materia.creditos, 0), 0)
-                }
-              </span>
+                <Label htmlFor="titulo">Título Otorgado</Label>
+                <Input id="titulo" value={programDetails.titulo} onChange={handleChange} placeholder="Ej: Ingeniero de Software" />
             </div>
           </CardContent>
         </Card>
@@ -172,6 +207,7 @@ export default function NewProgramPage() {
                         e.stopPropagation();
                         handleRemoveCycle(ciclo.numero);
                       }}
+                      type="button"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -184,38 +220,7 @@ export default function NewProgramPage() {
                             <span>{materia.nombre}</span>
                             <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full ml-2">{materia.creditos} créditos</span>
                         </div>
-                        <div className="flex gap-2">
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" size="icon" className="h-8 w-8"><Edit className="h-4 w-4"/></Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Editar Materia</DialogTitle>
-                                        <DialogDescription>Modifica los datos de la materia.</DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div>
-                                            <Label htmlFor="editSubjectName">Nombre de la Materia</Label>
-                                            <Input id="editSubjectName" defaultValue={materia.nombre}/>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="editSubjectCode">Código</Label>
-                                            <Input id="editSubjectCode" defaultValue={materia.codigo || "N/A"}/>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="editSubjectCredits">Créditos</Label>
-                                            <Input id="editSubjectCredits" type="number" defaultValue={materia.creditos}/>
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button variant="outline" type="button">Cancelar</Button>
-                                        <Button type="button">Guardar Cambios</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                            <Button variant="destructive" size="icon" className="h-8 w-8" type="button"><Trash2 className="h-4 w-4"/></Button>
-                        </div>
+                        <Button variant="destructive" size="icon" className="h-8 w-8" type="button"><Trash2 className="h-4 w-4"/></Button>
                       </li>
                     ))}
                   </ul>
@@ -229,7 +234,6 @@ export default function NewProgramPage() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
-                            <DialogDescription>Completa los datos de la nueva materia.</DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4 py-4">
                              <div>
@@ -267,7 +271,7 @@ export default function NewProgramPage() {
             <Button asChild type="button" variant="outline">
               <Link href="/dashboard/admin/career">Cancelar</Link>
             </Button>
-             <Button type="submit">Crear Carrera</Button>
+             <Button type="submit" disabled={isLoading}>{isLoading ? "Creando..." : "Crear Carrera"}</Button>
         </CardFooter>
       </Card>
 

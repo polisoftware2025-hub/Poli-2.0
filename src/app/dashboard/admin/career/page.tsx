@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookCopy, Plus, Search, MoreVertical, Edit, FileText } from "lucide-react";
+import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,65 +15,80 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-const careers = [
-  {
-    id: "sistemas",
-    slug: "ingenieria-de-sistemas",
-    name: "Ingeniería de Sistemas",
-    faculty: "Facultad de Ingenierías",
-    students: 350,
-    cycles: 9,
-    status: "Activa",
-  },
-  {
-    id: "admin",
-    slug: "administracion-de-empresas",
-    name: "Administración de Empresas",
-    faculty: "Facultad de Ciencias Económicas",
-    students: 420,
-    cycles: 8,
-    status: "Activa",
-  },
-  {
-    id: "mercadeo",
-    slug: "mercadeo-y-publicidad",
-    name: "Mercadeo y Publicidad",
-    faculty: "Facultad de Ciencias Económicas",
-    students: 280,
-    cycles: 8,
-    status: "Activa",
-  },
-  {
-    id: "contaduria",
-    slug: "contaduria-publica",
-    name: "Contaduría Pública",
-    faculty: "Facultad de Ciencias Económicas",
-    students: 310,
-    cycles: 8,
-    status: "En revisión",
-  },
-  {
-    id: "gastronomia",
-    slug: "gastronomia",
-    name: "Gastronomía",
-    faculty: "Facultad de Hospitalidad y Turismo",
-    students: 150,
-    cycles: 6,
-    status: "Activa",
-  },
-  {
-    id: "psicologia",
-    slug: "psicologia",
-    name: "Psicología",
-    faculty: "Facultad de Ciencias Sociales",
-    students: 220,
-    cycles: 9,
-    status: "Inactiva",
-  },
-];
+interface Career {
+  id: string;
+  slug: string;
+  nombre: string;
+  inversion?: number;
+  estudiantes?: number;
+  ciclos?: any[];
+  status?: string;
+}
 
 export default function CareerAdminPage() {
+  const [careers, setCareers] = useState<Career[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchCareers = async () => {
+    setIsLoading(true);
+    try {
+      const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+      const querySnapshot = await getDocs(careersCollection);
+      const careersList = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      } as Career));
+      setCareers(careersList);
+    } catch (error) {
+      console.error("Error fetching careers: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudieron cargar las carreras.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  useEffect(() => {
+    fetchCareers();
+  }, [toast]);
+
+  const handleDelete = async (careerId: string) => {
+    try {
+      await deleteDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", careerId));
+      toast({
+        title: "Éxito",
+        description: "La carrera ha sido eliminada.",
+      });
+      fetchCareers(); // Re-fetch careers after deletion
+    } catch (error) {
+      console.error("Error deleting career: ", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar la carrera.",
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -104,65 +119,90 @@ export default function CareerAdminPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {careers.map((career) => (
-                <Card key={career.id} className="flex flex-col">
-                    <CardHeader>
-                        <div className="flex justify-between items-start">
-                             <div>
-                                <CardTitle className="text-lg">{career.name}</CardTitle>
-                                <CardDescription>{career.faculty}</CardDescription>
-                             </div>
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreVertical className="h-4 w-4" />
-                                </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                <DropdownMenuItem asChild>
-                                    <Link href={`/dashboard/admin/career/${career.slug}`}>
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        Editar
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link href={`/dashboard/admin/career/pensum/${career.slug}`}>
-                                        <FileText className="mr-2 h-4 w-4" />
-                                        Ver Pensum
-                                    </Link>
-                                </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex-grow space-y-4">
-                        <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Estudiantes:</span>
-                            <span className="font-semibold">{career.students}</span>
-                        </div>
-                         <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Ciclos:</span>
-                            <span className="font-semibold">{career.cycles}</span>
-                        </div>
-                    </CardContent>
-                     <CardFooter>
-                         <Badge variant={
-                            career.status === "Activa" ? "secondary" : 
-                            career.status === "En revisión" ? "outline" : "destructive"
-                         }
-                          className={
-                            career.status === "Activa" ? "bg-green-100 text-green-800" :
-                            career.status === "En revisión" ? "bg-yellow-100 text-yellow-800" : ""
-                          }>
-                            {career.status}
-                         </Badge>
-                    </CardFooter>
-                </Card>
-            ))}
-          </div>
-
+            {isLoading ? (
+              Array.from({ length: 3 }).map((_, i) => <Card key={i} className="h-48 animate-pulse bg-muted" />)
+            ) : (
+                careers.map((career) => (
+                    <Card key={career.id} className="flex flex-col">
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <CardTitle className="text-lg">{career.nombre}</CardTitle>
+                                    <CardDescription>ID: {career.id}</CardDescription>
+                                </div>
+                                <AlertDialog>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/admin/career/${career.slug}`}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Editar
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem asChild>
+                                            <Link href={`/dashboard/admin/career/pensum/${career.slug}`}>
+                                                <FileText className="mr-2 h-4 w-4" />
+                                                Ver Pensum
+                                            </Link>
+                                        </DropdownMenuItem>
+                                         <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Eliminar
+                                            </DropdownMenuItem>
+                                         </AlertDialogTrigger>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Esta acción no se puede deshacer. Esto eliminará permanentemente la carrera
+                                                <span className="font-bold"> {career.nombre}</span> de la base de datos.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(career.id)} className="bg-destructive hover:bg-destructive/90">Eliminar</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                 </AlertDialog>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow space-y-4">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Estudiantes:</span>
+                                <span className="font-semibold">{career.estudiantes || 0}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Ciclos:</span>
+                                <span className="font-semibold">{career.ciclos?.length || 0}</span>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Badge variant={
+                                career.status === "Activa" ? "secondary" : 
+                                career.status === "En revisión" ? "outline" : "destructive"
+                            }
+                            className={
+                                career.status === "Activa" ? "bg-green-100 text-green-800" :
+                                career.status === "En revisión" ? "bg-yellow-100 text-yellow-800" : ""
+                            }>
+                                {career.status || "Activa"}
+                            </Badge>
+                        </CardFooter>
+                    </Card>
+                ))
+            )}
+            </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+
