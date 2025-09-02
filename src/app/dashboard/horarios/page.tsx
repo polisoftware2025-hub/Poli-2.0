@@ -223,20 +223,21 @@ export default function HorariosPage() {
   }
 
   const renderFilters = () => (
-    <Card className="w-full max-w-2xl mx-auto my-8 shadow-lg">
-        <CardHeader>
-            <CardTitle className="text-center flex items-center justify-center gap-3 text-2xl"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
-        </CardHeader>
-        <CardContent className="p-6 flex flex-col gap-6">
+    <div className="w-full max-w-5xl mx-auto my-8 p-6 sm:p-8 bg-white rounded-lg shadow-md">
+        <div className="text-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-800">Filtro de Horario</h2>
+            <p className="text-muted-foreground">Selecciona tus filtros para visualizar tu agenda.</p>
+        </div>
+        <div className="flex flex-col gap-6">
              <div className="space-y-2">
-                <Label htmlFor="materia-select">Materia</Label>
+                <Label htmlFor="materia-select" className="text-base font-medium">Materia</Label>
                 <Select value={filterMateria} onValueChange={(value) => { 
                     setFilterMateria(value);
                     setFilterGrupo(undefined);
                     setStatusMessage(value ? "Ahora selecciona un grupo." : "Selecciona una materia para ver los grupos disponibles.");
                     setMessageType("info");
                 }}>
-                    <SelectTrigger id="materia-select">
+                    <SelectTrigger id="materia-select" className="py-6 text-base">
                         <SelectValue placeholder="Selecciona una materia"/>
                     </SelectTrigger>
                     <SelectContent>
@@ -248,15 +249,15 @@ export default function HorariosPage() {
             
             {filterMateria && (
               <div className="space-y-2">
-                  <Label htmlFor="grupo-select">Grupo</Label>
+                  <Label htmlFor="grupo-select" className="text-base font-medium">Grupo</Label>
                   <Select value={filterGrupo} onValueChange={(value) => { 
                       setFilterGrupo(value);
                       if (value) {
                           setStatusMessage("Todo listo para ver tu horario.");
-                          setMessageType("info");
+                          setMessageType("success");
                       }
                   }} disabled={isLoading}>
-                      <SelectTrigger id="grupo-select">
+                      <SelectTrigger id="grupo-select" className="py-6 text-base">
                           <SelectValue placeholder="Selecciona un grupo"/>
                       </SelectTrigger>
                       <SelectContent>
@@ -268,21 +269,20 @@ export default function HorariosPage() {
             )}
             
             {filterMateria && filterGrupo && (
-                <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-full text-base py-6">
+                <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-full text-base py-6 bg-primary hover:bg-primary/90">
                     Ver Horario
                 </Button>
             )}
 
-             <div className={`text-center text-sm min-h-[20px] ${
+             <div className={`text-center text-sm min-h-[20px] font-medium ${
                 messageType === 'error' ? 'text-red-500' : 
-                messageType === 'success' ? 'text-green-500' : 
+                messageType === 'success' ? 'text-green-600' : 
                 'text-muted-foreground'
              }`}>
                 {statusMessage}
             </div>
-
-        </CardContent>
-    </Card>
+        </div>
+    </div>
   );
 
   const renderScheduleView = () => (
