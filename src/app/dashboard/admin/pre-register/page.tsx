@@ -79,13 +79,20 @@ export default function PreRegisterPage() {
 
         const fetchedUsers: PreRegisteredUser[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
+            let fechaRegistro: Date | null = null;
+            if (data.fechaRegistro && typeof data.fechaRegistro.toDate === 'function') {
+                fechaRegistro = data.fechaRegistro.toDate();
+            } else if (data.fechaRegistro instanceof Date) {
+                fechaRegistro = data.fechaRegistro;
+            }
+            
             return {
                 id: doc.id,
                 nombreCompleto: data.nombreCompleto,
                 correo: data.correo,
                 carreraId: data.carreraId,
                 carreraNombre: carrerasMap.get(data.carreraId) || 'Carrera no encontrada',
-                fechaRegistro: data.fechaRegistro?.toDate() ?? null,
+                fechaRegistro: fechaRegistro,
                 estado: data.estado
             }
         });
@@ -210,7 +217,7 @@ export default function PreRegisterPage() {
                       </TableCell>
                       <TableCell>{user.carreraNombre}</TableCell>
                        <TableCell>
-                        {user.fechaRegistro ? new Date(user.fechaRegistro).toLocaleDateString('es-ES', {
+                        {user.fechaRegistro ? user.fechaRegistro.toLocaleDateString('es-ES', {
                           year: 'numeric', month: 'long', day: 'numeric'
                         }) : 'N/A'}
                       </TableCell>
