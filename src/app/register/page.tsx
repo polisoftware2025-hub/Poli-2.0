@@ -63,7 +63,7 @@ const cityCountryValidation = z.string({ required_error: "Por favor, selecciona 
 // Schemas for each step
 const step1Schema = z.object({
   firstName: nameValidation,
-  segundoNombre: z.string().max(50).optional(),
+  segundoNombre: z.string().max(50).optional().or(z.literal('')),
   lastName: lastNameValidation,
   segundoApellido: lastNameValidation,
   tipoIdentificacion: z.string({ required_error: "Por favor, selecciona un tipo de identificación." }),
@@ -197,7 +197,7 @@ export default function RegisterPage() {
             title: "¡Solicitud de registro enviada!",
             description: responseData.message,
           });
-          router.push("/"); 
+          router.push("/register/pending"); 
         } else {
           toast({
             variant: "destructive",
