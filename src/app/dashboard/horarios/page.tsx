@@ -406,8 +406,10 @@ export default function HorariosPage() {
         showSchedule ? renderScheduleView() : (
           <>
             {renderFilters()}
-            {!showSchedule && (
-              <p className="text-center text-sm text-muted-foreground">Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.</p>
+            {!showSchedule && !isLoading && (
+              <div className="w-full max-w-4xl mx-auto mt-4 p-4 bg-primary text-primary-foreground rounded-lg text-center">
+                 <p>Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.</p>
+              </div>
             )}
           </>
         )
