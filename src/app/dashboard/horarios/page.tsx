@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, Search, ArrowLeft, ArrowRight, View, Filter, RotateCcw, List, Calendar } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Search, ArrowLeft, ArrowRight, View, Filter, RotateCcw, List, Calendar, Info } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -106,7 +106,6 @@ export default function HorariosPage() {
   
   const filteredSchedule = useMemo(() => {
     const schedule: ScheduleEntry[] = [];
-    if (!showSchedule) return schedule;
 
     const groupsToProcess = allGroups.filter(group => {
       const materiaMatch = filterMateria === 'all' || group.materia.nombre === filterMateria;
@@ -136,7 +135,7 @@ export default function HorariosPage() {
         }
     });
     return schedule;
-  }, [allGroups, filterMateria, filterGrupo, showSchedule]);
+  }, [allGroups, filterMateria, filterGrupo]);
 
   const materias = useMemo(() => {
     const uniqueMaterias = [...new Set(allGroups.map(g => g.materia.nombre))];
@@ -199,7 +198,7 @@ export default function HorariosPage() {
             <CardTitle>Filtro de Horario</CardTitle>
             <CardDescription>Selecciona una materia o grupo para visualizar el horario correspondiente.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
             <div className="space-y-2">
                 <label className="text-sm font-medium">Materia</label>
                 <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('all'); }}>
@@ -225,8 +224,8 @@ export default function HorariosPage() {
                 </Select>
             </div>
         </CardContent>
-        <CardContent className="flex flex-col items-center gap-4">
-             <Button onClick={handleShowSchedule}>
+        <CardContent className="flex flex-col items-center gap-4 pt-0 p-6">
+             <Button onClick={handleShowSchedule} size="lg" className="w-full md:w-auto">
                 <Calendar className="mr-2 h-4 w-4"/>
                 Ver Horario
             </Button>
@@ -234,6 +233,17 @@ export default function HorariosPage() {
                 Limpiar filtros
             </Button>
         </CardContent>
+         {!showSchedule && (
+            <CardContent className="p-6 pt-0">
+                 <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Información</AlertTitle>
+                    <AlertDescription>
+                        👉 Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.
+                    </AlertDescription>
+                </Alert>
+            </CardContent>
+        )}
     </Card>
   );
 
@@ -281,22 +291,19 @@ export default function HorariosPage() {
                         </TableHeader>
                         <TableBody>
                             {timeSlots.map((time, timeIndex) => {
-                                const entriesForTimeSlot = daysOfWeek.map((day, dayIndex) => {
-                                    return filteredSchedule.find(e => e.dia === day && e.horaInicio === time);
-                                }).filter(Boolean) as ScheduleEntry[];
-
-                                const maxRowCount = entriesForTimeSlot.length > 0 ? Math.max(...entriesForTimeSlot.map(e => e.duracion)) : 1;
-                                
                                 return (
                                     <TableRow key={time}>
                                         <TableCell className="border-r text-center font-mono text-xs text-muted-foreground align-top pt-2">
                                             {time}
                                         </TableCell>
-                                        {daysOfWeek.map((day, dayIndex) => {
-                                            const entry = scheduleGrid[timeIndex]?.[dayIndex];
-                                            if (entry && entry.horaInicio !== time) {
-                                                return null; // This cell is covered by a rowspan
+                                        {daysOfWeek.map((day) => {
+                                            const entry = filteredSchedule.find(e => e.dia === day && e.horaInicio === time);
+                                            
+                                            if (entry) {
+                                                const prevEntry = filteredSchedule.find(e => e.dia === day && e.horaFin > time && e.horaInicio < time);
+                                                if (prevEntry) return null;
                                             }
+
                                             return (
                                                 <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-24 ${entry ? getSubjectColor(entry.materia) : ''}`}>
                                                     {entry && (
