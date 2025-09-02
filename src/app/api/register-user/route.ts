@@ -4,6 +4,7 @@ import { collection, doc, setDoc, serverTimestamp, query, where, getDocs, writeB
 import { NextResponse } from "next/server";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
 // ========================================================================================
 // 1. DATA VALIDATION (Zod Schema)
@@ -30,21 +31,6 @@ const UserRegistrationSchema = z.object({
     password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
 });
 
-
-// ========================================================================================
-// 2. DATA SANITIZATION FUNCTION
-// This function cleans the data object to make it Firestore-compatible.
-// It removes 'undefined' values and can be extended to normalize types.
-// ========================================================================================
-function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
-  const sanitized = { ...obj };
-  for (const key in sanitized) {
-    if (sanitized[key] === undefined) {
-      delete sanitized[key];
-    }
-  }
-  return sanitized;
-}
 
 // ========================================================================================
 // 3. HELPER FUNCTIONS
@@ -84,6 +70,8 @@ async function generateUniqueInstitutionalEmail(nombre1: string, apellido1: stri
 export async function POST(req: Request) {
     try {
         const body = await req.json();
+        console.log("Body recibido en /api/register-user:", JSON.stringify(body, null, 2));
+
 
         // Step 1: Validate incoming data with Zod
         const validation = UserRegistrationSchema.safeParse(body);
@@ -114,7 +102,7 @@ export async function POST(req: Request) {
 
         const newUserId = data.numeroIdentificacion; // Use identification number as document ID
         
-        const usuarioData = sanitizeForFirestore({
+        const usuarioData = {
           nombreCompleto: `${data.firstName} ${data.segundoNombre || ''} ${data.lastName} ${data.segundoApellido}`.replace(/\s+/g, ' ').trim(),
           nombre1: data.firstName,
           nombre2: data.segundoNombre || "", // Ensure it's a string, not undefined
@@ -135,9 +123,9 @@ export async function POST(req: Request) {
           estado: "pendiente",
           fechaRegistro: serverTimestamp(),
           fechaActualizacion: serverTimestamp(),
-        });
+        };
         
-        const estudianteData = sanitizeForFirestore({
+        const estudianteData = {
           usuarioId: newUserId,
           nombreCompleto: usuarioData.nombreCompleto,
           documento: data.numeroIdentificacion,
@@ -149,7 +137,7 @@ export async function POST(req: Request) {
           materiasInscritas: [],
           estado: "pendiente", 
           fechaRegistro: serverTimestamp()
-        });
+        };
         
         // Step 4: Write to Firestore using a transaction (batch)
         const batch = writeBatch(db);
@@ -158,8 +146,8 @@ export async function POST(req: Request) {
         const newUserDocRef = doc(collection(politecnicoDocRef, "usuarios"), newUserId);
         const newStudentDocRef = doc(collection(politecnicoDocRef, "estudiantes"), newUserId);
 
-        batch.set(newUserDocRef, usuarioData);
-        batch.set(newStudentDocRef, estudianteData);
+        batch.set(newUserDocRef, sanitizeForFirestore(usuarioData));
+        batch.set(newStudentDocRef, sanitizeForFirestore(estudianteData));
         
         await batch.commit();
         
