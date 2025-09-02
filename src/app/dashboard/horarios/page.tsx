@@ -3,10 +3,10 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, ArrowLeft, ArrowRight, Info } from "lucide-react";
+import { Calendar as CalendarIcon, Download, ArrowLeft, ArrowRight, Info, Filter, Search } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -69,7 +69,6 @@ export default function HorariosPage() {
   
   const [showSchedule, setShowSchedule] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -166,13 +165,6 @@ export default function HorariosPage() {
 
     return grid;
   }, [filteredSchedule]);
-  
-  const daySchedule = useMemo(() => {
-    const dayIndex = getDay(currentDate); // Sunday = 0, Monday = 1...
-    const dayName = daysOfWeek[dayIndex -1];
-    return filteredSchedule.filter(entry => entry.dia === dayName);
-  }, [filteredSchedule, currentDate]);
-
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
@@ -198,8 +190,8 @@ export default function HorariosPage() {
   const renderFilters = () => (
     <Card className="max-w-4xl mx-auto w-full">
         <CardHeader>
-            <CardTitle>Filtro de Horario</CardTitle>
-            <CardDescription>Selecciona una materia o grupo para visualizar el horario correspondiente.</CardDescription>
+            <CardTitle className="flex items-center gap-3"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
+            <CardDescription>Selecciona una materia y/o grupo para visualizar el horario correspondiente.</CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
             <div className="space-y-2">
@@ -216,7 +208,7 @@ export default function HorariosPage() {
             </div>
             <div className="space-y-2">
                 <label className="text-sm font-medium">Grupo</label>
-                <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading}>
+                <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || filterMateria === 'all' && grupos.length === 0}>
                     <SelectTrigger>
                         <SelectValue placeholder={filterMateria === 'all' ? "Todos los grupos" : "Seleccione un grupo"}/>
                     </SelectTrigger>
@@ -227,23 +219,12 @@ export default function HorariosPage() {
                 </Select>
             </div>
         </CardContent>
-        <CardContent className="flex flex-col items-center gap-2 pt-0 p-6">
+        <CardFooter className="flex flex-col items-center gap-2 pt-0 p-6">
              <Button onClick={handleShowSchedule} size="lg" className="w-full md:w-auto">
-                <CalendarIcon className="mr-2 h-4 w-4"/>
+                <Search className="mr-2 h-4 w-4"/>
                 Ver Horario
             </Button>
-        </CardContent>
-        {!showSchedule && (
-            <CardContent className="p-6 pt-0">
-                 <Alert>
-                    <Info className="h-4 w-4" />
-                    <AlertTitle>Información</AlertTitle>
-                    <AlertDescription>
-                        👉 Por favor seleccione una materia y/o grupo para visualizar el horario correspondiente.
-                    </AlertDescription>
-                </Alert>
-            </CardContent>
-        )}
+        </CardFooter>
     </Card>
   );
 
@@ -273,120 +254,74 @@ export default function HorariosPage() {
             </div>
         </CardHeader>
         <CardContent>
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'week' | 'day')} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex mb-4">
-                    <TabsTrigger value="week">Vista Semanal</TabsTrigger>
-                    <TabsTrigger value="day">Vista Diaria</TabsTrigger>
-                </TabsList>
-                <TabsContent value="week">
-                    {isLoading ? (
-                        <div className="space-y-2">
-                           <Skeleton className="h-48 w-full" />
-                        </div>
-                    ) : filteredSchedule.length > 0 ? (
-                         <div className="overflow-x-auto relative">
-                            <Table className="min-w-full border">
-                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
-                                        {daysOfWeek.map(day => (
-                                        <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
-                                        ))}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {timeSlots.map((time, timeIndex) => {
-                                        let renderedInRow: { [key:string]: boolean } = {};
-                                        return (
-                                            <TableRow key={time}>
-                                                <TableCell className="border-r text-center font-mono text-xs text-muted-foreground align-top pt-2 h-24">
-                                                    {time}
-                                                </TableCell>
-                                                {daysOfWeek.map((day) => {
-                                                    if (renderedInRow[day]) return null;
+            {isLoading ? (
+                <div className="space-y-2">
+                   <Skeleton className="h-48 w-full" />
+                </div>
+            ) : filteredSchedule.length > 0 ? (
+                 <div className="overflow-x-auto relative">
+                    <Table className="min-w-full border">
+                         <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
+                                {daysOfWeek.map(day => (
+                                <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {timeSlots.map((time, timeIndex) => {
+                                let renderedInRow: { [key:string]: boolean } = {};
+                                return (
+                                    <TableRow key={time}>
+                                        <TableCell className="border-r text-center font-mono text-xs text-muted-foreground align-top pt-2 h-24">
+                                            {time}
+                                        </TableCell>
+                                        {daysOfWeek.map((day) => {
+                                            if (renderedInRow[day]) return null;
 
-                                                    const entry = filteredSchedule.find(e => e.dia === day && e.horaInicio === time);
-                                                    
-                                                    if (entry) {
-                                                        for(let i=0; i<entry.duracion; i++){
-                                                          const nextTimeSlot = timeSlots[timeIndex+i];
-                                                          if(nextTimeSlot){
-                                                            const nextDate = new Date(`1970-01-01T${nextTimeSlot}:00`);
-                                                            if (nextDate < new Date(`1970-01-01T${entry.horaFin}:00`)){
-                                                              renderedInRow[day] = true;
-                                                            }
-                                                          }
-                                                        }
-
-                                                        return (
-                                                          <TableCell key={day} rowSpan={entry.duracion} className={`border-r p-1 align-top ${getSubjectColor(entry.materia)}`}>
-                                                              <div className="bg-white/70 p-2 rounded-md h-full flex flex-col justify-center text-xs">
-                                                                  <p className="font-bold">{entry.materia}</p>
-                                                                  <p>{entry.grupo}</p>
-                                                                  <p className="text-muted-foreground">{entry.docente}</p>
-                                                                  <p className="text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
-                                                              </div>
-                                                          </TableCell>
-                                                        );
+                                            const entry = filteredSchedule.find(e => e.dia === day && e.horaInicio === time);
+                                            
+                                            if (entry) {
+                                                for(let i=0; i<entry.duracion; i++){
+                                                  const nextTimeSlot = timeSlots[timeIndex+i];
+                                                  if(nextTimeSlot){
+                                                    const nextDate = new Date(`1970-01-01T${nextTimeSlot}:00`);
+                                                    if (nextDate < new Date(`1970-01-01T${entry.horaFin}:00`)){
+                                                      renderedInRow[day] = true;
                                                     }
-                                                    
-                                                    return (<TableCell key={day} className="border-r"></TableCell>)
-                                                })}
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                         </div>
-                    ) : (
-                        <Alert>
-                            <CalendarIcon className="h-4 w-4"/>
-                            <AlertTitle>No hay clases</AlertTitle>
-                            <AlertDescription>
-                                No hay clases programadas según los filtros seleccionados.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                </TabsContent>
-                 <TabsContent value="day">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div>
-                            <Calendar
-                                mode="single"
-                                selected={currentDate}
-                                onSelect={(date) => date && setCurrentDate(date)}
-                                className="rounded-md border"
-                                locale={es}
-                            />
-                        </div>
-                        <div className="md:col-span-2">
-                             <Card>
-                                <CardHeader>
-                                    <CardTitle>
-                                        Clases para el {format(currentDate, "eeee, d 'de' LLLL", { locale: es })}
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                {daySchedule.length > 0 ? (
-                                    <div className="space-y-4">
-                                        {daySchedule.map(entry => (
-                                            <div key={`${entry.grupo}-${entry.horaInicio}`} className={`p-4 rounded-lg border-l-4 ${getSubjectColor(entry.materia).replace('bg-', 'border-')}`}>
-                                                <p className="font-semibold">{entry.materia}</p>
-                                                <p className="text-sm text-muted-foreground">{entry.horaInicio} - {entry.horaFin}</p>
-                                                <p className="text-sm text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
-                                                <p className="text-xs text-muted-foreground">Grupo: {entry.grupo}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground">No hay clases programadas para este día.</p>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                    </div>
-                </TabsContent>
-            </Tabs>
+                                                  }
+                                                }
+
+                                                return (
+                                                  <TableCell key={day} rowSpan={entry.duracion} className={`border-r p-1 align-top ${getSubjectColor(entry.materia)}`}>
+                                                      <div className="bg-white/70 p-2 rounded-md h-full flex flex-col justify-center text-xs">
+                                                          <p className="font-bold">{entry.materia}</p>
+                                                          <p>{entry.grupo}</p>
+                                                          <p className="text-muted-foreground">{entry.docente}</p>
+                                                          <p className="text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
+                                                      </div>
+                                                  </TableCell>
+                                                );
+                                            }
+                                            
+                                            return (<TableCell key={day} className="border-r"></TableCell>)
+                                        })}
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                 </div>
+            ) : (
+                <Alert>
+                    <CalendarIcon className="h-4 w-4"/>
+                    <AlertTitle>No hay clases</AlertTitle>
+                    <AlertDescription>
+                        No hay clases programadas según los filtros seleccionados.
+                    </AlertDescription>
+                </Alert>
+            )}
         </CardContent>
       </Card>
   );
@@ -414,30 +349,13 @@ export default function HorariosPage() {
             </div>
         </CardHeader>
         <CardContent>
-            <Tabs defaultValue="week" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:w-auto md:inline-flex mb-4">
-                    <TabsTrigger value="week">Vista Semanal</TabsTrigger>
-                    <TabsTrigger value="day">Vista Diaria</TabsTrigger>
-                </TabsList>
-                 <TabsContent value="week">
-                    <Alert>
-                        <CalendarIcon className="h-4 w-4"/>
-                        <AlertTitle>Horario de Estudiante (Semanal)</AlertTitle>
-                        <AlertDescription>
-                           El horario detallado para estudiantes se cargará aquí.
-                        </AlertDescription>
-                    </Alert>
-                </TabsContent>
-                 <TabsContent value="day">
-                     <Alert>
-                        <CalendarIcon className="h-4 w-4"/>
-                        <AlertTitle>Horario de Estudiante (Diario)</AlertTitle>
-                        <AlertDescription>
-                           El horario detallado para estudiantes se cargará aquí.
-                        </AlertDescription>
-                    </Alert>
-                </TabsContent>
-            </Tabs>
+            <Alert>
+                <CalendarIcon className="h-4 w-4"/>
+                <AlertTitle>Horario de Estudiante</AlertTitle>
+                <AlertDescription>
+                   El horario detallado para estudiantes se cargará aquí.
+                </AlertDescription>
+            </Alert>
         </CardContent>
       </Card>
   );
