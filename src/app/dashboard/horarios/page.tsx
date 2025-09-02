@@ -217,13 +217,13 @@ export default function HorariosPage() {
   }
 
   const renderFilters = () => (
-    <Card className="max-w-xl mx-auto w-full">
+    <Card className="max-w-2xl mx-auto w-full">
         <CardHeader>
             <CardTitle className="flex items-center gap-3 text-2xl"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
             <CardDescription>Selecciona una materia y/o grupo para visualizar el horario correspondiente.</CardDescription>
         </CardHeader>
         <CardContent className="p-6 space-y-6">
-            <div className="grid grid-cols-1 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                     <Label htmlFor="materia-select">Materia</Label>
                     <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo(''); setShowAlert(false); }}>
@@ -231,6 +231,7 @@ export default function HorariosPage() {
                             <SelectValue placeholder="Selecciona una materia"/>
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="">Todas las materias</SelectItem>
                             {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                         </SelectContent>
                     </Select>
@@ -244,6 +245,7 @@ export default function HorariosPage() {
                               <SelectValue placeholder="Selecciona un grupo"/>
                           </SelectTrigger>
                           <SelectContent>
+                               <SelectItem value="">Todos los grupos</SelectItem>
                               {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
                           </SelectContent>
                       </Select>
@@ -261,17 +263,12 @@ export default function HorariosPage() {
               </Alert>
             )}
         </CardContent>
-        <CardFooter className="flex flex-col items-center justify-center gap-4 pt-4 p-6">
+        <CardFooter className="flex items-center justify-center pt-4 p-6">
             {(filterMateria && filterGrupo) && (
-              <>
-                <Button onClick={handleShowSchedule} size="lg" className="w-full">
+                <Button onClick={handleShowSchedule} size="lg">
                     <Search className="mr-2 h-4 w-4"/>
                     Ver Horario
                 </Button>
-                <Button variant="link" onClick={handleResetFilters} className="text-sm text-muted-foreground">
-                    Limpiar filtros
-                </Button>
-              </>
             )}
         </CardFooter>
     </Card>
