@@ -295,7 +295,7 @@ export default function HorariosPage() {
                           <p className="font-bold">{entry.materia}</p>
                           <p className="font-mono text-xs">{entry.grupo} - {entry.aula.salon}</p>
                           <p className="mt-1 text-xs opacity-80">{entry.docente}</p>
-                          <p className="mt-1 font-semibold text-xs">{entry.horaInicio} - ${entry.horaFin}</p>
+                          <p className="mt-1 font-semibold text-xs">{`${entry.horaInicio} - ${entry.horaFin}`}</p>
                         </div>
                       )}
                     </TableCell>
@@ -322,7 +322,7 @@ export default function HorariosPage() {
                             <p className="text-sm text-muted-foreground">{entry.grupo} - {entry.docente}</p>
                         </div>
                          <div className="text-right">
-                             <p className="font-semibold text-sm">{entry.horaInicio} - ${entry.horaFin}</p>
+                             <p className="font-semibold text-sm">{`${entry.horaInicio} - ${entry.horaFin}`}</p>
                              <p className="text-xs text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
                          </div>
                     </CardHeader>
@@ -450,9 +450,9 @@ export default function HorariosPage() {
                     <Skeleton className="h-64 w-full" />
                 </div>
             ) : schedule.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
                     {viewMode === 'dia' && (
-                        <div className="md:col-span-1">
+                        <div className="lg:col-span-1">
                             <Calendar
                                 mode="single"
                                 locale={es}
@@ -463,7 +463,7 @@ export default function HorariosPage() {
                             />
                         </div>
                     )}
-                    <div className={viewMode === 'dia' ? 'md:col-span-2 lg:col-span-3' : 'col-span-1 md:col-span-3 lg:col-span-4'}>
+                    <div className={viewMode === 'dia' ? 'lg:col-span-3' : 'lg:col-span-4'}>
                         {viewMode === 'semana' && renderWeekView()}
                         {viewMode === 'dia' && renderDayView()}
                     </div>
