@@ -1,7 +1,7 @@
 
 import { db } from './firebase'; 
 import { collection, addDoc, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
