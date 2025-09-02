@@ -9,6 +9,7 @@ import { collection, query, where, getDocs, DocumentData } from "firebase/firest
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +18,7 @@ import autoTable from 'jspdf-autotable';
 import { addWeeks, startOfWeek, endOfWeek, format, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface ScheduleEntry {
@@ -68,7 +70,10 @@ export default function HorariosPage() {
   const [filterGrupo, setFilterGrupo] = useState('all');
   
   const [showSchedule, setShowSchedule] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  const { toast } = useToast();
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -184,46 +189,72 @@ export default function HorariosPage() {
   };
   
   const handleShowSchedule = () => {
+    if (filterMateria === 'all' && filterGrupo === 'all') {
+      setShowAlert(true);
+      return;
+    }
+    setShowAlert(false);
+    toast({
+        title: "Cargando tu horario...",
+        description: "Un momento mientras preparamos la vista de tu horario.",
+    });
     setShowSchedule(true);
   }
 
   const renderFilters = () => (
-    <Card className="max-w-4xl mx-auto w-full">
+    <Card className="max-w-3xl mx-auto w-full">
         <CardHeader>
-            <CardTitle className="flex items-center gap-3"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
-            <CardDescription>Selecciona una materia y/o grupo para visualizar el horario correspondiente.</CardDescription>
+            <CardTitle className="flex items-center gap-3 text-2xl"><Filter className="h-6 w-6"/> Filtro de Horario</CardTitle>
+            <CardDescription>Selecciona una materia para ver los grupos disponibles y luego consulta el horario.</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Materia</label>
-                <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('all'); }}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por materia"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todas las materias</SelectItem>
-                        {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
+        <CardContent className="p-6 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <Label htmlFor="materia-select">Materia</Label>
+                    <Select value={filterMateria} onValueChange={(value) => { setFilterMateria(value); setFilterGrupo('all'); setShowAlert(false); }}>
+                        <SelectTrigger id="materia-select">
+                            <SelectValue placeholder="Selecciona una materia"/>
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">Todas las materias</SelectItem>
+                            {materias.map(m => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {filterMateria !== 'all' && (
+                    <div className="space-y-2">
+                        <Label htmlFor="grupo-select">Grupo</Label>
+                        <Select value={filterGrupo} onValueChange={(value) => { setFilterGrupo(value); setShowAlert(false); }} disabled={isLoading || filterMateria === 'all' || grupos.length === 0}>
+                            <SelectTrigger id="grupo-select">
+                                <SelectValue placeholder="Selecciona un grupo"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los grupos de esta materia</SelectItem>
+                                {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
             </div>
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Grupo</label>
-                <Select value={filterGrupo} onValueChange={setFilterGrupo} disabled={isLoading || filterMateria === 'all' && grupos.length === 0}>
-                    <SelectTrigger>
-                        <SelectValue placeholder={filterMateria === 'all' ? "Todos los grupos" : "Seleccione un grupo"}/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">Todos los grupos</SelectItem>
-                        {grupos.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-            </div>
+
+            {showAlert && (
+              <Alert variant="destructive">
+                  <Info className="h-4 w-4"/>
+                  <AlertTitle>Campos requeridos</AlertTitle>
+                  <AlertDescription>
+                      Por favor selecciona todos los campos antes de continuar.
+                  </AlertDescription>
+              </Alert>
+            )}
         </CardContent>
-        <CardFooter className="flex flex-col items-center gap-2 pt-0 p-6">
-             <Button onClick={handleShowSchedule} size="lg" className="w-full md:w-auto">
-                <Search className="mr-2 h-4 w-4"/>
-                Ver Horario
-            </Button>
+        <CardFooter className="flex flex-col items-center justify-center gap-4 pt-4 p-6">
+            {(filterMateria !== 'all' && filterGrupo !== 'all') && (
+                <Button onClick={handleShowSchedule} size="lg" className="w-full md:w-auto">
+                    <Search className="mr-2 h-4 w-4"/>
+                    Ver Horario
+                </Button>
+            )}
         </CardFooter>
     </Card>
   );
@@ -254,74 +285,91 @@ export default function HorariosPage() {
             </div>
         </CardHeader>
         <CardContent>
-            {isLoading ? (
-                <div className="space-y-2">
-                   <Skeleton className="h-48 w-full" />
-                </div>
-            ) : filteredSchedule.length > 0 ? (
-                 <div className="overflow-x-auto relative">
-                    <Table className="min-w-full border">
-                         <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
-                                {daysOfWeek.map(day => (
-                                <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
-                                ))}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {timeSlots.map((time, timeIndex) => {
-                                let renderedInRow: { [key:string]: boolean } = {};
-                                return (
-                                    <TableRow key={time}>
-                                        <TableCell className="border-r text-center font-mono text-xs text-muted-foreground align-top pt-2 h-24">
-                                            {time}
-                                        </TableCell>
-                                        {daysOfWeek.map((day) => {
-                                            if (renderedInRow[day]) return null;
+          <Tabs defaultValue="semanal">
+            <TabsList>
+              <TabsTrigger value="diaria">Vista Diaria</TabsTrigger>
+              <TabsTrigger value="semanal">Vista Semanal</TabsTrigger>
+            </TabsList>
+            <TabsContent value="diaria" className="mt-4">
+               <Alert>
+                  <CalendarIcon className="h-4 w-4"/>
+                  <AlertTitle>Vista en desarrollo</AlertTitle>
+                  <AlertDescription>
+                    La vista diaria estará disponible próximamente.
+                  </AlertDescription>
+                </Alert>
+            </TabsContent>
+            <TabsContent value="semanal" className="mt-4">
+              {isLoading ? (
+                  <div className="space-y-2">
+                    <Skeleton className="h-48 w-full" />
+                  </div>
+              ) : filteredSchedule.length > 0 ? (
+                  <div className="overflow-x-auto relative">
+                      <Table className="min-w-full border">
+                          <TableHeader>
+                              <TableRow>
+                                  <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
+                                  {daysOfWeek.map(day => (
+                                  <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
+                                  ))}
+                              </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                              {timeSlots.map((time, timeIndex) => {
+                                  let renderedInRow: { [key:string]: boolean } = {};
+                                  return (
+                                      <TableRow key={time}>
+                                          <TableCell className="border-r text-center font-mono text-xs text-muted-foreground align-top pt-2 h-24">
+                                              {time}
+                                          </TableCell>
+                                          {daysOfWeek.map((day) => {
+                                              if (renderedInRow[day]) return null;
 
-                                            const entry = filteredSchedule.find(e => e.dia === day && e.horaInicio === time);
-                                            
-                                            if (entry) {
-                                                for(let i=0; i<entry.duracion; i++){
-                                                  const nextTimeSlot = timeSlots[timeIndex+i];
-                                                  if(nextTimeSlot){
-                                                    const nextDate = new Date(`1970-01-01T${nextTimeSlot}:00`);
-                                                    if (nextDate < new Date(`1970-01-01T${entry.horaFin}:00`)){
-                                                      renderedInRow[day] = true;
+                                              const entry = filteredSchedule.find(e => e.dia === day && e.horaInicio === time);
+                                              
+                                              if (entry) {
+                                                  for(let i=0; i<entry.duracion; i++){
+                                                    const nextTimeSlot = timeSlots[timeIndex+i];
+                                                    if(nextTimeSlot){
+                                                      const nextDate = new Date(`1970-01-01T${nextTimeSlot}:00`);
+                                                      if (nextDate < new Date(`1970-01-01T${entry.horaFin}:00`)){
+                                                        renderedInRow[day] = true;
+                                                      }
                                                     }
                                                   }
-                                                }
 
-                                                return (
-                                                  <TableCell key={day} rowSpan={entry.duracion} className={`border-r p-1 align-top ${getSubjectColor(entry.materia)}`}>
-                                                      <div className="bg-white/70 p-2 rounded-md h-full flex flex-col justify-center text-xs">
-                                                          <p className="font-bold">{entry.materia}</p>
-                                                          <p>{entry.grupo}</p>
-                                                          <p className="text-muted-foreground">{entry.docente}</p>
-                                                          <p className="text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
-                                                      </div>
-                                                  </TableCell>
-                                                );
-                                            }
-                                            
-                                            return (<TableCell key={day} className="border-r"></TableCell>)
-                                        })}
-                                    </TableRow>
-                                );
-                            })}
-                        </TableBody>
-                    </Table>
-                 </div>
-            ) : (
-                <Alert>
-                    <CalendarIcon className="h-4 w-4"/>
-                    <AlertTitle>No hay clases</AlertTitle>
-                    <AlertDescription>
-                        No hay clases programadas según los filtros seleccionados.
-                    </AlertDescription>
-                </Alert>
-            )}
+                                                  return (
+                                                    <TableCell key={day} rowSpan={entry.duracion} className={`border-r p-1 align-top ${getSubjectColor(entry.materia)}`}>
+                                                        <div className="bg-white/70 p-2 rounded-md h-full flex flex-col justify-center text-xs">
+                                                            <p className="font-bold">{entry.materia}</p>
+                                                            <p>{entry.grupo}</p>
+                                                            <p className="text-muted-foreground">{entry.docente}</p>
+                                                            <p className="text-muted-foreground">{entry.aula.sede} - {entry.aula.salon}</p>
+                                                        </div>
+                                                    </TableCell>
+                                                  );
+                                              }
+                                              
+                                              return (<TableCell key={day} className="border-r"></TableCell>)
+                                          })}
+                                      </TableRow>
+                                  );
+                              })}
+                          </TableBody>
+                      </Table>
+                  </div>
+              ) : (
+                  <Alert>
+                      <CalendarIcon className="h-4 w-4"/>
+                      <AlertTitle>No hay clases</AlertTitle>
+                      <AlertDescription>
+                          No hay clases programadas según los filtros seleccionados.
+                      </AlertDescription>
+                  </Alert>
+              )}
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
   );
