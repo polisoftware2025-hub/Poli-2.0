@@ -71,7 +71,7 @@ export default function HorariosPage() {
   
   const [showSchedule, setShowSchedule] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [statusMessage, setStatusMessage] = useState("Selecciona una materia para ver los grupos disponibles.");
+  const [statusMessage, setStatusMessage] = useState("Seleccione una materia y un grupo para consultar su horario de clases.");
   const [messageType, setMessageType] = useState<"info" | "error" | "success">("info");
 
 
@@ -218,23 +218,19 @@ export default function HorariosPage() {
     setFilterMateria(undefined);
     setFilterGrupo(undefined);
     setShowSchedule(false);
-    setStatusMessage("Selecciona una materia para ver los grupos disponibles.");
+    setStatusMessage("Seleccione una materia y un grupo para consultar su horario de clases.");
     setMessageType("info");
   }
 
   const renderFilters = () => (
-    <div className="w-full max-w-5xl mx-auto my-8 p-6 sm:p-8 bg-white rounded-lg shadow-md">
-        <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Filtro de Horario</h2>
-            <p className="text-muted-foreground">Selecciona tus filtros para visualizar tu agenda.</p>
-        </div>
-        <div className="flex flex-col gap-6">
-             <div className="space-y-2">
+    <div className="w-full max-w-4xl mx-auto my-8 p-6 sm:p-8 bg-white rounded-lg shadow-md">
+        <div className="space-y-6">
+            <div className="space-y-2">
                 <Label htmlFor="materia-select" className="text-base font-medium">Materia</Label>
                 <Select value={filterMateria} onValueChange={(value) => { 
                     setFilterMateria(value);
                     setFilterGrupo(undefined);
-                    setStatusMessage(value ? "Ahora selecciona un grupo." : "Selecciona una materia para ver los grupos disponibles.");
+                    setStatusMessage("Ahora selecciona un grupo.");
                     setMessageType("info");
                 }}>
                     <SelectTrigger id="materia-select" className="py-6 text-base">
@@ -269,16 +265,16 @@ export default function HorariosPage() {
             )}
             
             {filterMateria && filterGrupo && (
-                <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-full text-base py-6 bg-primary hover:bg-primary/90">
+                <Button onClick={handleShowSchedule} size="lg" className="w-full rounded-md text-base py-6 bg-[#002147] hover:bg-[#00346e]">
                     Ver Horario
                 </Button>
             )}
 
-             <div className={`text-center text-sm min-h-[20px] font-medium ${
-                messageType === 'error' ? 'text-red-500' : 
-                messageType === 'success' ? 'text-green-600' : 
+            <div className={`text-center text-sm min-h-[20px] ${
+                messageType === 'error' ? 'text-red-500 font-semibold' : 
+                messageType === 'success' ? 'text-green-600 font-semibold' : 
                 'text-muted-foreground'
-             }`}>
+            }`}>
                 {statusMessage}
             </div>
         </div>
@@ -454,3 +450,5 @@ export default function HorariosPage() {
     </div>
   );
 }
+
+    
