@@ -1,77 +1,121 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Calendar, Building, School, Plus, Save } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, doc, updateDoc, arrayUnion } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
+interface Sede { id: string; nombre: string; }
+interface Salon { id: string; nombre: string; }
+interface Group { id: string; codigoGrupo: string; materia: { nombre: string } }
+interface ScheduleEntry { dia: string; hora: string; duracion: number; materia: string; grupo: string; docente: string; }
 
-const timeSlots = Array.from({ length: 15 }, (_, i) => {
-  const hour = 7 + i;
-  return `${hour.toString().padStart(2, '0')}:00`;
-});
-
+const timeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
-const scheduleData = {
-  "sede_norte": {
-    "salon_101": [
-      { dia: "Lunes", hora: "07:00", duracion: 2, materia: "Cálculo Diferencial", grupo: "CD-001", docente: "Ana Pérez" },
-      { dia: "Miércoles", hora: "07:00", duracion: 2, materia: "Cálculo Diferencial", grupo: "CD-001", docente: "Ana Pérez" },
-      { dia: "Martes", hora: "10:00", duracion: 3, materia: "Base de Datos", grupo: "BD-002", docente: "Carlos Rivas" },
-      { dia: "Jueves", hora: "10:00", duracion: 3, materia: "Base de Datos", grupo: "BD-002", docente: "Carlos Rivas" },
-    ],
-    "salon_102": [
-       { dia: "Viernes", hora: "09:00", duracion: 4, materia: "Inteligencia Artificial", grupo: "IA-001", docente: "Luisa Fernandez" },
-    ]
-  },
-  "sede_73": {
-    "salon_301": [
-      { dia: "Sábado", hora: "08:00", duracion: 4, materia: "Marketing Digital", grupo: "MD-S01", docente: "Sofia Castro" }
-    ],
-    "salon_302": []
-  }
-}
-
 export default function SchedulesAdminPage() {
+  const [sedes, setSedes] = useState<Sede[]>([]);
+  const [salones, setSalones] = useState<Salon[]>([]);
+  const [grupos, setGrupos] = useState<Group[]>([]);
+  const [allSchedules, setAllSchedules] = useState<{ [salonId: string]: ScheduleEntry[] }>({});
+
   const [selectedSede, setSelectedSede] = useState("");
   const [selectedSalon, setSelectedSalon] = useState("");
-
-  const sedes = [
-    { id: "sede_norte", nombre: "Sede Norte" },
-    { id: "sede_73", nombre: "Sede Calle 73" },
-    { id: "sede_80", nombre: "Sede Calle 80" },
-  ];
-
-  const salonesPorSede: { [key: string]: { id: string; nombre: string }[] } = {
-    "sede_norte": [{ id: "salon_101", nombre: "Salón 101" }, { id: "salon_102", nombre: "Salón 102" }],
-    "sede_73": [{ id: "salon_301", nombre: "Salón 301" }, { id: "salon_302", nombre: "Salón 302" }],
-    "sede_80": [{ id: "salon_a", nombre: "Salón A" }, { id: "salon_b", nombre: "Salón B" }],
-  };
-
-  const scheduleForSalon = (selectedSede && selectedSalon ? scheduleData[selectedSede as keyof typeof scheduleData]?.[selectedSalon as keyof typeof scheduleData['sede_norte']] : []) || [];
   
-  const scheduleGrid: (any | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  scheduleForSalon.forEach(entry => {
-    const dayIndex = daysOfWeek.indexOf(entry.dia);
-    const timeIndex = timeSlots.indexOf(entry.hora);
+  const fetchInitialData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
+      const fetchedSedes = sedesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sede));
+      setSedes(fetchedSedes);
 
-    if (dayIndex !== -1 && timeIndex !== -1) {
-      scheduleGrid[timeIndex][dayIndex] = entry;
-      for (let i = 1; i < entry.duracion; i++) {
-        if (timeIndex + i < timeSlots.length) {
-          scheduleGrid[timeIndex + i][dayIndex] = { ...entry, materia: 'SPAN' }; // Mark as spanned
+      const gruposSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
+      const fetchedGrupos = gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group));
+      setGrupos(fetchedGrupos);
+
+      const schedulesMap: { [salonId: string]: ScheduleEntry[] } = {};
+      gruposSnapshot.forEach(doc => {
+          const grupo = doc.data();
+          if (grupo.horario && grupo.aula?.salonId) {
+              if (!schedulesMap[grupo.aula.salonId]) schedulesMap[grupo.aula.salonId] = [];
+              grupo.horario.forEach((slot: any) => {
+                  const [startTimeStr, endTimeStr] = slot.hora.split(" - ");
+                  const start = new Date(`1970-01-01T${startTimeStr}:00`);
+                  const end = new Date(`1970-01-01T${endTimeStr}:00`);
+                  const duracion = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+                  schedulesMap[grupo.aula.salonId].push({
+                      dia: slot.dia,
+                      hora: startTimeStr,
+                      duracion: Math.max(1, Math.round(duracion)),
+                      materia: grupo.materia.nombre,
+                      grupo: grupo.codigoGrupo,
+                      docente: grupo.docente.nombre
+                  });
+              });
+          }
+      });
+      setAllSchedules(schedulesMap);
+
+    } catch (error) {
+      console.error("Error fetching initial data: ", error);
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos iniciales." });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
+
+  useEffect(() => {
+    const fetchSalones = async () => {
+      if (!selectedSede) {
+        setSalones([]);
+        setSelectedSalon("");
+        return;
+      }
+      const salonesRef = collection(db, `Politecnico/mzIX7rzezDezczAV6pQ7/sedes/${selectedSede}/salones`);
+      const salonesSnapshot = await getDocs(salonesRef);
+      const fetchedSalones = salonesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Salon));
+      setSalones(fetchedSalones);
+    };
+    fetchSalones();
+  }, [selectedSede]);
+  
+  const scheduleForSalon = useMemo(() => allSchedules[selectedSalon] || [], [allSchedules, selectedSalon]);
+  
+  const scheduleGrid = useMemo(() => {
+    const grid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
+    scheduleForSalon.forEach(entry => {
+      const dayIndex = daysOfWeek.indexOf(entry.dia);
+      const timeIndex = timeSlots.indexOf(entry.hora);
+
+      if (dayIndex !== -1 && timeIndex !== -1) {
+        grid[timeIndex][dayIndex] = entry;
+        for (let i = 1; i < entry.duracion; i++) {
+          if (timeIndex + i < timeSlots.length) {
+            grid[timeIndex + i][dayIndex] = { ...entry, materia: 'SPAN' };
+          }
         }
       }
-    }
-  });
-
+    });
+    return grid;
+  }, [scheduleForSalon]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -80,7 +124,6 @@ export default function SchedulesAdminPage() {
         description="Visualiza, asigna y modifica la programación de clases en las diferentes sedes."
         icon={<Calendar className="h-8 w-8 text-primary" />}
       />
-
       <Card>
         <CardHeader>
           <CardTitle>Filtro de Horarios</CardTitle>
@@ -89,14 +132,11 @@ export default function SchedulesAdminPage() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
            <div className="space-y-2">
                 <label className="text-sm font-medium">Sede</label>
-                <Select value={selectedSede} onValueChange={(value) => {
-                    setSelectedSede(value);
-                    setSelectedSalon("");
-                }}>
+                <Select value={selectedSede} onValueChange={setSelectedSede} disabled={isLoading}>
                     <SelectTrigger>
                         <div className="flex items-center gap-2">
                             <Building className="h-4 w-4 text-muted-foreground" />
-                            <SelectValue placeholder="Selecciona una sede" />
+                            <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona una sede"} />
                         </div>
                     </SelectTrigger>
                     <SelectContent>
@@ -114,7 +154,7 @@ export default function SchedulesAdminPage() {
                         </div>
                     </SelectTrigger>
                     <SelectContent>
-                        {selectedSede && salonesPorSede[selectedSede].map(salon => <SelectItem key={salon.id} value={salon.id}>{salon.nombre}</SelectItem>)}
+                        {salones.map(salon => <SelectItem key={salon.id} value={salon.id}>{salon.nombre}</SelectItem>)}
                     </SelectContent>
                 </Select>
            </div>
@@ -125,68 +165,50 @@ export default function SchedulesAdminPage() {
         <Card>
             <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div>
-                    <CardTitle>Horario para {salonesPorSede[selectedSede].find(s => s.id === selectedSalon)?.nombre}</CardTitle>
+                    <CardTitle>Horario para {salones.find(s => s.id === selectedSalon)?.nombre}</CardTitle>
                     <CardDescription>Sede: {sedes.find(s => s.id === selectedSede)?.nombre}</CardDescription>
                 </div>
-                 <Button>
-                    <Plus className="mr-2 h-4 w-4"/>
-                    Asignar Clase
-                </Button>
+                 <AssignClassDialog 
+                    grupos={grupos} 
+                    scheduleForSalon={scheduleForSalon}
+                    selectedSalonId={selectedSalon}
+                    onClassAssigned={fetchInitialData}
+                 />
             </CardHeader>
             <CardContent className="p-4 md:p-6">
-                {scheduleForSalon.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-                        <div className="col-span-1 md:col-span-3 lg:col-span-4">
-                            <Table className="min-w-full border">
-                                <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
-                                    {daysOfWeek.map(day => (
-                                    <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
-                                    ))}
-                                </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                {timeSlots.map((time, timeIndex) => (
-                                    <TableRow key={time}>
-                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
-                                    {daysOfWeek.map((day, dayIndex) => {
-                                        const entry = scheduleGrid[timeIndex][dayIndex];
-                                        if (entry && entry.materia === 'SPAN') {
-                                        return null;
-                                        }
-                                        return (
-                                        <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5 cursor-pointer hover:bg-primary/10' : 'hover:bg-gray-50 cursor-pointer'}`}>
-                                            {entry && (
-                                            <div className="bg-white p-2 rounded-md border-l-4 border-blue-500 shadow-sm h-full flex flex-col justify-center">
-                                                <p className="font-bold text-xs text-blue-800">{entry.materia}</p>
-                                                <p className="text-xs text-muted-foreground">{entry.grupo}</p>
-                                                <p className="text-xs text-muted-foreground">{entry.docente}</p>
-                                            </div>
-                                            )}
-                                        </TableCell>
-                                        );
-                                    })}
-                                    </TableRow>
-                                ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-                ) : (
-                    <Alert>
-                        <School className="h-4 w-4" />
-                        <AlertTitle>Salón Disponible</AlertTitle>
-                        <AlertDescription>
-                            Este salón no tiene clases programadas. Puedes empezar a asignar clases usando el botón de arriba.
-                        </AlertDescription>
-                    </Alert>
-                )}
-                 <div className="flex justify-end mt-6">
-                    <Button variant="secondary">
-                        <Save className="mr-2 h-4 w-4" />
-                        Guardar Cambios en el Horario
-                    </Button>
+                <div className="w-full overflow-x-auto">
+                    <Table className="min-w-full border">
+                        <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
+                            {daysOfWeek.map(day => (
+                            <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>
+                            ))}
+                        </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                        {timeSlots.map((time, timeIndex) => (
+                            <TableRow key={time}>
+                            <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{time}</TableCell>
+                            {daysOfWeek.map((day, dayIndex) => {
+                                const entry = scheduleGrid[timeIndex][dayIndex];
+                                if (entry?.materia === 'SPAN') return null;
+                                return (
+                                <TableCell key={day} rowSpan={entry?.duracion || 1} className={`border-r p-1 align-top h-20 ${entry ? 'bg-primary/5 cursor-pointer hover:bg-primary/10' : 'hover:bg-gray-50 cursor-pointer'}`}>
+                                    {entry && (
+                                    <div className="bg-white p-2 rounded-md border-l-4 border-blue-500 shadow-sm h-full flex flex-col justify-center">
+                                        <p className="font-bold text-xs text-blue-800">{entry.materia}</p>
+                                        <p className="text-xs text-muted-foreground">{entry.grupo}</p>
+                                        <p className="text-xs text-muted-foreground">{entry.docente}</p>
+                                    </div>
+                                    )}
+                                </TableCell>
+                                );
+                            })}
+                            </TableRow>
+                        ))}
+                        </TableBody>
+                    </Table>
                 </div>
             </CardContent>
         </Card>
@@ -199,7 +221,102 @@ export default function SchedulesAdminPage() {
             </AlertDescription>
         </Alert>
       )}
-
     </div>
   );
 }
+
+function AssignClassDialog({ grupos, scheduleForSalon, selectedSalonId, onClassAssigned }: { grupos: Group[], scheduleForSalon: ScheduleEntry[], selectedSalonId: string, onClassAssigned: () => void }) {
+    const [open, setOpen] = useState(false);
+    const [selectedGrupo, setSelectedGrupo] = useState("");
+    const [selectedDia, setSelectedDia] = useState("");
+    const [selectedHora, setSelectedHora] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const { toast } = useToast();
+
+    const handleSubmit = async () => {
+        if (!selectedGrupo || !selectedDia || !selectedHora) {
+            toast({ variant: "destructive", title: "Campos incompletos", description: "Por favor, completa todos los campos." });
+            return;
+        }
+
+        const horaFinNum = parseInt(selectedHora.split(':')[0]) + 2;
+        const horaFin = `${horaFinNum.toString().padStart(2, '0')}:00`;
+        const newSlot = { dia: selectedDia, hora: `${selectedHora} - ${horaFin}` };
+
+        const conflict = scheduleForSalon.find(entry => 
+            entry.dia === selectedDia && 
+            (
+                (selectedHora >= entry.hora && selectedHora < entry.hora.split(' - ')[1]) ||
+                (horaFin > entry.hora && horaFin <= entry.hora.split(' - ')[1])
+            )
+        );
+
+        if(conflict) {
+            toast({
+                variant: "destructive",
+                title: "Conflicto de Horario",
+                description: `El salón ya está ocupado por ${conflict.materia} (${conflict.grupo}) en ese horario.`
+            });
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", selectedGrupo);
+            await updateDoc(grupoRef, {
+                horario: arrayUnion(newSlot)
+            });
+            toast({ title: "Éxito", description: "La clase ha sido asignada correctamente." });
+            onClassAssigned();
+            setOpen(false);
+        } catch (error) {
+            console.error("Error assigning class:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo asignar la clase." });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+                <Button><Plus className="mr-2 h-4 w-4" />Asignar Clase</Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Asignar Nueva Clase</DialogTitle>
+                    <DialogDescription>Selecciona el grupo, día y hora para la nueva clase en este salón.</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                        <label>Grupo</label>
+                        <Select value={selectedGrupo} onValueChange={setSelectedGrupo}>
+                            <SelectTrigger><SelectValue placeholder="Selecciona un grupo..." /></SelectTrigger>
+                            <SelectContent>{grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.materia.nombre} ({g.codigoGrupo})</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <label>Día</label>
+                        <Select value={selectedDia} onValueChange={setSelectedDia}>
+                            <SelectTrigger><SelectValue placeholder="Selecciona un día..." /></SelectTrigger>
+                            <SelectContent>{daysOfWeek.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <label>Hora de Inicio (clases de 2 horas)</label>
+                        <Select value={selectedHora} onValueChange={setSelectedHora}>
+                            <SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger>
+                            <SelectContent>{timeSlots.slice(0, -2).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar Asignación"}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+    

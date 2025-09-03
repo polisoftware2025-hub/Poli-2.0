@@ -66,40 +66,32 @@ export default function MyGroupsPage() {
   }, [userEmail]);
   
   const handleViewDetails = async (group: Group) => {
-    // Si no hay estudiantes, simplemente muestra el grupo sin hacer más consultas
     if (!group.estudiantes || group.estudiantes.length === 0) {
         setSelectedGroup(group);
         return;
     }
   
-    // Mapear los IDs de los estudiantes para la consulta
     const studentIds = group.estudiantes.map(s => s.id);
     
     try {
         const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
-        // Firestore 'in' query tiene un límite de 30 elementos, se debe manejar en chunks si hay más.
         const studentChunks = [];
         for (let i = 0; i < studentIds.length; i += 30) {
           studentChunks.push(studentIds.slice(i, i + 30));
         }
 
-        const studentsWithEmails: Student[] = [...group.estudiantes];
         const emailMap = new Map<string, string>();
-
         for (const chunk of studentChunks) {
-            // Nota: El campo a consultar en 'usuarios' debe coincidir con el 'id' guardado en 'grupos/estudiantes'
-            // Asumiendo que el `id` en `grupos.estudiantes` es el `ID del documento` del usuario.
+            if (chunk.length === 0) continue;
             const q = query(usersRef, where("__name__", "in", chunk));
             const userDocs = await getDocs(q);
-            
             userDocs.forEach(doc => {
                  const data = doc.data();
-                 emailMap.set(doc.id, data.correoInstitucional);
+                 emailMap.set(doc.id, data.correoInstitucional || data.correo);
             });
         }
         
-        // Asignar correos a los estudiantes
-        const updatedStudents = studentsWithEmails.map(student => ({
+        const updatedStudents = group.estudiantes.map(student => ({
             ...student,
             correoInstitucional: emailMap.get(student.id) || 'Correo no encontrado'
         }));
@@ -109,7 +101,6 @@ export default function MyGroupsPage() {
     } catch (err) {
         console.error("Error fetching student emails: ", err);
         setError("No se pudo cargar la información de los correos de los estudiantes.");
-        // Aun así, mostrar los detalles básicos del grupo aunque falle la carga de correos
         setSelectedGroup(group);
     }
   };
@@ -229,3 +220,5 @@ export default function MyGroupsPage() {
     </div>
   );
 }
+
+    

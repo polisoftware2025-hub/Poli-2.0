@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { DollarSign, Search, Filter, TrendingUp, AlertCircle, Bell, FileText } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -61,12 +61,12 @@ export default function PaymentsAdminPage() {
   const [filter, setFilter] = useState("all");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchInvoices = async () => {
         setIsLoading(true);
         try {
-            // 1. Fetch all users to map IDs to names
             const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
             const usersSnapshot = await getDocs(usersRef);
             const userMap = new Map<string, string>();
@@ -74,7 +74,6 @@ export default function PaymentsAdminPage() {
                 userMap.set(doc.id, doc.data().nombreCompleto || 'Nombre no disponible');
             });
 
-            // 2. Fetch invoices and apply filter if not 'all'
             const invoicesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
             let q = query(invoicesRef);
             if (filter !== "all") {
@@ -100,6 +99,15 @@ export default function PaymentsAdminPage() {
     }
     fetchInvoices();
   }, [filter]);
+  
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(invoice => {
+        const term = searchTerm.toLowerCase();
+        const studentName = invoice.nombreEstudiante?.toLowerCase() || "";
+        const studentId = invoice.idEstudiante.toLowerCase();
+        return studentName.includes(term) || studentId.includes(term) || invoice.id.toLowerCase().includes(term);
+    })
+  }, [invoices, searchTerm]);
 
   const totalRecaudado = invoices.filter(i => i.estado === 'pagado').reduce((sum, i) => sum + i.monto, 0);
   const totalPendiente = invoices.filter(i => i.estado === 'pendiente' || i.estado === 'incompleta').reduce((sum, i) => sum + i.monto, 0);
@@ -158,7 +166,12 @@ export default function PaymentsAdminPage() {
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-grow">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input placeholder="Buscar por estudiante o ID de factura..." className="pl-9" />
+                <Input 
+                    placeholder="Buscar por estudiante, ID de estudiante o ID de factura..." 
+                    className="pl-9" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-full sm:w-48">
@@ -198,8 +211,8 @@ export default function PaymentsAdminPage() {
                             <TableCell className="text-center"><Skeleton className="h-6 w-24" /></TableCell>
                         </TableRow>
                     ))
-                ) : (
-                    invoices.map((invoice) => (
+                ) : filteredInvoices.length > 0 ? (
+                    filteredInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                         <TableCell>
                         <div className="flex items-center gap-3">
@@ -227,6 +240,10 @@ export default function PaymentsAdminPage() {
                         </TableCell>
                     </TableRow>
                     ))
+                ) : (
+                    <TableRow>
+                        <TableCell colSpan={6} className="text-center h-24">No se encontraron facturas con los filtros actuales.</TableCell>
+                    </TableRow>
                 )}
               </TableBody>
             </Table>
@@ -236,3 +253,5 @@ export default function PaymentsAdminPage() {
     </div>
   );
 }
+
+    
