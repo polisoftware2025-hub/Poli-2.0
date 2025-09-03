@@ -30,7 +30,7 @@ const addUserSchema = z.object({
   tipoIdentificacion: z.string().min(1, "Campo requerido"),
   identificacion: z.string().min(1, "Campo requerido"),
   genero: z.string().min(1, "Campo requerido"),
-  fechaNacimiento: z.date(),
+  fechaNacimiento: z.date({ required_error: "La fecha es obligatoria." }),
   telefono: z.string().min(1, "Campo requerido"),
   direccion: z.string().min(1, "Campo requerido"),
   correo: z.string().email(),
@@ -45,6 +45,21 @@ export default function AddUserPage() {
 
   const form = useForm<z.infer<typeof addUserSchema>>({
     resolver: zodResolver(addUserSchema),
+    defaultValues: {
+      nombre1: "",
+      nombre2: "",
+      apellido1: "",
+      apellido2: "",
+      tipoIdentificacion: "",
+      identificacion: "",
+      genero: "",
+      fechaNacimiento: undefined,
+      telefono: "",
+      direccion: "",
+      correo: "",
+      rol: "",
+      contrasena: "",
+    },
   });
   
   const onSubmit = async (values: z.infer<typeof addUserSchema>) => {
