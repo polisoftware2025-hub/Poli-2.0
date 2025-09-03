@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from "react";
@@ -212,7 +211,7 @@ export default function GroupsAdminPage() {
                     <TableCell>
                       <Badge variant={group.estado === 'activo' ? 'secondary' : 'outline'}
                           className={group.estado === 'activo' ? "bg-green-100 text-green-800" : ""}>
-                        {group.estado.charAt(0).toUpperCase() + group.estado.slice(1)}
+                        {group.estado ? group.estado.charAt(0).toUpperCase() + group.estado.slice(1) : ''}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
