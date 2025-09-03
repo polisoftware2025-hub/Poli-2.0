@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { BookMarked, Plus, Search, Filter, MoreVertical, Edit, Trash2, BookCopy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -17,13 +17,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Subject {
-  id: string; // Combination of careerId-cycle-materia.id
+  id: string;
   nombre: string;
   codigo?: string;
   creditos: number;
   careerId: string;
   careerName: string;
-  status: string; // Assuming status, can be determined or stored
+  status: string;
 }
 
 interface Career {
@@ -37,6 +37,7 @@ export default function SubjectsAdminPage() {
   const [careers, setCareers] = useState<Career[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export default function SubjectsAdminPage() {
                                 creditos: materia.creditos,
                                 careerId: careerId,
                                 careerName: careerName,
-                                status: "Activa" // Placeholder status
+                                status: "Activa"
                             });
                         });
                     }
@@ -87,10 +88,21 @@ export default function SubjectsAdminPage() {
     fetchSubjectsAndCareers();
   }, [toast]);
   
-  const filteredSubjects = subjects.filter(subject => {
-      if (filter === 'all') return true;
-      return subject.careerId === filter;
-  });
+  const filteredSubjects = useMemo(() => {
+    return subjects
+      .filter(subject => {
+        if (filter === 'all') return true;
+        return subject.careerId === filter;
+      })
+      .filter(subject => {
+        const term = searchTerm.toLowerCase();
+        return (
+          subject.nombre.toLowerCase().includes(term) ||
+          (subject.codigo && subject.codigo.toLowerCase().includes(term))
+        );
+      });
+  }, [subjects, filter, searchTerm]);
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -111,7 +123,12 @@ export default function SubjectsAdminPage() {
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <Input placeholder="Buscar por nombre o código..." className="pl-9" />
+              <Input 
+                placeholder="Buscar por nombre o código..." 
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
             <Select value={filter} onValueChange={setFilter}>
               <SelectTrigger className="w-full sm:w-56">

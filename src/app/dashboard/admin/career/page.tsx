@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -44,6 +44,7 @@ interface Career {
 export default function CareerAdminPage() {
   const [careers, setCareers] = useState<Career[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   const fetchCareers = async () => {
@@ -71,7 +72,7 @@ export default function CareerAdminPage() {
       const careersWithStudentCounts = careersList.map(career => ({
           ...career,
           estudiantes: studentCounts[career.id] || 0,
-      })).filter(c => c.slug) as Career[]; // Ensure slug exists
+      })).filter(c => c.nombre) as Career[];
 
       setCareers(careersWithStudentCounts);
 
@@ -89,7 +90,7 @@ export default function CareerAdminPage() {
   
   useEffect(() => {
     fetchCareers();
-  }, [toast]);
+  }, []);
 
   const handleDelete = async (careerId: string) => {
     try {
@@ -108,6 +109,12 @@ export default function CareerAdminPage() {
       });
     }
   };
+
+  const filteredCareers = useMemo(() => {
+    return careers.filter(career =>
+      career.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [careers, searchTerm]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -128,7 +135,12 @@ export default function CareerAdminPage() {
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-grow">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input placeholder="Buscar por nombre de carrera..." className="pl-9" />
+                <Input 
+                    placeholder="Buscar por nombre de carrera..." 
+                    className="pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
             <Button asChild>
                 <Link href="/dashboard/admin/career/new-career">
@@ -156,7 +168,7 @@ export default function CareerAdminPage() {
                     </Card>
                 ))
             ) : (
-                careers.map((career) => (
+                filteredCareers.map((career) => (
                     <Card key={career.id} className="flex flex-col">
                         <CardHeader>
                             <div className="flex justify-between items-start">
@@ -234,7 +246,10 @@ export default function CareerAdminPage() {
                     </Card>
                 ))
             )}
-            </div>
+          </div>
+           {filteredCareers.length === 0 && !isLoading && (
+              <p className="text-center text-muted-foreground py-10">No se encontraron carreras para los filtros seleccionados.</p>
+          )}
         </CardContent>
       </Card>
     </div>
