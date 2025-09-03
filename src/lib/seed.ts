@@ -57,8 +57,20 @@ const gruposData = [
             { id: "est002", nombre: "Maria Lopez" },
         ],
         horario: [ 
-            { dia: "Lunes", hora: "18:00 - 20:00", salonId: "norte-101", materia: "Matemática Básica", docente: "Ana Pérez" },
-            { dia: "Miércoles", hora: "18:00 - 20:00", salonId: "norte-101", materia: "Matemática Básica", docente: "Ana Pérez" },
+            { 
+              id: "h1-c1-mb-001",
+              dia: "Lunes", hora: "18:00 - 20:00", duracion: 2, 
+              materiaId: "c1-mb", materiaNombre: "Matemática Básica",
+              docenteId: "docente01", docenteNombre: "Ana Pérez",
+              modalidad: "Virtual"
+            },
+            { 
+              id: "h2-c1-mb-001",
+              dia: "Miércoles", hora: "18:00 - 20:00", duracion: 2, 
+              materiaId: "c1-mb", materiaNombre: "Matemática Básica",
+              docenteId: "docente01", docenteNombre: "Ana Pérez",
+              modalidad: "Virtual"
+            }
         ]
     },
     {
@@ -75,8 +87,24 @@ const gruposData = [
              { id: "est001", nombre: "Juan Perez" },
         ],
         horario: [
-            { dia: "Martes", hora: "10:00 - 12:00", salonId: "73-302", materia: "Clasificación Arancelaria", docente: "Carlos Rivas" },
-            { dia: "Jueves", hora: "10:00 - 12:00", salonId: "73-302", materia: "Clasificación Arancelaria", docente: "Carlos Rivas" },
+            { 
+              id: "h1-c1-ca-002",
+              dia: "Martes", hora: "10:00 - 12:00", duracion: 2, 
+              materiaId: "c1-ca", materiaNombre: "Clasificación Arancelaria",
+              docenteId: "docente02", docenteNombre: "Carlos Rivas",
+              modalidad: "Presencial",
+              sedeId: "sede-73", sedeNombre: "Sede Calle 73",
+              salonId: "73-302", salonNombre: "Salón 302"
+            },
+            { 
+              id: "h2-c1-ca-002",
+              dia: "Jueves", hora: "10:00 - 12:00", duracion: 2, 
+              materiaId: "c1-ca", materiaNombre: "Clasificación Arancelaria",
+              docenteId: "docente02", docenteNombre: "Carlos Rivas",
+              modalidad: "Presencial",
+              sedeId: "sede-73", sedeNombre: "Sede Calle 73",
+              salonId: "73-302", salonNombre: "Salón 302"
+            }
         ]
     },
 ];
@@ -104,16 +132,31 @@ export async function seedGrupos() {
         for (const grupo of gruposData) {
             const q = query(gruposRef, where("codigoGrupo", "==", grupo.codigoGrupo));
             const querySnapshot = await getDocs(q);
+
             if (querySnapshot.empty) {
-                 const newGroupRef = doc(gruposRef);
-                 batch.set(newGroupRef, grupo);
+                // El grupo no existe, lo creamos con todos los datos
+                const newGroupRef = doc(gruposRef);
+                batch.set(newGroupRef, grupo);
             } else {
-                 const groupDoc = querySnapshot.docs[0];
-                 const groupData = groupDoc.data();
-                 if (!groupData.estado) {
-                    // Si el grupo existe pero no tiene el campo estado, lo actualizamos.
-                    batch.update(groupDoc.ref, { estado: "activo" });
-                 }
+                // El grupo ya existe, verificamos si necesita actualización
+                const groupDoc = querySnapshot.docs[0];
+                const groupData = groupDoc.data();
+                
+                const updates: { [key: string]: any } = {};
+                
+                // Actualizar si no tiene 'estado'
+                if (!groupData.estado) {
+                   updates.estado = grupo.estado;
+                }
+                
+                // Actualizar si no tiene 'horario'
+                if (!groupData.horario) {
+                    updates.horario = grupo.horario;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    batch.update(groupDoc.ref, updates);
+                }
             }
         }
         
@@ -293,5 +336,3 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
-
-    
