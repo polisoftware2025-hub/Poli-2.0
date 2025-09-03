@@ -170,7 +170,7 @@ export async function seedInitialUsers() {
 
     for (const userData of testUsers) {
       if (!existingEmails.has(userData.correoInstitucional)) {
-        const hashedPassword = await bcryptjs.hash(userData.contrasena, saltRounds);
+        const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
 
         const userDocRef = doc(usersRef, userData.id);
         const finalUserData: any = {
@@ -229,7 +229,8 @@ export async function seedSedesYSalones() {
     const sedes = [
         { id: "sede-norte", nombre: "Sede Norte", direccion: "Avenida Siempre Viva 123" },
         { id: "sede-73", nombre: "Sede Calle 73", direccion: "Calle 73 #10-20" },
-        { id: "sede-80", nombre: "Sede Calle 80", direccion: "Avenida Calle 80 #50-10" }
+        { id: "sede-80", nombre: "Sede Calle 80", direccion: "Avenida Calle 80 #50-10" },
+        { id: "sede-sur", nombre: "Sede Sur", direccion: "Autopista Sur #10-50" }
     ];
 
     const salonesPorSede: { [key: string]: { id: string, nombre: string, capacidad: number }[] } = {
@@ -247,6 +248,10 @@ export async function seedSedesYSalones() {
             { id: "80-201", nombre: "Salón 201", capacidad: 35 },
             { id: "80-202", nombre: "Salón 202", capacidad: 35 },
             { id: "80-lab-gastronomia", nombre: "Cocina de Prácticas", capacidad: 15 },
+        ],
+        "sede-sur": [
+            { id: "sur-a1", nombre: "Salón A1", capacidad: 30 },
+            { id: "sur-a2", nombre: "Salón A2", capacidad: 30 },
         ]
     };
 
@@ -255,7 +260,7 @@ export async function seedSedesYSalones() {
         const sedesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes");
 
         const existingSedesSnapshot = await getDocs(sedesRef);
-        if (existingSedesSnapshot.docs.length > 0) {
+        if (existingSedesSnapshot.docs.length > 3) { // Check if more than the original 3 exist
              return { success: false, message: "Las sedes y salones ya parecen existir. No se realizó ninguna acción para evitar duplicados." };
         }
         
@@ -281,5 +286,3 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
-
-    

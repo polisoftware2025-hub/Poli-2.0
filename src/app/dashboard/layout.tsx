@@ -130,6 +130,7 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/pre-register", label: "Pre registro", icon: ClipboardList },
     { href: "/dashboard/admin/career", label: "Carreras", icon: BookCopy },
     { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked },
+    { href: "/dashboard/admin/groups", label: "Grupos", icon: Users },
     { href: "/dashboard/admin/payments", label: "Gestión Pagos", icon: CreditCard },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar },
     { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3 },
