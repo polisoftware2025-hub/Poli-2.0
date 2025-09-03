@@ -31,70 +31,27 @@ export default function HorariosPage() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [currentDate, setCurrentDate] = useState<Date | undefined>(new Date());
 
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
+    const storedUserRole = localStorage.getItem('userRole');
     setUserId(storedUserId);
+    setUserRole(storedUserRole);
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !userRole) return;
 
     const fetchSchedule = async () => {
       setIsLoading(true);
       try {
-        const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
-        const studentSnap = await getDoc(studentDocRef);
-
-        if (!studentSnap.exists()) {
-          setSchedule([]);
-          setIsLoading(false);
-          return;
+        if (userRole === 'estudiante') {
+          await fetchStudentSchedule(userId);
+        } else if (userRole === 'docente') {
+          await fetchTeacherSchedule(userId);
         }
-
-        const studentData = studentSnap.data();
-        const enrolledSubjectIds = (studentData.materiasInscritas || []).map((m: any) => m.id);
-
-        if (enrolledSubjectIds.length === 0) {
-            setSchedule([]);
-            setIsLoading(false);
-            return;
-        }
-
-        const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-        const studentGroupsQuery = query(groupsRef, where("materia.id", "in", enrolledSubjectIds));
-        const groupsSnapshot = await getDocs(studentGroupsQuery);
-
-        const finalSchedule: ScheduleEntry[] = [];
-        groupsSnapshot.forEach(groupDoc => {
-            const group = groupDoc.data();
-            if (group.estudiantes?.some((est: any) => est.id === userId)) {
-                if (group.horario) {
-                    group.horario.forEach((slot: { dia: string; hora: string }) => {
-                        const [startTimeStr, endTimeStr] = slot.hora.split(" - ");
-                        const start = new Date(`1970-01-01T${startTimeStr}:00`);
-                        const end = new Date(`1970-01-01T${endTimeStr}:00`);
-                        const duracion = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-
-                        finalSchedule.push({
-                            dia: slot.dia,
-                            horaInicio: startTimeStr,
-                            horaFin: endTimeStr,
-                            duracion: Math.max(1, Math.round(duracion)),
-                            materia: group.materia.nombre,
-                            grupo: group.codigoGrupo,
-                            docente: group.docente.nombre,
-                            aula: group.aula,
-                        });
-                    });
-                }
-            }
-        });
-
-        finalSchedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.horaInicio.localeCompare(a.horaInicio));
-        setSchedule(finalSchedule);
-
       } catch (error) {
         console.error("Error fetching schedule:", error);
       } finally {
@@ -102,7 +59,80 @@ export default function HorariosPage() {
       }
     };
     fetchSchedule();
-  }, [userId]);
+  }, [userId, userRole]);
+
+  const fetchStudentSchedule = async (studentId: string) => {
+    const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
+    const studentSnap = await getDoc(studentDocRef);
+
+    if (!studentSnap.exists()) {
+      setSchedule([]);
+      return;
+    }
+
+    const studentData = studentSnap.data();
+    const enrolledSubjectIds = (studentData.materiasInscritas || []).map((m: any) => m.id);
+
+    if (enrolledSubjectIds.length === 0) {
+        setSchedule([]);
+        return;
+    }
+
+    const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+    const studentGroupsQuery = query(groupsRef, where("materia.id", "in", enrolledSubjectIds));
+    const groupsSnapshot = await getDocs(studentGroupsQuery);
+
+    const finalSchedule: ScheduleEntry[] = [];
+    groupsSnapshot.forEach(groupDoc => {
+        const group = groupDoc.data();
+        if (group.estudiantes?.some((est: any) => est.id === studentId)) {
+            processGroupSchedule(group, finalSchedule);
+        }
+    });
+    
+    sortAndSetSchedule(finalSchedule);
+  };
+  
+  const fetchTeacherSchedule = async (teacherId: string) => {
+     const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+     const teacherGroupsQuery = query(groupsRef, where("docente.usuarioId", "==", teacherId));
+     const groupsSnapshot = await getDocs(teacherGroupsQuery);
+     
+     const finalSchedule: ScheduleEntry[] = [];
+     groupsSnapshot.forEach(groupDoc => {
+         const group = groupDoc.data();
+         processGroupSchedule(group, finalSchedule);
+     });
+     
+     sortAndSetSchedule(finalSchedule);
+  };
+
+  const processGroupSchedule = (group: DocumentData, scheduleArray: ScheduleEntry[]) => {
+      if (group.horario) {
+          group.horario.forEach((slot: { dia: string; hora: string }) => {
+              const [startTimeStr, endTimeStr] = slot.hora.split(" - ");
+              const start = new Date(`1970-01-01T${startTimeStr}:00`);
+              const end = new Date(`1970-01-01T${endTimeStr}:00`);
+              const duracion = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+
+              scheduleArray.push({
+                  dia: slot.dia,
+                  horaInicio: startTimeStr,
+                  horaFin: endTimeStr,
+                  duracion: Math.max(1, Math.round(duracion)),
+                  materia: group.materia.nombre,
+                  grupo: group.codigoGrupo,
+                  docente: group.docente.nombre,
+                  aula: group.aula,
+              });
+          });
+      }
+  };
+
+  const sortAndSetSchedule = (finalSchedule: ScheduleEntry[]) => {
+      finalSchedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.horaInicio.localeCompare(a.horaInicio));
+      setSchedule(finalSchedule);
+  };
 
   const markedDays = useMemo(() => {
     const datesWithClasses: Date[] = [];
@@ -188,7 +218,7 @@ export default function HorariosPage() {
                                             <Building className="h-5 w-5 text-primary"/>
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Ubicación</p>
-                                                <p className="font-semibold">{entry.aula.sede} - {entry.aula.salon}</p>
+                                                <p className="font-semibold">{entry.aula?.sede || 'N/A'} - {entry.aula?.salon || 'N/A'}</p>
                                             </div>
                                         </div>
                                     </CardContent>
