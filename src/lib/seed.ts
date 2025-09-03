@@ -1,7 +1,7 @@
 
 import { db } from './firebase'; 
-import { collection, addDoc, getDocs, query, where, writeBatch, doc, setDoc } from 'firebase/firestore';
-import bcryptjs from "bcryptjs";
+import { collection, addDoc, getDocs, query, where, writeBatch, doc, setDoc, updateDoc } from 'firebase/firestore';
+import bcrypt from "bcryptjs";
 
 const createSlug = (name: string) => {
     return name
@@ -51,6 +51,7 @@ const gruposData = [
         docente: { id: "docente01", nombre: "Ana Pérez", usuarioId: "user01", email: "docente@example.com" },
         modalidad: "Virtual",
         franjaHoraria: "Nocturna",
+        estado: "activo",
         estudiantes: [
             { id: "est001", nombre: "Juan Perez" },
             { id: "est002", nombre: "Maria Lopez" },
@@ -69,6 +70,7 @@ const gruposData = [
         docente: { id: "docente02", nombre: "Carlos Rivas", usuarioId: "user02", email: "carlos.rivas@example.com" },
         modalidad: "Presencial",
         franjaHoraria: "Diurna",
+        estado: "activo",
         estudiantes: [
              { id: "est001", nombre: "Juan Perez" },
         ],
@@ -106,7 +108,12 @@ export async function seedGrupos() {
                  const newGroupRef = doc(gruposRef);
                  batch.set(newGroupRef, grupo);
             } else {
-                 console.log(`El grupo ${grupo.codigoGrupo} ya existe. Omitiendo.`);
+                 const groupDoc = querySnapshot.docs[0];
+                 const groupData = groupDoc.data();
+                 if (!groupData.estado) {
+                    // Si el grupo existe pero no tiene el campo estado, lo actualizamos.
+                    batch.update(groupDoc.ref, { estado: "activo" });
+                 }
             }
         }
         
