@@ -1,6 +1,6 @@
 
 import { db } from './firebase'; 
-import { collection, addDoc, getDocs, query, where, writeBatch, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, writeBatch, doc, setDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import bcrypt from "bcryptjs";
 
 const createSlug = (name: string) => {
@@ -189,7 +189,7 @@ export async function seedInitialUsers() {
           rol: userData.rol,
           contrasena: hashedPassword,
           estado: "activo",
-          fechaRegistro: new Date(),
+          fechaRegistro: Timestamp.fromDate(new Date()),
         };
         batch.set(userDocRef, finalUserData);
 
@@ -208,7 +208,7 @@ export async function seedInitialUsers() {
                 materiasInscritas: assignedSubjects,
                 estaInscrito: true,
                 estado: "aprobado",
-                fechaRegistro: new Date()
+                fechaRegistro: Timestamp.fromDate(new Date())
             });
         }
 
@@ -293,3 +293,5 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
+
+    

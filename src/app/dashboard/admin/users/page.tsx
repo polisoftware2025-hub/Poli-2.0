@@ -29,7 +29,7 @@ interface User {
     correoInstitucional: string;
     rol: { id: string, descripcion: string };
     estado: string;
-    fechaRegistro: Timestamp;
+    fechaRegistro: Timestamp | Date;
 }
 
 const getInitials = (name: string = "") => {
@@ -60,10 +60,17 @@ export default function UsersPage() {
       try {
           const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
           const querySnapshot = await getDocs(usersRef);
-          const fetchedUsers = querySnapshot.docs.map(doc => ({
-              id: doc.id,
-              ...doc.data()
-          } as User));
+          const fetchedUsers = querySnapshot.docs.map(doc => {
+              const data = doc.data();
+              // Firestore Timestamps need to be converted to JS Dates for consistent use
+              if (data.fechaRegistro && typeof data.fechaRegistro.toDate === 'function') {
+                  data.fechaRegistro = data.fechaRegistro.toDate();
+              }
+              return {
+                  id: doc.id,
+                  ...data
+              } as User;
+          });
           setUsers(fetchedUsers);
       } catch (error) {
           console.error("Error fetching users:", error);
@@ -195,9 +202,9 @@ export default function UsersPage() {
                        </Badge>
                       </TableCell>
                       <TableCell>
-                        {user.fechaRegistro?.toDate().toLocaleDateString('es-ES', {
+                        {user.fechaRegistro instanceof Date ? user.fechaRegistro.toLocaleDateString('es-ES', {
                           year: 'numeric', month: 'long', day: 'numeric'
-                        }) || 'No disponible'}
+                        }) : 'No disponible'}
                       </TableCell>
                       <TableCell className="text-right">
                        <DropdownMenu>
@@ -236,3 +243,5 @@ export default function UsersPage() {
     </div>
   );
 }
+
+    
