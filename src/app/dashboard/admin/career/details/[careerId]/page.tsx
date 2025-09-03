@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -30,7 +29,7 @@ interface Career {
 
 
 const formatCurrency = (value: number) => {
-  if (isNaN(value)) return "N/A";
+  if (isNaN(value) || value === undefined || value === null) return "N/A";
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
