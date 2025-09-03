@@ -24,6 +24,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
 
 interface Materia {
   nombre: string;
@@ -262,69 +263,72 @@ export default function NewProgramPage() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                <AccordionContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h4 className="font-semibold mb-2">Materias</h4>
-                            <ul className="space-y-3 pt-2">
-                            {ciclo.materias.map((materia, materiaIndex) => (
-                            <li key={materia.codigo || materia.nombre} className="flex justify-between items-center text-gray-700 p-2 rounded-md hover:bg-gray-100">
-                                <div className="flex-grow">
-                                    <span>{materia.nombre}</span>
-                                    <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full ml-2">{materia.creditos} créditos</span>
-                                </div>
+                <AccordionContent className="space-y-4">
+                    <h4 className="font-semibold mb-2">Materias</h4>
+                    <ul className="space-y-3">
+                        {ciclo.materias.map((materia, materiaIndex) => (
+                        <li key={materia.codigo || materia.nombre} className="flex justify-between items-center text-gray-700 p-3 rounded-md bg-gray-50 border">
+                            <div>
+                                <span className="font-medium">{materia.nombre}</span>
+                                <span className="text-sm text-muted-foreground ml-2">({materia.codigo || 'N/A'})</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full">{materia.creditos} créditos</span>
                                 <Button variant="destructive" size="icon" className="h-8 w-8" type="button" onClick={() => handleRemoveMateria(cycleIndex, materiaIndex)}>
-                                <Trash2 className="h-4 w-4"/>
+                                    <Trash2 className="h-4 w-4"/>
                                 </Button>
-                            </li>
-                            ))}
-                            </ul>
-                            <Dialog open={isDialogOpen && currentCycleIndex === cycleIndex} onOpenChange={(isOpen) => { if(!isOpen) setCurrentCycleIndex(null); setIsDialogOpen(isOpen); }}>
-                                <DialogTrigger asChild>
-                                    <Button variant="outline" className="mt-4" type="button" onClick={() => { setCurrentCycleIndex(cycleIndex); setIsDialogOpen(true); }}>
-                                        <Plus className="mr-2 h-4 w-4"/>
-                                        Agregar Materia
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div>
-                                            <Label htmlFor="subjectName">Nombre de la Materia</Label>
-                                            <Input id="subjectName" placeholder="Ej: Cálculo Integral" value={newMateria.nombre} onChange={(e) => setNewMateria({...newMateria, nombre: e.target.value})}/>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="subjectCode">Código</Label>
-                                            <Input id="subjectCode" placeholder="Ej: MAT-102" value={newMateria.codigo} onChange={(e) => setNewMateria({...newMateria, codigo: e.target.value})}/>
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="subjectCredits">Créditos</Label>
-                                            <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                                        <Button type="button" onClick={handleAddMateria}>Guardar Materia</Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                        <div>
-                            <h4 className="font-semibold mb-2">Precio del Ciclo</h4>
-                            <div className="relative">
-                                <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                                <Input 
-                                    id={`price-${ciclo.numero}`}
-                                    type="number"
-                                    value={programDetails.precioPorCiclo[ciclo.numero] || ''}
-                                    onChange={(e) => handlePriceChange(ciclo.numero, e.target.value)}
-                                    placeholder="Ej: 3500000"
-                                    className="pl-9"
-                                />
-                             </div>
-                        </div>
+                            </div>
+                        </li>
+                        ))}
+                    </ul>
+
+                    <Dialog open={isDialogOpen && currentCycleIndex === cycleIndex} onOpenChange={(isOpen) => { if(!isOpen) setCurrentCycleIndex(null); setIsDialogOpen(isOpen); }}>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" type="button" onClick={() => { setCurrentCycleIndex(cycleIndex); setIsDialogOpen(true); }}>
+                                <Plus className="mr-2 h-4 w-4"/>
+                                Agregar Materia
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <Label htmlFor="subjectName">Nombre de la Materia</Label>
+                                    <Input id="subjectName" placeholder="Ej: Cálculo Integral" value={newMateria.nombre} onChange={(e) => setNewMateria({...newMateria, nombre: e.target.value})}/>
+                                </div>
+                                <div>
+                                    <Label htmlFor="subjectCode">Código</Label>
+                                    <Input id="subjectCode" placeholder="Ej: MAT-102" value={newMateria.codigo} onChange={(e) => setNewMateria({...newMateria, codigo: e.target.value})}/>
+                                </div>
+                                <div>
+                                    <Label htmlFor="subjectCredits">Créditos</Label>
+                                    <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                                <Button type="button" onClick={handleAddMateria}>Guardar Materia</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Separator className="my-6"/>
+
+                    <div>
+                        <h4 className="font-semibold mb-2">Precio del Ciclo</h4>
+                        <div className="relative max-w-xs">
+                            <DollarSign className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                            <Input 
+                                id={`price-${ciclo.numero}`}
+                                type="number"
+                                value={programDetails.precioPorCiclo[ciclo.numero] || ''}
+                                onChange={(e) => handlePriceChange(ciclo.numero, e.target.value)}
+                                placeholder="Ej: 3500000"
+                                className="pl-9"
+                            />
+                         </div>
                     </div>
                 </AccordionContent>
               </AccordionItem>
