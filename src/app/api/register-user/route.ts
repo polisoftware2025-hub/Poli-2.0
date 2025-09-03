@@ -20,8 +20,8 @@ const validateRegistrationData = (data: any) => {
     if (!data.country) errors.country = "El país es requerido.";
     if (!data.city) errors.city = "La ciudad es requerida.";
     if (!data.correoPersonal || !/\S+@\S+\.\S+/.test(data.correoPersonal)) errors.correoPersonal = "El correo personal no es válido.";
+    if (!data.sedeId) errors.sedeId = "La sede es requerida.";
     if (!data.carreraId) errors.carreraId = "La carrera es requerida.";
-    if (!data.modalidad) errors.modalidad = "La modalidad es requerida.";
     if (!data.grupo) errors.grupo = "El grupo es requerido.";
     if (!data.password || typeof data.password !== 'string' || data.password.length < 8) errors.password = "La contraseña debe tener al menos 8 caracteres.";
     
@@ -93,8 +93,8 @@ export async function POST(req: Request) {
           usuarioId: newUserId,
           nombreCompleto: usuarioData.nombreCompleto,
           documento: data.numeroIdentificacion,
+          sedeId: data.sedeId,
           carreraId: data.carreraId,
-          modalidad: data.modalidad,
           grupo: data.grupo,
           correoInstitucional: "",
           cicloActual: null,
@@ -132,3 +132,5 @@ export async function POST(req: Request) {
         }, { status: 500 });
     }
 }
+
+    

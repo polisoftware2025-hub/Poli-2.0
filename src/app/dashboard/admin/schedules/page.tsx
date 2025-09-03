@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 interface Sede { id: string; nombre: string; }
 interface Salon { id: string; nombre: string; }
 interface Career { id: string; nombre: string; }
-interface Group { id: string; codigoGrupo: string; materia: { nombre: string }; ciclo: number; docente: { nombre: string; }; horario?: any[]; }
+interface Group { id: string; codigoGrupo: string; materia: { nombre: string }; ciclo: number; docente: { nombre: string; }; idCarrera: string; idSede: string; horario?: any[]; }
 interface ScheduleEntry { dia: string; hora: string; duracion: number; materia: string; grupo: string; docente: string; }
 
 const timeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
@@ -309,3 +309,5 @@ function AssignClassDialog({ selectedGrupoId, selectedSalonId, grupos, onClassAs
         </Dialog>
     );
 }
+
+    

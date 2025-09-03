@@ -55,7 +55,7 @@ const gruposData = [
             { id: "est001", nombre: "Juan Perez" },
             { id: "est002", nombre: "Maria Lopez" },
         ],
-        horario: [ // Horario ahora se guarda aquí
+        horario: [ 
             { dia: "Lunes", hora: "18:00 - 20:00", salonId: "norte-101", materia: "Matemática Básica", docente: "Ana Pérez" },
             { dia: "Miércoles", hora: "18:00 - 20:00", salonId: "norte-101", materia: "Matemática Básica", docente: "Ana Pérez" },
         ]
@@ -281,3 +281,5 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
+
+    

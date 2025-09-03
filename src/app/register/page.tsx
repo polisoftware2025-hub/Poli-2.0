@@ -31,6 +31,7 @@ import {
   CalendarIcon,
   Eye,
   EyeOff,
+  School
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
@@ -50,7 +51,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 
 interface AllStepsData extends FieldValues {
     firstName: string;
@@ -66,8 +67,8 @@ interface AllStepsData extends FieldValues {
     country: string;
     city: string;
     correoPersonal: string;
+    sedeId: string;
     carreraId: string;
-    modalidad: string;
     grupo: string;
     password: string;
     confirmPassword: string;
@@ -97,18 +98,18 @@ const defaultFormValues: AllStepsData = {
     country: "",
     city: "",
     correoPersonal: "",
+    sedeId: "",
     carreraId: "",
-    modalidad: "",
     grupo: "",
     password: "",
     confirmPassword: "",
-    metodoPago: "N/A", // Default as payment is no longer in registration
+    metodoPago: "N/A", 
 };
 
 
 export default function RegisterPage() {
   const [currentStep, setCurrentStep] = useState(1);
-  const totalSteps = 5; // Reduced from 6
+  const totalSteps = 5;
   const { toast } = useToast();
   const router = useRouter();
   
@@ -142,8 +143,8 @@ export default function RegisterPage() {
         if (!data.city) { setError("city", { type: 'manual', message: 'Ciudad requerida.' }); isValid = false; }
         if (!data.correoPersonal || !/\S+@\S+\.\S+/.test(data.correoPersonal)) { setError("correoPersonal", { type: 'manual', message: 'Correo inválido.' }); isValid = false; }
     } else if (step === 3) {
+        if (!data.sedeId) { setError("sedeId", { type: 'manual', message: 'Selecciona una sede.' }); isValid = false; }
         if (!data.carreraId) { setError("carreraId", { type: 'manual', message: 'Selecciona una carrera.' }); isValid = false; }
-        if (!data.modalidad) { setError("modalidad", { type: 'manual', message: 'Selecciona una modalidad.' }); isValid = false; }
         if (!data.grupo) { setError("grupo", { type: 'manual', message: 'Selecciona un grupo.' }); isValid = false; }
     } else if (step === 4) {
         if (!data.password || data.password.length < 8) { setError("password", { type: 'manual', message: 'Mínimo 8 caracteres.' }); isValid = false; }
@@ -555,99 +556,109 @@ interface Grupo {
     id: string;
     codigoGrupo: string;
 }
+interface Sede {
+    id: string;
+    nombre: string;
+}
 
 const Step3 = () => {
-    const { control } = useFormContext();
+    const { control, setValue } = useFormContext();
+    const [sedes, setSedes] = useState<Sede[]>([]);
     const [carreras, setCarreras] = useState<Carrera[]>([]);
     const [grupos, setGrupos] = useState<Grupo[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false });
+
+    const selectedSede = useWatch({ control, name: "sedeId" });
+    const selectedCarrera = useWatch({ control, name: "carreraId" });
 
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
+        const fetchInitialData = async () => {
+            setIsLoading(prev => ({...prev, sedes: true, carreras: true}));
             try {
-                const carrerasSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
-                const fetchedCarreras = carrerasSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre }));
-                setCarreras(fetchedCarreras);
+                const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
+                setSedes(sedesSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
 
-                const gruposSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
+                const carrerasSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+                setCarreras(carrerasSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
+            } catch (error) {
+                console.error("Error fetching initial data:", error);
+            } finally {
+                setIsLoading(prev => ({...prev, sedes: false, carreras: false}));
+            }
+        };
+        fetchInitialData();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedSede || !selectedCarrera) {
+            setGrupos([]);
+            return;
+        }
+
+        const fetchGrupos = async () => {
+            setIsLoading(prev => ({ ...prev, grupos: true }));
+            try {
+                const gruposQuery = query(
+                    collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
+                    where("idSede", "==", selectedSede),
+                    where("idCarrera", "==", selectedCarrera)
+                );
+                const gruposSnapshot = await getDocs(gruposQuery);
                 const fetchedGrupos = gruposSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo }));
                 setGrupos(fetchedGrupos);
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching grupos:", error);
             } finally {
-                setIsLoading(false);
+                setIsLoading(prev => ({ ...prev, grupos: false }));
             }
         };
-        fetchData();
-    }, []);
+
+        fetchGrupos();
+    }, [selectedSede, selectedCarrera]);
 
   return (
     <div className="space-y-6">
-      <FormField
-        control={control}
-        name="carreraId"
-        render={({ field }) => (
+      <FormField control={control} name="sedeId" render={({ field }) => (
           <FormItem>
-            <FormLabel>Carrera</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+            <FormLabel>Sede de Interés</FormLabel>
+             <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", ""); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.sedes}>
               <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona una carrera"} />
-                </SelectTrigger>
+                <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger>
               </FormControl>
-              <SelectContent>
-                {carreras.map(carrera => (
-                    <SelectItem key={carrera.id} value={carrera.id}>{carrera.nombre}</SelectItem>
-                ))}
-              </SelectContent>
+              <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
             </Select>
             <FormMessage />
           </FormItem>
         )}
       />
-      <FormField
-        control={control}
-        name="modalidad"
-        render={({ field }) => (
-          <FormItem className="space-y-3">
-            <FormLabel>Modalidad</FormLabel>
-            <FormControl>
-              <RadioGroup
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                className="flex flex-col space-y-1"
-              >
-                <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="Presencial" /></FormControl>
-                  <FormLabel className="font-normal">Presencial</FormLabel>
-                </FormItem>
-                 <FormItem className="flex items-center space-x-3 space-y-0">
-                  <FormControl><RadioGroupItem value="Virtual" /></FormControl>
-                  <FormLabel className="font-normal">Virtual</FormLabel>
-                </FormItem>
-              </RadioGroup>
-            </FormControl>
+      <FormField control={control} name="carreraId" render={({ field }) => (
+          <FormItem>
+            <FormLabel>Carrera</FormLabel>
+            <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
+              <FormControl>
+                <SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger>
+              </FormControl>
+              <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
+            </Select>
             <FormMessage />
           </FormItem>
         )}
       />
-      <FormField
-        control={control}
-        name="grupo"
-        render={({ field }) => (
+       <FormField control={control} name="grupo" render={({ field }) => (
           <FormItem>
-            <FormLabel>Grupo</FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+            <FormLabel>Grupo disponible</FormLabel>
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={isLoading ? "Cargando..." : "Selecciona un grupo"} />
+                  <SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
-                {grupos.map(grupo => (
-                    <SelectItem key={grupo.id} value={grupo.id}>{grupo.codigoGrupo}</SelectItem>
-                ))}
+                {grupos.length > 0 ? (
+                  grupos.map(grupo => <SelectItem key={grupo.id} value={grupo.id}>{grupo.codigoGrupo}</SelectItem>)
+                ) : (
+                  <SelectItem value="no-groups" disabled>No hay grupos disponibles</SelectItem>
+                )}
               </SelectContent>
             </Select>
             <FormMessage />
@@ -715,3 +726,5 @@ const Step5_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
+
+    

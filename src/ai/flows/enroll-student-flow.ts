@@ -118,7 +118,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         const assignedSubjects = cycleInfo.materias.map((m: any) => ({ id: m.id, nombre: m.nombre, creditos: m.creditos }));
         const institutionalEmail = await generateUniqueInstitutionalEmail(userData.nombre1, userData.apellido1, userData.apellido2);
         const temporaryPassword = studentData.initialPassword; 
-        const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
+        const hashedPassword = await bcryptjs.hash(temporaryPassword, 10);
         
         // Handle invoice generation
         const cyclePrice = careerData.precioPorCiclo?.[startCycle];
@@ -205,3 +205,5 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         return { success: false, message };
     }
 }
+
+    
