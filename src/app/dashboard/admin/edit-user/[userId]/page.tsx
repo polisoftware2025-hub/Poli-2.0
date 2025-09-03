@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { PageHeader } from "@/components/page-header";
-import { User, Phone, KeyRound } from "lucide-react";
+import { User, Phone, KeyRound, BookOpen, School } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -15,10 +15,11 @@ import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, Timestamp, updateDoc } from "firebase/firestore";
+import { doc, getDoc, Timestamp, query, where, collection, getDocs } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 const editUserSchema = z.object({
   nombre1: z.string().min(1, "Campo requerido"),
@@ -31,6 +32,17 @@ const editUserSchema = z.object({
   correo: z.string().email(),
   rol: z.string().min(1, "El rol es obligatorio"),
   contrasena: z.string().optional(),
+  sedeId: z.string().optional(),
+  carreraId: z.string().optional(),
+  grupo: z.string().optional(),
+}).refine(data => {
+    if(data.rol === 'estudiante') {
+        return !!data.sedeId && !!data.carreraId && !!data.grupo;
+    }
+    return true;
+}, {
+    message: "Sede, carrera y grupo son requeridos para el rol de estudiante.",
+    path: ["sedeId"],
 });
 
 type UserData = {
@@ -46,7 +58,14 @@ type UserData = {
     direccion: string;
     correo: string;
     rol: { id: string; descripcion: string };
+    sedeId?: string;
+    carreraId?: string;
+    grupo?: string;
 };
+
+interface Carrera { id: string; nombre: string; }
+interface Grupo { id: string; codigoGrupo: string; }
+interface Sede { id: string; nombre: string; }
 
 
 export default function EditUserPage() {
@@ -62,6 +81,8 @@ export default function EditUserPage() {
   const form = useForm<z.infer<typeof editUserSchema>>({
     resolver: zodResolver(editUserSchema),
   });
+  
+  const selectedRole = useWatch({ control: form.control, name: "rol" });
 
   useEffect(() => {
     if (!userId) return;
@@ -73,18 +94,21 @@ export default function EditUserPage() {
             const userSnap = await getDoc(userRef);
             if(userSnap.exists()) {
                 const data = userSnap.data() as UserData;
+                
+                if(data.rol.id === 'estudiante') {
+                    const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+                    const studentSnap = await getDoc(studentRef);
+                    if(studentSnap.exists()){
+                       Object.assign(data, studentSnap.data());
+                    }
+                }
+                
                 setUserData(data);
                 form.reset({
-                    nombre1: data.nombre1,
-                    nombre2: data.nombre2,
-                    apellido1: data.apellido1,
-                    apellido2: data.apellido2,
-                    genero: data.genero,
-                    telefono: data.telefono,
-                    direccion: data.direccion,
-                    correo: data.correo,
+                    ...data,
                     rol: data.rol.id,
                 });
+
             } else {
                 toast({ variant: "destructive", title: "Error", description: "Usuario no encontrado." });
                 router.push('/dashboard/admin/users');
@@ -245,6 +269,14 @@ export default function EditUserPage() {
                         )} />
                     </div>
                 </section>
+                
+                 {selectedRole === 'estudiante' && (
+                    <>
+                        <Separator />
+                        <AcademicInfoSection />
+                    </>
+                 )}
+
 
                 </div>
             </CardContent>
@@ -264,4 +296,97 @@ export default function EditUserPage() {
       </FormProvider>
     </div>
   );
+}
+
+function AcademicInfoSection() {
+    const { control, setValue } = useFormContext();
+    const [sedes, setSedes] = useState<Sede[]>([]);
+    const [carreras, setCarreras] = useState<Carrera[]>([]);
+    const [grupos, setGrupos] = useState<Grupo[]>([]);
+    const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false });
+
+    const selectedSede = useWatch({ control, name: "sedeId" });
+    const selectedCarrera = useWatch({ control, name: "carreraId" });
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            setIsLoading(prev => ({ ...prev, sedes: true, carreras: true }));
+            try {
+                const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
+                setSedes(sedesSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
+
+                const carrerasSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+                setCarreras(carrerasSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
+            } catch (error) {
+                console.error("Error fetching initial data:", error);
+            } finally {
+                setIsLoading(prev => ({ ...prev, sedes: false, carreras: false }));
+            }
+        };
+        fetchInitialData();
+    }, []);
+
+    useEffect(() => {
+        if (!selectedSede || !selectedCarrera) {
+            setGrupos([]);
+            return;
+        }
+        const fetchGrupos = async () => {
+            setIsLoading(prev => ({ ...prev, grupos: true }));
+            try {
+                const q = query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
+                    where("idSede", "==", selectedSede),
+                    where("idCarrera", "==", selectedCarrera)
+                );
+                const gruposSnapshot = await getDocs(q);
+                setGrupos(gruposSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo })));
+            } catch (error) {
+                console.error("Error fetching grupos:", error);
+            } finally {
+                setIsLoading(prev => ({ ...prev, grupos: false }));
+            }
+        };
+        fetchGrupos();
+    }, [selectedSede, selectedCarrera]);
+
+    return (
+        <section>
+            <div className="flex items-center gap-3 mb-4">
+                <BookOpen className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold">Información Académica</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <FormField control={control} name="sedeId" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Sede</FormLabel>
+                        <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", ""); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.sedes}>
+                            <FormControl><SelectTrigger><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></SelectTrigger></FormControl>
+                            <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={control} name="carreraId" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Carrera</FormLabel>
+                        <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
+                            <FormControl><SelectTrigger><SelectValue placeholder={!selectedSede ? "Elige sede" : "Selecciona carrera"} /></SelectTrigger></FormControl>
+                            <SelectContent>{carreras.map(carrera => <SelectItem key={carrera.id} value={carrera.id}>{carrera.nombre}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+                <FormField control={control} name="grupo" render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Grupo</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
+                            <FormControl><SelectTrigger><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : "Selecciona grupo"} /></SelectTrigger></FormControl>
+                            <SelectContent>{grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                )} />
+            </div>
+        </section>
+    );
 }

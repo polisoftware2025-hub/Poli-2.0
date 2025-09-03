@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
         
-        const { identificacion, contrasena, rol, ...rest } = body;
+        const { identificacion, contrasena, rol, sedeId, carreraId, grupo, ...rest } = body;
 
         const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
         const q = query(usuariosRef, where("identificacion", "==", identificacion));
@@ -49,6 +49,9 @@ export async function POST(req: Request) {
         
         const nombreCompleto = `${body.nombre1} ${body.nombre2 || ''} ${body.apellido1} ${body.apellido2}`.replace(/\s+/g, ' ').trim();
 
+        const batch = writeBatch(db);
+        const newUserRef = doc(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios"));
+        
         const newUserDoc = {
             ...rest,
             identificacion,
@@ -61,8 +64,6 @@ export async function POST(req: Request) {
             fechaActualizacion: serverTimestamp(),
         };
 
-        const batch = writeBatch(db);
-        const newUserRef = doc(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios"));
         batch.set(newUserRef, newUserDoc);
 
         if (rol === 'estudiante') {
@@ -70,9 +71,9 @@ export async function POST(req: Request) {
                 usuarioId: newUserRef.id,
                 nombreCompleto: nombreCompleto,
                 documento: identificacion,
-                sedeId: null,
-                carreraId: null,
-                grupo: null,
+                sedeId: sedeId,
+                carreraId: carreraId,
+                grupo: grupo,
                 correoInstitucional: institutionalEmail,
                 cicloActual: 1, 
                 materiasInscritas: [],

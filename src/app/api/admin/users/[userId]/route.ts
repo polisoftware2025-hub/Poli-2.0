@@ -1,6 +1,6 @@
 
 import { db } from "@/lib/firebase";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, updateDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 
@@ -17,8 +17,21 @@ export async function GET(req: Request, { params }: { params: { userId: string }
         if (!userSnap.exists()) {
             return NextResponse.json({ message: "Usuario no encontrado." }, { status: 404 });
         }
+        
+        const userData = userSnap.data();
+        
+        // Si es estudiante, buscar sus datos académicos
+        if (userData.rol.id === 'estudiante') {
+            const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+            const studentSnap = await getDoc(studentRef);
+            if(studentSnap.exists()){
+                const studentData = studentSnap.data();
+                return NextResponse.json({ id: userSnap.id, ...userData, ...studentData }, { status: 200 });
+            }
+        }
 
-        return NextResponse.json({ id: userSnap.id, ...userSnap.data() }, { status: 200 });
+        return NextResponse.json({ id: userSnap.id, ...userData }, { status: 200 });
+
     } catch (error) {
         console.error("Error al obtener usuario:", error);
         return NextResponse.json({ message: "Error interno del servidor." }, { status: 500 });
@@ -33,7 +46,9 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         }
 
         const body = await req.json();
-        const { contrasena, rol, ...userData } = body;
+        const { contrasena, rol, sedeId, carreraId, grupo, ...userData } = body;
+        
+        const batch = writeBatch(db);
         
         const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
 
@@ -49,7 +64,20 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
             dataToUpdate.contrasena = await bcrypt.hash(contrasena, saltRounds);
         }
 
-        await updateDoc(userRef, dataToUpdate);
+        batch.update(userRef, dataToUpdate);
+        
+        if(rol === 'estudiante'){
+             const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+             const studentDataToUpdate = {
+                 sedeId,
+                 carreraId,
+                 grupo,
+                 fechaActualizacion: serverTimestamp(),
+             };
+             batch.update(studentRef, studentDataToUpdate);
+        }
+
+        await batch.commit();
 
         return NextResponse.json({ message: "Usuario actualizado correctamente." }, { status: 200 });
 
