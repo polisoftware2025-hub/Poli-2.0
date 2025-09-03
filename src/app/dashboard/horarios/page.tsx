@@ -1,29 +1,39 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, Info, Clock, User, Building, BookOpen, Filter, View } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Clock, User, Building, BookOpen } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData, doc, getDoc } from "firebase/firestore";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
 import { startOfWeek, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 interface ScheduleEntry {
-  dia: string;
-  horaInicio: string;
-  horaFin: string;
-  duracion: number;
-  materia: string;
-  grupo: string;
-  docente: string;
-  aula: { sede: string; salon: string };
+    id: string;
+    dia: string;
+    hora: string;
+    duracion: number;
+    materiaId: string;
+    materiaNombre: string;
+    docenteId: string;
+    docenteNombre: string;
+    modalidad: "Presencial" | "Virtual";
+    sedeId?: string;
+    sedeNombre?: string;
+    salonId?: string;
+    salonNombre?: string;
 }
+
+interface Group {
+    id: string;
+    codigoGrupo: string;
+    horario?: ScheduleEntry[];
+}
+
 
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
@@ -46,12 +56,28 @@ export default function HorariosPage() {
 
     const fetchSchedule = async () => {
       setIsLoading(true);
+      let userGroups: Group[] = [];
+      
       try {
+        const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+        let q;
+
         if (userRole === 'estudiante') {
-          await fetchStudentSchedule(userId);
+          q = query(groupsRef, where("estudiantes", "array-contains", { id: userId, nombre: "placeholder" })); // Placeholder, needs better query
+          const studentDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId));
+          if(studentDoc.exists()){
+              const studentGroupsSnapshot = await getDocs(query(groupsRef, where('idCarrera', '==', studentDoc.data().carreraId), where('idSede', '==', studentDoc.data().sedeId)));
+              studentGroups = studentGroupsSnapshot.docs.map(d => ({id: d.id, ...d.data()} as Group));
+          }
         } else if (userRole === 'docente') {
-          await fetchTeacherSchedule(userId);
+          q = query(groupsRef, where("docente.usuarioId", "==", userId));
+          const teacherGroupsSnapshot = await getDocs(q);
+          userGroups = teacherGroupsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Group));
         }
+
+        const finalSchedule = userGroups.flatMap(g => g.horario || []);
+        sortAndSetSchedule(finalSchedule);
+
       } catch (error) {
         console.error("Error fetching schedule:", error);
       } finally {
@@ -61,76 +87,9 @@ export default function HorariosPage() {
     fetchSchedule();
   }, [userId, userRole]);
 
-  const fetchStudentSchedule = async (studentId: string) => {
-    const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
-    const studentSnap = await getDoc(studentDocRef);
-
-    if (!studentSnap.exists()) {
-      setSchedule([]);
-      return;
-    }
-
-    const studentData = studentSnap.data();
-    const enrolledSubjectIds = (studentData.materiasInscritas || []).map((m: any) => m.id);
-
-    if (enrolledSubjectIds.length === 0) {
-        setSchedule([]);
-        return;
-    }
-
-    const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-    const studentGroupsQuery = query(groupsRef, where("materia.id", "in", enrolledSubjectIds));
-    const groupsSnapshot = await getDocs(studentGroupsQuery);
-
-    const finalSchedule: ScheduleEntry[] = [];
-    groupsSnapshot.forEach(groupDoc => {
-        const group = groupDoc.data();
-        if (group.estudiantes?.some((est: any) => est.id === studentId)) {
-            processGroupSchedule(group, finalSchedule);
-        }
-    });
-    
-    sortAndSetSchedule(finalSchedule);
-  };
-  
-  const fetchTeacherSchedule = async (teacherId: string) => {
-     const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-     const teacherGroupsQuery = query(groupsRef, where("docente.usuarioId", "==", teacherId));
-     const groupsSnapshot = await getDocs(teacherGroupsQuery);
-     
-     const finalSchedule: ScheduleEntry[] = [];
-     groupsSnapshot.forEach(groupDoc => {
-         const group = groupDoc.data();
-         processGroupSchedule(group, finalSchedule);
-     });
-     
-     sortAndSetSchedule(finalSchedule);
-  };
-
-  const processGroupSchedule = (group: DocumentData, scheduleArray: ScheduleEntry[]) => {
-      if (group.horario) {
-          group.horario.forEach((slot: { dia: string; hora: string }) => {
-              const [startTimeStr, endTimeStr] = slot.hora.split(" - ");
-              const start = new Date(`1970-01-01T${startTimeStr}:00`);
-              const end = new Date(`1970-01-01T${endTimeStr}:00`);
-              const duracion = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-
-              scheduleArray.push({
-                  dia: slot.dia,
-                  horaInicio: startTimeStr,
-                  horaFin: endTimeStr,
-                  duracion: Math.max(1, Math.round(duracion)),
-                  materia: group.materia.nombre,
-                  grupo: group.codigoGrupo,
-                  docente: group.docente.nombre,
-                  aula: group.aula,
-              });
-          });
-      }
-  };
 
   const sortAndSetSchedule = (finalSchedule: ScheduleEntry[]) => {
-      finalSchedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.horaInicio.localeCompare(a.horaInicio));
+      finalSchedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.hora.localeCompare(b.hora));
       setSchedule(finalSchedule);
   };
 
@@ -181,7 +140,8 @@ export default function HorariosPage() {
                         selected={currentDate}
                         onSelect={setCurrentDate}
                         locale={es}
-                        markedDays={markedDays}
+                        modifiers={{ marked: markedDays }}
+                        modifiersClassNames={{ marked: 'bg-primary/20 rounded-full' }}
                     />
                 </div>
                 <div className="md:col-span-2">
@@ -197,28 +157,28 @@ export default function HorariosPage() {
                                             <BookOpen className="h-5 w-5 text-primary"/>
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Materia</p>
-                                                <p className="font-semibold">{entry.materia}</p>
+                                                <p className="font-semibold">{entry.materiaNombre}</p>
                                             </div>
                                         </div>
                                          <div className="flex items-center gap-2">
                                             <Clock className="h-5 w-5 text-primary"/>
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Horario</p>
-                                                <p className="font-semibold">{entry.horaInicio} - {entry.horaFin}</p>
+                                                <p className="font-semibold">{entry.hora}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <User className="h-5 w-5 text-primary"/>
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Docente</p>
-                                                <p className="font-semibold">{entry.docente}</p>
+                                                <p className="font-semibold">{entry.docenteNombre}</p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <Building className="h-5 w-5 text-primary"/>
                                             <div>
                                                 <p className="text-sm text-muted-foreground">Ubicación</p>
-                                                <p className="font-semibold">{entry.aula?.sede || 'N/A'} - {entry.aula?.salon || 'N/A'}</p>
+                                                <p className="font-semibold">{entry.modalidad === "Presencial" ? `${entry.sedeNombre} - ${entry.salonNombre}` : 'Virtual'}</p>
                                             </div>
                                         </div>
                                     </CardContent>

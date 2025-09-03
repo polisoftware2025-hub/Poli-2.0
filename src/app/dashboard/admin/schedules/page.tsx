@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar, Building, BookCopy, Users, Plus } from "lucide-react";
+import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,21 +10,30 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, doc, updateDoc, arrayUnion, query, where, DocumentData } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where, DocumentData } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
+import { Label } from "@/components/ui/label";
+import { getDoc } from "firebase/firestore";
 
 interface Sede { id: string; nombre: string; }
-interface Career { id: string; nombre: string; ciclos: { materias: { id: string; nombre: string }[] }[]; }
+interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string }[] }[]; }
 interface Docente { id: string; nombreCompleto: string; }
 interface Salon { id: string; nombre: string; }
 
 interface ScheduleEntry {
+    id: string; // Unique ID for the schedule entry, e.g., a timestamp or UUID
     dia: string;
     hora: string;
-    materia: string;
-    docente: string;
+    duracion: number;
+    materiaId: string;
+    materiaNombre: string;
+    docenteId: string;
+    docenteNombre: string;
     modalidad: "Presencial" | "Virtual";
-    ubicacion: string;
+    sedeId?: string;
+    sedeNombre?: string;
+    salonId?: string;
+    salonNombre?: string;
 }
 
 interface Group {
@@ -34,7 +42,7 @@ interface Group {
     idCarrera: string;
     idSede: string;
     ciclo: number;
-    horario?: any[];
+    horario?: ScheduleEntry[];
 }
 
 const timeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
@@ -45,7 +53,7 @@ export default function SchedulesAdminPage() {
     const [carreras, setCarreras] = useState<Career[]>([]);
     const [docentes, setDocentes] = useState<Docente[]>([]);
     const [grupos, setGrupos] = useState<Group[]>([]);
-    const [salones, setSalones] = useState<Salon[]>([]);
+    const [salonesBySede, setSalonesBySede] = useState<{ [key: string]: Salon[] }>({});
     
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
@@ -58,7 +66,16 @@ export default function SchedulesAdminPage() {
         setIsLoading(prev => ({ ...prev, sedes: true, carreras: true, docentes: true }));
         try {
             const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
-            setSedes(sedesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sede)));
+            const fetchedSedes = sedesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sede));
+            setSedes(fetchedSedes);
+
+            const salonesData: { [key: string]: Salon[] } = {};
+            for (const sede of fetchedSedes) {
+                const salonesRef = collection(db, `Politecnico/mzIX7rzezDezczAV6pQ7/sedes/${sede.id}/salones`);
+                const salonesSnapshot = await getDocs(salonesRef);
+                salonesData[sede.id] = salonesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Salon));
+            }
+            setSalonesBySede(salonesData);
             
             const carrerasSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
             setCarreras(carrerasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Career)));
@@ -78,22 +95,11 @@ export default function SchedulesAdminPage() {
         fetchInitialData();
     }, [fetchInitialData]);
 
-    const handleSedeChange = async (sedeId: string) => {
+    const handleSedeChange = (sedeId: string) => {
         setSelectedSede(sedeId);
         setSelectedCarrera("");
         setSelectedGrupo(null);
         setGrupos([]);
-        setSalones([]);
-
-        if (!sedeId) return;
-
-        try {
-            const salonesRef = collection(db, `Politecnico/mzIX7rzezDezczAV6pQ7/sedes/${sedeId}/salones`);
-            const salonesSnapshot = await getDocs(salonesRef);
-            setSalones(salonesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Salon)));
-        } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los salones de la sede." });
-        }
     };
     
     const handleCarreraChange = async (carreraId: string) => {
@@ -125,7 +131,7 @@ export default function SchedulesAdminPage() {
         setSelectedGrupo(grupo);
     };
 
-    const onClassAssigned = async () => {
+    const onClassAssigned = useCallback(async () => {
         if (selectedGrupo) {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", selectedGrupo.id);
             const grupoSnap = await getDoc(grupoRef);
@@ -133,28 +139,23 @@ export default function SchedulesAdminPage() {
                 setSelectedGrupo({ id: grupoSnap.id, ...grupoSnap.data() } as Group);
             }
         }
-    };
+    }, [selectedGrupo]);
     
     const scheduleGrid = useMemo(() => {
         const grid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
         if (!selectedGrupo?.horario) return grid;
 
         selectedGrupo.horario.forEach(entry => {
-            const [startTimeStr, _] = entry.hora.split(" - ");
+            const [startTimeStr] = entry.hora.split(" - ");
             const dayIndex = daysOfWeek.indexOf(entry.dia);
             const timeIndex = timeSlots.indexOf(startTimeStr);
 
             if (dayIndex !== -1 && timeIndex !== -1) {
-                grid[timeIndex][dayIndex] = {
-                    dia: entry.dia,
-                    horaInicio: startTimeStr,
-                    horaFin: entry.hora.split(" - ")[1],
-                    duracion: entry.duracion,
-                    materia: entry.materiaNombre,
-                    docente: entry.docenteNombre,
-                    modalidad: entry.modalidad,
-                    ubicacion: entry.modalidad === 'Presencial' ? `${entry.sedeNombre} - ${entry.salonNombre}` : 'Virtual'
-                };
+                for (let i = 0; i < entry.duracion; i++) {
+                    if (timeIndex + i < timeSlots.length) {
+                        grid[timeIndex + i][dayIndex] = entry;
+                    }
+                }
             }
         });
         return grid;
@@ -207,12 +208,13 @@ export default function SchedulesAdminPage() {
                             </CardDescription>
                         </div>
                         <AssignClassDialog
-                            key={selectedGrupo.id}
+                            key={selectedGrupo.id} // Re-mount modal when group changes
                             grupo={selectedGrupo}
                             carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
                             docentes={docentes}
-                            salones={salones}
+                            salones={salonesBySede[selectedSede] || []}
                             onClassAssigned={onClassAssigned}
+                            sedes={sedes}
                         />
                     </CardHeader>
                     <CardContent className="p-4 md:p-6">
@@ -228,17 +230,30 @@ export default function SchedulesAdminPage() {
                                     {scheduleGrid.map((row, timeIndex) => (
                                         <TableRow key={timeSlots[timeIndex]}>
                                             <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{timeSlots[timeIndex]}</TableCell>
-                                            {row.map((entry, dayIndex) => (
-                                                <TableCell key={daysOfWeek[dayIndex]} className="border-r p-1 align-top h-24">
+                                            {row.map((entry, dayIndex) => {
+                                                if (entry && entry.hora.split(' - ')[0] !== timeSlots[timeIndex]) return null;
+                                                return (
+                                                <TableCell key={`${dayIndex}-${timeIndex}`} rowSpan={entry?.duracion || 1} className="border-r p-1 align-top h-24">
                                                     {entry && (
-                                                        <div className="bg-primary/5 p-2 rounded-md border-l-4 border-primary h-full flex flex-col justify-center text-xs">
-                                                            <p className="font-bold text-primary">{entry.materia}</p>
-                                                            <p className="text-muted-foreground">{entry.docente}</p>
-                                                            <p className="text-muted-foreground font-semibold">{entry.ubicacion}</p>
-                                                        </div>
+                                                         <AssignClassDialog
+                                                            key={entry.id}
+                                                            grupo={selectedGrupo}
+                                                            carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
+                                                            docentes={docentes}
+                                                            salones={salonesBySede[selectedSede] || []}
+                                                            onClassAssigned={onClassAssigned}
+                                                            sedes={sedes}
+                                                            existingSchedule={entry}
+                                                        >
+                                                            <div className="bg-primary/5 p-2 rounded-md border-l-4 border-primary h-full flex flex-col justify-center text-xs cursor-pointer hover:bg-primary/10">
+                                                                <p className="font-bold text-primary">{entry.materiaNombre}</p>
+                                                                <p className="text-muted-foreground">{entry.docenteNombre}</p>
+                                                                <p className="text-muted-foreground font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                                            </div>
+                                                        </AssignClassDialog>
                                                     )}
                                                 </TableCell>
-                                            ))}
+                                            )})}
                                         </TableRow>
                                     ))}
                                 </TableBody>
@@ -259,21 +274,48 @@ export default function SchedulesAdminPage() {
     );
 }
 
-import { Label } from "@/components/ui/label";
-import { getDoc } from "firebase/firestore";
-
-function AssignClassDialog({ grupo, carrera, docentes, salones, onClassAssigned }: { grupo: Group, carrera?: Career, docentes: Docente[], salones: Salon[], onClassAssigned: () => void }) {
+function AssignClassDialog({ 
+    grupo, 
+    carrera, 
+    docentes, 
+    salones, 
+    onClassAssigned, 
+    sedes,
+    existingSchedule, 
+    children 
+}: { 
+    grupo: Group, 
+    carrera?: Career, 
+    docentes: Docente[], 
+    salones: Salon[], 
+    onClassAssigned: () => void,
+    sedes: Sede[],
+    existingSchedule?: ScheduleEntry | null,
+    children?: React.ReactNode 
+}) {
     const [open, setOpen] = useState(false);
-    const [selectedDia, setSelectedDia] = useState("");
-    const [selectedHora, setSelectedHora] = useState("");
-    const [selectedMateria, setSelectedMateria] = useState("");
-    const [selectedDocente, setSelectedDocente] = useState("");
-    const [modalidad, setModalidad] = useState<"Presencial" | "Virtual">("Presencial");
-    const [selectedSalon, setSelectedSalon] = useState("");
+    const [selectedDia, setSelectedDia] = useState(existingSchedule?.dia || "");
+    const [selectedHora, setSelectedHora] = useState(existingSchedule?.hora.split(' - ')[0] || "");
+    const [selectedMateria, setSelectedMateria] = useState(existingSchedule?.materiaId || "");
+    const [selectedDocente, setSelectedDocente] = useState(existingSchedule?.docenteId || "");
+    const [modalidad, setModalidad] = useState<"Presencial" | "Virtual">(existingSchedule?.modalidad || "Presencial");
+    const [selectedSalon, setSelectedSalon] = useState(existingSchedule?.salonId || "");
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     
     const materiasDelCiclo = carrera?.ciclos.find(c => c.numero === grupo.ciclo)?.materias || [];
+
+    useEffect(() => {
+        if(existingSchedule) {
+            setSelectedDia(existingSchedule.dia);
+            setSelectedHora(existingSchedule.hora.split(' - ')[0]);
+            setSelectedMateria(existingSchedule.materiaId);
+            setSelectedDocente(existingSchedule.docenteId);
+            setModalidad(existingSchedule.modalidad);
+            setSelectedSalon(existingSchedule.salonId || "");
+        }
+    }, [existingSchedule]);
+
 
     const handleSubmit = async () => {
         if (!selectedDia || !selectedHora || !selectedMateria || !selectedDocente || (modalidad === 'Presencial' && !selectedSalon)) {
@@ -284,18 +326,19 @@ function AssignClassDialog({ grupo, carrera, docentes, salones, onClassAssigned 
         const horaFinNum = parseInt(selectedHora.split(':')[0]) + 2;
         const horaFin = `${horaFinNum.toString().padStart(2, '0')}:00`;
         
-        const newSlot = { 
+        const newSlot: ScheduleEntry = { 
+            id: existingSchedule?.id || crypto.randomUUID(),
             dia: selectedDia, 
             hora: `${selectedHora} - ${horaFin}`,
             duracion: 2,
             materiaId: selectedMateria,
-            materiaNombre: materiasDelCiclo.find(m => m.id === selectedMateria)?.nombre,
+            materiaNombre: materiasDelCiclo.find(m => m.id === selectedMateria)?.nombre || 'N/A',
             docenteId: selectedDocente,
-            docenteNombre: docentes.find(d => d.id === selectedDocente)?.nombreCompleto,
+            docenteNombre: docentes.find(d => d.id === selectedDocente)?.nombreCompleto || 'N/A',
             modalidad: modalidad,
             ...(modalidad === 'Presencial' && {
                 sedeId: grupo.idSede,
-                sedeNombre: salones.length > 0 ? (doc(db, "sedes", grupo.idSede).id) : 'N/A', // Simple placeholder
+                sedeNombre: sedes.find(s => s.id === grupo.idSede)?.nombre,
                 salonId: selectedSalon,
                 salonNombre: salones.find(s => s.id === selectedSalon)?.nombre,
             })
@@ -306,8 +349,15 @@ function AssignClassDialog({ grupo, carrera, docentes, salones, onClassAssigned 
         setIsSaving(true);
         try {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
-            await updateDoc(grupoRef, { horario: arrayUnion(newSlot) });
-            toast({ title: "Éxito", description: "La clase ha sido asignada correctamente." });
+            if (existingSchedule) {
+                // Remove the old entry and add the new one
+                await updateDoc(grupoRef, { horario: arrayRemove(existingSchedule) });
+                await updateDoc(grupoRef, { horario: arrayUnion(newSlot) });
+                toast({ title: "Éxito", description: "La clase ha sido actualizada correctamente." });
+            } else {
+                await updateDoc(grupoRef, { horario: arrayUnion(newSlot) });
+                toast({ title: "Éxito", description: "La clase ha sido asignada correctamente." });
+            }
             onClassAssigned();
             setOpen(false);
         } catch (error) {
@@ -317,15 +367,34 @@ function AssignClassDialog({ grupo, carrera, docentes, salones, onClassAssigned 
             setIsSaving(false);
         }
     };
+    
+    const handleDelete = async () => {
+        if (!existingSchedule) return;
+
+        setIsSaving(true);
+        try {
+            const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
+            await updateDoc(grupoRef, { horario: arrayRemove(existingSchedule) });
+            toast({ title: "Clase Eliminada", description: "La clase ha sido eliminada del horario." });
+            onClassAssigned();
+            setOpen(false);
+        } catch (error) {
+            console.error("Error deleting class:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar la clase." });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button><Plus className="mr-2 h-4 w-4" />Asignar Horario</Button>
+                {children ? children : <Button><Plus className="mr-2 h-4 w-4" />Asignar Horario</Button>}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px]">
                 <DialogHeader>
-                    <DialogTitle>Asignar Horario a {grupo.codigoGrupo}</DialogTitle>
+                    <DialogTitle>{existingSchedule ? 'Editar' : 'Asignar'} Horario a {grupo.codigoGrupo}</DialogTitle>
                     <DialogDescription>Completa los detalles para una nueva clase.</DialogDescription>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4 py-4">
@@ -356,9 +425,19 @@ function AssignClassDialog({ grupo, carrera, docentes, salones, onClassAssigned 
                         </div>
                     )}
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-                    <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar Asignación"}</Button>
+                <DialogFooter className="flex justify-between w-full">
+                     <div>
+                        {existingSchedule && (
+                            <Button variant="destructive" onClick={handleDelete} disabled={isSaving}>
+                                <Trash2 className="mr-2 h-4 w-4"/>
+                                Eliminar
+                            </Button>
+                        )}
+                    </div>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar"}</Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
