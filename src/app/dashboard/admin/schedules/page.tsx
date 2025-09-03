@@ -185,7 +185,7 @@ export default function SchedulesAdminPage() {
                     <div className="space-y-2">
                         <Label>Paso 2: Carrera</Label>
                         <Select value={selectedCarrera} onValueChange={handleCarreraChange} disabled={!selectedSede || isLoading.carreras}>
-                            <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue className="truncate" placeholder={!selectedSede ? "Elige sede" : "Selecciona una carrera"} /></div></SelectTrigger>
+                            <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue className="truncate inline-block max-w-full" placeholder={!selectedSede ? "Elige sede" : "Selecciona una carrera"} /></div></SelectTrigger>
                             <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
