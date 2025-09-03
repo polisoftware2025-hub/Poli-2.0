@@ -2,13 +2,13 @@
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Users, BookOpen, Database, Sparkles } from "lucide-react";
+import { Shield, Users, BookOpen, Database, Sparkles, School } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
-type SeedType = 'carrera' | 'grupos' | 'initial-data' | 'users';
+type SeedType = 'carrera' | 'grupos' | 'initial-data' | 'users' | 'sedes';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -126,6 +126,10 @@ export default function AdminDashboardPage() {
              <Button onClick={() => handleSeed('users')} disabled={isSeeding['users']}>
                 <Sparkles className="mr-2 h-4 w-4" />
                 {isSeeding['users'] ? 'Poblando...' : 'Poblar Usuarios de Prueba'}
+            </Button>
+             <Button onClick={() => handleSeed('sedes')} disabled={isSeeding['sedes']}>
+                <School className="mr-2 h-4 w-4" />
+                {isSeeding['sedes'] ? 'Poblando...' : 'Poblar Sedes y Salones'}
             </Button>
         </CardContent>
       </Card>

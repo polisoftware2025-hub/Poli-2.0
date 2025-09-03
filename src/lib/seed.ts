@@ -1,6 +1,6 @@
 
 import { db } from './firebase'; 
-import { collection, addDoc, getDocs, query, where, writeBatch, doc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, writeBatch, doc, setDoc } from 'firebase/firestore';
 import bcryptjs from "bcryptjs";
 
 const createSlug = (name: string) => {
@@ -415,4 +415,61 @@ export async function seedInitialUsers() {
     console.error("Error en seedInitialUsers:", error);
     return { success: false, message: errorMessage };
   }
+}
+
+export async function seedSedesYSalones() {
+    const sedes = [
+        { id: "sede-norte", nombre: "Sede Norte" },
+        { id: "sede-73", nombre: "Sede Calle 73" },
+        { id: "sede-80", nombre: "Sede Calle 80" }
+    ];
+
+    const salonesPorSede: { [key: string]: { id: string, nombre: string }[] } = {
+        "sede-norte": [
+            { id: "norte-101", nombre: "Salón 101" },
+            { id: "norte-102", nombre: "Salón 102" },
+            { id: "norte-auditorio", nombre: "Auditorio Principal" },
+        ],
+        "sede-73": [
+            { id: "73-301", nombre: "Salón 301" },
+            { id: "73-302", nombre: "Salón 302" },
+            { id: "73-lab-sistemas", nombre: "Laboratorio de Sistemas" },
+        ],
+        "sede-80": [
+            { id: "80-201", nombre: "Salón 201" },
+            { id: "80-202", nombre: "Salón 202" },
+            { id: "80-lab-gastronomia", nombre: "Cocina de Prácticas" },
+        ]
+    };
+
+    try {
+        const batch = writeBatch(db);
+        const sedesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes");
+
+        const existingSedesSnapshot = await getDocs(sedesRef);
+        if (existingSedesSnapshot.docs.length > 0) {
+             return { success: false, message: "Las sedes y salones ya parecen existir. No se realizó ninguna acción para evitar duplicados." };
+        }
+        
+        for (const sede of sedes) {
+            const sedeDocRef = doc(sedesRef, sede.id);
+            batch.set(sedeDocRef, { nombre: sede.nombre });
+
+            const salonesRef = collection(sedeDocRef, "salones");
+            const salones = salonesPorSede[sede.id];
+            if (salones) {
+                for (const salon of salones) {
+                    const salonDocRef = doc(salonesRef, salon.id);
+                    batch.set(salonDocRef, { nombre: salon.nombre });
+                }
+            }
+        }
+        
+        await batch.commit();
+        return { success: true, message: "Sedes y salones de prueba creados exitosamente." };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió.";
+        console.error("Error en seedSedesYSalones:", error);
+        return { success: false, message: errorMessage };
+    }
 }
