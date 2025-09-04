@@ -26,7 +26,7 @@ interface ApplicantData {
   fechaNacimiento: Date;
   // Student data
   carreraId: string;
-  grupo: string;
+  grupo: string; // Will hold the group name (codigoGrupo)
   sedeId: string;
   fechaRegistro: Date;
   estado: "pendiente" | "aprobado" | "rechazado";
@@ -96,6 +96,15 @@ export default function PreRegisterDetailPage() {
                 sedeNombre = sedeSnap.data().nombre;
             }
         }
+        
+        let grupoNombre = "N/A";
+        if (studentData.grupo) {
+            const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", studentData.grupo);
+            const grupoSnap = await getDoc(grupoRef);
+            if (grupoSnap.exists()) {
+                grupoNombre = grupoSnap.data().codigoGrupo;
+            }
+        }
 
         // Ensure dates are JavaScript Date objects
         const fechaNacimiento = userData.fechaNacimiento?.toDate ? userData.fechaNacimiento.toDate() : new Date();
@@ -111,7 +120,7 @@ export default function PreRegisterDetailPage() {
             identificacion: userData.identificacion,
             fechaNacimiento,
             carreraId: studentData.carreraId,
-            grupo: studentData.grupo,
+            grupo: grupoNombre,
             sedeId: studentData.sedeId,
             fechaRegistro,
             estado: studentData.estado,
