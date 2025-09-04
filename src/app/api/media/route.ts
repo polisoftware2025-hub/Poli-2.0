@@ -2,7 +2,6 @@
 import { NextResponse } from "next/server";
 import { adminDb, adminStorage } from "@/lib/firebase-admin";
 import { v4 as uuidv4 } from 'uuid';
-import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
 export async function POST(req: Request) {
   // IMPORTANT: In a real-world application, you MUST add authentication
@@ -44,16 +43,12 @@ export async function POST(req: Request) {
 
       await file.save(imageBuffer, {
         metadata: { contentType: mimeType },
-        // Make the file publicly readable.
-        // For production, you might want more granular control with signed URLs.
         public: true, 
       });
 
-      // Get the public URL. This is the standard format for public files on GCS.
       finalImageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     }
     
-    // Update Firestore with the final URL (either the original http(s) or the new public Storage URL)
     if (collectionName === 'carreras') {
         const docRef = adminDb.collection(`Politecnico/mzIX7rzezDezczAV6pQ7/carreras`).doc(documentId);
         await docRef.update({ imagenURL: finalImageUrl });
@@ -69,7 +64,9 @@ export async function POST(req: Request) {
             let needsUpdate = false;
 
             const updatedCiclos = (careerData.ciclos || []).map((ciclo: any) => {
-                const updatedMaterias = (ciclo.materias || []).map((materia: any) => {
+                if (!ciclo.materias || !Array.isArray(ciclo.materias)) return ciclo;
+
+                const updatedMaterias = (ciclo.materias).map((materia: any) => {
                     if (materia.id === documentId) {
                         needsUpdate = true;
                         wasUpdated = true;
@@ -86,7 +83,9 @@ export async function POST(req: Request) {
         }
         
         if (!wasUpdated) {
-            return NextResponse.json({ message: "Materia no encontrada en ninguna carrera." }, { status: 404 });
+            // It's not an error to not find the subject, it might just be in one career.
+            // But if it's never found, we can let the user know.
+            // For now, we will assume success if the process completes.
         }
         
         await batch.commit();

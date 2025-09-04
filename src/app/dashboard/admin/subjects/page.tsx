@@ -61,15 +61,17 @@ export default function SubjectsAdminPage() {
                 careerData.ciclos.forEach((ciclo: any) => {
                     if (ciclo.materias && Array.isArray(ciclo.materias)) {
                         ciclo.materias.forEach((materia: any) => {
-                            allSubjects.push({
-                                id: `${careerId}-${ciclo.numero}-${materia.id || materia.nombre}`,
-                                nombre: materia.nombre,
-                                codigo: materia.codigo,
-                                creditos: materia.creditos,
-                                careerId: careerId,
-                                careerName: careerName,
-                                status: "Activa"
-                            });
+                            if (materia.id) { // Ensure subject has an ID
+                                allSubjects.push({
+                                    id: materia.id, // Use the real subject ID
+                                    nombre: materia.nombre,
+                                    codigo: materia.codigo,
+                                    creditos: materia.creditos,
+                                    careerId: careerId,
+                                    careerName: careerName,
+                                    status: "Activa"
+                                });
+                            }
                         });
                     }
                 });

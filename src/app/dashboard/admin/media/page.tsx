@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
@@ -28,19 +27,19 @@ export default function MediaManagementPage() {
   const fetchMediaData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch Careers
       const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
-      const careersList = careersSnapshot.docs.map(doc => ({
-        id: doc.id,
-        nombre: doc.data().nombre,
-        imagenURL: doc.data().imagenURL || "",
-      }));
-      setCareers(careersList);
-
-      // Fetch Subjects from all careers
+      
+      const careersList: Career[] = [];
       const allSubjectsMap = new Map<string, Materia>();
+      
       careersSnapshot.forEach(careerDoc => {
         const careerData = careerDoc.data();
+        careersList.push({
+          id: careerDoc.id,
+          nombre: careerData.nombre,
+          imagenURL: careerData.imagenURL || "",
+        });
+
         if (careerData.ciclos && Array.isArray(careerData.ciclos)) {
           careerData.ciclos.forEach((ciclo: any) => {
             if (ciclo.materias && Array.isArray(ciclo.materias)) {
@@ -59,6 +58,8 @@ export default function MediaManagementPage() {
           });
         }
       });
+
+      setCareers(careersList);
       setSubjects(Array.from(allSubjectsMap.values()));
 
     } catch (error) {
