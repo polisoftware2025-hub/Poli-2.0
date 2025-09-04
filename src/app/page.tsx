@@ -47,10 +47,6 @@ export default function HomePage() {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const autoplayPlugin = useRef(
-    Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
-  );
-
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
     { href: "#inscripcion", label: "Inscripción" },
@@ -92,19 +88,11 @@ export default function HomePage() {
     const onSelect = (api: CarouselApi) => {
       setCurrentSlide(api.selectedScrollSnap());
     };
-    
-    const onSettle = (api: CarouselApi) => {
-      if (!api.plugins().autoplay.isPlaying()) {
-        api.plugins().autoplay.play();
-      }
-    }
 
     carouselApi.on("select", onSelect);
-    carouselApi.on("settle", onSettle);
 
     return () => {
       carouselApi.off("select", onSelect);
-       carouselApi.off("settle", onSettle);
     };
   }, [carouselApi]);
   
@@ -118,9 +106,6 @@ export default function HomePage() {
 
   const scrollToSlide = (index: number) => {
     carouselApi?.scrollTo(index);
-    if (carouselApi && !carouselApi.plugins().autoplay.isPlaying()) {
-      carouselApi.plugins().autoplay.play();
-    }
   };
   
   return (
@@ -252,13 +237,11 @@ export default function HomePage() {
                 <Carousel 
                     setApi={setCarouselApi} 
                     className="w-full"
-                    plugins={[autoplayPlugin.current]}
+                    plugins={[Autoplay({ delay: 4000, stopOnInteraction: true })]}
                     opts={{
                         loop: true,
                         align: "start",
                     }}
-                    onMouseEnter={autoplayPlugin.current.stop}
-                    onMouseLeave={autoplayPlugin.current.play}
                 >
                   <CarouselContent>
                     {programs.map((program, index) => (
