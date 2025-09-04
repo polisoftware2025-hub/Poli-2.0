@@ -91,12 +91,8 @@ export function MediaManagementDialog({
             setIsLoading(false);
             return;
         }
-        imageUrl = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = (error) => reject(error);
-        });
+        // Use the base64 URL directly
+        imageUrl = url;
     }
 
     if (!imageUrl) {
@@ -145,7 +141,7 @@ export function MediaManagementDialog({
         </DialogHeader>
         
         <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden my-4 border">
-            {previewUrl && previewUrl.startsWith("http") || previewUrl.startsWith("data:image") ? (
+            {previewUrl && (previewUrl.startsWith("http") || previewUrl.startsWith("data:image")) ? (
                 <Image src={previewUrl} alt={documentName} layout="fill" objectFit="cover" />
             ) : (
                  <div className="flex items-center justify-center h-full text-muted-foreground">
