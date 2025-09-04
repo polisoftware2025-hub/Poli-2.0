@@ -11,8 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, DocumentData } from "firebase/firestore";
+import { doc, getDoc, DocumentData, collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { Materia } from "@/types";
 
 interface Course {
     id: string;
@@ -75,24 +76,46 @@ export default function StudentDashboardPage() {
     const fetchCourses = async () => {
         setIsLoadingCourses(true);
         try {
+            // 1. Fetch all careers to build a map of all subjects
+            const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+            const allSubjectsMap = new Map<string, Materia>();
+            careersSnapshot.forEach(careerDoc => {
+                const careerData = careerDoc.data();
+                 if (careerData.ciclos && Array.isArray(careerData.ciclos)) {
+                    careerData.ciclos.forEach((ciclo: any) => {
+                        if (ciclo.materias && Array.isArray(ciclo.materias)) {
+                            ciclo.materias.forEach((materia: any) => {
+                                if(materia.id && !allSubjectsMap.has(materia.id)) {
+                                    allSubjectsMap.set(materia.id, materia as Materia);
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+
+            // 2. Fetch student data to get their enrolled subjects
             const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
             const studentSnap = await getDoc(studentRef);
 
             if (studentSnap.exists()) {
                 const studentData = studentSnap.data();
-                const studentCourses = studentData.materiasInscritas || [];
+                const studentSubjectsInfo = studentData.materiasInscritas || [];
 
-                const fetchedCourses = studentCourses.map((materia: any, index: number) => {
+                const fetchedCourses = studentSubjectsInfo.map((enrolledSubject: any, index: number) => {
+                    const subjectDetails = allSubjectsMap.get(enrolledSubject.id);
                     const placeholder = placeholderImages[index % placeholderImages.length];
-                    const hasValidImage = materia.imagenURL && materia.imagenURL.startsWith('http');
                     
+                    const imageUrl = subjectDetails?.imagenURL || placeholder.image;
+                    const imageHint = subjectDetails?.imagenURL ? "subject image" : placeholder.imageHint;
+
                     return {
-                        id: materia.id,
-                        title: materia.nombre.toUpperCase(),
+                        id: enrolledSubject.id,
+                        title: enrolledSubject.nombre.toUpperCase(),
                         progress: Math.floor(Math.random() * 100), // Placeholder progress
-                        image: hasValidImage ? materia.imagenURL : placeholder.image,
-                        imageHint: hasValidImage ? "subject image" : placeholder.imageHint,
-                    }
+                        image: imageUrl,
+                        imageHint: imageHint,
+                    };
                 });
                 setCourses(fetchedCourses);
             } else {
