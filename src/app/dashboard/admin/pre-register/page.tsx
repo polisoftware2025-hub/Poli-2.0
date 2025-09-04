@@ -79,12 +79,10 @@ export default function PreRegisterPage() {
 
         const fetchedUsers: PreRegisteredUser[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
-            let fechaRegistro: Date | null = null;
-            if (data.fechaRegistro && typeof data.fechaRegistro.toDate === 'function') {
-                fechaRegistro = data.fechaRegistro.toDate();
-            } else if (data.fechaRegistro instanceof Date) {
-                fechaRegistro = data.fechaRegistro;
-            }
+            // Safely convert Firestore Timestamp to JS Date
+            const fechaRegistro = data.fechaRegistro && typeof data.fechaRegistro.toDate === 'function' 
+                ? data.fechaRegistro.toDate() 
+                : null;
             
             return {
                 id: doc.id,
