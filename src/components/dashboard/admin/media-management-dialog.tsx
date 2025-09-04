@@ -17,7 +17,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Image as ImageIcon, Upload, Link2 } from "lucide-react";
 import Image from "next/image";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 interface MediaManagementDialogProps {
   documentId: string;
@@ -36,53 +37,29 @@ export function MediaManagementDialog({
 }: MediaManagementDialogProps) {
   const [open, setOpen] = useState(false);
   const [uploadType, setUploadType] = useState<"url" | "file">("url");
-  const [imageUrl, setImageUrl] = useState(currentImageUrl || ""); // Holds the final URL (data or http)
-  const [urlInput, setUrlInput] = useState(""); // Exclusively for the URL input field
+  const [imageUrl, setImageUrl] = useState(""); 
+  const [urlInput, setUrlInput] = useState(""); 
   const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState(currentImageUrl || "");
+  const [previewUrl, setPreviewUrl] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  const initializeState = (imgUrl: string | undefined) => {
-    const initialUrl = imgUrl || "";
-    setPreviewUrl(initialUrl);
-    setImageUrl(initialUrl);
-
-    if (initialUrl.startsWith("data:image")) {
-      setUploadType("file");
-      setUrlInput("");
-    } else {
-      setUploadType("url");
-      setUrlInput(initialUrl);
-    }
-  };
-
-  useEffect(() => {
-    initializeState(currentImageUrl);
-  }, [currentImageUrl]);
-
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
-      initializeState(currentImageUrl);
-    }
-    setOpen(isOpen);
-  };
   
-  const handleUploadTypeChange = (value: "url" | "file") => {
-    setUploadType(value);
-    // Reset inputs when switching to avoid conflicts
-    if (value === "url") {
+  useEffect(() => {
+    if (open) {
+      const initialUrl = currentImageUrl || "";
+      setPreviewUrl(initialUrl);
+      setImageUrl(initialUrl);
+      if (initialUrl.startsWith("data:")) {
+        setUploadType("file");
+        setUrlInput("");
+      } else {
+        setUploadType("url");
+        setUrlInput(initialUrl);
+      }
       setFile(null);
-      // If there's an existing HTTP URL, restore it, otherwise clear.
-      const existingHttpUrl = (currentImageUrl && !currentImageUrl.startsWith("data:")) ? currentImageUrl : "";
-      setUrlInput(existingHttpUrl);
-      setImageUrl(existingHttpUrl);
-      setPreviewUrl(existingHttpUrl);
-    } else {
-      setUrlInput(""); // Clear URL input when switching to file upload
     }
-  }
-
+  }, [open, currentImageUrl]);
+  
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -91,8 +68,7 @@ export function MediaManagementDialog({
       reader.onloadend = () => {
         const result = reader.result as string;
         setPreviewUrl(result);
-        setImageUrl(result); // The data URI is now the source of truth
-        setUrlInput(""); // Clear the url input field
+        setImageUrl(result); 
       };
       reader.readAsDataURL(selectedFile);
     }
@@ -101,12 +77,21 @@ export function MediaManagementDialog({
   const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value;
     setUrlInput(newUrl);
-    setImageUrl(newUrl);
     setPreviewUrl(newUrl);
+    setImageUrl(newUrl);
   };
   
   const handleUpdate = async () => {
-    if (!imageUrl) {
+    let finalImageUrl = "";
+
+    if (uploadType === "file" && file) {
+        // The data URL is already in imageUrl state from handleFileChange
+        finalImageUrl = imageUrl;
+    } else if (uploadType === "url") {
+        finalImageUrl = urlInput;
+    }
+
+    if (!finalImageUrl) {
         toast({ variant: "destructive", title: "Imagen no proporcionada", description: "Por favor, proporciona una URL o sube un archivo." });
         return;
     }
@@ -120,7 +105,7 @@ export function MediaManagementDialog({
             body: JSON.stringify({
                 collectionName,
                 documentId,
-                imageUrl,
+                imageUrl: finalImageUrl,
             }),
         });
 
@@ -131,7 +116,7 @@ export function MediaManagementDialog({
         
         toast({ title: "Éxito", description: "La imagen ha sido actualizada." });
         onUpdate();
-        handleOpenChange(false);
+        setOpen(false);
 
     } catch (error: any) {
         toast({ variant: "destructive", title: "Error", description: error.message });
@@ -142,7 +127,7 @@ export function MediaManagementDialog({
 
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="w-full">Gestionar Imagen</Button>
       </DialogTrigger>
@@ -161,32 +146,28 @@ export function MediaManagementDialog({
                 </div>
             )}
         </div>
-
-        <RadioGroup value={uploadType} onValueChange={handleUploadTypeChange}>
-            <div className="flex items-center space-x-2">
-                <RadioGroupItem value="url" id="r-url" />
-                <Label htmlFor="r-url">Usar URL externa</Label>
-            </div>
-             <div className="flex items-center space-x-2">
-                <RadioGroupItem value="file" id="r-file" />
-                <Label htmlFor="r-file">Subir archivo</Label>
-            </div>
-        </RadioGroup>
-
-        {uploadType === "url" ? (
-             <div className="space-y-2 py-4">
-                <Label htmlFor="url-input" className="flex items-center gap-2"><Link2 className="h-4 w-4"/> URL de la imagen</Label>
-                <Input id="url-input" type="url" placeholder="https://ejemplo.com/imagen.jpg" value={urlInput} onChange={handleUrlInputChange} />
-            </div>
-        ) : (
-             <div className="space-y-2 py-4">
-                <Label htmlFor="file-input" className="flex items-center gap-2"><Upload className="h-4 w-4"/> Seleccionar archivo</Label>
-                <Input id="file-input" type="file" accept="image/*" onChange={handleFileChange} />
-            </div>
-        )}
+        
+        <Tabs value={uploadType} onValueChange={(value) => setUploadType(value as "url" | "file")}>
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="url">Usar URL</TabsTrigger>
+                <TabsTrigger value="file">Subir Archivo</TabsTrigger>
+            </TabsList>
+            <TabsContent value="url">
+                <div className="space-y-2 py-4">
+                    <Label htmlFor="url-input" className="flex items-center gap-2"><Link2 className="h-4 w-4"/> URL de la imagen</Label>
+                    <Input id="url-input" type="url" placeholder="https://ejemplo.com/imagen.jpg" value={urlInput} onChange={handleUrlInputChange} />
+                </div>
+            </TabsContent>
+            <TabsContent value="file">
+                <div className="space-y-2 py-4">
+                    <Label htmlFor="file-input" className="flex items-center gap-2"><Upload className="h-4 w-4"/> Seleccionar archivo</Label>
+                    <Input id="file-input" type="file" accept="image/*" onChange={handleFileChange} />
+                </div>
+            </TabsContent>
+        </Tabs>
         
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>Cerrar</Button>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cerrar</Button>
            <Button onClick={handleUpdate} disabled={isLoading} className="w-full sm:w-auto">
               {isLoading ? "Guardando..." : "Guardar Cambios"}
            </Button>
