@@ -15,8 +15,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Image as ImageIcon } from "lucide-react";
+import { Image as ImageIcon, Upload, Link2 } from "lucide-react";
 import Image from "next/image";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface MediaManagementDialogProps {
   documentId: string;
@@ -34,17 +35,63 @@ export function MediaManagementDialog({
   onUpdate,
 }: MediaManagementDialogProps) {
   const [open, setOpen] = useState(false);
+  const [uploadType, setUploadType] = useState<"url" | "file">("url");
   const [url, setUrl] = useState(currentImageUrl || "");
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState(currentImageUrl || "");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleUpdate = async () => {
-    if (!url) {
-      toast({ variant: "destructive", title: "URL Vacía", description: "Por favor, introduce una URL." });
-      return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result as string);
+      };
+      reader.readAsDataURL(selectedFile);
     }
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUrl(e.target.value);
+    setPreviewUrl(e.target.value);
+  }
+
+  const handleUpdate = async () => {
+    let imageUrl: string | null = null;
     
     setIsLoading(true);
+
+    if (uploadType === "url") {
+        if (!url) {
+            toast({ variant: "destructive", title: "URL Vacía", description: "Por favor, introduce una URL." });
+            setIsLoading(false);
+            return;
+        }
+        imageUrl = url;
+    } else {
+        if (!file) {
+            toast({ variant: "destructive", title: "Archivo no seleccionado", description: "Por favor, selecciona un archivo para subir." });
+            setIsLoading(false);
+            return;
+        }
+        // Convert file to base64 data URI
+        imageUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = (error) => reject(error);
+        });
+    }
+
+    if (!imageUrl) {
+        toast({ variant: "destructive", title: "Error", description: "No se pudo obtener la imagen." });
+        setIsLoading(false);
+        return;
+    }
+
     try {
         const response = await fetch("/api/media", {
             method: "POST",
@@ -52,7 +99,7 @@ export function MediaManagementDialog({
             body: JSON.stringify({
                 collectionName,
                 documentId,
-                imageUrl: url,
+                imageUrl,
             }),
         });
 
@@ -84,9 +131,11 @@ export function MediaManagementDialog({
           <DialogDescription>{documentName}</DialogDescription>
         </DialogHeader>
         
-        <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden my-4">
-            {url ? (
-                <Image src={url} alt={documentName} layout="fill" objectFit="cover" />
+        <div className="relative w-full h-48 bg-muted rounded-md overflow-hidden my-4 border">
+            {previewUrl && previewUrl.startsWith('http') ? (
+                <Image src={previewUrl} alt={documentName} layout="fill" objectFit="cover" />
+            ) : previewUrl && previewUrl.startsWith('data:image') ? (
+                <Image src={previewUrl} alt={documentName} layout="fill" objectFit="cover" />
             ) : (
                  <div className="flex items-center justify-center h-full text-muted-foreground">
                     <ImageIcon className="h-12 w-12" />
@@ -94,15 +143,33 @@ export function MediaManagementDialog({
             )}
         </div>
 
-        <div className="space-y-4 py-4">
-            <Label htmlFor="url-input">URL de la imagen</Label>
-            <Input id="url-input" type="url" placeholder="https://ejemplo.com/imagen.jpg" value={url} onChange={(e) => setUrl(e.target.value)} />
-        </div>
+        <RadioGroup defaultValue="url" onValueChange={(value: "url" | "file") => setUploadType(value)}>
+            <div className="flex items-center space-x-2">
+                <RadioGroupItem value="url" id="r-url" />
+                <Label htmlFor="r-url">Usar URL externa</Label>
+            </div>
+             <div className="flex items-center space-x-2">
+                <RadioGroupItem value="file" id="r-file" />
+                <Label htmlFor="r-file">Subir archivo</Label>
+            </div>
+        </RadioGroup>
+
+        {uploadType === "url" ? (
+             <div className="space-y-2 py-4">
+                <Label htmlFor="url-input" className="flex items-center gap-2"><Link2 className="h-4 w-4"/> URL de la imagen</Label>
+                <Input id="url-input" type="url" placeholder="https://ejemplo.com/imagen.jpg" value={url} onChange={handleUrlChange} />
+            </div>
+        ) : (
+             <div className="space-y-2 py-4">
+                <Label htmlFor="file-input" className="flex items-center gap-2"><Upload className="h-4 w-4"/> Seleccionar archivo</Label>
+                <Input id="file-input" type="file" onChange={handleFileChange} />
+            </div>
+        )}
         
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => setOpen(false)}>Cerrar</Button>
            <Button onClick={handleUpdate} disabled={isLoading} className="w-full sm:w-auto">
-              {isLoading ? "Guardando..." : "Guardar URL"}
+              {isLoading ? "Guardando..." : "Guardar Cambios"}
            </Button>
         </DialogFooter>
       </DialogContent>
