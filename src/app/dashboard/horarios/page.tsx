@@ -12,6 +12,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Calendar } from "@/components/ui/calendar";
 import { startOfWeek, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { generateSchedulePdf } from "@/lib/schedule-pdf-generator";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ScheduleEntry {
     id: string;
@@ -33,6 +35,14 @@ interface Group {
     id: string;
     codigoGrupo: string;
     horario?: ScheduleEntry[];
+    idCarrera: string;
+    idSede: string;
+}
+
+interface UserInfo {
+  nombreCompleto: string;
+  carreraNombre?: string;
+  sedeNombre?: string;
 }
 
 
@@ -43,8 +53,9 @@ export default function HorariosPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [currentDate, setCurrentDate] = useState<Date | undefined>(new Date());
-
+  
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
     const storedUserRole = localStorage.getItem('userRole');
@@ -55,27 +66,45 @@ export default function HorariosPage() {
   useEffect(() => {
     if (!userId || !userRole) return;
 
-    const fetchSchedule = async () => {
+    const fetchScheduleAndUserInfo = async () => {
       setIsLoading(true);
-      let userGroups: Group[] = [];
-      
       try {
-        const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-        let q;
+        let userGroups: Group[] = [];
+        const userInfoData: UserInfo = { nombreCompleto: "Usuario" };
 
+        const userDocRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/usuarios`, userId);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+            userInfoData.nombreCompleto = userDocSnap.data().nombreCompleto;
+        }
+
+        const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+        
         if (userRole === 'estudiante') {
-          const studentDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId));
-          if(studentDoc.exists()){
-              const studentGroupsSnapshot = await getDocs(query(groupsRef, where('idCarrera', '==', studentDoc.data().carreraId), where('idSede', '==', studentDoc.data().sedeId)));
+          const studentDocRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes`, userId);
+          const studentDocSnap = await getDoc(studentDocRef);
+          
+          if(studentDocSnap.exists()){
+              const studentData = studentDocSnap.data();
+              const q = query(groupsRef, where('idCarrera', '==', studentData.carreraId), where('idSede', '==', studentData.sedeId));
+              const studentGroupsSnapshot = await getDocs(q);
               userGroups = studentGroupsSnapshot.docs.map(d => ({id: d.id, ...d.data()} as Group));
+              
+              const [carreraDoc, sedeDoc] = await Promise.all([
+                 getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", studentData.carreraId)),
+                 getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", studentData.sedeId)),
+              ]);
+              userInfoData.carreraNombre = carreraDoc.exists() ? carreraDoc.data().nombre : "N/A";
+              userInfoData.sedeNombre = sedeDoc.exists() ? sedeDoc.data().nombre : "N/A";
           }
         } else if (userRole === 'docente') {
-          q = query(groupsRef, where("docente.usuarioId", "==", userId));
+          const q = query(groupsRef, where("docente.usuarioId", "==", userId));
           const teacherGroupsSnapshot = await getDocs(q);
           userGroups = teacherGroupsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Group));
         }
 
-        const finalSchedule = userGroups.flatMap(g => g.horario || []);
+        setUserInfo(userInfoData);
+        const finalSchedule = userGroups.flatMap(g => g.horario?.map(h => ({ ...h, grupoCodigo: g.codigoGrupo })) || []);
         sortAndSetSchedule(finalSchedule);
 
       } catch (error) {
@@ -84,14 +113,19 @@ export default function HorariosPage() {
         setIsLoading(false);
       }
     };
-    fetchSchedule();
+    fetchScheduleAndUserInfo();
   }, [userId, userRole]);
 
 
-  const sortAndSetSchedule = (finalSchedule: ScheduleEntry[]) => {
+  const sortAndSetSchedule = (finalSchedule: any[]) => {
       finalSchedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.hora.localeCompare(b.hora));
       setSchedule(finalSchedule);
   };
+  
+  const handleDownloadPdf = () => {
+    if (!userInfo || schedule.length === 0) return;
+    generateSchedulePdf(schedule, userInfo, userRole || "estudiante");
+  }
 
   const markedDays = useMemo(() => {
     const datesWithClasses: Date[] = [];
@@ -127,7 +161,22 @@ export default function HorariosPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <CardTitle>Horario de Clases</CardTitle>
-            <Button variant="outline"><Download className="mr-2 h-4 w-4"/>Descargar</Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0}> 
+                    <Button variant="outline" onClick={handleDownloadPdf} disabled={schedule.length === 0 || isLoading}>
+                        <Download className="mr-2 h-4 w-4"/>Descargar PDF
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {schedule.length === 0 && (
+                    <TooltipContent>
+                        <p>No hay horario disponible para descargar.</p>
+                    </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </CardHeader>
         {isLoading ? (
@@ -211,3 +260,4 @@ export default function HorariosPage() {
     </div>
   );
 }
+
