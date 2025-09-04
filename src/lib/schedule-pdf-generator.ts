@@ -55,25 +55,24 @@ export function generateSchedulePdf(
     // --- User Info ---
     let startY = 45;
     const leftMargin = 14;
-    const labelX = leftMargin;
     const valueX = 40;
     const rightColumnX = 120;
     const textMaxWidth = 80;
 
     doc.setFontSize(11);
     doc.setTextColor(0,0,0);
-    doc.text(`${userRole === 'docente' ? 'Docente' : 'Estudiante'}:`, labelX, startY);
+    doc.text(`${userRole === 'docente' ? 'Docente' : 'Estudiante'}:`, leftMargin, startY);
     doc.text(userInfo.nombreCompleto, valueX, startY);
 
     startY += 7;
 
     if (userRole === 'estudiante' && userInfo.carreraNombre) {
-      doc.text("Carrera:", labelX, startY);
+      doc.text("Carrera:", leftMargin, startY);
       
       const careerLines = doc.splitTextToSize(userInfo.carreraNombre, textMaxWidth);
       doc.text(careerLines, valueX, startY);
       
-      const careerTextHeight = careerLines.length * 5; // Approximate height of the text block
+      const careerTextHeight = careerLines.length * 5; 
 
       doc.text("Sede:", rightColumnX, startY);
       doc.text(userInfo.sedeNombre || "N/A", rightColumnX + 12, startY);
@@ -83,26 +82,50 @@ export function generateSchedulePdf(
     
     // --- Table ---
     const head = [["Hora", ...daysOfWeek]];
-    const body = [];
-    
-    for (const time of timeSlots) {
-        const row = [time];
-        for (const day of daysOfWeek) {
-            const entry = schedule.find(s => s.dia === day && s.hora.startsWith(time));
-            if (entry) {
-                const location = entry.modalidad === 'Virtual' ? 'Virtual' : (entry.salonNombre || 'N/A');
-                row.push(`${entry.materiaNombre}\n${entry.docenteNombre}\n(${location})`);
-            } else {
-                row.push("");
+    const body: any[][] = [];
+
+    const scheduleGrid: (ScheduleEntry | null)[][] = Array(timeSlots.length).fill(null).map(() => Array(daysOfWeek.length).fill(null));
+
+    schedule.forEach(entry => {
+        const dayIndex = daysOfWeek.indexOf(entry.dia);
+        const startTime = entry.hora.split(' - ')[0];
+        const timeIndex = timeSlots.indexOf(startTime);
+        
+        if (dayIndex !== -1 && timeIndex !== -1) {
+            for (let i = 0; i < entry.duracion; i++) {
+                if (timeIndex + i < timeSlots.length) {
+                    scheduleGrid[timeIndex + i][dayIndex] = entry;
+                }
             }
         }
+    });
+
+    timeSlots.forEach((time, timeIndex) => {
+        const row: any[] = [time];
+        daysOfWeek.forEach((day, dayIndex) => {
+            const entry = scheduleGrid[timeIndex][dayIndex];
+            const isFirstSlotOfEntry = entry && entry.hora.startsWith(time);
+            
+            if (entry) {
+                if (isFirstSlotOfEntry) {
+                    const location = entry.modalidad === 'Virtual' ? 'Virtual' : (entry.salonNombre || 'N/A');
+                    row.push({
+                        content: `${entry.materiaNombre}\n(${entry.hora})\n${entry.docenteNombre}\n${location}`,
+                        rowSpan: entry.duracion
+                    });
+                } 
+                // Don't push anything if it's a subsequent slot (it will be spanned by the first)
+            } else {
+                 row.push(""); // Empty slot
+            }
+        });
         body.push(row);
-    }
+    });
 
     doc.autoTable({
         head: head,
         body: body,
-        startY: startY, // Use dynamic startY
+        startY: startY,
         theme: 'grid',
         headStyles: {
             fillColor: [0, 33, 71], // Poli Blue
@@ -116,7 +139,15 @@ export function generateSchedulePdf(
             halign: 'center'
         },
         columnStyles: {
-            0: { fontStyle: 'bold', halign: 'center' }
+            0: { fontStyle: 'bold', halign: 'center', cellWidth: 20 },
+        },
+        didDrawCell: (data) => {
+            if (data.section === 'body' && data.column.index > 0 && data.cell.raw && typeof data.cell.raw === 'object') {
+                if ((data.cell.raw as any).rowSpan > 1) {
+                    doc.setDrawColor(200); // Light gray for merged cell borders
+                    doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
+                }
+            }
         }
     });
 
