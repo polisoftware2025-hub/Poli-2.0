@@ -35,11 +35,6 @@ export function generateSchedulePdf(
     const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
     // --- Header ---
-    // You can host a logo and use its URL here, e.g., from Firebase Storage
-    const logoUrl = 'https://placehold.co/100x40/002147/FFFFFF?text=Poli+2.0';
-    // Since jsPDF can't load from URL directly in all environments without CORS,
-    // we'll simulate it. In a real app, you might need to convert it to base64.
-    // For this example, we will just draw a placeholder.
     doc.setFillColor(0, 33, 71); // Poli Blue
     doc.rect(14, 15, 40, 15, 'F');
     doc.setTextColor(255, 255, 255);
@@ -58,16 +53,32 @@ export function generateSchedulePdf(
     doc.line(14, 35, 200, 35);
     
     // --- User Info ---
+    let startY = 45;
+    const leftMargin = 14;
+    const labelX = leftMargin;
+    const valueX = 40;
+    const rightColumnX = 120;
+    const textMaxWidth = 80;
+
     doc.setFontSize(11);
     doc.setTextColor(0,0,0);
-    doc.text(`${userRole === 'docente' ? 'Docente' : 'Estudiante'}:`, 14, 45);
-    doc.text(userInfo.nombreCompleto, 40, 45);
+    doc.text(`${userRole === 'docente' ? 'Docente' : 'Estudiante'}:`, labelX, startY);
+    doc.text(userInfo.nombreCompleto, valueX, startY);
+
+    startY += 7;
 
     if (userRole === 'estudiante' && userInfo.carreraNombre) {
-      doc.text("Carrera:", 14, 52);
-      doc.text(userInfo.carreraNombre, 40, 52);
-      doc.text("Sede:", 100, 52);
-      doc.text(userInfo.sedeNombre || "N/A", 115, 52);
+      doc.text("Carrera:", labelX, startY);
+      
+      const careerLines = doc.splitTextToSize(userInfo.carreraNombre, textMaxWidth);
+      doc.text(careerLines, valueX, startY);
+      
+      const careerTextHeight = careerLines.length * 5; // Approximate height of the text block
+
+      doc.text("Sede:", rightColumnX, startY);
+      doc.text(userInfo.sedeNombre || "N/A", rightColumnX + 12, startY);
+
+      startY += Math.max(7, careerTextHeight);
     }
     
     // --- Table ---
@@ -91,7 +102,7 @@ export function generateSchedulePdf(
     doc.autoTable({
         head: head,
         body: body,
-        startY: 60,
+        startY: startY, // Use dynamic startY
         theme: 'grid',
         headStyles: {
             fillColor: [0, 33, 71], // Poli Blue
