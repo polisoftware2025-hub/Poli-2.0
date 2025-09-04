@@ -97,6 +97,10 @@ export default function PreRegisterDetailPage() {
             }
         }
 
+        // Ensure dates are JavaScript Date objects
+        const fechaNacimiento = userData.fechaNacimiento?.toDate ? userData.fechaNacimiento.toDate() : userData.fechaNacimiento;
+        const fechaRegistro = studentData.fechaRegistro?.toDate ? studentData.fechaRegistro.toDate() : studentData.fechaRegistro;
+
         setApplicantData({
             id: userId,
             nombreCompleto: userData.nombreCompleto,
@@ -105,11 +109,11 @@ export default function PreRegisterDetailPage() {
             direccion: userData.direccion,
             tipoIdentificacion: userData.tipoIdentificacion,
             identificacion: userData.identificacion,
-            fechaNacimiento: userData.fechaNacimiento,
+            fechaNacimiento: fechaNacimiento,
             carreraId: studentData.carreraId,
             grupo: studentData.grupo,
             sedeId: studentData.sedeId,
-            fechaRegistro: studentData.fechaRegistro,
+            fechaRegistro: fechaRegistro,
             estado: studentData.estado,
             carreraNombre,
             sedeNombre,
