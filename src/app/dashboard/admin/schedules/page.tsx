@@ -185,7 +185,7 @@ export default function SchedulesAdminPage() {
                     <div className="space-y-2">
                         <Label>Paso 2: Carrera</Label>
                         <Select value={selectedCarrera} onValueChange={handleCarreraChange} disabled={!selectedSede || isLoading.carreras}>
-                            <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : "Selecciona una carrera"} /></div></SelectTrigger>
+                             <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue className="truncate inline-block max-w-full" placeholder={!selectedSede ? "Elige sede" : "Selecciona una carrera"} /></div></SelectTrigger>
                             <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
@@ -296,7 +296,8 @@ function AssignClassDialog({
 }) {
     const [open, setOpen] = useState(false);
     const [selectedDia, setSelectedDia] = useState(existingSchedule?.dia || "");
-    const [selectedHora, setSelectedHora] = useState(existingSchedule?.hora.split(' - ')[0] || "");
+    const [selectedHoraInicio, setSelectedHoraInicio] = useState(existingSchedule?.hora.split(' - ')[0] || "");
+    const [selectedHoraFin, setSelectedHoraFin] = useState(existingSchedule?.hora.split(' - ')[1] || "");
     const [selectedMateria, setSelectedMateria] = useState(existingSchedule?.materiaId || "");
     const [selectedDocente, setSelectedDocente] = useState(existingSchedule?.docenteId || "");
     const [modalidad, setModalidad] = useState<"Presencial" | "Virtual">(existingSchedule?.modalidad || "Presencial");
@@ -309,7 +310,8 @@ function AssignClassDialog({
     useEffect(() => {
         if(existingSchedule) {
             setSelectedDia(existingSchedule.dia);
-            setSelectedHora(existingSchedule.hora.split(' - ')[0]);
+            setSelectedHoraInicio(existingSchedule.hora.split(' - ')[0]);
+            setSelectedHoraFin(existingSchedule.hora.split(' - ')[1]);
             setSelectedMateria(existingSchedule.materiaId);
             setSelectedDocente(existingSchedule.docenteId);
             setModalidad(existingSchedule.modalidad);
@@ -319,19 +321,25 @@ function AssignClassDialog({
 
 
     const handleSubmit = async () => {
-        if (!selectedDia || !selectedHora || !selectedMateria || !selectedDocente || (modalidad === 'Presencial' && !selectedSalon)) {
+        if (!selectedDia || !selectedHoraInicio || !selectedHoraFin || !selectedMateria || !selectedDocente || (modalidad === 'Presencial' && !selectedSalon)) {
             toast({ variant: "destructive", title: "Campos incompletos", description: "Debes completar todos los campos requeridos." });
             return;
         }
 
-        const horaFinNum = parseInt(selectedHora.split(':')[0]) + 2;
-        const horaFin = `${horaFinNum.toString().padStart(2, '0')}:00`;
+        const horaInicioNum = parseInt(selectedHoraInicio.split(':')[0]);
+        const horaFinNum = parseInt(selectedHoraFin.split(':')[0]);
+        const duracion = horaFinNum - horaInicioNum;
         
+        if (duracion <= 0) {
+            toast({ variant: "destructive", title: "Horario inválido", description: "La hora de finalización debe ser posterior a la hora de inicio." });
+            return;
+        }
+
         const newSlot: ScheduleEntry = { 
             id: existingSchedule?.id || crypto.randomUUID(),
             dia: selectedDia, 
-            hora: `${selectedHora} - ${horaFin}`,
-            duracion: 2,
+            hora: `${selectedHoraInicio} - ${selectedHoraFin}`,
+            duracion: duracion,
             materiaId: selectedMateria,
             materiaNombre: materiasDelCiclo.find(m => m.id === selectedMateria)?.nombre || 'N/A',
             docenteId: selectedDocente,
@@ -387,6 +395,13 @@ function AssignClassDialog({
         }
     };
 
+    const availableEndTimes = useMemo(() => {
+        if (!selectedHoraInicio) return [];
+        const startIndex = timeSlots.indexOf(selectedHoraInicio);
+        if (startIndex === -1) return [];
+        return timeSlots.slice(startIndex + 1);
+    }, [selectedHoraInicio]);
+
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -405,7 +420,14 @@ function AssignClassDialog({
                     </div>
                      <div className="space-y-2">
                         <Label>Hora de Inicio</Label>
-                        <Select value={selectedHora} onValueChange={setSelectedHora}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{timeSlots.slice(0, -2).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedHoraInicio} onValueChange={setSelectedHoraInicio}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{timeSlots.slice(0, -1).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Hora Fin</Label>
+                        <Select value={selectedHoraFin} onValueChange={setSelectedHoraFin} disabled={!selectedHoraInicio}>
+                            <SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger>
+                            <SelectContent>{availableEndTimes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                        </Select>
                     </div>
                     <div className="space-y-2 col-span-2">
                         <Label>Materia</Label>
@@ -444,5 +466,3 @@ function AssignClassDialog({
         </Dialog>
     );
 }
-
-
