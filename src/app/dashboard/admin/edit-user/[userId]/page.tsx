@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -20,6 +21,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { Label } from "@/components/ui/label";
 
 const editUserSchema = z.object({
   nombre1: z.string().min(1, "Campo requerido"),
