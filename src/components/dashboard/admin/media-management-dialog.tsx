@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -42,6 +42,16 @@ export function MediaManagementDialog({
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  useEffect(() => {
+    // This effect synchronizes the internal state with the prop from the parent component.
+    // It ensures that if the dialog is re-rendered with a new `currentImageUrl`
+    // (e.g., after an update), the state is correctly updated.
+    // The `|| ""` ensures the value is never undefined.
+    setUrl(currentImageUrl || "");
+    setPreviewUrl(currentImageUrl || "");
+  }, [currentImageUrl]);
+
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -50,7 +60,7 @@ export function MediaManagementDialog({
       reader.onloadend = () => {
         const result = reader.result as string;
         setPreviewUrl(result);
-        setUrl(result); // Store base64 data in url state for submission
+        setUrl(result); 
       };
       reader.readAsDataURL(selectedFile);
     }
@@ -64,7 +74,6 @@ export function MediaManagementDialog({
   
   const handleOpenChange = (isOpen: boolean) => {
     if (isOpen) {
-      // Reset state when opening
       const initialUrl = currentImageUrl || "";
       setUrl(initialUrl);
       setPreviewUrl(initialUrl);
@@ -92,7 +101,6 @@ export function MediaManagementDialog({
             setIsLoading(false);
             return;
         }
-        // Use the base64 URL directly
         imageUrl = url;
     }
 
