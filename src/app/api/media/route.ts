@@ -56,7 +56,6 @@ export async function POST(req: Request) {
         const careersRef = adminDb.collection(`Politecnico/mzIX7rzezDezczAV6pQ7/carreras`);
         const snapshot = await careersRef.get();
         
-        let wasUpdated = false;
         const batch = adminDb.batch();
 
         for (const careerDoc of snapshot.docs) {
@@ -69,7 +68,6 @@ export async function POST(req: Request) {
                 const updatedMaterias = (ciclo.materias).map((materia: any) => {
                     if (materia.id === documentId) {
                         needsUpdate = true;
-                        wasUpdated = true;
                         return { ...materia, imagenURL: finalImageUrl };
                     }
                     return materia;
@@ -80,12 +78,6 @@ export async function POST(req: Request) {
             if (needsUpdate) {
                 batch.update(careerDoc.ref, { ciclos: updatedCiclos });
             }
-        }
-        
-        if (!wasUpdated) {
-            // It's not an error to not find the subject, it might just be in one career.
-            // But if it's never found, we can let the user know.
-            // For now, we will assume success if the process completes.
         }
         
         await batch.commit();
