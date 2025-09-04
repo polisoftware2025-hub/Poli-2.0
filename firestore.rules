@@ -2,16 +2,61 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allows any user to read or write to the Politecnico collection
-    // This is useful for public forms like registration, but you should
-    // secure your data further based on your application's needs.
-    match /Politecnico/{document=**} {
+    // Grant public read access to careers and subjects, but deny all writes from the client.
+    // Writes must go through a secure backend server with Admin SDK.
+    match /Politecnico/{poliId}/carreras/{carreraId} {
+      allow read: if true;
+      allow write: if false; 
+    }
+    
+    match /Politecnico/{poliId}/materias/{materiaId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Allow users to be created (register) and read/updated (login, profile changes).
+    // This rule is intentionally open for the custom auth flow.
+    // In a production environment with custom auth, you would secure this further,
+    // for example, by only allowing writes from your backend server.
+    match /Politecnico/{poliId}/usuarios/{userId} {
       allow read, write: if true;
     }
     
-    // Fallback for any other path, requires authentication
-    match /{document=**} {
-      allow read, write: if request.auth != null;
+    // Allow creation of password reset tokens.
+    match /Politecnico/{poliId}/tokens/{tokenId} {
+      allow read, write: if true;
+    }
+    
+    // Allow students to be created during registration.
+    match /Politecnico/{poliId}/estudiantes/{studentId} {
+       allow read, write: if true;
+    }
+    
+    // Allow access to groups
+    match /Politecnico/{poliId}/grupos/{groupId} {
+       allow read, write: if true;
+    }
+
+    // Allow payments to be created and read.
+    match /Politecnico/{poliId}/pagos/{pagoId} {
+      allow read, write: if true;
+    }
+    
+    // Allow read access to sedes and salones
+    match /Politecnico/{poliId}/sedes/{sedeId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+     match /Politecnico/{poliId}/sedes/{sedeId}/salones/{salonId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    
+    // Allow calendar events to be read by anyone, but only written from backend.
+    match /Politecnico/{poliId}/calendario/{eventId} {
+       allow read: if true;
+       allow write: if false; // Or add admin logic here if needed from client
     }
   }
 }

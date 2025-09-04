@@ -57,6 +57,7 @@ import {
   Edit,
   FileText,
   Send,
+  Image as ImageIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -133,6 +134,7 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/groups", label: "Grupos", icon: Users },
     { href: "/dashboard/admin/payments", label: "Gestión Pagos", icon: CreditCard },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar },
+    { href: "/dashboard/admin/media", label: "Gestión de Media", icon: ImageIcon },
     { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3 },
     { href: "/dashboard/admin/notifications", label: "Notificaciones", icon: Bell },
   ];
