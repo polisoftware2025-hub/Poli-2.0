@@ -6,176 +6,40 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { BookOpen, User, CheckCircle, GraduationCap, Menu, Phone, Mail, MapPin, DollarSign, Clock,Award, Instagram, Linkedin } from "lucide-react";
 import { useParams } from "next/navigation";
-import { carreraData } from "@/lib/seed"; 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, use } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { notFound } from 'next/navigation';
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
+interface Materia {
+  nombre: string;
+  codigo?: string;
+  creditos: number;
+}
+interface Ciclo {
+  numero: number;
+  materias: Materia[];
+}
+interface Career {
+  nombre: string;
+  slug: string;
+  descripcionGeneral: string;
+  perfilProfesional: string;
+  imagenURL: string;
+  duracionCiclo: string;
+  modalidad: string;
+  titulo: string;
+  precioPorCiclo?: { [key: string]: number };
+  ciclos: Ciclo[];
+}
 
-// En una aplicación real, estos datos vendrían de una API o CMS.
-// Por ahora, usamos los datos de ejemplo del seed y datos simulados.
-const programData: { [key: string]: any } = {
-  "tecnologia-en-comercio-exterior-y-negocios-internacionales": {
-    ...carreraData,
-    inversion: 2800000,
-    titulo: "Tecnólogo en Comercio Exterior y Negocios Internacionales"
-  },
-  "administracion-de-empresas": {
-    nombre: "Administración de Empresas",
-    slug: "administracion-de-empresas",
-    descripcionGeneral: "Forma líderes con visión estratégica para la gestión eficiente y competitiva de organizaciones en un entorno globalizado.",
-    perfilProfesional: "El Administrador de Empresas diseña, implementa y evalúa estrategias gerenciales en áreas como finanzas, marketing, talento humano y operaciones para asegurar el crecimiento y la sostenibilidad de la organización.",
-    imagenURL: "/images/Administacion-de-Empresas.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Presencial / Virtual",
-    inversion: 3200000,
-    titulo: "Administrador de Empresas",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Fundamentos de Administración", creditos: 3 }, { nombre: "Matemáticas I", creditos: 3 }, { nombre: "Contabilidad General", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Procesos Administrativos", creditos: 3 }, { nombre: "Estadística Descriptiva", creditos: 3 }, { nombre: "Microeconomía", creditos: 2 }] }
-    ]
-  },
-  "contaduria-publica": {
-    nombre: "Contaduría Pública",
-    slug: "contaduria-publica",
-    descripcionGeneral: "Prepara expertos en el control financiero, la auditoría y la normativa contable para garantizar la transparencia y la salud financiera de las empresas.",
-    perfilProfesional: "El Contador Público está capacitado para analizar estados financieros, gestionar tributos, realizar auditorías y asegurar el cumplimiento de las normativas contables y fiscales vigentes.",
-    imagenURL: "/images/carousel/accounting-finance.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3000000,
-    titulo: "Contador Público",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Contabilidad Financiera I", creditos: 3 }, { nombre: "Legislación Comercial", creditos: 2 }, { nombre: "Cálculo Diferencial", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Contabilidad de Costos", creditos: 3 }, { nombre: "Tributaria I", creditos: 3 }, { nombre: "Macroeconomía", creditos: 2 }] }
-    ]
-  },
-  "mercadeo-y-publicidad": {
-    nombre: "Mercadeo y Publicidad",
-    slug: "mercadeo-y-publicidad",
-    descripcionGeneral: "Desarrolla estrategias creativas e innovadoras para posicionar marcas, productos y servicios en mercados competitivos, utilizando herramientas digitales y tradicionales.",
-    perfilProfesional: "El profesional en Mercadeo y Publicidad crea y gestiona campañas, investiga mercados, analiza el comportamiento del consumidor y desarrolla estrategias de comunicación 360°.",
-    imagenURL: "/images/carousel/marketing-team.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Virtual",
-    inversion: 3100000,
-    titulo: "Profesional en Mercadeo y Publicidad",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Fundamentos de Mercadeo", creditos: 3 }, { nombre: "Teoría de la Comunicación", creditos: 2 }, { nombre: "Diseño Básico", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Investigación de Mercados", creditos: 3 }, { nombre: "Marketing Digital I", creditos: 3 }, { nombre: "Redacción Publicitaria", creditos: 2 }] }
-    ]
-  },
-  "ingenieria-de-sistemas": {
-    nombre: "Ingeniería de Sistemas",
-    slug: "ingenieria-de-sistemas",
-    descripcionGeneral: "Crea soluciones tecnológicas, de software y de infraestructura para optimizar procesos, gestionar información y resolver problemas complejos en las organizaciones.",
-    perfilProfesional: "El Ingeniero de Sistemas diseña, desarrolla e implementa software, gestiona redes y bases de datos, y lidera proyectos tecnológicos innovadores.",
-    imagenURL: "/images/carousel/software-development.jpg",
-    duracionCiclo: "9 Ciclos",
-    modalidad: "Presencial / Virtual",
-    inversion: 3500000,
-    titulo: "Ingeniero de Sistemas",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Algoritmos y Programación", creditos: 3 }, { nombre: "Cálculo I", creditos: 3 }, { nombre: "Lógica de Programación", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Estructuras de Datos", creditos: 3 }, { nombre: "Bases de Datos I", creditos: 3 }, { nombre: "Sistemas Operativos", creditos: 3 }] }
-    ]
-  },
-  "gastronomia": {
-    nombre: "Gastronomía",
-    slug: "gastronomia",
-    descripcionGeneral: "Fusiona arte, técnica y ciencia culinaria para crear experiencias gastronómicas únicas, gestionando cocinas y negocios de alimentos y bebidas.",
-    perfilProfesional: "El Gastrónomo domina técnicas culinarias nacionales e internacionales, crea menús, gestiona costos y administra restaurantes y eventos con altos estándares de calidad.",
-    imagenURL: "/images/carousel/chef-cooking.jpg",
-    duracionCiclo: "6 Ciclos",
-    modalidad: "Presencial",
-    inversion: 4000000,
-    titulo: "Gastrónomo Profesional",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Técnicas Básicas de Cocina", creditos: 4 }, { nombre: "Higiene y Manipulación de Alimentos", creditos: 2 }, { nombre: "Historia de la Gastronomía", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Cocina Colombiana", creditos: 4 }, { nombre: "Panadería y Pastelería Básica", creditos: 3 }, { nombre: "Costos de Alimentos y Bebidas", creditos: 2 }] }
-    ]
-  },
-  "hoteleria-y-turismo": {
-    nombre: "Hotelería y Turismo",
-    slug: "hoteleria-y-turismo",
-    descripcionGeneral: "Gestiona servicios de hospitalidad, alojamiento y agencias de viajes, creando experiencias turísticas memorables con estándares de calidad internacionales.",
-    perfilProfesional: "El profesional en Hotelería y Turismo administra hoteles, organiza eventos, diseña productos turísticos y promueve destinos de manera sostenible.",
-    imagenURL: "/images/carousel/luxury-hotel.jpg",
-    duracionCiclo: "7 Ciclos",
-    modalidad: "Presencial",
-    inversion: 2900000,
-    titulo: "Profesional en Hotelería y Turismo",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Introducción al Turismo", creditos: 2 }, { nombre: "Gestión de Alojamiento", creditos: 3 }, { nombre: "Geografía Turística", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Servicio al Cliente", creditos: 2 }, { nombre: "Agencias de Viajes y Tour Operadores", creditos: 3 }, { nombre: "Patrimonio Cultural", creditos: 3 }] }
-    ]
-  },
-  "derecho": {
-    nombre: "Derecho",
-    slug: "derecho",
-    descripcionGeneral: "Forma profesionales con sólidos principios éticos y un profundo conocimiento jurídico para asesorar, representar y defender los derechos de personas y empresas.",
-    perfilProfesional: "El Abogado interpreta y aplica el ordenamiento jurídico en diversas áreas como el derecho civil, penal, laboral y administrativo, actuando con justicia y equidad.",
-    imagenURL: "/images/carousel/law-books-courtroom.jpg",
-    duracionCiclo: "10 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3800000,
-    titulo: "Abogado(a)",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Introducción al Derecho", creditos: 3 }, { nombre: "Derecho Romano", creditos: 2 }, { nombre: "Teoría del Estado", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Derecho Civil Personas", creditos: 3 }, { nombre: "Derecho Constitucional", creditos: 3 }, { nombre: "Sociología Jurídica", creditos: 2 }] }
-    ]
-  },
-  "psicologia": {
-    nombre: "Psicología",
-    slug: "psicologia",
-    descripcionGeneral: "Comprende el comportamiento humano desde una perspectiva científica y humanista para evaluar, diagnosticar e intervenir en procesos psicológicos y promover el bienestar.",
-    perfilProfesional: "El Psicólogo aplica sus conocimientos en áreas como la clínica, la educativa, la organizacional y la social, contribuyendo al desarrollo individual y colectivo.",
-    imagenURL: "/images/carousel/therapy-session.jpg",
-    duracionCiclo: "9 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3600000,
-    titulo: "Psicólogo(a)",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Historia de la Psicología", creditos: 2 }, { nombre: "Procesos Psicológicos Básicos", creditos: 3 }, { nombre: "Biología Humana", creditos: 3 }] },
-      { numero: 2, materias: [{ nombre: "Psicología del Desarrollo", creditos: 3 }, { nombre: "Estadística Aplicada", creditos: 3 }, { nombre: "Teorías de la Personalidad", creditos: 3 }] }
-    ]
-  },
-  "enfermeria": {
-    nombre: "Enfermería",
-    slug: "enfermeria",
-    descripcionGeneral: "Forma profesionales para el cuidado integral de la salud del individuo, la familia y la comunidad, con vocación de servicio, ética y humanismo.",
-    perfilProfesional: "El Enfermero(a) participa en la promoción, prevención, tratamiento y rehabilitación de la salud, trabajando en equipos interdisciplinarios en diversos entornos de atención.",
-    imagenURL: "/images/carousel/nurses-hospital.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Presencial",
-    inversion: 3700000,
-    titulo: "Enfermero(a) Profesional",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Fundamentos de Enfermería", creditos: 4 }, { nombre: "Anatomía y Fisiología", creditos: 3 }, { nombre: "Bioquímica", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Cuidado Básico del Paciente", creditos: 4 }, { nombre: "Farmacología", creditos: 3 }, { nombre: "Microbiología", creditos: 2 }] }
-    ]
-  },
-  "comunicacion-social": {
-    nombre: "Comunicación Social",
-    slug: "comunicacion-social",
-    descripcionGeneral: "Forma comunicadores estratégicos capaces de crear, gestionar y difundir contenidos en medios masivos, digitales y organizaciones.",
-    perfilProfesional: "El Comunicador Social se desempeña en periodismo, comunicación organizacional, producción audiovisual y gestión de redes sociales, con una visión crítica y creativa.",
-    imagenURL: "/images/carousel/media-broadcast.jpg",
-    duracionCiclo: "8 Ciclos",
-    modalidad: "Virtual / Presencial",
-    inversion: 3300000,
-    titulo: "Comunicador Social y Periodista",
-    ciclos: [
-      { numero: 1, materias: [{ nombre: "Teorías de la Comunicación", creditos: 3 }, { nombre: "Redacción para Medios", creditos: 3 }, { nombre: "Fotografía Básica", creditos: 2 }] },
-      { numero: 2, materias: [{ nombre: "Periodismo Informativo", creditos: 3 }, { nombre: "Comunicación Organizacional", creditos: 3 }, { nombre: "Producción de Radio", creditos: 2 }] }
-    ]
-  }
-};
-
-const formatCurrency = (value: number) => {
+const formatCurrency = (value?: number) => {
+  if (value === undefined || isNaN(value)) return "No especificado";
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
@@ -193,8 +57,36 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function ProgramDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
-  const program = programData[slug]
+  const [program, setProgram] = useState<Career | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isMenuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!slug) return;
+    
+    const fetchProgram = async () => {
+        setIsLoading(true);
+        try {
+            const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+            const q = query(careersRef, where("slug", "==", slug));
+            const querySnapshot = await getDocs(q);
+
+            if (querySnapshot.empty) {
+                notFound();
+            } else {
+                const programDoc = querySnapshot.docs[0];
+                setProgram(programDoc.data() as Career);
+            }
+        } catch (error) {
+            console.error("Error fetching program:", error);
+            notFound();
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    fetchProgram();
+  }, [slug]);
 
   const navLinks = [
     { href: "/", label: "Inicio" },
@@ -203,9 +95,21 @@ export default function ProgramDetailPage() {
     { href: "/#contacto", label: "Contacto" },
   ];
 
-  if (!program) {
-    notFound();
+  if (isLoading) {
+      return (
+        <div className="bg-gray-50 min-h-screen flex flex-col items-center justify-center">
+            <p>Cargando programa...</p>
+            <div className="mt-4 h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent mx-auto"></div>
+        </div>
+      )
   }
+
+  if (!program) {
+    return notFound();
+  }
+  
+  const firstCyclePrice = program.precioPorCiclo ? program.precioPorCiclo["1"] : undefined;
+
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
@@ -278,7 +182,7 @@ export default function ProgramDetailPage() {
           <Card className="overflow-hidden">
             <div className="relative h-64 w-full">
               <Image
-                src={program.imagenURL}
+                src={program.imagenURL || "/images/default-hero.jpg"}
                 alt={`Imagen de ${program.nombre}`}
                 fill
                 style={{ objectFit: "cover" }}
@@ -316,7 +220,7 @@ export default function ProgramDetailPage() {
                     <DollarSign className="h-5 w-5 text-green-600" />
                     <span>Inversión por ciclo:</span>
                   </div>
-                  <span className="text-gray-800 font-bold">{formatCurrency(program.inversion)}</span>
+                  <span className="text-gray-800 font-bold">{formatCurrency(firstCyclePrice)}</span>
                 </div>
                 <div className="flex items-center justify-between border-b pb-2">
                   <div className="flex items-center gap-2 font-semibold text-gray-700">
@@ -431,3 +335,5 @@ export default function ProgramDetailPage() {
     </div>
   );
 }
+
+    
