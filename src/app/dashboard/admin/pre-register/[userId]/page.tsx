@@ -23,12 +23,12 @@ interface ApplicantData {
   direccion: string;
   tipoIdentificacion: string;
   identificacion: string;
-  fechaNacimiento: Timestamp;
+  fechaNacimiento: Date;
   // Student data
   carreraId: string;
   grupo: string;
   sedeId: string;
-  fechaRegistro: Timestamp;
+  fechaRegistro: Date;
   estado: "pendiente" | "aprobado" | "rechazado";
   // Enriched data
   carreraNombre?: string;
@@ -97,11 +97,11 @@ export default function PreRegisterDetailPage() {
             direccion: userData.direccion,
             tipoIdentificacion: userData.tipoIdentificacion,
             identificacion: userData.identificacion,
-            fechaNacimiento: userData.fechaNacimiento,
+            fechaNacimiento: userData.fechaNacimiento.toDate(),
             carreraId: studentData.carreraId,
             grupo: studentData.grupo,
             sedeId: studentData.sedeId,
-            fechaRegistro: studentData.fechaRegistro,
+            fechaRegistro: studentData.fechaRegistro.toDate(),
             estado: studentData.estado,
             carreraNombre,
             sedeNombre,
@@ -199,7 +199,7 @@ export default function PreRegisterDetailPage() {
                 <div>
                     <CardTitle className="text-2xl">{applicantData.nombreCompleto}</CardTitle>
                     <CardDescription>
-                        Solicitud recibida el {applicantData.fechaRegistro.toDate().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        Solicitud recibida el {applicantData.fechaRegistro.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
                     </CardDescription>
                 </div>
                 <Button>Descargar Documentos</Button>
@@ -214,7 +214,7 @@ export default function PreRegisterDetailPage() {
             <dl className="space-y-4">
               <DetailItem label="Tipo de Identificación" value={applicantData.tipoIdentificacion} />
               <DetailItem label="Número de Identificación" value={applicantData.identificacion} />
-              <DetailItem label="Fecha de Nacimiento" value={applicantData.fechaNacimiento.toDate().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })} />
+              <DetailItem label="Fecha de Nacimiento" value={applicantData.fechaNacimiento.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })} />
             </dl>
           </section>
 
