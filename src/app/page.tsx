@@ -22,6 +22,9 @@ import { useEffect, useState, useRef } from "react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Autoplay from "embla-carousel-autoplay"
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -29,11 +32,20 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+interface Program {
+    slug: string;
+    title: string;
+    description: string;
+    image: string;
+    imageHint: string;
+}
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const autoplayPlugin = useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })
@@ -46,87 +58,31 @@ export default function HomePage() {
     { href: "#contacto", label: "Contacto" },
   ];
 
-  const programs = [
-    {
-      slug: "administracion-de-empresas",
-      title: "Administración de Empresas",
-      description:
-        "Forma líderes con visión estratégica para gestionar organizaciones.",
-      image: "/images/Administacion-de-Empresas.jpg",
-      imageHint: "business students",
-    },
-    {
-      slug: "contaduria-publica",
-      title: "Contaduría Pública",
-      description:
-        "Prepara expertos en el control financiero y la normativa contable.",
-      image: "/images/carousel/accounting-finance.jpg",
-      imageHint: "accounting finance",
-    },
-    {
-      slug: "mercadeo-y-publicidad",
-      title: "Mercadeo y Publicidad",
-      description:
-        "Desarrolla estrategias creativas para posicionar marcas y productos.",
-      image: "/images/carousel/marketing-team.jpg",
-      imageHint: "marketing team",
-    },
-    {
-      slug: "ingenieria-de-sistemas",
-      title: "Ingeniería de Sistemas",
-      description:
-        "Crea soluciones tecnológicas innovadoras para optimizar procesos.",
-      image: "/images/carousel/software-development.jpg",
-      imageHint: "software development",
-    },
-    {
-      slug: "gastronomia",
-      title: "Gastronomía",
-      description: "Fusiona arte y técnica culinaria para crear experiencias únicas.",
-      image: "/images/carousel/chef-cooking.jpg",
-      imageHint: "chef cooking",
-    },
-    {
-      slug: "hoteleria-y-turismo",
-      title: "Hotelería y Turismo",
-      description:
-        "Gestiona servicios de hospitalidad con estándares internacionales.",
-      image: "/images/carousel/luxury-hotel.jpg",
-      imageHint: "luxury hotel",
-    },
-    {
-      slug: "derecho",
-      title: "Derecho",
-      description:
-        "Forma profesionales con sólidos principios éticos y jurídicos.",
-      image: "/images/carousel/law-books-courtroom.jpg",
-      imageHint: "law books courtroom",
-    },
-    {
-      slug: "psicologia",
-      title: "Psicología",
-      description:
-        "Comprende el comportamiento humano para promover el bienestar.",
-      image: "/images/carousel/therapy-session.jpg",
-      imageHint: "therapy session",
-    },
-    {
-      slug: "enfermeria",
-      title: "Enfermería",
-      description:
-        "Cuidado integral de la salud con vocación de servicio y humanismo.",
-      image: "/images/carousel/nurses-hospital.jpg",
-      imageHint: "nurses hospital",
-    },
-    {
-      slug: "comunicacion-social",
-      title: "Comunicación Social",
-      description:
-        "Forma comunicadores estratégicos para medios y organizaciones.",
-      image: "/images/carousel/media-broadcast.jpg",
-      imageHint: "media broadcast",
-    },
-  ];
+  useEffect(() => {
+    const fetchPrograms = async () => {
+        setIsLoading(true);
+        try {
+            const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+            const careersSnapshot = await getDocs(careersCollection);
+            const careersList = careersSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    slug: data.slug || doc.id,
+                    title: data.nombre,
+                    description: data.descripcionGeneral,
+                    image: data.imagenURL || "https://placehold.co/800x400/002147/FFFFFF?text=Poli+2.0",
+                    imageHint: "university campus"
+                }
+            });
+            setPrograms(careersList);
+        } catch (error) {
+            console.error("Error fetching programs: ", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchPrograms();
+  }, []);
 
   useEffect(() => {
     if (!carouselApi) {
@@ -288,59 +244,67 @@ export default function HomePage() {
             <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-12">
               Nuestros Programas Académicos
             </h2>
-            <Carousel 
-                setApi={setCarouselApi} 
-                className="w-full"
-                plugins={[autoplayPlugin.current]}
-                opts={{
-                    loop: true,
-                    align: "start",
-                }}
-                onMouseEnter={autoplayPlugin.current.stop}
-                onMouseLeave={autoplayPlugin.current.play}
-            >
-              <CarouselContent>
-                {programs.map((program, index) => (
-                  <CarouselItem key={index}>
-                    <div className="relative h-[500px] w-full overflow-hidden rounded-lg">
-                      <Image
-                        src={program.image}
-                        alt={`Imagen de ${program.title}`}
-                        fill
-                        style={{objectFit: 'cover'}}
-                        className="brightness-50"
-                        data-ai-hint={program.imageHint}
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                        <div className="w-full max-w-2xl rounded-lg bg-black/50 p-8 text-center text-white backdrop-blur-sm">
-                          <h3 className="font-poppins text-4xl font-bold">
-                            {program.title}
-                          </h3>
-                          <p className="mt-4 text-lg">
-                            {program.description}
-                          </p>
-                          <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
-                            <Button asChild
-                              style={{ backgroundColor: "#004aad" }}
-                              className="px-8 py-3 font-semibold text-white transition-transform hover:scale-105"
-                            >
-                              <Link href="/register">Inscribirme</Link>
-                            </Button>
-                            <Button asChild
-                              className="px-8 py-3 font-semibold text-white shadow-lg transition-transform hover:scale-105 bg-[#2ecc71] hover:bg-[#27ae60] active:bg-[#219150]"
-                            >
-                               <Link href={`/programas/${program.slug}`}>Ver más</Link>
-                            </Button>
+            {isLoading ? (
+                <div className="w-full h-[500px]">
+                    <Skeleton className="h-full w-full rounded-lg" />
+                </div>
+            ) : programs.length > 0 ? (
+                <Carousel 
+                    setApi={setCarouselApi} 
+                    className="w-full"
+                    plugins={[autoplayPlugin.current]}
+                    opts={{
+                        loop: true,
+                        align: "start",
+                    }}
+                    onMouseEnter={autoplayPlugin.current.stop}
+                    onMouseLeave={autoplayPlugin.current.play}
+                >
+                  <CarouselContent>
+                    {programs.map((program, index) => (
+                      <CarouselItem key={index}>
+                        <div className="relative h-[500px] w-full overflow-hidden rounded-lg">
+                          <Image
+                            src={program.image}
+                            alt={`Imagen de ${program.title}`}
+                            fill
+                            style={{objectFit: 'cover'}}
+                            className="brightness-50"
+                            data-ai-hint={program.imageHint}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                            <div className="w-full max-w-2xl rounded-lg bg-black/50 p-8 text-center text-white backdrop-blur-sm">
+                              <h3 className="font-poppins text-4xl font-bold">
+                                {program.title}
+                              </h3>
+                              <p className="mt-4 text-lg">
+                                {program.description}
+                              </p>
+                              <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
+                                <Button asChild
+                                  style={{ backgroundColor: "#004aad" }}
+                                  className="px-8 py-3 font-semibold text-white transition-transform hover:scale-105"
+                                >
+                                  <Link href="/register">Inscribirme</Link>
+                                </Button>
+                                <Button asChild
+                                  className="px-8 py-3 font-semibold text-white shadow-lg transition-transform hover:scale-105 bg-[#2ecc71] hover:bg-[#27ae60] active:bg-[#219150]"
+                                >
+                                   <Link href={`/programas/${program.slug}`}>Ver más</Link>
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  </CarouselItem>
-                ))}
-              </CarouselContent>
-              <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 transform text-white bg-black/30 hover:bg-black/50 border-none" />
-              <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 transform text-white bg-black/30 hover:bg-black/50 border-none" />
-            </Carousel>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious className="absolute left-4 top-1/2 -translate-y-1/2 transform text-white bg-black/30 hover:bg-black/50 border-none" />
+                  <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 transform text-white bg-black/30 hover:bg-black/50 border-none" />
+                </Carousel>
+            ) : (
+                <p className="text-center text-muted-foreground">No hay programas disponibles en este momento.</p>
+            )}
              <div className="mt-4 flex justify-center gap-2">
               {programs.map((_, index) => (
                 <button
@@ -355,7 +319,6 @@ export default function HomePage() {
             </div>
           </div>
         </section>
-
       </main>
 
        {/* Footer */}
