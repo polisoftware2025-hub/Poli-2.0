@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,13 +82,17 @@ export default function StudentDashboardPage() {
                 const studentData = studentSnap.data();
                 const studentCourses = studentData.materiasInscritas || [];
 
-                const fetchedCourses = studentCourses.map((materia: any, index: number) => ({
-                    id: materia.id,
-                    title: materia.nombre.toUpperCase(),
-                    progress: Math.floor(Math.random() * 100), // Placeholder progress
-                    ...placeholderImages[index % placeholderImages.length]
-                }));
-                 setCourses(fetchedCourses);
+                const fetchedCourses = studentCourses.map((materia: any, index: number) => {
+                    const placeholder = placeholderImages[index % placeholderImages.length];
+                    return {
+                        id: materia.id,
+                        title: materia.nombre.toUpperCase(),
+                        progress: Math.floor(Math.random() * 100), // Placeholder progress
+                        image: materia.imagenURL || placeholder.image,
+                        imageHint: materia.imagenURL ? "subject image" : placeholder.imageHint,
+                    }
+                });
+                setCourses(fetchedCourses);
             } else {
                 console.log("No se encontró el documento del estudiante.");
                 setCourses([]);

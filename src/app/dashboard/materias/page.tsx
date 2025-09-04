@@ -12,7 +12,7 @@ import { BookCopy, Search, MoreVertical, LayoutGrid, List } from "lucide-react";
 import Image from "next/image";
 import { PageHeader } from "@/components/page-header";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, DocumentData } from "firebase/firestore";
+import { doc, getDoc, DocumentData } from "firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Course {
@@ -57,13 +57,17 @@ export default function CoursesPage() {
                 const studentData = studentSnap.data();
                 const studentCourses = studentData.materiasInscritas || [];
 
-                const fetchedCourses = studentCourses.map((materia: any, index: number) => ({
-                    id: materia.id,
-                    title: materia.nombre.toUpperCase(),
-                    code: materia.id.toUpperCase(),
-                    progress: Math.floor(Math.random() * 100), // Placeholder progress
-                    ...placeholderImages[index % placeholderImages.length]
-                }));
+                const fetchedCourses = studentCourses.map((materia: any, index: number) => {
+                    const placeholder = placeholderImages[index % placeholderImages.length];
+                    return {
+                        id: materia.id,
+                        title: materia.nombre.toUpperCase(),
+                        code: materia.id.toUpperCase(),
+                        progress: Math.floor(Math.random() * 100), // Placeholder progress
+                        image: materia.imagenURL || placeholder.image,
+                        imageHint: materia.imagenURL ? "subject image" : placeholder.imageHint,
+                    }
+                });
                 setCourses(fetchedCourses);
             } else {
                 console.log("No se encontró el documento del estudiante.");
