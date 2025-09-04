@@ -31,57 +31,51 @@ export function generateSchedulePdf(
 ) {
     const doc = new jsPDF() as jsPDFWithAutoTable;
     
+    // Config
     const timeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
     const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const poliBlue = [0, 33, 71];
+    const lightGray = 240;
 
     // --- Header ---
-    doc.setFillColor(0, 33, 71); // Poli Blue
-    doc.rect(14, 15, 40, 15, 'F');
+    doc.setFillColor(poliBlue[0], poliBlue[1], poliBlue[2]);
+    doc.rect(14, 15, 186, 16, 'F');
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(16);
-    doc.text("Poli 2.0", 22, 25);
+    doc.setFontSize(22);
+    doc.setFont("helvetica", "bold");
+    doc.text("Horario de Clases Semanal", doc.internal.pageSize.getWidth() / 2, 25, { align: 'center' });
 
-    doc.setFontSize(18);
-    doc.setTextColor(0, 33, 71);
-    doc.text("Horario de Clases Semanal", 105, 25, { align: 'center' });
+    // --- User Info ---
+    let startY = 42;
+    const leftMargin = 14;
+    const rightMargin = 115;
 
     doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generado el: ${new Date().toLocaleDateString('es-ES')}`, 200, 15, { align: 'right' });
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(poliBlue[0], poliBlue[1], poliBlue[2]);
     
-    doc.setLineWidth(0.5);
-    doc.line(14, 35, 200, 35);
+    doc.text("Estudiante:", leftMargin, startY);
+    if(userInfo.carreraNombre) doc.text("Carrera:", leftMargin, startY + 7);
     
-    // --- User Info ---
-    let startY = 45;
-    const leftMargin = 14;
-    const valueX = 40;
-    const rightColumnX = 120;
-    const textMaxWidth = 80;
+    doc.text("Sede:", rightMargin, startY);
+    doc.text("Generado:", rightMargin, startY + 7);
+    
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(50, 50, 50);
 
-    doc.setFontSize(11);
-    doc.setTextColor(0,0,0);
-    doc.text(`${userRole === 'docente' ? 'Docente' : 'Estudiante'}:`, leftMargin, startY);
-    doc.text(userInfo.nombreCompleto, valueX, startY);
-
-    startY += 7;
-
-    if (userRole === 'estudiante' && userInfo.carreraNombre) {
-      doc.text("Carrera:", leftMargin, startY);
-      
-      const careerLines = doc.splitTextToSize(userInfo.carreraNombre, textMaxWidth);
-      doc.text(careerLines, valueX, startY);
-      
-      const careerTextHeight = careerLines.length * 5; 
-
-      doc.text("Sede:", rightColumnX, startY);
-      doc.text(userInfo.sedeNombre || "N/A", rightColumnX + 12, startY);
-
-      startY += Math.max(7, careerTextHeight);
+    doc.text(userInfo.nombreCompleto, leftMargin + 22, startY);
+    if (userInfo.carreraNombre) {
+        const careerLines = doc.splitTextToSize(userInfo.carreraNombre, 70);
+        doc.text(careerLines, leftMargin + 22, startY + 7);
     }
     
-    // --- Table ---
-    const head = [["Hora", ...daysOfWeek]];
+    doc.text(userInfo.sedeNombre || "N/A", rightMargin + 10, startY);
+    doc.text(new Date().toLocaleDateString('es-ES'), rightMargin + 20, startY + 7);
+
+    startY += 20;
+
+    // --- Table Logic ---
+    const head = [daysOfWeek];
     const body: any[][] = [];
 
     const scheduleGrid: (ScheduleEntry | null)[][] = Array(timeSlots.length).fill(null).map(() => Array(daysOfWeek.length).fill(null));
@@ -101,25 +95,28 @@ export function generateSchedulePdf(
     });
 
     timeSlots.forEach((time, timeIndex) => {
-        const row: any[] = [time];
-        daysOfWeek.forEach((day, dayIndex) => {
+        const rowData: any[] = [];
+        daysOfWeek.forEach((_, dayIndex) => {
             const entry = scheduleGrid[timeIndex][dayIndex];
-            const isFirstSlotOfEntry = entry && entry.hora.startsWith(time);
-            
-            if (entry) {
-                if (isFirstSlotOfEntry) {
-                    const location = entry.modalidad === 'Virtual' ? 'Virtual' : (entry.salonNombre || 'N/A');
-                    row.push({
-                        content: `${entry.materiaNombre}\n(${entry.hora})\n${entry.docenteNombre}\n${location}`,
-                        rowSpan: entry.duracion
-                    });
-                } 
-                // Don't push anything if it's a subsequent slot (it will be spanned by the first)
-            } else {
-                 row.push(""); // Empty slot
+            const isFirstSlot = entry && entry.hora.startsWith(time);
+
+            if (isFirstSlot) {
+                const location = entry.modalidad === 'Virtual' ? 'Virtual' : (entry.salonNombre || 'N/A');
+                rowData.push({
+                    content: [
+                        { content: entry.materiaNombre, styles: { fontStyle: 'bold', fontSize: 9, textColor: poliBlue } },
+                        { content: `(${entry.hora})`, styles: { fontSize: 7, textColor: 80 } },
+                        { content: entry.docenteNombre, styles: { fontSize: 7, textColor: 80 } },
+                        { content: location, styles: { fontStyle: 'italic', fontSize: 7, textColor: 80 } }
+                    ],
+                    rowSpan: entry.duracion,
+                    styles: { fillColor: [230, 240, 255] } // Light blue for class cells
+                });
+            } else if (!entry) {
+                rowData.push({ content: '', styles: { fillColor: [250, 250, 250] } });
             }
         });
-        body.push(row);
+        body.push(rowData);
     });
 
     doc.autoTable({
@@ -128,27 +125,53 @@ export function generateSchedulePdf(
         startY: startY,
         theme: 'grid',
         headStyles: {
-            fillColor: [0, 33, 71], // Poli Blue
+            fillColor: poliBlue,
             textColor: 255,
-            fontStyle: 'bold'
+            fontStyle: 'bold',
+            halign: 'center'
         },
         styles: {
             fontSize: 8,
             cellPadding: 2,
             valign: 'middle',
-            halign: 'center'
+            halign: 'center',
+            lineWidth: 0.1,
+            lineColor: 220
         },
-        columnStyles: {
-            0: { fontStyle: 'bold', halign: 'center', cellWidth: 20 },
-        },
-        didDrawCell: (data) => {
-            if (data.section === 'body' && data.column.index > 0 && data.cell.raw && typeof data.cell.raw === 'object') {
-                if ((data.cell.raw as any).rowSpan > 1) {
-                    doc.setDrawColor(200); // Light gray for merged cell borders
-                    doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
-                }
+        didParseCell: (data) => {
+            // This is for multicontent cells
+            if(Array.isArray(data.cell.raw?.content)){
+                data.cell.text = data.cell.raw.content.map((item: any) => item.content);
+                data.cell.styles.font = 'helvetica';
+                
+                const stylesArray: any[] = data.cell.raw.content.map((item: any) => item.styles);
+                data.cell.styles.cellStyles = {
+                     0: stylesArray[0], 1: stylesArray[1], 2: stylesArray[2], 3: stylesArray[3] 
+                };
             }
-        }
+        },
+        willDrawCell: (data) => {
+            // For custom styling inside cells
+             if (data.cell.raw?.styles?.cellStyles) {
+                doc.setFont(data.cell.styles.font, data.cell.styles.fontStyle);
+                doc.setFontSize(data.cell.styles.fontSize);
+                const styles = data.cell.raw.styles.cellStyles;
+                
+                const textLines = data.cell.text as string[];
+                let y = data.cell.y + 4;
+
+                textLines.forEach((line: string, index: number) => {
+                    const style = styles[index] || {};
+                    doc.setFont(style.font || 'helvetica', style.fontStyle || 'normal');
+                    doc.setFontSize(style.fontSize || 8);
+                    doc.setTextColor(style.textColor || 50);
+                    
+                    doc.text(line, data.cell.x + 2, y);
+                    y += style.fontSize * 0.35 + 1.5;
+                })
+                 return false; // Prevent default rendering
+            }
+        },
     });
 
     // --- Footer ---
