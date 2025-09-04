@@ -58,13 +58,15 @@ export default function CoursesPage() {
 
                 const fetchedCourses = studentCourses.map((materia: any, index: number) => {
                     const placeholder = placeholderImages[index % placeholderImages.length];
+                    const hasValidImage = materia.imagenURL && materia.imagenURL.startsWith('http');
+                    
                     return {
                         id: materia.id,
                         title: materia.nombre.toUpperCase(),
                         code: materia.id.toUpperCase(),
                         progress: Math.floor(Math.random() * 100), // Placeholder progress
-                        image: materia.imagenURL || placeholder.image,
-                        imageHint: materia.imagenURL ? "subject image" : placeholder.imageHint,
+                        image: hasValidImage ? materia.imagenURL : placeholder.image,
+                        imageHint: hasValidImage ? "subject image" : placeholder.imageHint,
                     }
                 });
                 setCourses(fetchedCourses);
