@@ -50,7 +50,7 @@ export default function MediaManagementPage() {
                       nombre: materia.nombre,
                       codigo: materia.codigo,
                       creditos: materia.creditos,
-                      imagenURL: materia.imagenURL || ""
+                      imagenURL: materia.imagenURL || "" // Ensure imagenURL is always defined
                   });
                 }
               });
