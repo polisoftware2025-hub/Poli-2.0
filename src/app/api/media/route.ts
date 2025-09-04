@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { adminDb, adminStorage } from "@/lib/firebase-admin";
 import { v4 as uuidv4 } from 'uuid';
+import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
 export async function POST(req: Request) {
   // IMPORTANT: In a real-world application, you MUST add authentication
@@ -24,10 +25,11 @@ export async function POST(req: Request) {
     if (imageUrl.startsWith('data:')) {
       const bucket = adminStorage.bucket();
       
-      const mimeType = imageUrl.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/)?.[1];
-      if (!mimeType) {
+      const mimeTypeMatch = imageUrl.match(/data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,/);
+      if (!mimeTypeMatch || !mimeTypeMatch[1]) {
         throw new Error("Invalid Data URI: MIME type not found.");
       }
+      const mimeType = mimeTypeMatch[1];
       
       const base64EncodedImageString = imageUrl.split(';base64,').pop();
       if (!base64EncodedImageString) {
@@ -36,15 +38,18 @@ export async function POST(req: Request) {
 
       const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
       
-      const fileName = `${collectionName}/${documentId}-${uuidv4()}.${mimeType.split('/')[1]}`;
+      const fileExtension = mimeType.split('/')[1] || 'png';
+      const fileName = `${collectionName}/${documentId}-${uuidv4()}.${fileExtension}`;
       const file = bucket.file(fileName);
 
       await file.save(imageBuffer, {
         metadata: { contentType: mimeType },
+        // Make the file publicly readable.
+        // For production, you might want more granular control with signed URLs.
         public: true, 
       });
 
-      // Get the public URL
+      // Get the public URL. This is the standard format for public files on GCS.
       finalImageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
     }
     
@@ -56,33 +61,31 @@ export async function POST(req: Request) {
         const careersRef = adminDb.collection(`Politecnico/mzIX7rzezDezczAV6pQ7/carreras`);
         const snapshot = await careersRef.get();
         
-        let updated = false;
+        let wasUpdated = false;
         const batch = adminDb.batch();
 
         for (const careerDoc of snapshot.docs) {
             const careerData = careerDoc.data();
-            let ciclos = careerData.ciclos || [];
             let needsUpdate = false;
 
-            ciclos = ciclos.map((ciclo: any) => {
-                if (!ciclo.materias) return ciclo;
-                const materias = ciclo.materias.map((materia: any) => {
+            const updatedCiclos = (careerData.ciclos || []).map((ciclo: any) => {
+                const updatedMaterias = (ciclo.materias || []).map((materia: any) => {
                     if (materia.id === documentId) {
                         needsUpdate = true;
+                        wasUpdated = true;
                         return { ...materia, imagenURL: finalImageUrl };
                     }
                     return materia;
                 });
-                return { ...ciclo, materias };
+                return { ...ciclo, materias: updatedMaterias };
             });
 
             if (needsUpdate) {
-                batch.update(careerDoc.ref, { ciclos });
-                updated = true;
+                batch.update(careerDoc.ref, { ciclos: updatedCiclos });
             }
         }
         
-        if (!updated) {
+        if (!wasUpdated) {
             return NextResponse.json({ message: "Materia no encontrada en ninguna carrera." }, { status: 404 });
         }
         
