@@ -6,12 +6,12 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import Image from "next/image";
 import { MediaManagementDialog } from "@/components/dashboard/admin/media-management-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Materia } from "@/types";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Clapperboard } from "lucide-react";
 
 interface Career {
   id: string;
@@ -19,14 +19,23 @@ interface Career {
   imagenURL?: string;
 }
 
+interface SiteImage {
+    id: string;
+    name: string;
+    description: string;
+    imageUrl: string;
+}
+
 export default function MediaManagementPage() {
   const [careers, setCareers] = useState<Career[]>([]);
   const [subjects, setSubjects] = useState<Materia[]>([]);
+  const [siteImages, setSiteImages] = useState<SiteImage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const fetchMediaData = useCallback(async () => {
     setIsLoading(true);
     try {
+      // Fetch Careers and Subjects
       const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
       
       const careersList: Career[] = [];
@@ -50,7 +59,7 @@ export default function MediaManagementPage() {
                       nombre: materia.nombre,
                       codigo: materia.codigo,
                       creditos: materia.creditos,
-                      imagenURL: materia.imagenURL || "" // Ensure imagenURL is always defined
+                      imagenURL: materia.imagenURL || ""
                   });
                 }
               });
@@ -61,6 +70,18 @@ export default function MediaManagementPage() {
 
       setCareers(careersList);
       setSubjects(Array.from(allSubjectsMap.values()));
+
+      // Fetch Site Images
+      const heroImageRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/siteSettings", "heroImage");
+      const heroImageSnap = await getDoc(heroImageRef);
+      
+      const heroImageData: SiteImage = {
+        id: 'heroImage',
+        name: 'Imagen Principal (Hero)',
+        description: 'La imagen principal de la página de inicio.',
+        imageUrl: heroImageSnap.exists() ? heroImageSnap.data().imageUrl : ""
+      };
+      setSiteImages([heroImageData]);
 
     } catch (error) {
       console.error("Error fetching media data:", error);
@@ -77,15 +98,58 @@ export default function MediaManagementPage() {
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Gestión de Media"
-        description="Administra las imágenes de carreras y materias."
+        description="Administra las imágenes de carreras, materias e imágenes del sitio."
         icon={<ImageIcon className="h-8 w-8 text-primary" />}
       />
 
-      <Tabs defaultValue="careers">
-        <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+      <Tabs defaultValue="site">
+        <TabsList className="grid w-full grid-cols-3 max-w-lg mx-auto">
+          <TabsTrigger value="site">Imágenes del Sitio</TabsTrigger>
           <TabsTrigger value="careers">Carreras</TabsTrigger>
           <TabsTrigger value="subjects">Materias</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="site">
+          <Card>
+            <CardHeader>
+              <CardTitle>Imágenes Generales del Sitio</CardTitle>
+              <CardDescription>Gestiona imágenes importantes como el banner principal.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+               {isLoading ? (
+                Array.from({ length: 1 }).map((_, i) => <Skeleton key={i} className="h-64" />)
+              ) : (
+                siteImages.map(item => (
+                  <Card key={item.id}>
+                    <CardHeader className="p-4">
+                      <CardTitle className="text-base truncate">{item.name}</CardTitle>
+                       <CardDescription className="text-xs truncate">{item.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0">
+                      <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden mb-4">
+                        {item.imageUrl && item.imageUrl.startsWith("http") ? (
+                          <Image src={item.imageUrl} alt={item.name} fill style={{ objectFit: 'cover' }} />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-muted-foreground">
+                            <Clapperboard className="h-10 w-10" />
+                          </div>
+                        )}
+                      </div>
+                      <MediaManagementDialog
+                        documentId={item.id}
+                        documentName={item.name}
+                        collectionName="siteSettings"
+                        currentImageUrl={item.imageUrl}
+                        onUpdate={fetchMediaData}
+                      />
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
         <TabsContent value="careers">
           <Card>
             <CardHeader>
@@ -103,7 +167,7 @@ export default function MediaManagementPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden mb-4">
-                        {item.imagenURL ? (
+                        {item.imagenURL && item.imagenURL.startsWith("http") ? (
                           <Image src={item.imagenURL} alt={item.nombre} fill style={{ objectFit: 'cover' }} />
                         ) : (
                           <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -125,6 +189,7 @@ export default function MediaManagementPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
         <TabsContent value="subjects">
            <Card>
             <CardHeader>
@@ -142,7 +207,7 @@ export default function MediaManagementPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden mb-4">
-                        {item.imagenURL ? (
+                        {item.imagenURL && item.imagenURL.startsWith("http") ? (
                           <Image src={item.imagenURL} alt={item.nombre} fill style={{ objectFit: 'cover' }} />
                         ) : (
                           <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -151,7 +216,7 @@ export default function MediaManagementPage() {
                         )}
                       </div>
                       <MediaManagementDialog
-                        documentId={item.id}
+                        documentId={item.id as string}
                         documentName={item.nombre}
                         collectionName="materias"
                         currentImageUrl={item.imagenURL}

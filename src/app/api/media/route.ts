@@ -1,13 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDocs, writeBatch } from "firebase/firestore";
-
-// This endpoint is simplified to not use Firebase Admin SDK or Storage directly.
-// It takes a URL (which can be an http/https URL or a base64 data URI)
-// and saves it directly to the imagenURL field in Firestore.
-// WARNING: In a real-world application, you MUST add authentication
-// and authorization checks here to ensure only admin users can perform this action.
+import { collection, doc, getDocs, writeBatch, updateDoc, setDoc } from "firebase/firestore";
 
 export async function POST(req: Request) {
   try {
@@ -17,13 +11,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Datos incompletos." }, { status: 400 });
     }
     
-    if (collectionName !== 'carreras' && collectionName !== 'materias') {
+    if (collectionName !== 'carreras' && collectionName !== 'materias' && collectionName !== 'siteSettings') {
         return NextResponse.json({ message: "Colección no válida." }, { status: 400 });
     }
     
     if (collectionName === 'carreras') {
         const docRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", documentId);
-        await writeBatch(db).update(docRef, { imagenURL: imageUrl }).commit();
+        await updateDoc(docRef, { imagenURL: imageUrl });
+    } else if (collectionName === 'siteSettings') {
+        const docRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/siteSettings", documentId);
+        await setDoc(docRef, { imageUrl: imageUrl }, { merge: true });
     } else if (collectionName === 'materias') {
         const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
         const snapshot = await getDocs(careersRef);

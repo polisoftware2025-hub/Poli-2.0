@@ -23,7 +23,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Autoplay from "embla-carousel-autoplay"
 import { db } from "@/lib/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -40,12 +40,15 @@ interface Program {
     imageHint: string;
 }
 
+const DEFAULT_HERO_IMAGE = "/images/default-hero.jpg"; // Add a default hero image to your public folder
+
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [heroImageUrl, setHeroImageUrl] = useState<string>(DEFAULT_HERO_IMAGE);
 
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
@@ -55,9 +58,10 @@ export default function HomePage() {
   ];
 
   useEffect(() => {
-    const fetchPrograms = async () => {
+    const fetchPageData = async () => {
         setIsLoading(true);
         try {
+            // Fetch Programs
             const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
             const careersSnapshot = await getDocs(careersCollection);
             const careersList = careersSnapshot.docs.map(doc => {
@@ -71,29 +75,31 @@ export default function HomePage() {
                 }
             });
             setPrograms(careersList);
+
+            // Fetch Hero Image
+            const heroImageRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/siteSettings", "heroImage");
+            const heroImageSnap = await getDoc(heroImageRef);
+            if (heroImageSnap.exists() && heroImageSnap.data().imageUrl) {
+                setHeroImageUrl(heroImageSnap.data().imageUrl);
+            }
+
         } catch (error) {
-            console.error("Error fetching programs: ", error);
+            console.error("Error fetching page data: ", error);
         } finally {
             setIsLoading(false);
         }
     };
-    fetchPrograms();
+    fetchPageData();
   }, []);
 
   useEffect(() => {
     if (!carouselApi) {
       return;
     }
-
-    const onSelect = (api: CarouselApi) => {
-      setCurrentSlide(api.selectedScrollSnap());
-    };
-
-    carouselApi.on("select", onSelect);
-
-    return () => {
-      carouselApi.off("select", onSelect);
-    };
+    setCurrentSlide(carouselApi.selectedScrollSnap());
+    carouselApi.on("select", () => {
+      setCurrentSlide(carouselApi.selectedScrollSnap());
+    });
   }, [carouselApi]);
   
   useEffect(() => {
@@ -176,11 +182,10 @@ export default function HomePage() {
         {/* Hero Section */}
         <section
           id="inicio"
-          className="relative flex h-screen w-full items-center justify-center text-center text-white"
+          className="relative flex h-screen w-full items-center justify-center text-center text-white bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroImageUrl})` }}
         >
-          <div className="absolute inset-0 z-0">
-             <div className="absolute inset-0 z-10 bg-[#002147]/60" />
-          </div>
+          <div className="absolute inset-0 z-0 bg-[#002147]/60" />
           <div className="relative z-20 flex flex-col items-center p-6">
             <h1 className="font-poppins text-5xl font-bold md:text-7xl">
               Somos Politécnico 2.0
@@ -237,9 +242,9 @@ export default function HomePage() {
                 <Carousel 
                     setApi={setCarouselApi} 
                     className="w-full"
-                    plugins={[Autoplay({ delay: 4000, stopOnInteraction: true })]}
+                    plugins={programs.length > 1 ? [Autoplay({ delay: 4000, stopOnInteraction: true })] : []}
                     opts={{
-                        loop: true,
+                        loop: programs.length > 1,
                         align: "start",
                     }}
                 >
