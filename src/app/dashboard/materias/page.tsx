@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,7 +11,7 @@ import { BookCopy, Search, MoreVertical, LayoutGrid, List } from "lucide-react";
 import Image from "next/image";
 import { PageHeader } from "@/components/page-header";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, DocumentData } from "firestore";
+import { doc, getDoc, DocumentData } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Course {
