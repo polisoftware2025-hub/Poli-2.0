@@ -12,7 +12,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Input }from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -130,7 +130,7 @@ export function MediaManagementDialog({
           <TabsContent value="upload" className="py-4">
             <div className="space-y-4">
                 <Label htmlFor="file-upload">Seleccionar imagen</Label>
-                <Input id="file-upload" type="file" accept="image/*" onChange={handleFileChange} />
+                <Input id="file-upload" type="file" onChange={handleFileChange} />
                 <Button onClick={handleFileUpload} disabled={isLoading || !file} className="w-full">
                     {isLoading ? "Subiendo..." : "Subir y Guardar"}
                 </Button>
