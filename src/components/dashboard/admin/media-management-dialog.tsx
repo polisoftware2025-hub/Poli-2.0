@@ -36,17 +36,52 @@ export function MediaManagementDialog({
 }: MediaManagementDialogProps) {
   const [open, setOpen] = useState(false);
   const [uploadType, setUploadType] = useState<"url" | "file">("url");
-  const [url, setUrl] = useState(currentImageUrl || "");
+  const [imageUrl, setImageUrl] = useState(currentImageUrl || ""); // Holds the final URL (data or http)
+  const [urlInput, setUrlInput] = useState(""); // Exclusively for the URL input field
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState(currentImageUrl || "");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const initializeState = (imgUrl: string | undefined) => {
+    const initialUrl = imgUrl || "";
+    setPreviewUrl(initialUrl);
+    setImageUrl(initialUrl);
+
+    if (initialUrl.startsWith("data:image")) {
+      setUploadType("file");
+      setUrlInput("");
+    } else {
+      setUploadType("url");
+      setUrlInput(initialUrl);
+    }
+  };
+
   useEffect(() => {
-    setUrl(currentImageUrl || "");
-    setPreviewUrl(currentImageUrl || "");
+    initializeState(currentImageUrl);
   }, [currentImageUrl]);
 
+  const handleOpenChange = (isOpen: boolean) => {
+    if (isOpen) {
+      initializeState(currentImageUrl);
+    }
+    setOpen(isOpen);
+  };
+  
+  const handleUploadTypeChange = (value: "url" | "file") => {
+    setUploadType(value);
+    // Reset inputs when switching to avoid conflicts
+    if (value === "url") {
+      setFile(null);
+      // If there's an existing HTTP URL, restore it, otherwise clear.
+      const existingHttpUrl = (currentImageUrl && !currentImageUrl.startsWith("data:")) ? currentImageUrl : "";
+      setUrlInput(existingHttpUrl);
+      setImageUrl(existingHttpUrl);
+      setPreviewUrl(existingHttpUrl);
+    } else {
+      setUrlInput(""); // Clear URL input when switching to file upload
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -56,56 +91,28 @@ export function MediaManagementDialog({
       reader.onloadend = () => {
         const result = reader.result as string;
         setPreviewUrl(result);
-        setUrl(result); 
+        setImageUrl(result); // The data URI is now the source of truth
+        setUrlInput(""); // Clear the url input field
       };
       reader.readAsDataURL(selectedFile);
     }
   };
 
-  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUrlInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value;
-    setUrl(newUrl);
+    setUrlInput(newUrl);
+    setImageUrl(newUrl);
     setPreviewUrl(newUrl);
   };
   
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
-      const initialUrl = currentImageUrl || "";
-      setUrl(initialUrl);
-      setPreviewUrl(initialUrl);
-      setFile(null);
-      setUploadType(initialUrl.startsWith("data:image") ? "file" : "url");
-    }
-    setOpen(isOpen);
-  };
-
   const handleUpdate = async () => {
-    let imageUrl: string | null = null;
-    
-    setIsLoading(true);
-
-    if (uploadType === "url") {
-        if (!url) {
-            toast({ variant: "destructive", title: "URL Inválida", description: "Por favor, introduce una URL válida." });
-            setIsLoading(false);
-            return;
-        }
-        imageUrl = url;
-    } else {
-        if (!file && !url.startsWith("data:image")) {
-            toast({ variant: "destructive", title: "Archivo no seleccionado", description: "Por favor, selecciona un archivo para subir." });
-            setIsLoading(false);
-            return;
-        }
-        imageUrl = url; // url state already holds the data URI
-    }
-
     if (!imageUrl) {
-        toast({ variant: "destructive", title: "Error", description: "No se pudo obtener la imagen." });
-        setIsLoading(false);
+        toast({ variant: "destructive", title: "Imagen no proporcionada", description: "Por favor, proporciona una URL o sube un archivo." });
         return;
     }
-
+    
+    setIsLoading(true);
+    
     try {
         const response = await fetch("/api/media", {
             method: "POST",
@@ -155,7 +162,7 @@ export function MediaManagementDialog({
             )}
         </div>
 
-        <RadioGroup defaultValue="url" value={uploadType} onValueChange={(value: "url" | "file") => setUploadType(value)}>
+        <RadioGroup value={uploadType} onValueChange={handleUploadTypeChange}>
             <div className="flex items-center space-x-2">
                 <RadioGroupItem value="url" id="r-url" />
                 <Label htmlFor="r-url">Usar URL externa</Label>
@@ -169,7 +176,7 @@ export function MediaManagementDialog({
         {uploadType === "url" ? (
              <div className="space-y-2 py-4">
                 <Label htmlFor="url-input" className="flex items-center gap-2"><Link2 className="h-4 w-4"/> URL de la imagen</Label>
-                <Input id="url-input" type="url" placeholder="https://ejemplo.com/imagen.jpg" value={url.startsWith("data:image") ? "" : url} onChange={handleUrlChange} />
+                <Input id="url-input" type="url" placeholder="https://ejemplo.com/imagen.jpg" value={urlInput} onChange={handleUrlInputChange} />
             </div>
         ) : (
              <div className="space-y-2 py-4">
