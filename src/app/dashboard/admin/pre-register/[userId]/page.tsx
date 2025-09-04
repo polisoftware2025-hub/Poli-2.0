@@ -98,8 +98,8 @@ export default function PreRegisterDetailPage() {
         }
 
         // Ensure dates are JavaScript Date objects
-        const fechaNacimiento = userData.fechaNacimiento?.toDate ? userData.fechaNacimiento.toDate() : userData.fechaNacimiento;
-        const fechaRegistro = studentData.fechaRegistro?.toDate ? studentData.fechaRegistro.toDate() : studentData.fechaRegistro;
+        const fechaNacimiento = userData.fechaNacimiento?.toDate ? userData.fechaNacimiento.toDate() : new Date();
+        const fechaRegistro = studentData.fechaRegistro?.toDate ? studentData.fechaRegistro.toDate() : new Date();
 
         setApplicantData({
             id: userId,
@@ -109,11 +109,11 @@ export default function PreRegisterDetailPage() {
             direccion: userData.direccion,
             tipoIdentificacion: userData.tipoIdentificacion,
             identificacion: userData.identificacion,
-            fechaNacimiento: fechaNacimiento,
+            fechaNacimiento,
             carreraId: studentData.carreraId,
             grupo: studentData.grupo,
             sedeId: studentData.sedeId,
-            fechaRegistro: fechaRegistro,
+            fechaRegistro,
             estado: studentData.estado,
             carreraNombre,
             sedeNombre,
@@ -166,114 +166,102 @@ export default function PreRegisterDetailPage() {
       });
   }
   
-  if (isLoading) {
-    return (
-        <div className="flex flex-col gap-8">
-            <PageHeader
-                title="Detalle del Aspirante"
-                description="..."
-                icon={<ClipboardList className="h-8 w-8 text-primary" />}
-            />
-            <Card>
-                <CardHeader>
-                    <Skeleton className="h-8 w-1/2" />
-                    <Skeleton className="h-4 w-1/4" />
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    <Skeleton className="h-24 w-full" />
-                    <Skeleton className="h-24 w-full" />
-                </CardContent>
-                <CardFooter>
-                    <Skeleton className="h-10 w-48" />
-                </CardFooter>
-            </Card>
-        </div>
-    )
-  }
-
-  if (!applicantData) {
-    return notFound();
-  }
-
-
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Detalle del Aspirante"
-        description={`Revisa la información de ${applicantData.nombreCompleto}.`}
+        description={`Revisa la información de ${applicantData?.nombreCompleto || '...'}.`}
         icon={<ClipboardList className="h-8 w-8 text-primary" />}
         backPath="/dashboard/admin/pre-register"
       />
 
-      <Card>
-        <CardHeader>
-            <div className="flex justify-between items-start">
-                <div>
-                    <CardTitle className="text-2xl">{applicantData.nombreCompleto}</CardTitle>
-                    <CardDescription>
-                        Solicitud recibida el {applicantData.fechaRegistro.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-                    </CardDescription>
-                </div>
-                <Button>Descargar Documentos</Button>
-            </div>
-        </CardHeader>
-        <CardContent className="space-y-8">
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <User className="h-6 w-6 text-primary" />
-              <h3 className="text-xl font-semibold">Información Personal</h3>
-            </div>
-            <dl className="space-y-4">
-              <DetailItem label="Tipo de Identificación" value={applicantData.tipoIdentificacion} />
-              <DetailItem label="Número de Identificación" value={applicantData.identificacion} />
-              <DetailItem label="Fecha de Nacimiento" value={applicantData.fechaNacimiento.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })} />
-            </dl>
-          </section>
-
-          <Separator />
-
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <Phone className="h-6 w-6 text-primary" />
-              <h3 className="text-xl font-semibold">Datos de Contacto</h3>
-            </div>
-            <dl className="space-y-4">
-              <DetailItem label="Correo Personal" value={applicantData.correo} />
-              <DetailItem label="Teléfono" value={applicantData.telefono} />
-              <DetailItem label="Dirección" value={applicantData.direccion} />
-            </dl>
-          </section>
-
-          <Separator />
-
-          <section>
-            <div className="flex items-center gap-3 mb-4">
-              <BookOpen className="h-6 w-6 text-primary" />
-              <h3 className="text-xl font-semibold">Información Académica</h3>
-            </div>
-            <dl className="space-y-4">
-              <DetailItem label="Carrera de Interés" value={applicantData.carreraNombre} />
-              <DetailItem label="Sede" value={applicantData.sedeNombre} />
-               <DetailItem label="Grupo Seleccionado" value={applicantData.grupo} />
-            </dl>
-          </section>
-        </CardContent>
-        
-        {applicantData.estado === 'pendiente' && (
-            <CardFooter className="p-6 bg-gray-50 rounded-b-xl border-t">
-              <div className="flex w-full justify-end gap-4">
-                <Button variant="destructive" onClick={handleReject} disabled={isProcessing}>
-                  <X className="mr-2 h-4 w-4" />
-                   {isProcessing ? "Rechazando..." : "Rechazar Solicitud"}
-                </Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={handleApprove} disabled={isProcessing}>
-                  <Check className="mr-2 h-4 w-4" />
-                   {isProcessing ? "Aprobando..." : "Aprobar Solicitud"}
-                </Button>
+      {isLoading ? (
+        <Card>
+          <CardHeader>
+              <Skeleton className="h-8 w-1/2" />
+              <Skeleton className="h-4 w-1/4" />
+          </CardHeader>
+          <CardContent className="space-y-8">
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-24 w-full" />
+          </CardContent>
+          <CardFooter>
+              <Skeleton className="h-10 w-48" />
+          </CardFooter>
+        </Card>
+      ) : !applicantData ? (
+        notFound()
+      ) : (
+        <Card>
+          <CardHeader>
+              <div className="flex justify-between items-start">
+                  <div>
+                      <CardTitle className="text-2xl">{applicantData.nombreCompleto}</CardTitle>
+                      <CardDescription>
+                          Solicitud recibida el {applicantData.fechaRegistro.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </CardDescription>
+                  </div>
+                  <Button>Descargar Documentos</Button>
               </div>
-            </CardFooter>
-        )}
-      </Card>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <User className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold">Información Personal</h3>
+              </div>
+              <dl className="space-y-4">
+                <DetailItem label="Tipo de Identificación" value={applicantData.tipoIdentificacion} />
+                <DetailItem label="Número de Identificación" value={applicantData.identificacion} />
+                <DetailItem label="Fecha de Nacimiento" value={applicantData.fechaNacimiento.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })} />
+              </dl>
+            </section>
+
+            <Separator />
+
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <Phone className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold">Datos de Contacto</h3>
+              </div>
+              <dl className="space-y-4">
+                <DetailItem label="Correo Personal" value={applicantData.correo} />
+                <DetailItem label="Teléfono" value={applicantData.telefono} />
+                <DetailItem label="Dirección" value={applicantData.direccion} />
+              </dl>
+            </section>
+
+            <Separator />
+
+            <section>
+              <div className="flex items-center gap-3 mb-4">
+                <BookOpen className="h-6 w-6 text-primary" />
+                <h3 className="text-xl font-semibold">Información Académica</h3>
+              </div>
+              <dl className="space-y-4">
+                <DetailItem label="Carrera de Interés" value={applicantData.carreraNombre} />
+                <DetailItem label="Sede" value={applicantData.sedeNombre} />
+                 <DetailItem label="Grupo Seleccionado" value={applicantData.grupo} />
+              </dl>
+            </section>
+          </CardContent>
+          
+          {applicantData.estado === 'pendiente' && (
+              <CardFooter className="p-6 bg-gray-50 rounded-b-xl border-t">
+                <div className="flex w-full justify-end gap-4">
+                  <Button variant="destructive" onClick={handleReject} disabled={isProcessing}>
+                    <X className="mr-2 h-4 w-4" />
+                     {isProcessing ? "Rechazando..." : "Rechazar Solicitud"}
+                  </Button>
+                  <Button className="bg-green-600 hover:bg-green-700" onClick={handleApprove} disabled={isProcessing}>
+                    <Check className="mr-2 h-4 w-4" />
+                     {isProcessing ? "Aprobando..." : "Aprobar Solicitud"}
+                  </Button>
+                </div>
+              </CardFooter>
+          )}
+        </Card>
+      )}
     </div>
   );
 }
