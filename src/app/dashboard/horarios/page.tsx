@@ -64,11 +64,10 @@ export default function HorariosPage() {
         let q;
 
         if (userRole === 'estudiante') {
-          q = query(groupsRef, where("estudiantes", "array-contains", { id: userId, nombre: "placeholder" })); // Placeholder, needs better query
           const studentDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId));
           if(studentDoc.exists()){
               const studentGroupsSnapshot = await getDocs(query(groupsRef, where('idCarrera', '==', studentDoc.data().carreraId), where('idSede', '==', studentDoc.data().sedeId)));
-              studentGroups = studentGroupsSnapshot.docs.map(d => ({id: d.id, ...d.data()} as Group));
+              userGroups = studentGroupsSnapshot.docs.map(d => ({id: d.id, ...d.data()} as Group));
           }
         } else if (userRole === 'docente') {
           q = query(groupsRef, where("docente.usuarioId", "==", userId));
