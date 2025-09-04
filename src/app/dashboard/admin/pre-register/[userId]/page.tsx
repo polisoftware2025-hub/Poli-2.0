@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useParams, useRouter, notFound } from "next/navigation";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, writeBatch, Timestamp } from "firebase/firestore";
+import { doc, getDoc, writeBatch, Timestamp, collection, query, where, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { processStudentEnrollment } from "@/ai/flows/enroll-student-flow";
@@ -59,15 +59,23 @@ export default function PreRegisterDetailPage() {
       setIsLoading(true);
       try {
         const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
-        const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+        const userSnap = await getDoc(userRef);
 
-        const [userSnap, studentSnap] = await Promise.all([getDoc(userRef), getDoc(studentRef)]);
-
-        if (!userSnap.exists() || !studentSnap.exists()) {
+        if (!userSnap.exists()) {
           notFound();
           return;
         }
+        
+        const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+        const studentQuery = query(studentsRef, where("usuarioId", "==", userId));
+        const studentQuerySnapshot = await getDocs(studentQuery);
 
+        if (studentQuerySnapshot.empty) {
+            notFound();
+            return;
+        }
+
+        const studentSnap = studentQuerySnapshot.docs[0];
         const userData = userSnap.data();
         const studentData = studentSnap.data();
 
@@ -97,11 +105,11 @@ export default function PreRegisterDetailPage() {
             direccion: userData.direccion,
             tipoIdentificacion: userData.tipoIdentificacion,
             identificacion: userData.identificacion,
-            fechaNacimiento: userData.fechaNacimiento.toDate(),
+            fechaNacimiento: userData.fechaNacimiento,
             carreraId: studentData.carreraId,
             grupo: studentData.grupo,
             sedeId: studentData.sedeId,
-            fechaRegistro: studentData.fechaRegistro.toDate(),
+            fechaRegistro: studentData.fechaRegistro,
             estado: studentData.estado,
             carreraNombre,
             sedeNombre,
