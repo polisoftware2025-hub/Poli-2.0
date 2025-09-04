@@ -167,7 +167,7 @@ export default function MediaManagementPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden mb-4">
-                        {item.imagenURL && item.imagenURL.startsWith("http") ? (
+                        {item.imagenURL && (item.imagenURL.startsWith("http") || item.imagenURL.startsWith("data:image")) ? (
                           <Image src={item.imagenURL} alt={item.nombre} fill style={{ objectFit: 'cover' }} />
                         ) : (
                           <div className="flex items-center justify-center h-full text-muted-foreground">
@@ -207,7 +207,7 @@ export default function MediaManagementPage() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                       <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden mb-4">
-                        {item.imagenURL && item.imagenURL.startsWith("http") ? (
+                        {item.imagenURL && (item.imagenURL.startsWith("http") || item.imagenURL.startsWith("data:image"))? (
                           <Image src={item.imagenURL} alt={item.nombre} fill style={{ objectFit: 'cover' }} />
                         ) : (
                           <div className="flex items-center justify-center h-full text-muted-foreground">
