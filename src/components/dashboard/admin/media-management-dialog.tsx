@@ -43,10 +43,6 @@ export function MediaManagementDialog({
   const { toast } = useToast();
 
   useEffect(() => {
-    // This effect synchronizes the internal state with the prop from the parent component.
-    // It ensures that if the dialog is re-rendered with a new `currentImageUrl`
-    // (e.g., after an update), the state is correctly updated.
-    // The `|| ""` ensures the value is never undefined.
     setUrl(currentImageUrl || "");
     setPreviewUrl(currentImageUrl || "");
   }, [currentImageUrl]);
@@ -89,8 +85,8 @@ export function MediaManagementDialog({
     setIsLoading(true);
 
     if (uploadType === "url") {
-        if (!url || !url.startsWith("http")) {
-            toast({ variant: "destructive", title: "URL Inválida", description: "Por favor, introduce una URL válida que empiece con http o https." });
+        if (!url) {
+            toast({ variant: "destructive", title: "URL Inválida", description: "Por favor, introduce una URL válida." });
             setIsLoading(false);
             return;
         }
