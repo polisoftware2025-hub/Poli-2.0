@@ -48,8 +48,9 @@ export function MediaManagementDialog({
       setFile(selectedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-        setUrl(reader.result as string); // Store base64 data in url state for submission
+        const result = reader.result as string;
+        setPreviewUrl(result);
+        setUrl(result); // Store base64 data in url state for submission
       };
       reader.readAsDataURL(selectedFile);
     }
