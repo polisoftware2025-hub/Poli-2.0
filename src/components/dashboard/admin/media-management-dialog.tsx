@@ -74,7 +74,7 @@ export function MediaManagementDialog({
       setUrl(initialUrl);
       setPreviewUrl(initialUrl);
       setFile(null);
-      setUploadType("url");
+      setUploadType(initialUrl.startsWith("data:image") ? "file" : "url");
     }
     setOpen(isOpen);
   };
@@ -92,12 +92,12 @@ export function MediaManagementDialog({
         }
         imageUrl = url;
     } else {
-        if (!file) {
+        if (!file && !url.startsWith("data:image")) {
             toast({ variant: "destructive", title: "Archivo no seleccionado", description: "Por favor, selecciona un archivo para subir." });
             setIsLoading(false);
             return;
         }
-        imageUrl = url;
+        imageUrl = url; // url state already holds the data URI
     }
 
     if (!imageUrl) {
