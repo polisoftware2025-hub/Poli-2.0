@@ -47,7 +47,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 
 const groupSchema = z.object({
-  nombreGrupo: z.string().min(1, "El nombre del grupo es requerido."),
+  codigoGrupo: z.string().min(1, "El código del grupo es requerido."),
   idSede: z.string().min(1, "La sede es requerida."),
   idCarrera: z.string().min(1, "La carrera es requerida."),
   ciclo: z.coerce.number().min(1, "El ciclo debe ser al menos 1.").max(12, "El ciclo no puede ser mayor a 12."),
@@ -189,7 +189,7 @@ export default function GroupsAdminPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nombre del Grupo</TableHead>
+                  <TableHead>Código del Grupo</TableHead>
                   <TableHead>Carrera</TableHead>
                   <TableHead>Sede</TableHead>
                   <TableHead>Ciclo</TableHead>
@@ -211,7 +211,7 @@ export default function GroupsAdminPage() {
                   ))
                 ) : filteredGroups.map((group) => (
                   <TableRow key={group.id}>
-                    <TableCell className="font-medium">{group.nombreGrupo}</TableCell>
+                    <TableCell className="font-medium">{group.codigoGrupo}</TableCell>
                     <TableCell>{group.carreraNombre}</TableCell>
                     <TableCell>{group.sedeNombre}</TableCell>
                     <TableCell>{group.ciclo}</TableCell>
@@ -242,7 +242,7 @@ export default function GroupsAdminPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Esta acción no se puede deshacer. Esto eliminará permanentemente el grupo <strong>{group.nombreGrupo}</strong>.
+                                Esta acción no se puede deshacer. Esto eliminará permanentemente el grupo <strong>{group.codigoGrupo}</strong>.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -294,13 +294,13 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
   const form = useForm<GroupFormValues>({
     resolver: zodResolver(groupSchema),
     defaultValues: group ? {
-      nombreGrupo: group.nombreGrupo || "",
+      codigoGrupo: group.codigoGrupo || "",
       idSede: group.idSede || "",
       idCarrera: group.idCarrera || "",
       ciclo: group.ciclo || 1,
       estado: group.estado || "activo",
     } : {
-      nombreGrupo: "",
+      codigoGrupo: "",
       idSede: "",
       idCarrera: "",
       ciclo: 1,
@@ -372,10 +372,10 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
             />
             <FormField
               control={form.control}
-              name="nombreGrupo"
+              name="codigoGrupo"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nombre del Grupo</FormLabel>
+                  <FormLabel>Código del Grupo</FormLabel>
                   <FormControl><Input placeholder="Ej: G1-Matutino" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
