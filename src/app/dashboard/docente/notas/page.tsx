@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { GroupSelector } from "@/components/dashboard/docente/group-selector";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { db } from "@/lib/firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, query, where, getDocs, doc } from "firebase/firestore";
 import { Textarea } from "@/components/ui/textarea";
 
 interface Student {
@@ -27,10 +27,16 @@ interface Group {
   docente: { id: string; nombre: string; email: string; usuarioId: string };
 }
 
+interface PartialGrade {
+    type: 'Quiz' | 'Taller' | 'Parcial' | 'Trabajo';
+    grade: number;
+}
+
 export default function RegisterGradesPage() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [selectedStudentId, setSelectedStudentId] = useState<string>("");
-  const [grade, setGrade] = useState("");
+  const [finalGrade, setFinalGrade] = useState("");
+  const [partialGrades, setPartialGrades] = useState<PartialGrade[]>([]);
   const [observation, setObservation] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -43,20 +49,50 @@ export default function RegisterGradesPage() {
     }
   }, []);
 
-  const handleGroupSelect = (group: Group | null) => {
+  const handleGroupSelect = async (group: Group | null) => {
     setSelectedGroup(group);
     setSelectedStudentId(""); 
-    setGrade("");
+    setFinalGrade("");
+    setPartialGrades([]);
     setObservation("");
+
+    if (group) {
+        // Fetch full student details
+        const studentIds = group.estudiantes.map(s => s.id);
+        if (studentIds.length === 0) {
+            group.estudiantes = [];
+            return;
+        };
+
+        const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+        const q = query(usersRef, where("__name__", "in", studentIds));
+        const userDocs = await getDocs(q);
+        const studentMap = new Map(userDocs.docs.map(d => [d.id, d.data().nombreCompleto]));
+        group.estudiantes = group.estudiantes.map(s => ({...s, nombre: studentMap.get(s.id) || s.nombre}));
+    }
   };
 
+  const handleAddPartialGrade = () => {
+    setPartialGrades([...partialGrades, { type: 'Quiz', grade: 0 }]);
+  };
+
+  const handlePartialGradeChange = (index: number, field: keyof PartialGrade, value: any) => {
+    const newGrades = [...partialGrades];
+    if (field === 'grade') {
+        newGrades[index][field] = parseFloat(value) || 0;
+    } else {
+        newGrades[index][field] = value;
+    }
+    setPartialGrades(newGrades);
+  };
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGroup || !selectedStudentId || !grade) {
+    if (!selectedGroup || !selectedStudentId || !finalGrade) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Por favor, completa todos los campos requeridos.",
+        description: "Por favor, completa grupo, estudiante y nota final.",
       });
       return;
     }
@@ -65,24 +101,24 @@ export default function RegisterGradesPage() {
         return;
     }
 
-    const numericGrade = parseFloat(grade);
+    const numericGrade = parseFloat(finalGrade);
     if (isNaN(numericGrade) || numericGrade < 0 || numericGrade > 5) {
-      toast({
-        variant: "destructive",
-        title: "Nota inválida",
-        description: "La nota debe ser un número entre 0.0 y 5.0.",
-      });
+      toast({ variant: "destructive", title: "Nota final inválida", description: "La nota debe ser un número entre 0.0 y 5.0." });
       return;
     }
 
     setIsLoading(true);
     try {
       const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
+      
+      const gradeHistory = partialGrades.map(pg => ({ type: pg.type, grade: pg.grade }));
+      
       await addDoc(notesRef, {
         estudianteId: selectedStudentId,
         grupoId: selectedGroup.id,
         materiaId: selectedGroup.materia.id,
         nota: numericGrade,
+        historial: gradeHistory,
         observacion: observation,
         fecha: serverTimestamp(),
         docenteId: docenteId, 
@@ -94,7 +130,8 @@ export default function RegisterGradesPage() {
       });
 
       setSelectedStudentId("");
-      setGrade("");
+      setFinalGrade("");
+      setPartialGrades([]);
       setObservation("");
 
     } catch (error) {
@@ -123,7 +160,7 @@ export default function RegisterGradesPage() {
         <CardHeader>
             <CardTitle>Formulario de Calificación</CardTitle>
             <CardDescription>
-                Completa los siguientes campos para registrar una nueva nota.
+                Completa los siguientes campos para registrar una nueva nota. Puedes añadir notas parciales para mantener un historial.
             </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
@@ -147,17 +184,45 @@ export default function RegisterGradesPage() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-4 rounded-md border p-4">
+                    <h3 className="font-semibold">Notas Parciales (Historial)</h3>
+                    {partialGrades.map((pg, index) => (
+                        <div key={index} className="grid grid-cols-3 gap-4 items-end">
+                            <div className="col-span-2 space-y-2">
+                                <Label htmlFor={`partial-type-${index}`}>Tipo de Nota</Label>
+                                 <Select value={pg.type} onValueChange={(value) => handlePartialGradeChange(index, 'type', value)}>
+                                    <SelectTrigger id={`partial-type-${index}`}>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Quiz">Quiz</SelectItem>
+                                        <SelectItem value="Taller">Taller</SelectItem>
+                                        <SelectItem value="Parcial">Parcial</SelectItem>
+                                        <SelectItem value="Trabajo">Trabajo</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor={`partial-grade-${index}`}>Nota</Label>
+                                <Input id={`partial-grade-${index}`} type="number" step="0.1" min="0" max="5" value={pg.grade} onChange={(e) => handlePartialGradeChange(index, 'grade', e.target.value)} />
+                            </div>
+                        </div>
+                    ))}
+                    <Button type="button" variant="outline" onClick={handleAddPartialGrade} disabled={!selectedStudentId}>Añadir Nota Parcial</Button>
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <Label htmlFor="grade">Nota (0.0 - 5.0)</Label>
+                        <Label htmlFor="grade" className="font-bold">Nota Final</Label>
                         <Input
                             id="grade"
                             type="number"
                             step="0.1"
                             min="0"
                             max="5"
-                            value={grade}
-                            onChange={(e) => setGrade(e.target.value)}
+                            value={finalGrade}
+                            onChange={(e) => setFinalGrade(e.target.value)}
                             placeholder="Ej: 4.5"
                             disabled={!selectedStudentId}
                         />
@@ -169,11 +234,11 @@ export default function RegisterGradesPage() {
                         id="observation"
                         value={observation}
                         onChange={(e) => setObservation(e.target.value)}
-                        placeholder="Añade un comentario sobre la entrega o el desempeño del estudiante..."
+                        placeholder="Ej: Nota final basada en el promedio de los talleres y el examen parcial."
                         disabled={!selectedStudentId}
                     />
                  </div>
-                <Button type="submit" disabled={isLoading || !selectedStudentId || !grade}>
+                <Button type="submit" disabled={isLoading || !selectedStudentId || !finalGrade}>
                   {isLoading ? "Guardando..." : "Guardar Nota"}
                 </Button>
               </>
