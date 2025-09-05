@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type SeedType = 'carrera' | 'grupos' | 'initial-data' | 'users' | 'sedes';
 
@@ -15,6 +17,9 @@ export default function AdminDashboardPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState<{[key in SeedType]?: boolean}>({});
   const { toast } = useToast();
+  const [stats, setStats] = useState({ userCount: 0, careerCount: 0 });
+  const [isLoadingStats, setIsLoadingStats] = useState(true);
+
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -27,6 +32,36 @@ export default function AdminDashboardPage() {
       router.push('/login');
     }
   }, [router]);
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      setIsLoadingStats(true);
+      try {
+        const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+        const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+        
+        const usersSnapshot = await getDocs(usersRef);
+        const careersSnapshot = await getDocs(careersRef);
+
+        setStats({
+          userCount: usersSnapshot.size,
+          careerCount: careersSnapshot.size,
+        });
+
+      } catch (error) {
+        console.error("Error fetching admin stats:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "No se pudieron cargar las estadísticas.",
+        });
+      } finally {
+        setIsLoadingStats(false);
+      }
+    };
+
+    fetchStats();
+  }, [toast]);
 
   const handleSeed = async (type: SeedType) => {
     setIsSeeding(prev => ({...prev, [type]: true}));
@@ -80,7 +115,11 @@ export default function AdminDashboardPage() {
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+1,234</div>
+               {isLoadingStats ? (
+                <Skeleton className="h-8 w-1/2" />
+              ) : (
+                <div className="text-2xl font-bold">{stats.userCount}</div>
+              )}
               <p className="text-xs text-muted-foreground">Gestión de todos los roles de usuario</p>
             </CardContent>
           </Card>
@@ -90,7 +129,11 @@ export default function AdminDashboardPage() {
               <BookOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">+25</div>
+              {isLoadingStats ? (
+                <Skeleton className="h-8 w-1/4" />
+              ) : (
+                <div className="text-2xl font-bold">{stats.careerCount}</div>
+              )}
               <p className="text-xs text-muted-foreground">Crear y editar programas académicos</p>
             </CardContent>
           </Card>
