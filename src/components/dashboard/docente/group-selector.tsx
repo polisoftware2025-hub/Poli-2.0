@@ -1,11 +1,12 @@
 
+      
 "use client";
 
 import { useState, useEffect } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 
 interface Student {
   id: string;
@@ -28,27 +29,48 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
   const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedGroupId, setSelectedGroupId] = useState<string>("");
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [docenteId, setDocenteId] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
-    setUserEmail(storedEmail);
+    const storedUserId = localStorage.getItem('userId');
+    setDocenteId(storedUserId);
   }, []);
 
   useEffect(() => {
-    if (!userEmail) return;
+    if (!docenteId) return;
 
     const fetchGroups = async () => {
       setIsLoading(true);
       try {
+        const docenteRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", docenteId);
+        const docenteSnap = await getDoc(docenteRef);
+
+        if (!docenteSnap.exists() || !docenteSnap.data().asignaciones) {
+          setGroups([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const assignments = docenteSnap.data().asignaciones;
+        const groupIds = assignments.map((a: any) => a.grupoId);
+
+        if (groupIds.length === 0) {
+          setGroups([]);
+          setIsLoading(false);
+          return;
+        }
+
         const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-        const q = query(groupsRef, where("docente.email", "==", userEmail));
+        const q = query(groupsRef, where("__name__", "in", groupIds));
+        
         const querySnapshot = await getDocs(q);
         const fetchedGroups: Group[] = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         } as Group));
+        
         setGroups(fetchedGroups);
+
       } catch (error) {
         console.error("Error fetching groups for selector: ", error);
       } finally {
@@ -57,7 +79,7 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
     };
 
     fetchGroups();
-  }, [userEmail]);
+  }, [docenteId]);
 
   const handleSelectChange = (groupId: string) => {
     setSelectedGroupId(groupId);
@@ -89,3 +111,5 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
     </div>
   );
 }
+
+    
