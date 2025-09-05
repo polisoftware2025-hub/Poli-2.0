@@ -7,7 +7,7 @@ import { BookCopy, Users, Mail, ArrowLeft, FileDown } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
+import { collection, query, where, getDocs, DocumentData, doc, getDoc } from "firebase/firestore";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 
@@ -37,36 +37,73 @@ export default function MyGroupsPage() {
   const [selectedGroup, setSelectedGroup] = useState<Group | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
-    setUserEmail(storedEmail);
+    const storedUserId = localStorage.getItem('userId');
+    setUserId(storedUserId);
   }, []);
 
   useEffect(() => {
-    if (!userEmail) return;
+    if (!userId) return;
 
     const fetchGroups = async () => {
       setIsLoading(true);
       setError(null);
       try {
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists() || !userSnap.data().asignaciones) {
+          setGroups([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const assignments = userSnap.data().asignaciones;
+        const groupIds = assignments.map((a: any) => a.grupoId);
+
+        if (groupIds.length === 0) {
+          setGroups([]);
+          setIsLoading(false);
+          return;
+        }
+
         const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-        const q = query(groupsRef, where("docente.email", "==", userEmail));
+        const q = query(groupsRef, where("__name__", "in", groupIds));
         
         const querySnapshot = await getDocs(q);
         const fetchedGroups: Group[] = [];
+        
+        const sedesCache = new Map();
+        const carrerasCache = new Map();
+        
+        for (const groupDoc of querySnapshot.docs) {
+            const data = groupDoc.data();
+            
+            let sedeNombre = sedesCache.get(data.idSede);
+            if (!sedeNombre) {
+                const sedeDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", data.idSede));
+                if (sedeDoc.exists()) {
+                    sedeNombre = sedeDoc.data().nombre;
+                    sedesCache.set(data.idSede, sedeNombre);
+                }
+            }
 
-        for (const doc of querySnapshot.docs) {
-            const data = doc.data();
-            const sedeSnapshot = await getDocs(query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"), where("id", "==", data.idSede)));
-            const carreraSnapshot = await getDocs(query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"), where("id", "==", data.idCarrera)));
+            let carreraNombre = carrerasCache.get(data.idCarrera);
+            if (!carreraNombre) {
+                const carreraDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", data.idCarrera));
+                if (carreraDoc.exists()) {
+                    carreraNombre = carreraDoc.data().nombre;
+                    carrerasCache.set(data.idCarrera, carreraNombre);
+                }
+            }
 
             fetchedGroups.push({
-              id: doc.id,
+              id: groupDoc.id,
               ...data,
-              sedeNombre: sedeSnapshot.docs.length > 0 ? sedeSnapshot.docs[0].data().nombre : "N/A",
-              carreraNombre: carreraSnapshot.docs.length > 0 ? carreraSnapshot.docs[0].data().nombre : "N/A",
+              sedeNombre: sedeNombre || "N/A",
+              carreraNombre: carreraNombre || "N/A",
             } as Group);
         }
         
@@ -80,7 +117,7 @@ export default function MyGroupsPage() {
     };
 
     fetchGroups();
-  }, [userEmail]);
+  }, [userId]);
   
   const handleViewDetails = async (group: Group) => {
     if (!group.estudiantes || group.estudiantes.length === 0) {
@@ -278,3 +315,5 @@ export default function MyGroupsPage() {
     </div>
   );
 }
+
+    
