@@ -49,11 +49,25 @@ interface AcademicInfo {
     periodo: string;
 }
 
+interface UserInfo {
+    nombre1: string;
+    nombre2?: string;
+    apellido1: string;
+    apellido2: string;
+    tipoIdentificacion: string;
+    identificacion: string;
+    telefono: string;
+    direccion: string;
+    correo: string;
+}
+
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [academicInfo, setAcademicInfo] = useState<AcademicInfo | null>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoadingAcademic, setIsLoadingAcademic] = useState(true);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
   
   const router = useRouter();
   const { toast } = useToast();
@@ -108,7 +122,27 @@ export default function ProfilePage() {
         }
     };
     
+    const fetchUserInfo = async () => {
+        setIsLoadingUser(true);
+        try {
+            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                setUserInfo(userSnap.data() as UserInfo);
+            } else {
+                toast({ variant: "destructive", title: "Error", description: "No se encontró tu información de usuario." });
+            }
+        } catch (error) {
+            console.error("Error fetching user info:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo cargar tu información personal." });
+        } finally {
+            setIsLoadingUser(false);
+        }
+    };
+
     fetchAcademicInfo();
+    fetchUserInfo();
   }, [userId, toast]);
   
   const form = useForm<z.infer<typeof changePasswordSchema>>({
@@ -198,50 +232,60 @@ export default function ProfilePage() {
               </TabsTrigger>
             </TabsList>
             <TabsContent value="personal" className="mt-6">
-              <form className="space-y-6">
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  <div>
-                    <Label htmlFor="firstName">Primer Nombre</Label>
-                    <Input id="firstName" defaultValue="John" />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Primer Apellido</Label>
-                    <Input id="lastName" defaultValue="Doe" />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Correo Electrónico</Label>
-                    <Input id="email" type="email" value={userEmail || ''} disabled />
-                  </div>
-                  <div>
-                    <Label htmlFor="phone">Teléfono</Label>
-                    <Input id="phone" type="tel" defaultValue="3001234567" />
-                  </div>
-                   <div>
-                    <Label htmlFor="idType">Tipo de Identificación</Label>
-                    <Select defaultValue="cc">
-                        <SelectTrigger id="idType">
-                            <SelectValue/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="cc">Cédula de Ciudadanía</SelectItem>
-                            <SelectItem value="ti">Tarjeta de Identidad</SelectItem>
-                        </SelectContent>
-                    </Select>
-                  </div>
-                   <div>
-                    <Label htmlFor="idNumber">Número de Identificación</Label>
-                    <Input id="idNumber" defaultValue="1234567890" disabled />
-                  </div>
-                  <div className="md:col-span-2">
-                    <Label htmlFor="address">Dirección</Label>
-                    <Input id="address" defaultValue="Calle Falsa 123, Springfield" />
-                  </div>
-                </div>
-                 <div className="flex justify-end gap-2 pt-4">
-                    <Button variant="outline">Cancelar</Button>
-                    <Button>Guardar Cambios</Button>
-                </div>
-              </form>
+              {isLoadingUser ? (
+                 <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                 </div>
+              ) : (
+                <form className="space-y-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                        <Label htmlFor="firstName">Primer Nombre</Label>
+                        <Input id="firstName" value={userInfo?.nombre1 || ''} readOnly />
+                    </div>
+                    <div>
+                        <Label htmlFor="secondName">Segundo Nombre</Label>
+                        <Input id="secondName" value={userInfo?.nombre2 || ''} readOnly />
+                    </div>
+                    <div>
+                        <Label htmlFor="lastName">Primer Apellido</Label>
+                        <Input id="lastName" value={userInfo?.apellido1 || ''} readOnly />
+                    </div>
+                    <div>
+                        <Label htmlFor="secondLastName">Segundo Apellido</Label>
+                        <Input id="secondLastName" value={userInfo?.apellido2 || ''} readOnly />
+                    </div>
+                    <div>
+                        <Label htmlFor="email">Correo Electrónico Personal</Label>
+                        <Input id="email" type="email" value={userInfo?.correo || ''} readOnly />
+                    </div>
+                    <div>
+                        <Label htmlFor="phone">Teléfono</Label>
+                        <Input id="phone" type="tel" value={userInfo?.telefono || ''} readOnly />
+                    </div>
+                    <div>
+                        <Label htmlFor="idType">Tipo de Identificación</Label>
+                        <Input id="idType" value={userInfo?.tipoIdentificacion || ''} readOnly />
+                    </div>
+                    <div>
+                        <Label htmlFor="idNumber">Número de Identificación</Label>
+                        <Input id="idNumber" value={userInfo?.identificacion || ''} readOnly />
+                    </div>
+                    <div className="md:col-span-2">
+                        <Label htmlFor="address">Dirección</Label>
+                        <Input id="address" value={userInfo?.direccion || ''} readOnly />
+                    </div>
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                        <Button type="button" disabled>Actualizar Datos (Próximamente)</Button>
+                    </div>
+                </form>
+              )}
             </TabsContent>
             <TabsContent value="security" className="mt-6">
               <Form {...form}>
