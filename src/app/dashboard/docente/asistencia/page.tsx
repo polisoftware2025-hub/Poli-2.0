@@ -133,7 +133,7 @@ export default function TakeAttendancePage() {
         tableRows.push([index + 1, student.nombre, attendance[student.id] || "N/A"]);
     });
 
-    doc.autoTable(tableColumn, tableRows, { startY: 35 });
+    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 35 });
     doc.save(`asistencia_${selectedGroup.codigoGrupo}_${date}.pdf`);
   };
 

@@ -181,7 +181,7 @@ export default function MyGroupsPage() {
       tableRows.push(studentData);
     });
 
-    doc.autoTable(tableColumn, tableRows, { startY: 35 });
+    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 35 });
     doc.save(`estudiantes_${group.codigoGrupo}.pdf`);
   }
 
