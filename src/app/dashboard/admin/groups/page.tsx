@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useTransition } from "react";
@@ -293,11 +294,11 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
   const form = useForm<GroupFormValues>({
     resolver: zodResolver(groupSchema),
     defaultValues: group ? {
-      nombreGrupo: group.nombreGrupo,
-      idSede: group.idSede,
-      idCarrera: group.idCarrera,
-      ciclo: group.ciclo,
-      estado: group.estado,
+      nombreGrupo: group.nombreGrupo || "",
+      idSede: group.idSede || "",
+      idCarrera: group.idCarrera || "",
+      ciclo: group.ciclo || 1,
+      estado: group.estado || "activo",
     } : {
       nombreGrupo: "",
       idSede: "",
