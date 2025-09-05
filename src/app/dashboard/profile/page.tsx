@@ -25,6 +25,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import { doc, getDoc } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "La contraseña actual es obligatoria."),
@@ -39,9 +42,19 @@ const changePasswordSchema = z.object({
   path: ["confirmPassword"],
 });
 
+interface AcademicInfo {
+    carrera: string;
+    sede: string;
+    grupo: string;
+    periodo: string;
+}
 
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [academicInfo, setAcademicInfo] = useState<AcademicInfo | null>(null);
+  const [isLoadingAcademic, setIsLoadingAcademic] = useState(true);
+  
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -51,12 +64,52 @@ export default function ProfilePage() {
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
-    if (storedEmail) {
+    const storedUserId = localStorage.getItem('userId');
+    if (storedEmail && storedUserId) {
       setUserEmail(storedEmail);
+      setUserId(storedUserId);
     } else {
       router.push('/login');
     }
   }, [router]);
+  
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchAcademicInfo = async () => {
+        setIsLoadingAcademic(true);
+        try {
+            const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+            const studentSnap = await getDoc(studentRef);
+
+            if (studentSnap.exists()) {
+                const studentData = studentSnap.data();
+                
+                const [carreraDoc, sedeDoc, grupoDoc] = await Promise.all([
+                    studentData.carreraId ? getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", studentData.carreraId)) : Promise.resolve(null),
+                    studentData.sedeId ? getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", studentData.sedeId)) : Promise.resolve(null),
+                    studentData.grupo ? getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", studentData.grupo)) : Promise.resolve(null),
+                ]);
+
+                setAcademicInfo({
+                    carrera: carreraDoc?.exists() ? carreraDoc.data().nombre : "No asignada",
+                    sede: sedeDoc?.exists() ? sedeDoc.data().nombre : "No asignada",
+                    grupo: grupoDoc?.exists() ? grupoDoc.data().codigoGrupo : "No asignado",
+                    periodo: "2024-2" // Placeholder, can be dynamic later
+                });
+            } else {
+                 setAcademicInfo({ carrera: "N/A", sede: "N/A", grupo: "N/A", periodo: "N/A" });
+            }
+        } catch (error) {
+            console.error("Error fetching academic info: ", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo cargar la información académica." });
+        } finally {
+            setIsLoadingAcademic(false);
+        }
+    };
+    
+    fetchAcademicInfo();
+  }, [userId, toast]);
   
   const form = useForm<z.infer<typeof changePasswordSchema>>({
     resolver: zodResolver(changePasswordSchema),
@@ -255,20 +308,32 @@ export default function ProfilePage() {
               </Form>
             </TabsContent>
             <TabsContent value="academic" className="mt-6">
-              <div className="space-y-4">
-                  <div>
-                    <Label>Carrera</Label>
-                    <p className="text-sm font-medium text-gray-800">Ingeniería de Sistemas</p>
-                  </div>
-                   <div>
-                    <Label>Periodo Académico Actual</Label>
-                    <p className="text-sm font-medium text-gray-800">2024-2</p>
-                  </div>
-                   <div>
-                    <Label>Jornada</Label>
-                    <p className="text-sm font-medium text-gray-800">Diurna</p>
-                  </div>
-              </div>
+              {isLoadingAcademic ? (
+                 <div className="space-y-4">
+                    <Skeleton className="h-8 w-1/3" />
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-8 w-1/4" />
+                 </div>
+              ) : (
+                <div className="space-y-4">
+                    <div>
+                        <Label>Carrera</Label>
+                        <p className="text-sm font-medium text-gray-800">{academicInfo?.carrera}</p>
+                    </div>
+                    <div>
+                        <Label>Sede</Label>
+                        <p className="text-sm font-medium text-gray-800">{academicInfo?.sede}</p>
+                    </div>
+                     <div>
+                        <Label>Grupo</Label>
+                        <p className="text-sm font-medium text-gray-800">{academicInfo?.grupo}</p>
+                    </div>
+                     <div>
+                        <Label>Periodo Académico Actual</Label>
+                        <p className="text-sm font-medium text-gray-800">{academicInfo?.periodo}</p>
+                    </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
