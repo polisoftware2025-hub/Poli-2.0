@@ -41,6 +41,12 @@ export function AddEventForm({ isOpen, onOpenChange }: AddEventFormProps) {
 
   const form = useForm<z.infer<typeof eventSchema>>({
     resolver: zodResolver(eventSchema),
+    defaultValues: {
+      titulo: "",
+      descripcion: "",
+      fecha: undefined,
+      categoria: undefined,
+    },
   });
 
   const onSubmit = async (values: z.infer<typeof eventSchema>) => {
