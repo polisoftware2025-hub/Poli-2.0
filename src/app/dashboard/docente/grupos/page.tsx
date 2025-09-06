@@ -81,30 +81,32 @@ export default function MyGroupsPage() {
         for (const groupDoc of querySnapshot.docs) {
             const data = groupDoc.data();
             
-            let sedeNombre = sedesCache.get(data.idSede);
-            if (!sedeNombre) {
-                const sedeDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", data.idSede));
-                if (sedeDoc.exists()) {
-                    sedeNombre = sedeDoc.data().nombre;
-                    sedesCache.set(data.idSede, sedeNombre);
+            if (data.materia) { // Check if materia exists
+                let sedeNombre = sedesCache.get(data.idSede);
+                if (!sedeNombre) {
+                    const sedeDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", data.idSede));
+                    if (sedeDoc.exists()) {
+                        sedeNombre = sedeDoc.data().nombre;
+                        sedesCache.set(data.idSede, sedeNombre);
+                    }
                 }
-            }
 
-            let carreraNombre = carrerasCache.get(data.idCarrera);
-            if (!carreraNombre) {
-                const carreraDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", data.idCarrera));
-                if (carreraDoc.exists()) {
-                    carreraNombre = carreraDoc.data().nombre;
-                    carrerasCache.set(data.idCarrera, carreraNombre);
+                let carreraNombre = carrerasCache.get(data.idCarrera);
+                if (!carreraNombre) {
+                    const carreraDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", data.idCarrera));
+                    if (carreraDoc.exists()) {
+                        carreraNombre = carreraDoc.data().nombre;
+                        carrerasCache.set(data.idCarrera, carreraNombre);
+                    }
                 }
-            }
 
-            fetchedGroups.push({
-              id: groupDoc.id,
-              ...data,
-              sedeNombre: sedeNombre || "N/A",
-              carreraNombre: carreraNombre || "N/A",
-            } as Group);
+                fetchedGroups.push({
+                  id: groupDoc.id,
+                  ...data,
+                  sedeNombre: sedeNombre || "N/A",
+                  carreraNombre: carreraNombre || "N/A",
+                } as Group);
+            }
         }
         
         setGroups(fetchedGroups);
@@ -284,7 +286,7 @@ export default function MyGroupsPage() {
                    <div className="flex items-start justify-between">
                      <div>
                         <CardTitle className="leading-tight">📘 {group.codigoGrupo}</CardTitle>
-                        <CardDescription className="mt-1">📚 {group.materia.nombre}</CardDescription>
+                        <CardDescription className="mt-1">📚 {group.materia?.nombre || 'Materia no definida'}</CardDescription>
                      </div>
                    </div>
                 </CardHeader>
