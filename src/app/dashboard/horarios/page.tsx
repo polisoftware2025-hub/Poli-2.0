@@ -29,6 +29,7 @@ interface ScheduleEntry {
     sedeNombre?: string;
     salonId?: string;
     salonNombre?: string;
+    grupoCodigo?: string;
 }
 
 interface Group {
@@ -69,7 +70,7 @@ export default function HorariosPage() {
     const fetchScheduleAndUserInfo = async () => {
       setIsLoading(true);
       try {
-        let userGroups: Group[] = [];
+        let finalSchedule: ScheduleEntry[] = [];
         const userInfoData: UserInfo = { nombreCompleto: "Usuario" };
 
         const userDocRef = doc(db, `Politecnico/mzIX7rzezDezczAV6pQ7/usuarios`, userId);
@@ -86,25 +87,37 @@ export default function HorariosPage() {
           
           if(studentDocSnap.exists()){
               const studentData = studentDocSnap.data();
-              const q = query(groupsRef, where('idCarrera', '==', studentData.carreraId), where('idSede', '==', studentData.sedeId));
-              const studentGroupsSnapshot = await getDocs(q);
-              userGroups = studentGroupsSnapshot.docs.map(d => ({id: d.id, ...d.data()} as Group));
+              if (studentData.grupo) {
+                const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", studentData.grupo);
+                const groupSnap = await getDoc(groupRef);
+                if (groupSnap.exists()) {
+                    const groupData = groupSnap.data() as Group;
+                    finalSchedule = groupData.horario?.map(h => ({ ...h, grupoCodigo: groupData.codigoGrupo })) || [];
+                }
+              }
               
               const [carreraDoc, sedeDoc] = await Promise.all([
-                 getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", studentData.carreraId)),
-                 getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", studentData.sedeId)),
+                 studentData.carreraId ? getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", studentData.carreraId)) : Promise.resolve(null),
+                 studentData.sedeId ? getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", studentData.sedeId)) : Promise.resolve(null),
               ]);
-              userInfoData.carreraNombre = carreraDoc.exists() ? carreraDoc.data().nombre : "N/A";
-              userInfoData.sedeNombre = sedeDoc.exists() ? sedeDoc.data().nombre : "N/A";
+              userInfoData.carreraNombre = carreraDoc?.exists() ? carreraDoc.data().nombre : "N/A";
+              userInfoData.sedeNombre = sedeDoc?.exists() ? sedeDoc.data().nombre : "N/A";
           }
         } else if (userRole === 'docente') {
-          const q = query(groupsRef, where("docente.usuarioId", "==", userId));
-          const teacherGroupsSnapshot = await getDocs(q);
-          userGroups = teacherGroupsSnapshot.docs.map(d => ({ id: d.id, ...d.data() } as Group));
+            const allGroupsSnapshot = await getDocs(groupsRef);
+            allGroupsSnapshot.forEach(groupDoc => {
+                const groupData = groupDoc.data() as Group;
+                if (groupData.horario && Array.isArray(groupData.horario)) {
+                    groupData.horario.forEach(h => {
+                        if (h.docenteId === userId) {
+                            finalSchedule.push({ ...h, grupoCodigo: groupData.codigoGrupo });
+                        }
+                    });
+                }
+            });
         }
 
         setUserInfo(userInfoData);
-        const finalSchedule = userGroups.flatMap(g => g.horario?.map(h => ({ ...h, grupoCodigo: g.codigoGrupo })) || []);
         sortAndSetSchedule(finalSchedule);
 
       } catch (error) {
@@ -260,4 +273,3 @@ export default function HorariosPage() {
     </div>
   );
 }
-
