@@ -64,10 +64,17 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
         const q = query(groupsRef, where("__name__", "in", groupIds));
         
         const querySnapshot = await getDocs(q);
-        const fetchedGroups: Group[] = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        } as Group));
+        const fetchedGroups: Group[] = [];
+        querySnapshot.forEach(doc => {
+            const data = doc.data();
+            // Critical fix: ensure group has a 'materia' object before adding it
+            if (data.materia) {
+                fetchedGroups.push({
+                  id: doc.id,
+                  ...data
+                } as Group);
+            }
+        });
         
         setGroups(fetchedGroups);
 
@@ -98,7 +105,7 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
           {groups.length > 0 ? (
             groups.map(group => (
               <SelectItem key={group.id} value={group.id}>
-                {group.materia.nombre} ({group.codigoGrupo})
+                {group.materia?.nombre || 'Materia sin nombre'} ({group.codigoGrupo})
               </SelectItem>
             ))
           ) : (
