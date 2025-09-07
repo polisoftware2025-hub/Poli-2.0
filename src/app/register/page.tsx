@@ -36,6 +36,8 @@ import {
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
 import { useForm, FormProvider, useFormContext, useWatch, FieldValues, Path } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import {
   FormField,
   FormItem,
@@ -53,33 +55,50 @@ import { es } from "date-fns/locale";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
-interface AllStepsData extends FieldValues {
-    firstName: string;
-    segundoNombre?: string;
-    lastName: string;
-    segundoApellido: string;
-    tipoIdentificacion: string;
-    numeroIdentificacion: string;
-    gender: string;
-    birthDate?: Date;
-    phone: string;
-    address: string;
-    country: string;
-    city: string;
-    correoPersonal: string;
-    sedeId: string;
-    carreraId: string;
-    grupo: string;
-    password: string;
-    confirmPassword: string;
-}
+const step1Schema = z.object({
+    firstName: z.string().min(1, "El primer nombre es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    segundoNombre: z.string().optional().refine(val => !val || /^\S+$/.test(val), { message: "Este campo solo puede contener una palabra." }),
+    lastName: z.string().min(1, "El primer apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    segundoApellido: z.string().min(1, "El segundo apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    tipoIdentificacion: z.string({ required_error: "Selecciona un tipo." }).min(1, "Selecciona un tipo."),
+    numeroIdentificacion: z.string().min(1, "El número es requerido.").regex(/^\d+$/, "Este campo solo puede contener números."),
+    gender: z.string({ required_error: "Selecciona un género." }).min(1, "Selecciona un género."),
+    birthDate: z.date({ required_error: "La fecha es requerida." }),
+});
+
+const step2Schema = z.object({
+    phone: z.string().min(1, "Teléfono requerido.").regex(/^\d{7,15}$/, 'Teléfono inválido.'),
+    address: z.string().min(1, "Dirección requerida."),
+    country: z.string().min(1, "País requerido."),
+    city: z.string().min(1, "Ciudad requerida."),
+    correoPersonal: z.string().email("Correo inválido."),
+});
+
+const step3Schema = z.object({
+    sedeId: z.string().min(1, "Selecciona una sede."),
+    carreraId: z.string().min(1, "Selecciona una carrera."),
+    grupo: z.string().min(1, "Selecciona un grupo."),
+});
+
+const step4Schema = z.object({
+    password: z.string().min(8, "Mínimo 8 caracteres."),
+    confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
+});
+
+
+const allStepsSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema);
+type AllStepsData = z.infer<typeof allStepsSchema>;
+
 
 const steps = [
-    { number: 1, title: "Datos Personales", icon: User },
-    { number: 2, title: "Datos de Contacto", icon: Phone },
-    { number: 3, title: "Inscripción Académica", icon: BookOpen },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound },
-    { number: 5, title: "Confirmación", icon: CheckCircle },
+    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
+    { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
+    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "grupo"] as Path<AllStepsData>[] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
+    { number: 5, title: "Confirmación", icon: CheckCircle, schema: z.object({}), fields: [] },
 ];
 
 const LOCAL_STORAGE_KEY = 'registrationFormData';
@@ -103,7 +122,6 @@ const defaultFormValues: AllStepsData = {
     grupo: "",
     password: "",
     confirmPassword: "",
-    metodoPago: "N/A", 
 };
 
 
@@ -114,57 +132,12 @@ export default function RegisterPage() {
   const router = useRouter();
   
   const methods = useForm<AllStepsData>({
-    mode: "onChange",
+    resolver: zodResolver(allStepsSchema),
+    mode: "onTouched",
     defaultValues: defaultFormValues,
   });
 
-  const { handleSubmit, formState: { isSubmitting }, watch, reset, setError, clearErrors } = methods;
-
-  const validateStep = async (step: number) => {
-    const { getValues } = methods;
-    const data = getValues();
-    let isValid = true;
-    
-    // Clear all previous errors before re-validating
-    clearErrors();
-
-    if (step === 1) {
-        if (!data.firstName) { setError("firstName", { type: 'manual', message: 'El primer nombre es requerido.' }); isValid = false; }
-        else if (!/^\S+$/.test(data.firstName)) { setError("firstName", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
-
-        if (data.segundoNombre && !/^\S+$/.test(data.segundoNombre)) { setError("segundoNombre", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
-        
-        if (!data.lastName) { setError("lastName", { type: 'manual', message: 'El primer apellido es requerido.' }); isValid = false; }
-        else if (!/^\S+$/.test(data.lastName)) { setError("lastName", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
-
-        if (!data.segundoApellido) { setError("segundoApellido", { type: 'manual', message: 'El segundo apellido es requerido.' }); isValid = false; }
-        else if (!/^\S+$/.test(data.segundoApellido)) { setError("segundoApellido", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
-
-        if (!data.tipoIdentificacion) { setError("tipoIdentificacion", { type: 'manual', message: 'Selecciona un tipo.' }); isValid = false; }
-        
-        if (!data.numeroIdentificacion) { setError("numeroIdentificacion", { type: 'manual', message: 'El número es requerido.' }); isValid = false; }
-        else if (!/^\d+$/.test(data.numeroIdentificacion)) { setError("numeroIdentificacion", { type: 'manual', message: 'Este campo solo puede contener números.' }); isValid = false; }
-
-        if (!data.gender) { setError("gender", { type: 'manual', message: 'Selecciona un género.' }); isValid = false; }
-        if (!data.birthDate) { setError("birthDate", { type: 'manual', message: 'La fecha es requerida.' }); isValid = false; }
-
-    } else if (step === 2) {
-        if (!data.phone || !/^\d{7,15}$/.test(data.phone)) { setError("phone", { type: 'manual', message: 'Teléfono inválido.' }); isValid = false; }
-        if (!data.address) { setError("address", { type: 'manual', message: 'Dirección requerida.' }); isValid = false; }
-        if (!data.country) { setError("country", { type: 'manual', message: 'País requerido.' }); isValid = false; }
-        if (!data.city) { setError("city", { type: 'manual', message: 'Ciudad requerida.' }); isValid = false; }
-        if (!data.correoPersonal || !/\S+@\S+\.\S+/.test(data.correoPersonal)) { setError("correoPersonal", { type: 'manual', message: 'Correo inválido.' }); isValid = false; }
-    } else if (step === 3) {
-        if (!data.sedeId) { setError("sedeId", { type: 'manual', message: 'Selecciona una sede.' }); isValid = false; }
-        if (!data.carreraId) { setError("carreraId", { type: 'manual', message: 'Selecciona una carrera.' }); isValid = false; }
-        if (!data.grupo) { setError("grupo", { type: 'manual', message: 'Selecciona un grupo.' }); isValid = false; }
-    } else if (step === 4) {
-        if (!data.password || data.password.length < 8) { setError("password", { type: 'manual', message: 'Mínimo 8 caracteres.' }); isValid = false; }
-        if (data.password !== data.confirmPassword) { setError("confirmPassword", { type: 'manual', message: 'Las contraseñas no coinciden.' }); isValid = false; }
-    }
-
-    return isValid;
-  }
+  const { handleSubmit, formState: { isSubmitting }, watch, reset, trigger } = methods;
   
   useEffect(() => {
     const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
@@ -209,7 +182,9 @@ export default function RegisterPage() {
   };
 
   const nextStep = async () => {
-    const isValid = await validateStep(currentStep);
+    const currentFields = steps[currentStep - 1].fields;
+    const isValid = await trigger(currentFields, { shouldFocus: true });
+    
     if (isValid) {
       if (currentStep < totalSteps) {
         setCurrentStep(currentStep + 1);
