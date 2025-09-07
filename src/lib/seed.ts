@@ -245,7 +245,7 @@ export async function seedInitialUsers() {
                 documento: finalUserData.identificacion,
                 carreraId: createSlug(carreraData.nombre),
                 modalidad: "Virtual",
-                grupo: "G-001",
+                grupo: "PENDIENTE",
                 correoInstitucional: userData.correoInstitucional,
                 cicloActual: 1,
                 materiasInscritas: assignedSubjects,
@@ -279,7 +279,6 @@ export async function seedSedesYSalones() {
     const sedes = [
         { id: "sede-norte", nombre: "Sede Norte", direccion: "Avenida Siempre Viva 123" },
         { id: "sede-73", nombre: "Sede Calle 73", direccion: "Calle 73 #10-20" },
-        { id: "sede-80", nombre: "Sede Calle 80", direccion: "Avenida Calle 80 #50-10" },
         { id: "sede-sur", nombre: "Sede Sur", direccion: "Autopista Sur #10-50" }
     ];
 
@@ -294,11 +293,6 @@ export async function seedSedesYSalones() {
             { id: "73-302", nombre: "Salón 302", capacidad: 40 },
             { id: "73-lab-sistemas", nombre: "Laboratorio de Sistemas", capacidad: 20 },
         ],
-        "sede-80": [
-            { id: "80-201", nombre: "Salón 201", capacidad: 35 },
-            { id: "80-202", nombre: "Salón 202", capacidad: 35 },
-            { id: "80-lab-gastronomia", nombre: "Cocina de Prácticas", capacidad: 15 },
-        ],
         "sede-sur": [
             { id: "sur-a1", nombre: "Salón A1", capacidad: 30 },
             { id: "sur-a2", nombre: "Salón A2", capacidad: 30 },
@@ -310,7 +304,7 @@ export async function seedSedesYSalones() {
         const sedesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes");
 
         const existingSedesSnapshot = await getDocs(sedesRef);
-        if (existingSedesSnapshot.docs.length > 3) { // Check if more than the original 3 exist
+        if (existingSedesSnapshot.docs.length >= sedes.length) {
              return { success: false, message: "Las sedes y salones ya parecen existir. No se realizó ninguna acción para evitar duplicados." };
         }
         
@@ -336,3 +330,4 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
+

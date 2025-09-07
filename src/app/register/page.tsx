@@ -58,18 +58,20 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 const step1Schema = z.object({
-    firstName: z.string().min(1, "El primer nombre es requerido."),
-    segundoNombre: z.string().optional(),
-    lastName: z.string().min(1, "El primer apellido es requerido."),
-    segundoApellido: z.string().min(1, "El segundo apellido es requerido."),
+    firstName: z.string().min(1, "El primer nombre es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    segundoNombre: z.string().optional().refine(val => !val || /^\S+$/.test(val), {
+        message: "Este campo solo puede contener una palabra."
+    }),
+    lastName: z.string().min(1, "El primer apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    segundoApellido: z.string().min(1, "El segundo apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
     tipoIdentificacion: z.string({ required_error: "Selecciona un tipo." }).min(1, "Selecciona un tipo."),
-    numeroIdentificacion: z.string().min(1, "El número es requerido."),
+    numeroIdentificacion: z.string().min(1, "El número es requerido.").regex(/^\d+$/, "Este campo solo puede contener números."),
     gender: z.string({ required_error: "Selecciona un género." }).min(1, "Selecciona un género."),
     birthDate: z.date({ required_error: "La fecha es requerida." }),
 });
 
 const step2Schema = z.object({
-    phone: z.string().min(1, "Teléfono requerido."),
+    phone: z.string().min(1, "Teléfono requerido.").regex(/^\d+$/, "Este campo solo puede contener números."),
     address: z.string().min(1, "Dirección requerida."),
     country: z.string().min(1, "País requerido."),
     city: z.string().min(1, "Ciudad requerida."),
@@ -81,7 +83,6 @@ const step3Schema = z.object({
     carreraId: z.string().min(1, "Selecciona una carrera."),
     modalidad: z.string().min(1, "Selecciona una modalidad."),
     jornada: z.string().min(1, "Selecciona una jornada."),
-    grupo: z.string().min(1, "Selecciona un grupo."),
 });
 
 const step4Schema = z.object({
@@ -106,14 +107,14 @@ type AllStepsData = z.infer<typeof allStepsSchema>;
 const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
-    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "modalidad", "jornada", "grupo"] as Path<AllStepsData>[] },
+    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "modalidad", "jornada"] as Path<AllStepsData>[] },
     { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
     { number: 5, title: "Confirmación", icon: CheckCircle, schema: z.object({}), fields: [] },
 ];
 
 const LOCAL_STORAGE_KEY = 'registrationFormData';
 
-const defaultFormValues: AllStepsData = {
+const defaultFormValues: Omit<AllStepsData, "grupo"> = {
     firstName: "",
     segundoNombre: "",
     lastName: "",
@@ -131,7 +132,6 @@ const defaultFormValues: AllStepsData = {
     carreraId: "",
     modalidad: "",
     jornada: "",
-    grupo: "",
     password: "",
     confirmPassword: "",
 };
@@ -146,7 +146,7 @@ export default function RegisterPage() {
   const methods = useForm<AllStepsData>({
     resolver: zodResolver(allStepsSchema),
     mode: "onTouched",
-    defaultValues: defaultFormValues,
+    defaultValues: defaultFormValues as AllStepsData,
   });
 
   const { handleSubmit, formState: { isSubmitting }, watch, reset, trigger } = methods;
@@ -161,7 +161,7 @@ export default function RegisterPage() {
             if (parsedData.birthDate) {
               parsedData.birthDate = new Date(parsedData.birthDate);
             }
-            reset(parsedData);
+            reset(parsedData as AllStepsData);
         }
         if (savedStep && typeof savedStep === 'number' && savedStep <= totalSteps) {
             setCurrentStep(savedStep);
@@ -212,10 +212,13 @@ export default function RegisterPage() {
   
   const processSubmit = async (data: AllStepsData) => {
       try {
+        // The 'grupo' field is no longer part of the form, so we create a placeholder
+        const dataToSend = { ...data, grupo: 'PENDIENTE' };
+
         const response = await fetch('/api/register-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(dataToSend),
         });
 
         const responseData = await response.json();
@@ -323,21 +326,13 @@ export default function RegisterPage() {
 const Step1 = () => {
   const { control } = useFormContext();
   
-  const handleNoSpaces = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
-      field.onChange(e.target.value.replace(/\s/g, ''));
-  };
-
-  const handleOnlyNumbers = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
-      field.onChange(e.target.value.replace(/\D/g, ''));
-  };
-
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="firstName" render={({ field }) => (
           <FormItem>
             <FormLabel>Primer Nombre <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="John" {...field} onChange={(e) => handleNoSpaces(e, field)} />
+              <Input placeholder="John" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -347,7 +342,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Nombre (Opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Fitzgerald" {...field} onChange={(e) => handleNoSpaces(e, field)} />
+              <Input placeholder="Fitzgerald" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -357,7 +352,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Doe" {...field} onChange={(e) => handleNoSpaces(e, field)} />
+              <Input placeholder="Doe" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -367,7 +362,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Smith" {...field} onChange={(e) => handleNoSpaces(e, field)} />
+              <Input placeholder="Smith" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -397,7 +392,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Número de Identificación <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="123456789" {...field} onChange={(e) => handleOnlyNumbers(e, field)} />
+              <Input placeholder="123456789" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -481,17 +476,13 @@ const Step2 = () => {
   const countries = Object.keys(locations);
   const cities = selectedCountry ? locations[selectedCountry as keyof typeof locations] : [];
   
-  const handleOnlyNumbers = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
-      field.onChange(e.target.value.replace(/\D/g, ''));
-  };
-
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="phone" render={({ field }) => (
           <FormItem>
             <FormLabel>Teléfono / Celular <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="3001234567" {...field} onChange={(e) => handleOnlyNumbers(e, field)} />
+              <Input placeholder="3001234567" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -564,10 +555,6 @@ interface Carrera {
     id: string;
     nombre: string;
 }
-interface Grupo {
-    id: string;
-    codigoGrupo: string;
-}
 interface Sede {
     id: string;
     nombre: string;
@@ -577,13 +564,9 @@ const Step3 = () => {
     const { control, setValue } = useFormContext();
     const [sedes, setSedes] = useState<Sede[]>([]);
     const [carreras, setCarreras] = useState<Carrera[]>([]);
-    const [grupos, setGrupos] = useState<Grupo[]>([]);
-    const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false });
+    const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true });
 
     const selectedSede = useWatch({ control, name: "sedeId" });
-    const selectedCarrera = useWatch({ control, name: "carreraId" });
-    const selectedModalidad = useWatch({ control, name: "modalidad" });
-    const selectedJornada = useWatch({ control, name: "jornada" });
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -602,48 +585,11 @@ const Step3 = () => {
         };
         fetchInitialData();
     }, []);
-
-    useEffect(() => {
-        if (!selectedSede || !selectedCarrera || !selectedModalidad || !selectedJornada) {
-            setGrupos([]);
-            return;
-        }
-
-        const fetchGrupos = async () => {
-            setIsLoading(prev => ({ ...prev, grupos: true }));
-            try {
-                let gruposQuery = query(
-                    collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
-                    where("idSede", "==", selectedSede),
-                    where("idCarrera", "==", selectedCarrera),
-                    where("modalidad", "==", selectedModalidad),
-                    where("franjaHoraria", "==", selectedJornada)
-                );
-                const gruposSnapshot = await getDocs(gruposQuery);
-                const fetchedGrupos = gruposSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo }));
-                setGrupos(fetchedGrupos);
-            } catch (error) {
-                console.error("Error fetching grupos:", error);
-            } finally {
-                setIsLoading(prev => ({ ...prev, grupos: false }));
-            }
-        };
-
-        fetchGrupos();
-    }, [selectedSede, selectedCarrera, selectedModalidad, selectedJornada]);
     
-    const resetDependentFields = (level: 'sede' | 'carrera' | 'modalidad' | 'jornada') => {
-        if (level === 'sede') {
-            setValue("carreraId", "");
-        }
-        if (level === 'sede' || level === 'carrera') {
-            setValue("modalidad", "");
-        }
-         if (level === 'sede' || level === 'carrera' || level === 'modalidad') {
-            setValue("jornada", "");
-        }
-        setValue("grupo", "");
-        setGrupos([]);
+    const resetDependentFields = () => {
+        setValue("carreraId", "");
+        setValue("modalidad", "");
+        setValue("jornada", "");
     };
 
   return (
@@ -652,7 +598,7 @@ const Step3 = () => {
         <FormField control={control} name="sedeId" render={({ field }) => (
             <FormItem>
                 <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('sede'); }} defaultValue={field.value} disabled={isLoading.sedes}>
+                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields(); }} defaultValue={field.value} disabled={isLoading.sedes}>
                 <FormControl>
                     <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger>
                 </FormControl>
@@ -665,7 +611,7 @@ const Step3 = () => {
         <FormField control={control} name="carreraId" render={({ field }) => (
             <FormItem>
                 <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('carrera'); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
+                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields(); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
                 <FormControl>
                     <SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger>
                 </FormControl>
@@ -678,9 +624,9 @@ const Step3 = () => {
         <FormField control={control} name="modalidad" render={({ field }) => (
             <FormItem>
                 <FormLabel>Modalidad <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('modalidad'); }} defaultValue={field.value} disabled={!selectedCarrera}>
+                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields(); }} defaultValue={field.value} disabled={!selectedSede || !selectedSede}>
                 <FormControl>
-                    <SelectTrigger><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : "Selecciona modalidad"} /></div></SelectTrigger>
+                    <SelectTrigger><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede y carrera" : "Selecciona modalidad"} /></div></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                     <SelectItem value="Virtual">Virtual</SelectItem>
@@ -694,13 +640,14 @@ const Step3 = () => {
         <FormField control={control} name="jornada" render={({ field }) => (
             <FormItem>
                 <FormLabel>Jornada <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('jornada'); }} defaultValue={field.value} disabled={!selectedModalidad}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSede || !selectedSede}>
                 <FormControl>
-                    <SelectTrigger><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={!selectedModalidad ? "Elige modalidad" : "Selecciona jornada"} /></div></SelectTrigger>
+                    <SelectTrigger><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede y carrera" : "Selecciona jornada"} /></div></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                     <SelectItem value="Diurna">Diurna</SelectItem>
                     <SelectItem value="Nocturna">Nocturna</SelectItem>
+                    <SelectItem value="Especial">Especial</SelectItem>
                 </SelectContent>
                 </Select>
                 <FormMessage />
@@ -708,27 +655,6 @@ const Step3 = () => {
             )}
         />
       </div>
-       <FormField control={control} name="grupo" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Grupo disponible <span className="text-destructive">*</span></FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedJornada}>
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder={!selectedJornada ? "Elige jornada" : (isLoading.grupos ? "Buscando grupos..." : "Selecciona un grupo")} />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {grupos.length > 0 ? (
-                  grupos.map(grupo => <SelectItem key={grupo.id} value={grupo.id}>{grupo.codigoGrupo}</SelectItem>)
-                ) : (
-                  <SelectItem value="no-groups" disabled>No hay grupos disponibles para tu selección</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 };
@@ -790,3 +716,4 @@ const Step5_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
+
