@@ -57,7 +57,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 
 const step1Schema = z.object({
     firstName: z.string().min(1, "El primer nombre es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
-    segundoNombre: z.string().optional().refine(val => !val || /^\S+$/.test(val), { message: "Este campo solo puede contener una palabra." }),
+    segundoNombre: z.string().optional(),
     lastName: z.string().min(1, "El primer apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
     segundoApellido: z.string().min(1, "El segundo apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
     tipoIdentificacion: z.string({ required_error: "Selecciona un tipo." }).min(1, "Selecciona un tipo."),
@@ -80,7 +80,7 @@ const step3Schema = z.object({
     grupo: z.string().min(1, "Selecciona un grupo."),
 });
 
-const step4BaseSchema = z.object({
+const step4Schema = z.object({
     password: z.string().min(8, "Mínimo 8 caracteres."),
     confirmPassword: z.string(),
 });
@@ -88,11 +88,11 @@ const step4BaseSchema = z.object({
 const allStepsSchema = z.object({
   ...step1Schema.shape,
   ...step2Schema.shape,
-  ...step4BaseSchema.shape,
   ...step3Schema.shape,
+  ...step4Schema.shape,
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Las contraseñas no coinciden.",
-  path: ["confirmPassword"],
+    message: "Las contraseñas no coinciden.",
+    path: ["confirmPassword"],
 });
 
 
@@ -103,7 +103,7 @@ const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
     { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "grupo"] as Path<AllStepsData>[] },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4BaseSchema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
     { number: 5, title: "Confirmación", icon: CheckCircle, schema: z.object({}), fields: [] },
 ];
 
@@ -329,7 +329,7 @@ const Step1 = () => {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="firstName" render={({ field }) => (
           <FormItem>
-            <FormLabel>Primer Nombre</FormLabel>
+            <FormLabel>Primer Nombre <span className="text-destructive">*</span></FormLabel>
             <FormControl>
               <Input placeholder="John" {...field} onChange={(e) => handleNoSpaces(e, field)} />
             </FormControl>
@@ -349,7 +349,7 @@ const Step1 = () => {
       />
       <FormField control={control} name="lastName" render={({ field }) => (
           <FormItem>
-            <FormLabel>Primer Apellido</FormLabel>
+            <FormLabel>Primer Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
               <Input placeholder="Doe" {...field} onChange={(e) => handleNoSpaces(e, field)} />
             </FormControl>
@@ -359,7 +359,7 @@ const Step1 = () => {
       />
       <FormField control={control} name="segundoApellido" render={({ field }) => (
           <FormItem>
-            <FormLabel>Segundo Apellido</FormLabel>
+            <FormLabel>Segundo Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
               <Input placeholder="Smith" {...field} onChange={(e) => handleNoSpaces(e, field)} />
             </FormControl>
@@ -369,7 +369,7 @@ const Step1 = () => {
       />
        <FormField control={control} name="tipoIdentificacion" render={({ field }) => (
           <FormItem>
-            <FormLabel>Tipo de Identificación</FormLabel>
+            <FormLabel>Tipo de Identificación <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
@@ -389,7 +389,7 @@ const Step1 = () => {
       />
        <FormField control={control} name="numeroIdentificacion" render={({ field }) => (
           <FormItem>
-            <FormLabel>Número de Identificación</FormLabel>
+            <FormLabel>Número de Identificación <span className="text-destructive">*</span></FormLabel>
             <FormControl>
               <Input placeholder="123456789" {...field} onChange={(e) => handleOnlyNumbers(e, field)} />
             </FormControl>
@@ -402,7 +402,7 @@ const Step1 = () => {
         name="birthDate"
         render={({ field }) => (
           <FormItem className="flex flex-col justify-end">
-            <FormLabel>Fecha de Nacimiento</FormLabel>
+            <FormLabel>Fecha de Nacimiento <span className="text-destructive">*</span></FormLabel>
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>
@@ -441,7 +441,7 @@ const Step1 = () => {
       />
       <FormField control={control} name="gender" render={({ field }) => (
           <FormItem className="flex flex-col justify-end">
-            <FormLabel>Género</FormLabel>
+            <FormLabel>Género <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
                 <SelectTrigger>
@@ -479,7 +479,7 @@ const Step2 = () => {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="phone" render={({ field }) => (
           <FormItem>
-            <FormLabel>Teléfono / Celular</FormLabel>
+            <FormLabel>Teléfono / Celular <span className="text-destructive">*</span></FormLabel>
             <FormControl>
               <Input placeholder="3001234567" {...field} />
             </FormControl>
@@ -489,7 +489,7 @@ const Step2 = () => {
       />
       <FormField control={control} name="address" render={({ field }) => (
           <FormItem>
-            <FormLabel>Dirección de Residencia</FormLabel>
+            <FormLabel>Dirección de Residencia <span className="text-destructive">*</span></FormLabel>
             <FormControl>
               <Input placeholder="Calle 123 #45-67, Apto 101" {...field} />
             </FormControl>
@@ -499,7 +499,7 @@ const Step2 = () => {
       />
       <FormField control={control} name="country" render={({ field }) => (
         <FormItem>
-          <FormLabel>País</FormLabel>
+          <FormLabel>País <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={(value) => {
             field.onChange(value);
             setValue("city", "", { shouldValidate: true });
@@ -520,7 +520,7 @@ const Step2 = () => {
       )} />
       <FormField control={control} name="city" render={({ field }) => (
         <FormItem>
-          <FormLabel>Ciudad</FormLabel>
+          <FormLabel>Ciudad <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCountry}>
             <FormControl>
               <SelectTrigger>
@@ -538,7 +538,7 @@ const Step2 = () => {
       )} />
       <FormField control={control} name="correoPersonal" render={({ field }) => (
           <FormItem className="md:col-span-2">
-            <FormLabel>Correo Personal</FormLabel>
+            <FormLabel>Correo Personal <span className="text-destructive">*</span></FormLabel>
             <FormControl>
               <Input type="email" placeholder="tu.correo@example.com" {...field} />
             </FormControl>
@@ -622,7 +622,7 @@ const Step3 = () => {
     <div className="space-y-6">
       <FormField control={control} name="sedeId" render={({ field }) => (
           <FormItem>
-            <FormLabel>Sede de Interés</FormLabel>
+            <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
              <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", ""); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.sedes}>
               <FormControl>
                 <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger>
@@ -635,7 +635,7 @@ const Step3 = () => {
       />
       <FormField control={control} name="carreraId" render={({ field }) => (
           <FormItem>
-            <FormLabel>Carrera</FormLabel>
+            <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
               <FormControl>
                 <SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger>
@@ -648,7 +648,7 @@ const Step3 = () => {
       />
        <FormField control={control} name="grupo" render={({ field }) => (
           <FormItem>
-            <FormLabel>Grupo disponible</FormLabel>
+            <FormLabel>Grupo disponible <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
               <FormControl>
                 <SelectTrigger>
@@ -680,7 +680,7 @@ const Step4_Access = () => {
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="password" render={({ field }) => (
           <FormItem>
-            <FormLabel>Contraseña</FormLabel>
+            <FormLabel>Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
               <FormControl>
                 <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
@@ -699,7 +699,7 @@ const Step4_Access = () => {
       />
       <FormField control={control} name="confirmPassword" render={({ field }) => (
           <FormItem>
-            <FormLabel>Confirmar Contraseña</FormLabel>
+            <FormLabel>Confirmar Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
               <FormControl>
                 <Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} />
@@ -728,3 +728,5 @@ const Step5_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
+
+    
