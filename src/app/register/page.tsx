@@ -118,24 +118,36 @@ export default function RegisterPage() {
     defaultValues: defaultFormValues,
   });
 
-  const { handleSubmit, formState: { isSubmitting }, watch, reset, setError } = methods;
+  const { handleSubmit, formState: { isSubmitting }, watch, reset, setError, clearErrors } = methods;
 
   const validateStep = async (step: number) => {
     const { getValues } = methods;
     const data = getValues();
     let isValid = true;
     
-    // Clear previous errors for the current step
-    const fieldsToValidate = steps[step - 1];
+    // Clear all previous errors before re-validating
+    clearErrors();
 
     if (step === 1) {
         if (!data.firstName) { setError("firstName", { type: 'manual', message: 'El primer nombre es requerido.' }); isValid = false; }
+        else if (!/^\S+$/.test(data.firstName)) { setError("firstName", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
+
+        if (data.segundoNombre && !/^\S+$/.test(data.segundoNombre)) { setError("segundoNombre", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
+        
         if (!data.lastName) { setError("lastName", { type: 'manual', message: 'El primer apellido es requerido.' }); isValid = false; }
+        else if (!/^\S+$/.test(data.lastName)) { setError("lastName", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
+
         if (!data.segundoApellido) { setError("segundoApellido", { type: 'manual', message: 'El segundo apellido es requerido.' }); isValid = false; }
+        else if (!/^\S+$/.test(data.segundoApellido)) { setError("segundoApellido", { type: 'manual', message: 'Este campo solo puede contener una palabra.' }); isValid = false; }
+
         if (!data.tipoIdentificacion) { setError("tipoIdentificacion", { type: 'manual', message: 'Selecciona un tipo.' }); isValid = false; }
+        
         if (!data.numeroIdentificacion) { setError("numeroIdentificacion", { type: 'manual', message: 'El número es requerido.' }); isValid = false; }
+        else if (!/^\d+$/.test(data.numeroIdentificacion)) { setError("numeroIdentificacion", { type: 'manual', message: 'Este campo solo puede contener números.' }); isValid = false; }
+
         if (!data.gender) { setError("gender", { type: 'manual', message: 'Selecciona un género.' }); isValid = false; }
         if (!data.birthDate) { setError("birthDate", { type: 'manual', message: 'La fecha es requerida.' }); isValid = false; }
+
     } else if (step === 2) {
         if (!data.phone || !/^\d{7,15}$/.test(data.phone)) { setError("phone", { type: 'manual', message: 'Teléfono inválido.' }); isValid = false; }
         if (!data.address) { setError("address", { type: 'manual', message: 'Dirección requerida.' }); isValid = false; }
