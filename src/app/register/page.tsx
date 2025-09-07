@@ -80,16 +80,24 @@ const step3Schema = z.object({
     grupo: z.string().min(1, "Selecciona un grupo."),
 });
 
-const step4Schema = z.object({
+const step4BaseSchema = z.object({
     password: z.string().min(8, "Mínimo 8 caracteres."),
     confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
+});
+
+const step4Schema = step4BaseSchema.refine(data => data.password === data.confirmPassword, {
     message: "Las contraseñas no coinciden.",
     path: ["confirmPassword"],
 });
 
 
-const allStepsSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema);
+const allStepsSchema = z.object({
+    ...step1Schema.shape,
+    ...step2Schema.shape,
+    ...step3Schema.shape,
+    ...step4Schema.shape
+});
+
 type AllStepsData = z.infer<typeof allStepsSchema>;
 
 
