@@ -85,18 +85,16 @@ const step4BaseSchema = z.object({
     confirmPassword: z.string(),
 });
 
-const step4Schema = step4BaseSchema.refine(data => data.password === data.confirmPassword, {
-    message: "Las contraseñas no coinciden.",
-    path: ["confirmPassword"],
-});
-
-
 const allStepsSchema = z.object({
-    ...step1Schema.shape,
-    ...step2Schema.shape,
-    ...step3Schema.shape,
-    ...step4Schema.shape
+  ...step1Schema.shape,
+  ...step2Schema.shape,
+  ...step4BaseSchema.shape,
+  ...step3Schema.shape,
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Las contraseñas no coinciden.",
+  path: ["confirmPassword"],
 });
+
 
 type AllStepsData = z.infer<typeof allStepsSchema>;
 
@@ -105,7 +103,7 @@ const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
     { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "grupo"] as Path<AllStepsData>[] },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4BaseSchema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
     { number: 5, title: "Confirmación", icon: CheckCircle, schema: z.object({}), fields: [] },
 ];
 
@@ -318,13 +316,22 @@ export default function RegisterPage() {
 
 const Step1 = () => {
   const { control } = useFormContext();
+  
+  const handleNoSpaces = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+      field.onChange(e.target.value.replace(/\s/g, ''));
+  };
+
+  const handleOnlyNumbers = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+      field.onChange(e.target.value.replace(/\D/g, ''));
+  };
+
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="firstName" render={({ field }) => (
           <FormItem>
             <FormLabel>Primer Nombre</FormLabel>
             <FormControl>
-              <Input placeholder="John" {...field} />
+              <Input placeholder="John" {...field} onChange={(e) => handleNoSpaces(e, field)} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -334,7 +341,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Nombre (Opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Fitzgerald" {...field} />
+              <Input placeholder="Fitzgerald" {...field} onChange={(e) => handleNoSpaces(e, field)} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -344,7 +351,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Apellido</FormLabel>
             <FormControl>
-              <Input placeholder="Doe" {...field} />
+              <Input placeholder="Doe" {...field} onChange={(e) => handleNoSpaces(e, field)} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -354,7 +361,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Apellido</FormLabel>
             <FormControl>
-              <Input placeholder="Smith" {...field} />
+              <Input placeholder="Smith" {...field} onChange={(e) => handleNoSpaces(e, field)} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -384,7 +391,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Número de Identificación</FormLabel>
             <FormControl>
-              <Input placeholder="123456789" {...field} />
+              <Input placeholder="123456789" {...field} onChange={(e) => handleOnlyNumbers(e, field)} />
             </FormControl>
             <FormMessage />
           </FormItem>
