@@ -474,6 +474,10 @@ const Step2 = () => {
 
   const countries = Object.keys(locations);
   const cities = selectedCountry ? locations[selectedCountry as keyof typeof locations] : [];
+  
+  const handleOnlyNumbers = (e: React.ChangeEvent<HTMLInputElement>, field: any) => {
+      field.onChange(e.target.value.replace(/\D/g, ''));
+  };
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -481,7 +485,7 @@ const Step2 = () => {
           <FormItem>
             <FormLabel>Teléfono / Celular <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="3001234567" {...field} />
+              <Input placeholder="3001234567" {...field} onChange={(e) => handleOnlyNumbers(e, field)} />
             </FormControl>
             <FormMessage />
           </FormItem>
