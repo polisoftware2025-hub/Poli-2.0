@@ -1,0 +1,82 @@
+
+# MANUAL TÉCNICO - Sistema de Gestión Académica "Poli 2.0"
+
+## 1. Objetivos
+
+### 1.1 Objetivo General
+Desarrollar una aplicación web integral, robusta y escalable para la gestión académica y administrativa del "Politécnico 2.0", que centralice la información y automatice los procesos clave para los roles de Administrador, Gestor, Docente y Estudiante, asegurando una experiencia de usuario fluida, segura y consistente.
+
+### 1.2 Objetivos Específicos
+- **Centralizar la Gestión Académica:** Implementar un panel de administrador que sirva como única fuente de verdad para la creación y gestión de sedes, carreras, materias, grupos y horarios.
+- **Optimizar la Asignación Docente:** Crear un sistema de asignación de horarios que vincule de forma única a docentes, materias y grupos, eliminando la redundancia de datos y asegurando que las vistas de los docentes y estudiantes se generen automáticamente a partir de esta fuente.
+- **Proveer Paneles de Control por Rol:** Desarrollar dashboards específicos para cada tipo de usuario (Administrador, Gestor, Docente, Estudiante), mostrando únicamente las herramientas e información relevantes para sus funciones.
+- **Automatizar el Ciclo del Estudiante:** Facilitar un flujo completo desde el pre-registro de aspirantes, la aprobación administrativa, la inscripción automática en materias del primer ciclo y la generación de credenciales.
+- **Garantizar la Integridad y Seguridad:** Implementar un sistema de autenticación seguro basado en roles, con validaciones de datos tanto en el frontend (Zod) como en el backend para proteger la integridad de la base de datos.
+- **Mejorar la Experiencia de Usuario:** Construir una interfaz de usuario moderna, responsiva e intuitiva, utilizando un stack tecnológico moderno (Next.js, React, ShadCN, Tailwind CSS) que funcione en múltiples dispositivos.
+- **Integrar Funcionalidades de IA:** Utilizar Genkit para desarrollar flujos de inteligencia artificial que agreguen valor al sistema, como la generación automática de correos de bienvenida y comunicados.
+
+---
+
+## 2. Alcance del Sistema
+
+La aplicación "Poli 2.0" abarca el ciclo de vida académico y administrativo principal de la institución.
+
+**Funcionalidades Incluidas:**
+- **Módulo de Autenticación:** Registro de aspirantes, inicio de sesión por roles, recuperación de contraseña.
+- **Módulo Público:** Landing page informativa y visualización de la oferta académica.
+- **Módulo de Administrador:**
+    - Gestión completa de usuarios (creación, edición, visualización).
+    - Gestión de la estructura académica: carreras, ciclos y materias (pensum).
+    - Gestión de grupos y sedes.
+    - Creación y asignación de horarios, que define la carga académica de los docentes.
+    - Aprobación de solicitudes de pre-registro.
+    - Visualización de analíticas y reportes básicos.
+- **Módulo de Docente:**
+    - Visualización automática de su horario, materias y grupos asignados, basado en la gestión del administrador.
+    - Registro de calificaciones y toma de asistencia para sus grupos.
+- **Módulo de Estudiante:**
+    - Visualización de su horario, materias y docentes asignados.
+    - Consulta de calificaciones, asistencias y estado de pagos.
+    - Actualización de su perfil y cambio de contraseña.
+- **Módulo de Gestor:**
+    - Panel con acceso a funciones de gestión como revisión de pagos y envío de comunicados.
+
+**Funcionalidades Excluidas (Fuera del Alcance):**
+- Módulos financieros complejos (contabilidad, nómina, facturación electrónica detallada).
+- Integración con sistemas de planificación de recursos empresariales (ERP) externos.
+- Funcionalidades de e-learning avanzadas como videoconferencias en tiempo real o carga de contenido SCORM.
+- Un sistema de chat o mensajería instantánea entre usuarios.
+
+---
+
+## 3. Requerimientos Técnicos
+
+### 3.1 Requerimientos Mínimos de Hardware (para Desarrollo)
+- **Procesador:** Intel Core i3 (o equivalente AMD) de 2.0 GHz o superior.
+- **Memoria RAM:** 8 GB (16 GB recomendados para un rendimiento óptimo).
+- **Almacenamiento:** 20 GB de espacio libre en disco (SSD recomendado).
+- **Conexión a Internet:** Conexión de banda ancha para la instalación de dependencias y comunicación con servicios en la nube.
+
+### 3.2 Requerimientos Mínimos de Software (para Desarrollo)
+- **Sistema Operativo:** Windows 10, macOS 11 (Big Sur) o superior, o una distribución de Linux moderna (ej. Ubuntu 20.04).
+- **Navegador Web:** Última versión de Google Chrome, Firefox, Safari o Microsoft Edge.
+- **Entorno de Ejecución:** Node.js v18.x o superior.
+- **Gestor de Paquetes:** npm v9.x o superior (incluido con Node.js).
+- **Editor de Código:** Visual Studio Code (recomendado) con extensiones para TypeScript y Prettier.
+
+---
+
+## 4. Herramientas Utilizadas para el Desarrollo
+
+- **Framework Frontend:** Next.js (v15.x) con App Router.
+- **Librería de UI:** React (v18.x).
+- **Lenguaje de Programación:** TypeScript.
+- **Estilos CSS:** Tailwind CSS.
+- **Componentes de UI:** ShadCN/UI, que utiliza Radix UI y Lucide React para iconos.
+- **Gestión de Formularios:** React Hook Form con Zod para la validación de esquemas.
+- **Base de Datos:** Google Firestore (NoSQL, en la nube).
+- **Autenticación y Servicios Backend:** Firebase (Authentication, Firestore).
+- **Inteligencia Artificial:** Google Genkit.
+- **Envío de Correos (Backend):** Nodemailer.
+- **Despliegue y Hosting:** Firebase App Hosting.
+- **Control de Versiones:** Git y GitHub (implícito).
