@@ -31,7 +31,9 @@ import {
   CalendarIcon,
   Eye,
   EyeOff,
-  School
+  School,
+  Clock,
+  Laptop
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
@@ -56,18 +58,18 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 
 const step1Schema = z.object({
-    firstName: z.string().min(1, "El primer nombre es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    firstName: z.string().min(1, "El primer nombre es requerido."),
     segundoNombre: z.string().optional(),
-    lastName: z.string().min(1, "El primer apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
-    segundoApellido: z.string().min(1, "El segundo apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    lastName: z.string().min(1, "El primer apellido es requerido."),
+    segundoApellido: z.string().min(1, "El segundo apellido es requerido."),
     tipoIdentificacion: z.string({ required_error: "Selecciona un tipo." }).min(1, "Selecciona un tipo."),
-    numeroIdentificacion: z.string().min(1, "El número es requerido.").regex(/^\d+$/, "Este campo solo puede contener números."),
+    numeroIdentificacion: z.string().min(1, "El número es requerido."),
     gender: z.string({ required_error: "Selecciona un género." }).min(1, "Selecciona un género."),
     birthDate: z.date({ required_error: "La fecha es requerida." }),
 });
 
 const step2Schema = z.object({
-    phone: z.string().min(1, "Teléfono requerido.").regex(/^\d{7,15}$/, 'Teléfono inválido.'),
+    phone: z.string().min(1, "Teléfono requerido."),
     address: z.string().min(1, "Dirección requerida."),
     country: z.string().min(1, "País requerido."),
     city: z.string().min(1, "Ciudad requerida."),
@@ -77,6 +79,8 @@ const step2Schema = z.object({
 const step3Schema = z.object({
     sedeId: z.string().min(1, "Selecciona una sede."),
     carreraId: z.string().min(1, "Selecciona una carrera."),
+    modalidad: z.string().min(1, "Selecciona una modalidad."),
+    jornada: z.string().min(1, "Selecciona una jornada."),
     grupo: z.string().min(1, "Selecciona un grupo."),
 });
 
@@ -102,7 +106,7 @@ type AllStepsData = z.infer<typeof allStepsSchema>;
 const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
-    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "grupo"] as Path<AllStepsData>[] },
+    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "modalidad", "jornada", "grupo"] as Path<AllStepsData>[] },
     { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
     { number: 5, title: "Confirmación", icon: CheckCircle, schema: z.object({}), fields: [] },
 ];
@@ -125,6 +129,8 @@ const defaultFormValues: AllStepsData = {
     correoPersonal: "",
     sedeId: "",
     carreraId: "",
+    modalidad: "",
+    jornada: "",
     grupo: "",
     password: "",
     confirmPassword: "",
@@ -576,6 +582,8 @@ const Step3 = () => {
 
     const selectedSede = useWatch({ control, name: "sedeId" });
     const selectedCarrera = useWatch({ control, name: "carreraId" });
+    const selectedModalidad = useWatch({ control, name: "modalidad" });
+    const selectedJornada = useWatch({ control, name: "jornada" });
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -596,7 +604,7 @@ const Step3 = () => {
     }, []);
 
     useEffect(() => {
-        if (!selectedSede || !selectedCarrera) {
+        if (!selectedSede || !selectedCarrera || !selectedModalidad || !selectedJornada) {
             setGrupos([]);
             return;
         }
@@ -604,10 +612,12 @@ const Step3 = () => {
         const fetchGrupos = async () => {
             setIsLoading(prev => ({ ...prev, grupos: true }));
             try {
-                const gruposQuery = query(
+                let gruposQuery = query(
                     collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
                     where("idSede", "==", selectedSede),
-                    where("idCarrera", "==", selectedCarrera)
+                    where("idCarrera", "==", selectedCarrera),
+                    where("modalidad", "==", selectedModalidad),
+                    where("franjaHoraria", "==", selectedJornada)
                 );
                 const gruposSnapshot = await getDocs(gruposQuery);
                 const fetchedGrupos = gruposSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo }));
@@ -620,50 +630,98 @@ const Step3 = () => {
         };
 
         fetchGrupos();
-    }, [selectedSede, selectedCarrera]);
+    }, [selectedSede, selectedCarrera, selectedModalidad, selectedJornada]);
+    
+    const resetDependentFields = (level: 'sede' | 'carrera' | 'modalidad' | 'jornada') => {
+        if (level === 'sede') {
+            setValue("carreraId", "");
+        }
+        if (level === 'sede' || level === 'carrera') {
+            setValue("modalidad", "");
+        }
+         if (level === 'sede' || level === 'carrera' || level === 'modalidad') {
+            setValue("jornada", "");
+        }
+        setValue("grupo", "");
+        setGrupos([]);
+    };
 
   return (
     <div className="space-y-6">
-      <FormField control={control} name="sedeId" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
-             <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", ""); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.sedes}>
-              <FormControl>
-                <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger>
-              </FormControl>
-              <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-      <FormField control={control} name="carreraId" render={({ field }) => (
-          <FormItem>
-            <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
-            <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
-              <FormControl>
-                <SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger>
-              </FormControl>
-              <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
-            </Select>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField control={control} name="sedeId" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
+                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('sede'); }} defaultValue={field.value} disabled={isLoading.sedes}>
+                <FormControl>
+                    <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger>
+                </FormControl>
+                <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        <FormField control={control} name="carreraId" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
+                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('carrera'); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
+                <FormControl>
+                    <SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger>
+                </FormControl>
+                <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        <FormField control={control} name="modalidad" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Modalidad <span className="text-destructive">*</span></FormLabel>
+                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('modalidad'); }} defaultValue={field.value} disabled={!selectedCarrera}>
+                <FormControl>
+                    <SelectTrigger><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : "Selecciona modalidad"} /></div></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                    <SelectItem value="Virtual">Virtual</SelectItem>
+                    <SelectItem value="Presencial">Presencial</SelectItem>
+                </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+        <FormField control={control} name="jornada" render={({ field }) => (
+            <FormItem>
+                <FormLabel>Jornada <span className="text-destructive">*</span></FormLabel>
+                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields('jornada'); }} defaultValue={field.value} disabled={!selectedModalidad}>
+                <FormControl>
+                    <SelectTrigger><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={!selectedModalidad ? "Elige modalidad" : "Selecciona jornada"} /></div></SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                    <SelectItem value="Diurna">Diurna</SelectItem>
+                    <SelectItem value="Nocturna">Nocturna</SelectItem>
+                </SelectContent>
+                </Select>
+                <FormMessage />
+            </FormItem>
+            )}
+        />
+      </div>
        <FormField control={control} name="grupo" render={({ field }) => (
           <FormItem>
             <FormLabel>Grupo disponible <span className="text-destructive">*</span></FormLabel>
-            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
+            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedJornada}>
               <FormControl>
                 <SelectTrigger>
-                  <SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} />
+                  <SelectValue placeholder={!selectedJornada ? "Elige jornada" : (isLoading.grupos ? "Buscando grupos..." : "Selecciona un grupo")} />
                 </SelectTrigger>
               </FormControl>
               <SelectContent>
                 {grupos.length > 0 ? (
                   grupos.map(grupo => <SelectItem key={grupo.id} value={grupo.id}>{grupo.codigoGrupo}</SelectItem>)
                 ) : (
-                  <SelectItem value="no-groups" disabled>No hay grupos disponibles</SelectItem>
+                  <SelectItem value="no-groups" disabled>No hay grupos disponibles para tu selección</SelectItem>
                 )}
               </SelectContent>
             </Select>
@@ -732,5 +790,3 @@ const Step5_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
-
-    
