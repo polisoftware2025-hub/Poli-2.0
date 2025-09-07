@@ -4,7 +4,8 @@
 ## 1. Objetivos
 
 ### 1.1 Objetivo General
-Desarrollar una aplicación web integral, robusta y escalable para la gestión académica y administrativa del "Politécnico 2.0", que centralice la información y automatice los procesos clave para los roles de Administrador, Gestor, Docente y Estudiante, asegurando una experiencia de usuario fluida, segura y consistente.
+Desarrollar una aplicación web integral, robusta y escalable para la gestión académica y administrativa del
+"Politécnico 2.0", que centralice la información y automatice los procesos clave para los roles de Administrador, Gestor, Docente y Estudiante, asegurando una experiencia de usuario fluida, segura y consistente.
 
 ### 1.2 Objetivos Específicos
 - **Centralizar la Gestión Académica:** Implementar un panel de administrador que sirva como única fuente de verdad para la creación y gestión de sedes, carreras, materias, grupos y horarios.
@@ -80,3 +81,64 @@ La aplicación "Poli 2.0" abarca el ciclo de vida académico y administrativo pr
 - **Envío de Correos (Backend):** Nodemailer.
 - **Despliegue y Hosting:** Firebase App Hosting.
 - **Control de Versiones:** Git y GitHub (implícito).
+
+---
+
+## 7. Diseño de la Arquitectura Física
+
+### 7.1 Ambiente de ejecución
+El sistema opera en un entorno **serverless (sin servidor)** proporcionado por Google Cloud a través de Firebase. Esto significa que no hay servidores físicos o virtuales que mantener directamente.
+- **Hosting del Frontend:** Se realiza a través de **Firebase App Hosting**, que despliega la aplicación Next.js en un entorno de ejecución de Node.js gestionado y escalable.
+- **Backend y Lógica de Negocio:** Las API routes de Next.js se ejecutan como funciones serverless que escalan automáticamente según la demanda. Los flujos de IA de Genkit se ejecutan en el mismo entorno.
+- **Base de Datos:** Se utiliza **Google Firestore**, una base de datos NoSQL totalmente gestionada que escala de forma independiente.
+
+### 7.2 Componentes principales
+1.  **Frontend (Cliente):** La aplicación de React construida con Next.js que se ejecuta en el navegador del usuario. Es responsable de la interfaz de usuario, la interacción y las validaciones del lado del cliente.
+2.  **Backend (Servidor):**
+    - **API Routes de Next.js:** Endpoints ubicados en `src/app/api/` que manejan la lógica de negocio, como el registro de usuarios, el inicio de sesión y la manipulación de datos.
+    - **Flujos de Genkit:** Lógica de IA ubicada en `src/ai/flows/` que se ejecuta en el servidor para tareas como generar correos electrónicos o procesar información.
+3.  **Base de Datos (Firestore):** Almacena toda la información persistente de la aplicación (usuarios, carreras, grupos, horarios, etc.) en una estructura de colecciones y documentos.
+4.  **Servicio de Autenticación (Firebase Authentication):** Gestiona la identidad de los usuarios, aunque en este proyecto se optó por un sistema de credenciales almacenadas y validadas directamente contra Firestore para un mayor control.
+5.  **Servicio de Envío de Correos (Nodemailer):** Un módulo de Node.js que se ejecuta en el backend para enviar correos transaccionales (bienvenida, recuperación de contraseña).
+
+### 7.3 Comunicación entre componentes
+- **Cliente ↔ Backend:** El frontend se comunica con las API Routes de Next.js a través de peticiones HTTP (GET, POST, PUT). Las respuestas se envían en formato JSON.
+- **Backend ↔ Base de Datos:** Las API Routes y los flujos de Genkit utilizan el SDK de Firebase (Admin) para interactuar de forma segura y directa con Firestore.
+- **Backend ↔ Servicio de Correo:** La API de recuperación de contraseña o de bienvenida invoca a Nodemailer para enviar correos a través de un servidor SMTP (en este caso, Gmail).
+
+---
+
+## 8. Usuarios
+
+### 8.1 Usuarios de Base de Datos
+No existen usuarios de base de datos en el sentido tradicional (como en SQL). El acceso a Firestore está controlado por **reglas de seguridad de Firestore**. Estas reglas definen qué usuarios autenticados pueden leer, escribir o modificar datos en rutas específicas de la base de datos, basándose en su rol y su ID de usuario.
+
+### 8.2 Usuarios de Sistema Operativo
+Dado que la infraestructura es serverless, no hay usuarios de sistema operativo que gestionar. El acceso para despliegue y mantenimiento se realiza a través de la cuenta de Google asociada al proyecto de Firebase, con roles de IAM (Identity and Access Management) definidos en la consola de Google Cloud.
+
+### 8.3 Usuarios de Aplicación
+El sistema define cuatro roles principales, cada uno con un conjunto específico de permisos y vistas:
+1.  **Administrador:** Acceso total a todas las funcionalidades de gestión del sistema. Puede crear, leer, actualizar y eliminar cualquier dato (CRUD completo).
+2.  **Gestor:** Rol con permisos intermedios. Puede gestionar pagos, comunicados y supervisar aspectos académicos, pero con menos privilegios que el administrador.
+3.  **Docente:** Puede visualizar sus grupos y materias asignadas, tomar asistencia y registrar calificaciones para los estudiantes de dichos grupos.
+4.  **Estudiante:** Puede consultar su información académica (horarios, notas, materias), actualizar su perfil y realizar pagos.
+
+---
+
+## 9. Contingencias y Soluciones
+
+### 9.1 Problemas comunes
+- **Error `Cannot read properties of undefined` en la UI:**
+    - **Causa:** Generalmente, el código intenta acceder a una propiedad de un objeto que es `undefined`. Esto suele ocurrir cuando una consulta a Firestore devuelve un documento sin un campo esperado.
+    - **Solución:** Implementar "optional chaining" (`?.`) en el frontend (ej. `group.materia?.nombre`) y añadir validaciones en la lógica de negocio para manejar datos incompletos o nulos.
+- **Conflictos de Horarios:**
+    - **Causa:** Dos clases se asignan al mismo tiempo en el mismo salón o al mismo docente/grupo.
+    - **Solución:** El administrador debe revisar el panel de horarios y reasignar la clase conflictiva. A futuro, se debe implementar una validación en el backend que prevenga guardar un horario si detecta un conflicto.
+- **Fallo en el Envío de Correos:**
+    - **Causa:** Credenciales de Nodemailer incorrectas o vencidas, o problemas con el servicio de Gmail (límites de envío, etc.).
+    - **Solución:** Verificar las variables de entorno `EMAIL_USER` y `EMAIL_PASS`. Si se usan credenciales de Gmail, puede ser necesario generar una "contraseña de aplicación" desde la configuración de la cuenta de Google.
+
+### 9.2 Recomendaciones generales
+- **Backups de Firestore:** Aunque Google gestiona la infraestructura, es recomendable configurar backups periódicos de la base de datos de Firestore a un bucket de Google Cloud Storage para recuperación ante desastres.
+- **Monitoreo:** Utilizar el panel de Firebase para monitorear el uso de Firestore (lecturas, escrituras), el rendimiento de las funciones y los logs de errores para detectar problemas proactivamente.
+- **Gestión de Variables de Entorno:** Nunca almacenar claves de API, contraseñas de correo u otra información sensible directamente en el código. Utilizar siempre variables de entorno (`.env` para desarrollo local, y el sistema de secretos de Firebase/Google Cloud para producción).
