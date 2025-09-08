@@ -1,5 +1,5 @@
 
-      
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -18,7 +18,6 @@ interface Group {
   codigoGrupo: string;
   materia: { id: string; nombre: string };
   estudiantes: Student[];
-  docente: { id: string; nombre: string; email: string; usuarioId: string };
 }
 
 interface GroupSelectorProps {
@@ -67,7 +66,6 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
         const fetchedGroups: Group[] = [];
         querySnapshot.forEach(doc => {
             const data = doc.data();
-            // Critical fix: ensure group has a 'materia' object before adding it
             if (data.materia) {
                 fetchedGroups.push({
                   id: doc.id,
@@ -118,5 +116,3 @@ export function GroupSelector({ onGroupSelect }: GroupSelectorProps) {
     </div>
   );
 }
-
-    
