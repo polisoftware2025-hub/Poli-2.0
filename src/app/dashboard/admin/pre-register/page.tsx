@@ -36,6 +36,7 @@ interface PreRegisteredUser {
 }
 
 const getInitials = (name: string) => {
+  if (!name) return "U";
   const names = name.split(' ');
   if (names.length > 1) {
     return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
@@ -60,7 +61,6 @@ export default function PreRegisterPage() {
     const fetchUsers = async () => {
       setIsLoading(true);
       try {
-        // Fetch careers to map IDs to names
         const carrerasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
         const carrerasSnapshot = await getDocs(carrerasRef);
         const carrerasMap = new Map<string, string>();
@@ -68,33 +68,45 @@ export default function PreRegisterPage() {
             carrerasMap.set(doc.id, doc.data().nombre);
         });
 
-        // Fetch students and map career name
         const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
-        let q = query(studentsRef, where("estado", "in", ["pendiente", "rechazado", "aprobado"]));
+        let studentQuery = query(studentsRef);
         if (filter !== "todos") {
-           q = query(studentsRef, where("estado", "==", filter));
+           studentQuery = query(studentsRef, where("estado", "==", filter));
+        }
+        const studentQuerySnapshot = await getDocs(studentQuery);
+        
+        const userIds = studentQuerySnapshot.docs.map(doc => doc.id);
+        const fetchedUsers: PreRegisteredUser[] = [];
+
+        if (userIds.length > 0) {
+            const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+            const usersQuery = query(usersRef, where("__name__", "in", userIds));
+            const usersSnapshot = await getDocs(usersQuery);
+            const usersMap = new Map<string, DocumentData>();
+            usersSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+
+            for (const studentDoc of studentQuerySnapshot.docs) {
+                const studentData = studentDoc.data();
+                const userData = usersMap.get(studentDoc.id);
+
+                if (userData) {
+                    const fechaRegistro = userData.fechaRegistro?.toDate ? userData.fechaRegistro.toDate() : null;
+                    fetchedUsers.push({
+                        id: studentDoc.id,
+                        nombreCompleto: userData.nombreCompleto,
+                        correo: userData.correo,
+                        carreraId: studentData.carreraId,
+                        carreraNombre: carrerasMap.get(studentData.carreraId) || 'Carrera no encontrada',
+                        fechaRegistro: fechaRegistro,
+                        estado: studentData.estado
+                    });
+                }
+            }
         }
         
-        const querySnapshot = await getDocs(q);
-
-        const fetchedUsers: PreRegisteredUser[] = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            // Safely convert Firestore Timestamp to JS Date
-            const fechaRegistro = data.fechaRegistro && typeof data.fechaRegistro.toDate === 'function' 
-                ? data.fechaRegistro.toDate() 
-                : null;
-            
-            return {
-                id: doc.id,
-                nombreCompleto: data.nombreCompleto,
-                correo: data.correo,
-                carreraId: data.carreraId,
-                carreraNombre: carrerasMap.get(data.carreraId) || 'Carrera no encontrada',
-                fechaRegistro: fechaRegistro,
-                estado: data.estado
-            }
-        });
+        fetchedUsers.sort((a, b) => (b.fechaRegistro?.getTime() || 0) - (a.fechaRegistro?.getTime() || 0));
         setUsers(fetchedUsers);
+
       } catch (error) {
           console.error("Error fetching pre-registered users:", error);
           toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar las solicitudes."})
@@ -104,6 +116,7 @@ export default function PreRegisterPage() {
     }
     fetchUsers();
   }, [filter, toast]);
+
 
   const handleApprove = async (studentId: string) => {
     startTransition(async () => {
@@ -221,7 +234,7 @@ export default function PreRegisterPage() {
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusBadgeVariant[user.estado]}>
-                          {user.estado}
+                          {user.estado.charAt(0).toUpperCase() + user.estado.slice(1)}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -232,6 +245,12 @@ export default function PreRegisterPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                             <DropdownMenuItem asChild>
+                                 <Link href={`/dashboard/admin/pre-register/${user.id}`} className="flex items-center">
+                                  <Eye className="mr-2 h-4 w-4" />
+                                  Ver Detalles
+                                 </Link>
+                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => handleApprove(user.id)} className="text-green-600 focus:text-green-600 focus:bg-green-50" disabled={user.estado !== 'pendiente'}>
                               <Check className="mr-2 h-4 w-4" />
                               Aprobar
@@ -240,12 +259,6 @@ export default function PreRegisterPage() {
                               <X className="mr-2 h-4 w-4" />
                               Rechazar
                             </DropdownMenuItem>
-                             <DropdownMenuItem asChild>
-                                 <Link href={`/dashboard/admin/pre-register/${user.id}`} className="flex items-center">
-                                  <Eye className="mr-2 h-4 w-4" />
-                                  Ver Detalles
-                                 </Link>
-                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
