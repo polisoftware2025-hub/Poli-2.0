@@ -35,43 +35,19 @@ interface CareerStudentData {
     students: number;
 }
 
+const staticCareerData: CareerStudentData[] = [
+    { name: "Tecnología", students: 50 },
+    { name: "Medicina", students: 100 },
+    { name: "Salud", students: 150 },
+    { name: "Cocina", students: 200 },
+    { name: "Diseño", students: 250 },
+];
+
+
 export default function AnalyticsPage() {
-  const [careerData, setCareerData] = useState<CareerStudentData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [careerData, setCareerData] = useState<CareerStudentData[]>(staticCareerData);
+  const [isLoading, setIsLoading] = useState(false); // Set to false as we are using static data now
 
-  useEffect(() => {
-    const fetchStudentDistribution = async () => {
-      setIsLoading(true);
-      try {
-        const studentsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes"));
-        const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
-        
-        const careerMap = new Map(careersSnapshot.docs.map(doc => [doc.id, doc.data().nombre]));
-        const studentCounts = new Map<string, number>();
-
-        studentsSnapshot.forEach(doc => {
-            const student = doc.data();
-            if (student.carreraId) {
-                const currentCount = studentCounts.get(student.carreraId) || 0;
-                studentCounts.set(student.carreraId, currentCount + 1);
-            }
-        });
-
-        const chartData = Array.from(studentCounts.entries()).map(([careerId, count]) => ({
-            name: (careerMap.get(careerId) || 'N/A').substring(0,10) + '.', // Shorten name for chart
-            students: count,
-        }));
-        
-        setCareerData(chartData);
-
-      } catch (error) {
-        console.error("Error fetching student distribution:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchStudentDistribution();
-  }, []);
 
   return (
     <div className="flex flex-col gap-8">
@@ -201,7 +177,7 @@ export default function AnalyticsPage() {
              <Skeleton className="w-full h-[350px]" />
           ) : (
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={careerData}>
+              <BarChart data={careerData.map(item => ({ ...item, name: item.name.substring(0,10) + (item.name.length > 10 ? "." : "") }))}>
                   <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} interval={0} />
                   <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip
