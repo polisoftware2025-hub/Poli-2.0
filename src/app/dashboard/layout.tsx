@@ -282,15 +282,15 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-             <SidebarMenu className="mt-auto">
+            <SidebarMenu className="mt-auto px-0 bg-red-600">
                 <SidebarMenuItem>
                     <SidebarMenuButton
-                    onClick={handleLogout}
-                    className="bg-red-600 text-white hover:bg-red-700"
-                    tooltip={{
-                        children: "Cerrar Sesión",
-                        className: "group-data-[collapsible=icon]:flex hidden",
-                    }}
+                        onClick={handleLogout}
+                        className="w-full bg-transparent text-white hover:bg-red-700"
+                        tooltip={{
+                            children: "Cerrar Sesión",
+                            className: "group-data-[collapsible=icon]:flex hidden",
+                        }}
                     >
                         <LogOut />
                         <span>Cerrar Sesión</span>
@@ -374,5 +374,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
