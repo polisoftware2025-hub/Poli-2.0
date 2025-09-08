@@ -195,7 +195,7 @@ export default function SubjectsAdminPage() {
                                         <DropdownMenuItem asChild>
                                             <Link href={`/dashboard/admin/career/edit/${subject.careerId}`}>
                                                 <BookCopy className="mr-2 h-4 w-4" />
-                                                Gestionar Carrera
+                                                Gestionar en Carrera
                                             </Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
