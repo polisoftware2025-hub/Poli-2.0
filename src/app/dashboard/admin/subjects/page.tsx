@@ -24,6 +24,7 @@ interface Subject {
   careerId: string;
   careerName: string;
   status: string;
+  cycleNumber: number;
 }
 
 interface Career {
@@ -36,7 +37,8 @@ export default function SubjectsAdminPage() {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [careers, setCareers] = useState<Career[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [filter, setFilter] = useState("all");
+  const [careerFilter, setCareerFilter] = useState("all");
+  const [cycleFilter, setCycleFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
@@ -55,7 +57,7 @@ export default function SubjectsAdminPage() {
             const careerId = doc.id;
             const careerName = careerData.nombre;
             
-            allCareers.push({ id: careerId, nombre: careerName, ciclos: careerData.ciclos });
+            allCareers.push({ id: careerId, nombre: careerName, ciclos: careerData.ciclos || [] });
 
             if (careerData.ciclos && Array.isArray(careerData.ciclos)) {
                 careerData.ciclos.forEach((ciclo: any) => {
@@ -69,7 +71,8 @@ export default function SubjectsAdminPage() {
                                     creditos: materia.creditos,
                                     careerId: careerId,
                                     careerName: careerName,
-                                    status: "Activa"
+                                    status: "Activa",
+                                    cycleNumber: ciclo.numero,
                                 });
                             }
                         });
@@ -90,11 +93,26 @@ export default function SubjectsAdminPage() {
     fetchSubjectsAndCareers();
   }, [toast]);
   
+  const availableCycles = useMemo(() => {
+    if (careerFilter === 'all') return [];
+    const selectedCareer = careers.find(c => c.id === careerFilter);
+    return selectedCareer?.ciclos?.map(c => c.numero).sort((a,b) => a - b) || [];
+  }, [careers, careerFilter]);
+
+  const handleCareerFilterChange = (value: string) => {
+    setCareerFilter(value);
+    setCycleFilter("all"); 
+  };
+
   const filteredSubjects = useMemo(() => {
     return subjects
       .filter(subject => {
-        if (filter === 'all') return true;
-        return subject.careerId === filter;
+        if (careerFilter === 'all') return true;
+        return subject.careerId === careerFilter;
+      })
+      .filter(subject => {
+        if (cycleFilter === 'all') return true;
+        return subject.cycleNumber === parseInt(cycleFilter);
       })
       .filter(subject => {
         const term = searchTerm.toLowerCase();
@@ -103,7 +121,7 @@ export default function SubjectsAdminPage() {
           (subject.codigo && subject.codigo.toLowerCase().includes(term))
         );
       });
-  }, [subjects, filter, searchTerm]);
+  }, [subjects, careerFilter, cycleFilter, searchTerm]);
 
 
   return (
@@ -122,8 +140,8 @@ export default function SubjectsAdminPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-grow">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="relative md:col-span-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input 
                 placeholder="Buscar por nombre o código..." 
@@ -132,8 +150,8 @@ export default function SubjectsAdminPage() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-full sm:w-56">
+            <Select value={careerFilter} onValueChange={handleCareerFilterChange}>
+              <SelectTrigger className="w-full">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filtrar por carrera" />
               </SelectTrigger>
@@ -141,6 +159,18 @@ export default function SubjectsAdminPage() {
                 <SelectItem value="all">Todas las Carreras</SelectItem>
                 {careers.map(career => (
                     <SelectItem key={career.id} value={career.id}>{career.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+             <Select value={cycleFilter} onValueChange={setCycleFilter} disabled={careerFilter === 'all'}>
+              <SelectTrigger className="w-full">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filtrar por ciclo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos los Ciclos</SelectItem>
+                {availableCycles.map(cycle => (
+                    <SelectItem key={cycle} value={String(cycle)}>Ciclo {cycle}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -181,6 +211,10 @@ export default function SubjectsAdminPage() {
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Créditos:</span>
                                 <span className="font-semibold">{subject.creditos}</span>
+                            </div>
+                             <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Ciclo:</span>
+                                <span className="font-semibold">{subject.cycleNumber}</span>
                             </div>
                         </CardContent>
                         <CardFooter>
