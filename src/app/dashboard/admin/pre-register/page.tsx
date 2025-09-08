@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
-import { ClipboardList, MoreHorizontal, Check, X, Search, Filter, AlertCircle } from "lucide-react";
+import { ClipboardList, MoreHorizontal, Check, X, Search, Filter, AlertCircle, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -241,7 +241,8 @@ export default function PreRegisterPage() {
                               Rechazar
                             </DropdownMenuItem>
                              <DropdownMenuItem asChild>
-                                 <Link href={`/dashboard/admin/pre-register/${user.id}`}>
+                                 <Link href={`/dashboard/admin/pre-register/${user.id}`} className="flex items-center">
+                                  <Eye className="mr-2 h-4 w-4" />
                                   Ver Detalles
                                  </Link>
                              </DropdownMenuItem>
