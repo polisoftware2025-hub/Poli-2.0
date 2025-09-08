@@ -7,90 +7,20 @@ import { Button } from "@/components/ui/button";
 import { BookCopy, GraduationCap, Menu, Phone, Mail, MapPin, Linkedin, Instagram } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const programs = [
-    {
-      slug: "administracion-de-empresas",
-      title: "Administración de Empresas",
-      description:
-        "Forma líderes con visión estratégica para gestionar organizaciones.",
-      image: "/images/Administacion-de-Empresas.jpg",
-      imageHint: "business students",
-    },
-    {
-      slug: "contaduria-publica",
-      title: "Contaduría Pública",
-      description:
-        "Prepara expertos en el control financiero y la normativa contable.",
-      image: "/images/carousel/accounting-finance.jpg",
-      imageHint: "accounting finance",
-    },
-    {
-      slug: "mercadeo-y-publicidad",
-      title: "Mercadeo y Publicidad",
-      description:
-        "Desarrolla estrategias creativas para posicionar marcas y productos.",
-      image: "/images/carousel/marketing-team.jpg",
-      imageHint: "marketing team",
-    },
-    {
-      slug: "ingenieria-de-sistemas",
-      title: "Ingeniería de Sistemas",
-      description:
-        "Crea soluciones tecnológicas innovadoras para optimizar procesos.",
-      image: "/images/carousel/software-development.jpg",
-      imageHint: "software development",
-    },
-    {
-      slug: "gastronomia",
-      title: "Gastronomía",
-      description: "Fusiona arte y técnica culinaria para crear experiencias únicas.",
-      image: "/images/carousel/chef-cooking.jpg",
-      imageHint: "chef cooking",
-    },
-    {
-      slug: "hoteleria-y-turismo",
-      title: "Hotelería y Turismo",
-      description:
-        "Gestiona servicios de hospitalidad con estándares internacionales.",
-      image: "/images/carousel/luxury-hotel.jpg",
-      imageHint: "luxury hotel",
-    },
-    {
-      slug: "derecho",
-      title: "Derecho",
-      description:
-        "Forma profesionales con sólidos principios éticos y jurídicos.",
-      image: "/images/carousel/law-books-courtroom.jpg",
-      imageHint: "law books courtroom",
-    },
-    {
-      slug: "psicologia",
-      title: "Psicología",
-      description:
-        "Comprende el comportamiento humano para promover el bienestar.",
-      image: "/images/carousel/therapy-session.jpg",
-      imageHint: "therapy session",
-    },
-    {
-      slug: "enfermeria",
-      title: "Enfermería",
-      description:
-        "Cuidado integral de la salud con vocación de servicio y humanismo.",
-      image: "/images/carousel/nurses-hospital.jpg",
-      imageHint: "nurses hospital",
-    },
-    {
-      slug: "comunicacion-social",
-      title: "Comunicación Social",
-      description:
-        "Forma comunicadores estratégicos para medios y organizaciones.",
-      image: "/images/carousel/media-broadcast.jpg",
-      imageHint: "media broadcast",
-    },
-];
+interface Program {
+  slug: string;
+  title: string;
+  description: string;
+  image: string;
+  imageHint: string;
+}
+
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -100,12 +30,41 @@ const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export default function ProgramsListPage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const navLinks = [
     { href: "/", label: "Inicio" },
     { href: "/#inscripcion", label: "Inscripción" },
     { href: "/programas", label: "Programas" },
     { href: "/#contacto", label: "Contacto" },
   ];
+  
+  useEffect(() => {
+    const fetchPrograms = async () => {
+        setIsLoading(true);
+        try {
+            const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+            const careersSnapshot = await getDocs(careersCollection);
+            const careersList = careersSnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    slug: data.slug || doc.id,
+                    title: data.nombre,
+                    description: data.descripcionGeneral,
+                    image: data.imagenURL || "https://placehold.co/600x400/002147/FFFFFF?text=Poli",
+                    imageHint: "university campus"
+                } as Program;
+            });
+            setPrograms(careersList);
+        } catch (error) {
+            console.error("Error fetching programs: ", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchPrograms();
+  }, []);
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col">
@@ -186,33 +145,44 @@ export default function ProgramsListPage() {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {programs.map((program) => (
-                    <Card key={program.slug} className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 flex flex-col">
-                        <div className="relative h-48 w-full">
-                            <Image
-                                src={program.image}
-                                alt={`Imagen de ${program.title}`}
-                                fill
-                                style={{objectFit: 'cover'}}
-                                className="transition-transform duration-500 group-hover:scale-105"
-                                data-ai-hint={program.imageHint}
-                            />
-                        </div>
-                         <CardHeader>
-                            <CardTitle className="text-xl">{program.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                            <p className="text-sm text-muted-foreground">{program.description}</p>
-                        </CardContent>
-                        <CardFooter>
-                            <Button asChild className="w-full">
-                                <Link href={`/programas/${program.slug}`}>
-                                    Ver Detalles del Programa
-                                </Link>
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                ))}
+                {isLoading ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                       <Card key={i} className="overflow-hidden flex flex-col">
+                           <Skeleton className="h-48 w-full"/>
+                           <CardHeader><Skeleton className="h-6 w-3/4"/></CardHeader>
+                           <CardContent className="flex-grow"><Skeleton className="h-4 w-full"/><Skeleton className="h-4 w-2/3 mt-2"/></CardContent>
+                           <CardFooter><Skeleton className="h-10 w-full"/></CardFooter>
+                       </Card>
+                    ))
+                ) : (
+                    programs.map((program) => (
+                        <Card key={program.slug} className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 flex flex-col">
+                            <div className="relative h-48 w-full">
+                                <Image
+                                    src={program.image}
+                                    alt={`Imagen de ${program.title}`}
+                                    fill
+                                    style={{objectFit: 'cover'}}
+                                    className="transition-transform duration-500 group-hover:scale-105"
+                                    data-ai-hint={program.imageHint}
+                                />
+                            </div>
+                            <CardHeader>
+                                <CardTitle className="text-xl">{program.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                                <p className="text-sm text-muted-foreground">{program.description}</p>
+                            </CardContent>
+                            <CardFooter>
+                                <Button asChild className="w-full">
+                                    <Link href={`/programas/${program.slug}`}>
+                                        Ver Detalles del Programa
+                                    </Link>
+                                </Button>
+                            </CardFooter>
+                        </Card>
+                    ))
+                )}
             </div>
         </div>
       </main>
