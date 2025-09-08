@@ -61,6 +61,8 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
       'estudiante': 'Estudiante',
       'gestor': 'Gestor',
       'users': 'Usuarios',
+      'add-user': 'Agregar Usuario',
+      'edit-user': 'Editar Usuario',
       'pre-register': 'Pre-Inscripción',
       'subjects': 'Materias',
       'payments': userRole === 'admin' ? 'Gestión de Pagos' : (userRole === 'gestor' ? 'Revisión de Pagos' : 'Pagos'),
