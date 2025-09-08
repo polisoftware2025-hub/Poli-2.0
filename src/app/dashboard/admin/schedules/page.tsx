@@ -50,7 +50,7 @@ interface Group {
 
 const allTimeSlots = Array.from({ length: 16 }, (_, i) => 7 + i); // 7 AM a 10 PM (22:00)
 const daysOfWeekMap: { [key: string]: number } = {
-  "Lunes": 1, "Martes": 2, "Miércoles": 3, "Jueves": 4, "Viernes": 5, "Sábado": 6, "Domingo": 0
+  "Lunes": 1, "Martes": 2, "Miércoles": 3, "Jueves": 4, "Viernes": 5, "Sábado": 6
 };
 
 
@@ -169,8 +169,8 @@ export default function SchedulesAdminPage() {
         if (startRow === -1) return {};
 
         return {
-            gridColumn: `${dayIndex + 2}`, // CSS Grid is 1-based, plus 1 for time column
-            gridRow: `${startRow + 1} / span ${duration}` // CSS Grid is 1-based
+            gridColumn: `${dayIndex + 1}`,
+            gridRow: `${startRow + 2} / span ${duration}`
         }
     }
 
@@ -262,37 +262,38 @@ export default function SchedulesAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
-                        <div className="grid grid-cols-[auto_repeat(6,_minmax(120px,_1fr))] text-sm">
-                             <div className="sticky left-0 z-10 bg-card border-r border-b"></div> 
-                             {Object.keys(daysOfWeekMap).filter(d => d !== 'Domingo').map(day => (
-                                <div key={day} className="border-b p-2 text-center">
-                                    <p className="font-semibold">{day}</p>
+                        <div className="relative grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))] grid-rows-[auto_repeat(17,_minmax(60px,_1fr))] text-sm">
+                            {/* Empty corner */}
+                            <div className="sticky left-0 z-10 bg-card border-r border-b"></div> 
+                            
+                            {/* Days Header */}
+                            {Object.keys(daysOfWeekMap).map(day => (
+                                <div key={day} className="border-b p-2 text-center font-semibold">
+                                    {day}
                                 </div>
                             ))}
 
-                            <div className="col-start-1 col-end-8 row-start-2 row-end-[-1] grid grid-cols-[auto_repeat(6,_minmax(120px,_1fr))] grid-rows-[repeat(16,_minmax(60px,_1fr))]">
-                               <div className="col-start-1 col-end-2 row-start-1 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))]">
-                                    {allTimeSlots.map(hour => (
-                                        <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground">
-                                            {hour.toString().padStart(2, '0')}:00
-                                        </div>
-                                    ))}
-                               </div>
-
-                               <div className="col-start-2 col-end-8 row-start-1 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))] border-l">
-                                  {allTimeSlots.map(hour => (
-                                    <div key={hour} className="border-b"></div>
-                                  ))}
-                               </div>
-                               <div className="col-start-2 col-end-8 row-start-1 row-end-[-1] grid grid-cols-6">
-                                    {Array.from({length: 6}).map((_, i) => (
-                                         <div key={i} className="border-r"></div>
-                                    ))}
-                               </div>
-                                
-                               {(selectedGrupo.horario || []).map((entry, index) => (
-                                   <div key={entry.id || index} style={getGridPosition(entry)} className="relative flex p-1 m-px rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
-                                       <AssignClassDialog
+                            {/* Time Column */}
+                            <div className="col-start-1 col-end-2 row-start-2 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                                {allTimeSlots.map(hour => (
+                                    <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground border-r">
+                                        {hour.toString().padStart(2, '0')}:00
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Grid Background */}
+                            <div className="col-start-2 col-end-[-1] row-start-2 row-end-[-1] grid grid-cols-6 grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                                {Array.from({ length: 16 * 6 }).map((_, i) => (
+                                    <div key={i} className="border-b border-r"></div>
+                                ))}
+                            </div>
+                            
+                            {/* Schedule Entries */}
+                            <div className="absolute top-0 left-0 w-full h-full col-start-2 col-end-[-1] row-start-1 row-end-[-1] grid grid-cols-6 grid-rows-[auto_repeat(16,_minmax(60px,_1fr))] pointer-events-none">
+                                {(selectedGrupo.horario || []).map((entry, index) => (
+                                    <div key={entry.id || index} style={getGridPosition(entry)} className="relative p-1 m-px pointer-events-auto">
+                                        <AssignClassDialog
                                             key={entry.id}
                                             grupo={selectedGrupo}
                                             carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
@@ -302,10 +303,10 @@ export default function SchedulesAdminPage() {
                                             sedes={sedes}
                                             existingSchedule={entry}
                                         >
-                                           <div className="flex flex-col w-full h-full cursor-pointer p-1">
+                                           <div className="flex flex-col w-full h-full cursor-pointer p-1 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
                                               <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
                                               <p className="text-gray-600">{entry.docenteNombre}</p>
-                                              <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                              <p className="text-gray-600 font-semibold mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
                                            </div>
                                        </AssignClassDialog>
                                    </div>
@@ -483,7 +484,7 @@ function AssignClassDialog({
                 <div className="grid grid-cols-2 gap-4 py-4">
                     <div className="space-y-2">
                         <Label>Día</Label>
-                        <Select value={selectedDia} onValueChange={setSelectedDia}><SelectTrigger><SelectValue placeholder="Selecciona un día..." /></SelectTrigger><SelectContent>{Object.keys(daysOfWeekMap).filter(d => d !== "Domingo").map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedDia} onValueChange={setSelectedDia}><SelectTrigger><SelectValue placeholder="Selecciona un día..." /></SelectTrigger><SelectContent>{Object.keys(daysOfWeekMap).map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
                     </div>
                      <div className="space-y-2">
                         <Label>Hora de Inicio</Label>
@@ -533,3 +534,5 @@ function AssignClassDialog({
         </Dialog>
     );
 }
+
+    
