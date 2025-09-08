@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2 } from "lucide-react";
+import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -57,6 +57,7 @@ export default function SchedulesAdminPage() {
     const [salonesBySede, setSalonesBySede] = useState<{ [key: string]: Salon[] }>({});
     
     const [selectedSede, setSelectedSede] = useState("");
+    const [selectedSalon, setSelectedSalon] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedGrupo, setSelectedGrupo] = useState<Group | null>(null);
     
@@ -98,11 +99,19 @@ export default function SchedulesAdminPage() {
 
     const handleSedeChange = (sedeId: string) => {
         setSelectedSede(sedeId);
+        setSelectedSalon("");
         setSelectedCarrera("");
         setSelectedGrupo(null);
         setGrupos([]);
     };
     
+    const handleSalonChange = (salonId: string) => {
+        setSelectedSalon(salonId);
+        setSelectedCarrera("");
+        setSelectedGrupo(null);
+        setGrupos([]);
+    };
+
     const handleCarreraChange = async (carreraId: string) => {
         setSelectedCarrera(carreraId);
         setSelectedGrupo(null);
@@ -174,7 +183,7 @@ export default function SchedulesAdminPage() {
                     <CardTitle>Filtro Jerárquico de Horarios</CardTitle>
                     <CardDescription>Sigue los pasos para encontrar y asignar horarios a los grupos.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div className="space-y-2">
                         <Label>Paso 1: Sede</Label>
                         <Select value={selectedSede} onValueChange={handleSedeChange} disabled={isLoading.sedes}>
@@ -182,17 +191,24 @@ export default function SchedulesAdminPage() {
                             <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
+                     <div className="space-y-2">
+                        <Label>Paso 2: Salón/Aula</Label>
+                        <Select value={selectedSalon} onValueChange={handleSalonChange} disabled={!selectedSede}>
+                            <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder="Selecciona un salón" /></div></SelectTrigger>
+                            <SelectContent>{(salonesBySede[selectedSede] || []).map(salon => <SelectItem key={salon.id} value={salon.id}>{salon.nombre}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
                     <div className="space-y-2">
-                        <Label>Paso 2: Carrera</Label>
-                        <Select value={selectedCarrera} onValueChange={handleCarreraChange} disabled={!selectedSede || isLoading.carreras}>
-                             <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue className="truncate inline-block max-w-full" placeholder={!selectedSede ? "Elige sede" : "Selecciona una carrera"} /></div></SelectTrigger>
+                        <Label>Paso 3: Carrera</Label>
+                        <Select value={selectedCarrera} onValueChange={handleCarreraChange} disabled={!selectedSalon || isLoading.carreras}>
+                             <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue className="truncate inline-block max-w-full" placeholder={!selectedSalon ? "Elige salón" : "Selecciona carrera"} /></div></SelectTrigger>
                             <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label>Paso 3: Grupo</Label>
+                        <Label>Paso 4: Grupo</Label>
                         <Select value={selectedGrupo?.id || ""} onValueChange={handleGrupoChange} disabled={!selectedCarrera || isLoading.grupos}>
-                            <SelectTrigger><div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} /></div></SelectTrigger>
+                            <SelectTrigger><div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona grupo")} /></div></SelectTrigger>
                             <SelectContent>{grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
@@ -267,7 +283,7 @@ export default function SchedulesAdminPage() {
                     <Calendar className="h-4 w-4" />
                     <AlertTitle>Completa la Selección</AlertTitle>
                     <AlertDescription>
-                        Por favor, elige una sede, carrera y grupo para visualizar y gestionar el horario correspondiente.
+                        Por favor, elige una sede, salón, carrera y grupo para visualizar y gestionar el horario correspondiente.
                     </AlertDescription>
                 </Alert>
             )}
