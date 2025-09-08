@@ -57,7 +57,6 @@ export default function SchedulesAdminPage() {
     const [salonesBySede, setSalonesBySede] = useState<{ [key: string]: Salon[] }>({});
     
     const [selectedSede, setSelectedSede] = useState("");
-    const [selectedSalon, setSelectedSalon] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedGrupo, setSelectedGrupo] = useState<Group | null>(null);
     
@@ -99,14 +98,6 @@ export default function SchedulesAdminPage() {
 
     const handleSedeChange = (sedeId: string) => {
         setSelectedSede(sedeId);
-        setSelectedSalon("");
-        setSelectedCarrera("");
-        setSelectedGrupo(null);
-        setGrupos([]);
-    };
-    
-    const handleSalonChange = (salonId: string) => {
-        setSelectedSalon(salonId);
         setSelectedCarrera("");
         setSelectedGrupo(null);
         setGrupos([]);
@@ -180,10 +171,10 @@ export default function SchedulesAdminPage() {
             />
             <Card>
                 <CardHeader>
-                    <CardTitle>Filtro Jerárquico de Horarios</CardTitle>
+                    <CardTitle>Filtro de Horarios</CardTitle>
                     <CardDescription>Sigue los pasos para encontrar y asignar horarios a los grupos.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <Label>Paso 1: Sede</Label>
                         <Select value={selectedSede} onValueChange={handleSedeChange} disabled={isLoading.sedes}>
@@ -191,22 +182,15 @@ export default function SchedulesAdminPage() {
                             <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
-                     <div className="space-y-2">
-                        <Label>Paso 2: Salón/Aula</Label>
-                        <Select value={selectedSalon} onValueChange={handleSalonChange} disabled={!selectedSede}>
-                            <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder="Selecciona un salón" /></div></SelectTrigger>
-                            <SelectContent>{(salonesBySede[selectedSede] || []).map(salon => <SelectItem key={salon.id} value={salon.id}>{salon.nombre}</SelectItem>)}</SelectContent>
-                        </Select>
-                    </div>
                     <div className="space-y-2">
-                        <Label>Paso 3: Carrera</Label>
-                        <Select value={selectedCarrera} onValueChange={handleCarreraChange} disabled={!selectedSalon || isLoading.carreras}>
-                             <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue className="truncate inline-block max-w-full" placeholder={!selectedSalon ? "Elige salón" : "Selecciona carrera"} /></div></SelectTrigger>
+                        <Label>Paso 2: Carrera</Label>
+                        <Select value={selectedCarrera} onValueChange={handleCarreraChange} disabled={!selectedSede || isLoading.carreras}>
+                             <SelectTrigger><div className="flex items-center gap-2"><BookCopy className="h-4 w-4" /><SelectValue className="truncate inline-block max-w-full" placeholder={!selectedSede ? "Elige sede" : "Selecciona carrera"} /></div></SelectTrigger>
                             <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
-                        <Label>Paso 4: Grupo</Label>
+                        <Label>Paso 3: Grupo</Label>
                         <Select value={selectedGrupo?.id || ""} onValueChange={handleGrupoChange} disabled={!selectedCarrera || isLoading.grupos}>
                             <SelectTrigger><div className="flex items-center gap-2"><Users className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona grupo")} /></div></SelectTrigger>
                             <SelectContent>{grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)}</SelectContent>
@@ -244,35 +228,53 @@ export default function SchedulesAdminPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {scheduleGrid.map((row, timeIndex) => (
-                                        <TableRow key={timeSlots[timeIndex]}>
-                                            <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{timeSlots[timeIndex]}</TableCell>
-                                            {row.map((entry, dayIndex) => {
-                                                if (entry && entry.hora.split(' - ')[0] !== timeSlots[timeIndex]) return null;
-                                                return (
-                                                <TableCell key={`${dayIndex}-${timeIndex}`} rowSpan={entry?.duracion || 1} className="border-r p-1 align-top h-24">
-                                                    {entry && (
-                                                         <AssignClassDialog
-                                                            key={entry.id}
-                                                            grupo={selectedGrupo}
-                                                            carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
-                                                            docentes={docentes}
-                                                            salones={salonesBySede[selectedSede] || []}
-                                                            onClassAssigned={onClassAssigned}
-                                                            sedes={sedes}
-                                                            existingSchedule={entry}
-                                                        >
-                                                            <div className="bg-primary/5 p-2 rounded-md border-l-4 border-primary h-full flex flex-col justify-center text-xs cursor-pointer hover:bg-primary/10">
-                                                                <p className="font-bold text-primary">{entry.materiaNombre}</p>
-                                                                <p className="text-muted-foreground">{entry.docenteNombre}</p>
-                                                                <p className="text-muted-foreground font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                                            </div>
-                                                        </AssignClassDialog>
-                                                    )}
-                                                </TableCell>
-                                            )})}
-                                        </TableRow>
-                                    ))}
+                                    {scheduleGrid.map((row, timeIndex) => {
+                                         if (row.every(entry => entry === null)) {
+                                            return (
+                                                <TableRow key={timeSlots[timeIndex]}>
+                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{timeSlots[timeIndex]}</TableCell>
+                                                    {daysOfWeek.map(day => <TableCell key={day} className="border-r p-1 align-top h-24"></TableCell>)}
+                                                </TableRow>
+                                            );
+                                        }
+
+                                        const firstEntryInRow = row.find(entry => entry && entry.hora.startsWith(timeSlots[timeIndex]));
+                                        if (firstEntryInRow && firstEntryInRow.hora.startsWith(timeSlots[timeIndex])) {
+                                            return (
+                                                <TableRow key={timeSlots[timeIndex]}>
+                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{timeSlots[timeIndex]}</TableCell>
+                                                    {row.map((entry, dayIndex) => {
+                                                        if (entry && entry.hora.startsWith(timeSlots[timeIndex])) {
+                                                            return (
+                                                                <TableCell key={`${dayIndex}-${timeIndex}`} rowSpan={entry.duracion} className="border-r p-1 align-top h-24">
+                                                                    <AssignClassDialog
+                                                                        key={entry.id}
+                                                                        grupo={selectedGrupo}
+                                                                        carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
+                                                                        docentes={docentes}
+                                                                        salones={salonesBySede[selectedSede] || []}
+                                                                        onClassAssigned={onClassAssigned}
+                                                                        sedes={sedes}
+                                                                        existingSchedule={entry}
+                                                                    >
+                                                                        <div className="bg-primary/5 p-2 rounded-md border-l-4 border-primary h-full flex flex-col justify-center text-xs cursor-pointer hover:bg-primary/10">
+                                                                            <p className="font-bold text-primary">{entry.materiaNombre}</p>
+                                                                            <p className="text-muted-foreground">{entry.docenteNombre}</p>
+                                                                            <p className="text-muted-foreground font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                                                        </div>
+                                                                    </AssignClassDialog>
+                                                                </TableCell>
+                                                            );
+                                                        } else if (!entry) {
+                                                            return <TableCell key={`${dayIndex}-${timeIndex}`} className="border-r p-1 align-top h-24"></TableCell>;
+                                                        }
+                                                        return null; // Don't render cells that are spanned over
+                                                    })}
+                                                </TableRow>
+                                            );
+                                        }
+                                        return null; // Don't render rows that are entirely spanned over
+                                    })}
                                 </TableBody>
                             </Table>
                         </div>
@@ -283,7 +285,7 @@ export default function SchedulesAdminPage() {
                     <Calendar className="h-4 w-4" />
                     <AlertTitle>Completa la Selección</AlertTitle>
                     <AlertDescription>
-                        Por favor, elige una sede, salón, carrera y grupo para visualizar y gestionar el horario correspondiente.
+                        Por favor, elige una sede, carrera y grupo para visualizar y gestionar el horario correspondiente.
                     </AlertDescription>
                 </Alert>
             )}
@@ -332,8 +334,17 @@ function AssignClassDialog({
             setSelectedDocente(existingSchedule.docenteId);
             setModalidad(existingSchedule.modalidad);
             setSelectedSalon(existingSchedule.salonId || "");
+        } else {
+            // Reset state when opening for a new entry
+            setSelectedDia("");
+            setSelectedHoraInicio("");
+            setSelectedHoraFin("");
+            setSelectedMateria("");
+            setSelectedDocente("");
+            setModalidad("Presencial");
+            setSelectedSalon("");
         }
-    }, [existingSchedule]);
+    }, [existingSchedule, open]); // Depend on 'open' to reset form
 
 
     const handleSubmit = async () => {
@@ -375,9 +386,10 @@ function AssignClassDialog({
         try {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
             if (existingSchedule) {
-                // Remove the old entry and add the new one
-                await updateDoc(grupoRef, { horario: arrayRemove(existingSchedule) });
-                await updateDoc(grupoRef, { horario: arrayUnion(newSlot) });
+                // Create a temporary array, remove the old item, add the new one.
+                const currentHorario = grupo.horario?.filter(h => h.id !== existingSchedule.id) || [];
+                const newHorario = [...currentHorario, newSlot];
+                await updateDoc(grupoRef, { horario: newHorario });
                 toast({ title: "Éxito", description: "La clase ha sido actualizada correctamente." });
             } else {
                 await updateDoc(grupoRef, { horario: arrayUnion(newSlot) });
@@ -399,10 +411,17 @@ function AssignClassDialog({
         setIsSaving(true);
         try {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
-            await updateDoc(grupoRef, { horario: arrayRemove(existingSchedule) });
-            toast({ title: "Clase Eliminada", description: "La clase ha sido eliminada del horario." });
-            onClassAssigned();
-            setOpen(false);
+            // Firestore does not allow removing items from an array by property value directly in an update.
+            // We need to get the full object to remove it.
+            const fullScheduleEntryToRemove = grupo.horario?.find(h => h.id === existingSchedule.id);
+            if(fullScheduleEntryToRemove){
+                await updateDoc(grupoRef, { horario: arrayRemove(fullScheduleEntryToRemove) });
+                toast({ title: "Clase Eliminada", description: "La clase ha sido eliminada del horario." });
+                onClassAssigned();
+                setOpen(false);
+            } else {
+                 throw new Error("No se encontró la clase para eliminar.");
+            }
         } catch (error) {
             console.error("Error deleting class:", error);
             toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar la clase." });
@@ -426,7 +445,7 @@ function AssignClassDialog({
             </DialogTrigger>
             <DialogContent className="sm:max-w-[480px]">
                 <DialogHeader>
-                    <DialogTitle>{existingSchedule ? 'Editar' : 'Asignar'} Horario a {grupo.codigoGrupo}</DialogTitle>
+                    <DialogTitle>{existingSchedule ? 'Editar' : 'Asignar'} Clase a {grupo.codigoGrupo}</DialogTitle>
                     <DialogDescription>Completa los detalles para una nueva clase.</DialogDescription>
                 </DialogHeader>
                 <div className="grid grid-cols-2 gap-4 py-4">
@@ -482,3 +501,4 @@ function AssignClassDialog({
         </Dialog>
     );
 }
+
