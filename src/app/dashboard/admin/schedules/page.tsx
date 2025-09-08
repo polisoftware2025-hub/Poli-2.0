@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/page-header";
 import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School, Filter, Download, Expand, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
@@ -170,7 +169,7 @@ export default function SchedulesAdminPage() {
 
         return {
             gridColumn: `${dayIndex + 1}`,
-            gridRow: `${startRow + 2} / span ${duration}`
+            gridRow: `${startRow + 1} / span ${duration}`
         }
     }
 
@@ -262,7 +261,7 @@ export default function SchedulesAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
-                        <div className="relative grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))] grid-rows-[auto_repeat(17,_minmax(60px,_1fr))] text-sm">
+                        <div className="grid grid-cols-[auto_repeat(6,_1fr)] text-sm">
                             {/* Empty corner */}
                             <div className="sticky left-0 z-10 bg-card border-r border-b"></div> 
                             
@@ -274,25 +273,24 @@ export default function SchedulesAdminPage() {
                             ))}
 
                             {/* Time Column */}
-                            <div className="col-start-1 col-end-2 row-start-2 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                            <div className="col-start-1 col-end-2 row-start-2 row-end-[-1] grid grid-rows-16">
                                 {allTimeSlots.map(hour => (
-                                    <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground border-r">
+                                    <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground border-r h-[60px] flex items-start justify-end pt-1">
                                         {hour.toString().padStart(2, '0')}:00
                                     </div>
                                 ))}
                             </div>
                             
-                            {/* Grid Background */}
-                            <div className="col-start-2 col-end-[-1] row-start-2 row-end-[-1] grid grid-cols-6 grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                            {/* Grid Background and Entries */}
+                            <div className="col-start-2 col-end-[-1] row-start-2 row-end-[-1] grid grid-cols-6 grid-rows-16 relative">
+                                {/* Grid lines */}
                                 {Array.from({ length: 16 * 6 }).map((_, i) => (
-                                    <div key={i} className="border-b border-r"></div>
+                                    <div key={i} className="border-b border-r h-[60px]"></div>
                                 ))}
-                            </div>
-                            
-                            {/* Schedule Entries */}
-                            <div className="absolute top-0 left-0 w-full h-full col-start-2 col-end-[-1] row-start-1 row-end-[-1] grid grid-cols-6 grid-rows-[auto_repeat(16,_minmax(60px,_1fr))] pointer-events-none">
+                                
+                                {/* Schedule Entries */}
                                 {(selectedGrupo.horario || []).map((entry, index) => (
-                                    <div key={entry.id || index} style={getGridPosition(entry)} className="relative p-1 m-px pointer-events-auto">
+                                    <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
                                         <AssignClassDialog
                                             key={entry.id}
                                             grupo={selectedGrupo}
@@ -535,4 +533,3 @@ function AssignClassDialog({
     );
 }
 
-    
