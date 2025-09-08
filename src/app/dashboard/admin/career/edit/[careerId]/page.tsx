@@ -50,6 +50,13 @@ interface Career {
   precioPorCiclo: { [key: string]: number };
 }
 
+function truncateString(str: string, num: number) {
+    if (str.length <= num) {
+        return str;
+    }
+    return str.slice(0, num) + "...";
+}
+
 export default function EditCareerPage() {
   const params = useParams();
   const careerId = params.careerId as string;
@@ -188,6 +195,12 @@ export default function EditCareerPage() {
     notFound();
     return null;
   }
+  
+  const breadcrumbs = [
+    { name: "Carreras", href: "/dashboard/admin/career" },
+    { name: truncateString(programDetails.nombre, 25), href: `/dashboard/admin/career/details/${careerId}` },
+    { name: "Editar", href: `/dashboard/admin/career/edit/${careerId}` }
+  ];
 
   return (
     <div className="flex flex-col gap-8">
@@ -196,6 +209,7 @@ export default function EditCareerPage() {
         description="Modifica los detalles de este programa académico."
         icon={<Edit className="h-8 w-8 text-primary" />}
         backPath="/dashboard/admin/career"
+        breadcrumbs={breadcrumbs}
       />
       <form onSubmit={handleUpdate}>
         <Card className="overflow-hidden">

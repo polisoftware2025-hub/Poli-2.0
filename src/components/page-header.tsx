@@ -8,7 +8,12 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 import { ArrowLeft, Home, ChevronRight } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
-const Breadcrumbs = () => {
+type BreadcrumbPart = {
+  name: string;
+  href: string;
+};
+
+const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart[] }) => {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -19,6 +24,29 @@ const Breadcrumbs = () => {
 
   const homePath = userRole ? `/dashboard/${userRole}` : '/dashboard';
   
+  if (customBreadcrumbs) {
+      return (
+        <nav className="flex items-center text-sm text-muted-foreground">
+          <Link href={homePath} className="hover:text-primary transition-colors">
+            <Home className="h-4 w-4" />
+          </Link>
+          {customBreadcrumbs.map((crumb, index) => (
+             <React.Fragment key={crumb.href}>
+                <ChevronRight className="h-4 w-4 mx-1" />
+                {index === customBreadcrumbs.length - 1 ? (
+                    <span className="font-medium text-foreground">{crumb.name}</span>
+                ) : (
+                    <Link href={crumb.href} className="hover:text-primary transition-colors">
+                        {crumb.name}
+                    </Link>
+                )}
+            </React.Fragment>
+          ))}
+        </nav>
+      )
+  }
+
+
   const pathSegments = pathname.split('/').filter(segment => segment);
 
   const getBreadcrumbName = (segment: string) => {
@@ -55,11 +83,9 @@ const Breadcrumbs = () => {
       'notas': 'Registro de Notas',
       'asistencia': 'Toma de Asistencia'
     };
-    // This is a simplistic way to handle dynamic parts like [userId]
     if (names[segment]) {
         return names[segment];
     }
-    // A simple heuristic for IDs or slugs
     if (segment.length > 10 || segment.match(/^[a-z0-9-_]+$/)) {
       return "Detalle";
     }
@@ -72,7 +98,6 @@ const Breadcrumbs = () => {
         <Home className="h-4 w-4" />
       </Link>
       {pathSegments.map((segment, index) => {
-        // Skip the 'dashboard' segment and the role-specific segment from breadcrumbs
         if (segment === 'dashboard' || segment === userRole) return null;
         
         const currentPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
@@ -100,9 +125,10 @@ interface PageHeaderProps {
   description?: string;
   icon: React.ReactNode;
   backPath?: string;
+  breadcrumbs?: BreadcrumbPart[];
 }
 
-export const PageHeader = ({ title, description, icon, backPath }: PageHeaderProps) => {
+export const PageHeader = ({ title, description, icon, backPath, breadcrumbs }: PageHeaderProps) => {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -126,7 +152,7 @@ export const PageHeader = ({ title, description, icon, backPath }: PageHeaderPro
       <CardHeader>
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-4">
-            <Breadcrumbs />
+            <Breadcrumbs customBreadcrumbs={breadcrumbs} />
             <div className="flex items-center gap-4">
               {icon}
               <div>

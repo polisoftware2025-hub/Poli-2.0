@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -89,13 +90,19 @@ export default function CareerDetailsPage() {
   const totalCredits = program.ciclos.reduce((totalCreds: number, ciclo: any) => 
     totalCreds + ciclo.materias.reduce((cycleCreds: number, materia: any) => cycleCreds + materia.creditos, 0), 0);
 
+  const breadcrumbs = [
+    { name: "Carreras", href: "/dashboard/admin/career" },
+    { name: "Detalles", href: `/dashboard/admin/career/details/${careerId}` }
+  ];
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
-        title={`Detalle de ${program.nombre}`}
+        title={program.nombre}
         description="Visualiza la información completa de este programa."
         icon={<BookOpen className="h-8 w-8 text-primary" />}
         backPath="/dashboard/admin/career"
+        breadcrumbs={breadcrumbs}
       />
 
       <Card className="overflow-hidden">
