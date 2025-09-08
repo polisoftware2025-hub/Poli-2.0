@@ -177,6 +177,7 @@ export default function ProgramDetailPage() {
             title={program.nombre}
             description="Conoce todos los detalles sobre este programa académico."
             icon={<BookOpen className="h-8 w-8 text-primary" />}
+            breadcrumbs={[{ name: program.nombre, href: `/programas/${program.slug}`}]}
           />
 
           <Card className="overflow-hidden">
@@ -335,5 +336,3 @@ export default function ProgramDetailPage() {
     </div>
   );
 }
-
-    

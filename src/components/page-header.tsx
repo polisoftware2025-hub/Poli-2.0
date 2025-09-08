@@ -13,6 +13,15 @@ type BreadcrumbPart = {
   href: string;
 };
 
+// Helper function to truncate long strings
+const truncateString = (str: string, num: number) => {
+    if (str.length <= num) {
+        return str;
+    }
+    return str.slice(0, num) + "...";
+};
+
+
 const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart[] }) => {
   const pathname = usePathname();
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -22,81 +31,69 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     setUserRole(role);
   }, []);
 
-  const homePath = userRole ? `/dashboard/${userRole}` : '/dashboard';
-  
-  if (customBreadcrumbs) {
+  const getDashboardHomePath = () => {
+      const role = localStorage.getItem("userRole");
+      return role ? `/dashboard/${role}` : '/dashboard';
+  }
+
+  // Handle public pages breadcrumbs separately
+  if (pathname.startsWith('/programas')) {
+       const pathSegments = pathname.split('/').filter(segment => segment);
+       const isListPage = pathSegments.length === 1;
+       const programName = customBreadcrumbs ? customBreadcrumbs[0].name : 'Detalle';
+
       return (
-        <nav className="flex items-center text-sm text-muted-foreground">
-          <Link href={homePath} className="hover:text-primary transition-colors">
-            <Home className="h-4 w-4" />
-          </Link>
-          {customBreadcrumbs.map((crumb, index) => (
-             <React.Fragment key={crumb.href}>
-                <ChevronRight className="h-4 w-4 mx-1" />
-                {index === customBreadcrumbs.length - 1 ? (
-                    <span className="font-medium text-foreground">{crumb.name}</span>
-                ) : (
-                    <Link href={crumb.href} className="hover:text-primary transition-colors">
-                        {crumb.name}
-                    </Link>
-                )}
-            </React.Fragment>
-          ))}
-        </nav>
-      )
+          <nav className="flex items-center text-sm text-muted-foreground">
+              <Link href="/" className="hover:text-primary transition-colors">
+                <Home className="h-4 w-4" />
+              </Link>
+              <ChevronRight className="h-4 w-4 mx-1" />
+              {isListPage ? (
+                  <span className="font-medium text-foreground">Programas</span>
+              ) : (
+                  <>
+                      <Link href="/programas" className="hover:text-primary transition-colors">
+                          Programas
+                      </Link>
+                      <ChevronRight className="h-4 w-4 mx-1" />
+                      <span className="font-medium text-foreground">{truncateString(programName, 25)}</span>
+                  </>
+              )}
+          </nav>
+      );
   }
 
-  const pathSegments = pathname.split('/').filter(segment => segment);
-  const dashboardBaseIndex = pathSegments.indexOf('dashboard');
-  const roleSegment = userRole ? pathSegments.find(p => p === userRole) : null;
+  // Dashboard breadcrumbs logic
+  const homePath = getDashboardHomePath();
+  const pathSegments = pathname.split('/').filter(Boolean);
+  const dashboardBaseIndex = pathSegments.findIndex(p => p === 'dashboard');
   
-  // Determine where the meaningful path parts begin (after 'dashboard' and the role segment)
-  let startIndex = dashboardBaseIndex + 1;
-  if(roleSegment) {
-    startIndex = pathSegments.indexOf(roleSegment) + 1;
+  if (dashboardBaseIndex === -1) {
+    return null; // Don't render breadcrumbs if not in a dashboard context
   }
 
-  const relevantSegments = pathSegments.slice(startIndex);
+  const relevantSegments = pathSegments.slice(dashboardBaseIndex + 1);
 
   const getBreadcrumbName = (segment: string) => {
     const names: { [key: string]: string } = {
-      'dashboard': 'Panel',
-      'materias': 'Materias',
-      'notifications': 'Notificaciones',
-      'profile': 'Mi Perfil',
-      'settings': 'Configuración',
-      'admin': 'Admin',
-      'docente': 'Docente',
-      'estudiante': 'Estudiante',
-      'gestor': 'Gestor',
-      'users': 'Usuarios',
-      'add-user': 'Agregar Usuario',
-      'edit-user': 'Editar Usuario',
-      'pre-register': 'Pre-Inscripción',
-      'subjects': 'Materias',
-      'payments': userRole === 'admin' ? 'Gestión de Pagos' : (userRole === 'gestor' ? 'Revisión de Pagos' : 'Pagos'),
-      'schedules': 'Horarios',
-      'analytics': 'Analíticas',
-      'calificaciones': 'Calificaciones',
-      'horarios': 'Horarios',
-      'asistencias': 'Asistencias',
-      'calendario': 'Calendario Académico',
-      'noticias': 'Noticias y Anuncios',
-      'empleo': 'Bolsa de Empleo',
-      'pagos': 'Mis Pagos',
-      'evaluacion-docente': 'Evaluación Docente',
-      'career': 'Carreras',
-      'requests': 'Solicitudes',
-      'reports': 'Reportes',
-      'grades': 'Calificaciones',
-      'announcements': 'Anuncios',
-      'grupos': 'Mis Grupos',
-      'notas': 'Registro de Notas',
-      'asistencia': 'Toma de Asistencia'
+      'dashboard': 'Panel', 'materias': 'Materias', 'notifications': 'Notificaciones',
+      'profile': 'Mi Perfil', 'settings': 'Configuración', 'admin': 'Admin',
+      'docente': 'Docente', 'estudiante': 'Estudiante', 'gestor': 'Gestor',
+      'users': 'Usuarios', 'add-user': 'Agregar Usuario', 'edit-user': 'Editar Usuario',
+      'pre-register': 'Pre-Inscripción', 'subjects': 'Materias',
+      'payments': 'Pagos', 'schedules': 'Horarios', 'analytics': 'Analíticas',
+      'calificaciones': 'Calificaciones', 'horarios': 'Horarios', 'asistencias': 'Asistencias',
+      'calendario': 'Calendario Académico', 'noticias': 'Noticias', 'empleo': 'Bolsa de Empleo',
+      'pagos': 'Mis Pagos', 'evaluacion-docente': 'Evaluación Docente', 'career': 'Carreras',
+      'requests': 'Solicitudes', 'reports': 'Reportes', 'grades': 'Calificaciones',
+      'announcements': 'Anuncios', 'grupos': 'Mis Grupos', 'notas': 'Registro de Notas',
+      'asistencia': 'Toma de Asistencia', 'details': 'Detalles', 'new-career': 'Nueva Carrera',
+      'edit': 'Editar'
     };
     if (names[segment]) {
         return names[segment];
     }
+    // If it's a slug-like string, return a generic name
     if (segment.length > 10 || segment.match(/^[a-z0-9-_]+$/)) {
       return "Detalle";
     }
@@ -109,8 +106,13 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
         <Home className="h-4 w-4" />
       </Link>
       {relevantSegments.map((segment, index) => {
+        // Skip role segment in breadcrumb path
+        if (segment === userRole) return null;
+
         const isLast = index === relevantSegments.length - 1;
-        const currentPath = `${homePath}/${relevantSegments.slice(0, index + 1).join('/')}`;
+        
+        const pathBeforeCurrent = relevantSegments.slice(0, index).filter(s => s !== userRole);
+        const currentPath = `/dashboard/${userRole}/${[...pathBeforeCurrent, segment].join('/')}`;
 
         return (
           <React.Fragment key={currentPath}>
@@ -148,7 +150,7 @@ export const PageHeader = ({ title, description, icon, backPath, breadcrumbs }: 
     }
 
     const segments = pathname.split('/').filter(Boolean);
-    if (segments.length > 2) {
+    if (segments.length > 1) { // Adjusted to handle root level like /programas
       const parentPath = `/${segments.slice(0, segments.length - 1).join('/')}`;
       router.push(parentPath);
     } else {
