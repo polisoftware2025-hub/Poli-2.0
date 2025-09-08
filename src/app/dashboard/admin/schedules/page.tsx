@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School, Sun, Moon } from "lucide-react";
+import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School, Filter, Download, Expand, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -15,6 +15,8 @@ import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, wh
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { getDoc } from "firebase/firestore";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string }[] }[]; }
@@ -46,8 +48,11 @@ interface Group {
     horario?: ScheduleEntry[];
 }
 
-const allTimeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
-const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const allTimeSlots = Array.from({ length: 16 }, (_, i) => 7 + i); // 7 AM a 10 PM (22:00)
+const daysOfWeekMap: { [key: string]: number } = {
+  "Lunes": 1, "Martes": 2, "Miércoles": 3, "Jueves": 4, "Viernes": 5, "Sábado": 6, "Domingo": 0
+};
+
 
 export default function SchedulesAdminPage() {
     const [sedes, setSedes] = useState<Sede[]>([]);
@@ -59,10 +64,20 @@ export default function SchedulesAdminPage() {
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedGrupo, setSelectedGrupo] = useState<Group | null>(null);
-    const [jornada, setJornada] = useState<'am' | 'pm'>('am');
     
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false, docentes: true });
     const { toast } = useToast();
+    const [currentDate, setCurrentDate] = useState(new Date());
+
+    const week = useMemo(() => {
+        const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+        return {
+            start,
+            end,
+            days: eachDayOfInterval({ start, end }),
+        };
+    }, [currentDate]);
 
     const fetchInitialData = useCallback(async () => {
         setIsLoading(prev => ({ ...prev, sedes: true, carreras: true, docentes: true }));
@@ -142,33 +157,32 @@ export default function SchedulesAdminPage() {
             }
         }
     }, [selectedGrupo]);
-    
-    const timeSlots = useMemo(() => {
-        if (jornada === 'am') {
-            return allTimeSlots.filter(t => parseInt(t.split(':')[0]) < 14); // 7 AM a 1 PM
+
+    const getGridPosition = (entry: ScheduleEntry) => {
+        const dayIndex = daysOfWeekMap[entry.dia as keyof typeof daysOfWeekMap];
+        if (dayIndex === undefined) return {}; 
+
+        const startTime = parseInt(entry.hora.split(':')[0]);
+        const startRow = allTimeSlots.indexOf(startTime);
+        const duration = entry.duracion;
+
+        if (startRow === -1) return {};
+
+        return {
+            gridColumn: `${dayIndex + 2}`, // CSS Grid is 1-based, plus 1 for time column
+            gridRow: `${startRow + 1} / span ${duration}` // CSS Grid is 1-based
         }
-        return allTimeSlots.filter(t => parseInt(t.split(':')[0]) >= 14); // 2 PM a 9 PM
-    }, [jornada]);
+    }
 
-    const scheduleGrid = useMemo(() => {
-        const grid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
-        if (!selectedGrupo?.horario) return grid;
-
-        selectedGrupo.horario.forEach(entry => {
-            const [startTimeStr] = entry.hora.split(" - ");
-            const dayIndex = daysOfWeek.indexOf(entry.dia);
-            const timeIndex = timeSlots.indexOf(startTimeStr);
-
-            if (dayIndex !== -1 && timeIndex !== -1) {
-                for (let i = 0; i < entry.duracion; i++) {
-                    if (timeIndex + i < timeSlots.length) {
-                        grid[timeIndex + i][dayIndex] = entry;
-                    }
-                }
-            }
-        });
-        return grid;
-    }, [selectedGrupo, timeSlots]);
+    const changeWeek = (direction: 'next' | 'prev' | 'today') => {
+        if (direction === 'today') {
+            setCurrentDate(new Date());
+        } else {
+            const newDate = new Date(currentDate);
+            newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+            setCurrentDate(newDate);
+        }
+    };
 
     return (
         <div className="flex flex-col gap-8">
@@ -209,87 +223,94 @@ export default function SchedulesAdminPage() {
 
             {selectedGrupo ? (
                 <Card>
-                    <CardHeader className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                        <div>
-                            <CardTitle>Horario para el Grupo: {selectedGrupo.codigoGrupo}</CardTitle>
-                            <CardDescription>
-                                {carreras.find(c => c.id === selectedGrupo.idCarrera)?.nombre} - Sede: {sedes.find(s => s.id === selectedGrupo.idSede)?.nombre}
-                            </CardDescription>
-                        </div>
-                        <div className="flex items-center gap-2">
-                             <Button variant={jornada === 'am' ? 'secondary' : 'outline'} onClick={() => setJornada('am')}><Sun className="mr-2 h-4 w-4" />Jornada Mañana</Button>
-                             <Button variant={jornada === 'pm' ? 'secondary' : 'outline'} onClick={() => setJornada('pm')}><Moon className="mr-2 h-4 w-4" />Jornada Tarde</Button>
-                             <AssignClassDialog
-                                key={selectedGrupo.id} // Re-mount modal when group changes
-                                grupo={selectedGrupo}
-                                carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
-                                docentes={docentes}
-                                salones={salonesBySede[selectedSede] || []}
-                                onClassAssigned={onClassAssigned}
-                                sedes={sedes}
-                            />
+                    <CardHeader className="border-b p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-4">
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Hoy</Button>
+                                <div className="flex items-center">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
+                                </div>
+                                <p className="text-sm font-medium text-gray-700">
+                                    {format(week.start, "dd/MM/yyyy")} - {format(week.end, "dd/MM/yyyy")}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <AssignClassDialog
+                                    key={selectedGrupo.id} 
+                                    grupo={selectedGrupo}
+                                    carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
+                                    docentes={docentes}
+                                    salones={salonesBySede[selectedSede] || []}
+                                    onClassAssigned={onClassAssigned}
+                                    sedes={sedes}
+                                />
+                                <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/>Exportar</Button>
+                                <Button variant="outline" size="sm"><Filter className="mr-2 h-4 w-4"/>Filtrar</Button>
+                                <Button variant="outline" size="sm" className="hidden md:flex"><Expand className="mr-2 h-4 w-4" /> Ampliar</Button>
+                                <Select defaultValue="week">
+                                    <SelectTrigger className="w-[180px] h-9 text-sm">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="week">Semana completa</SelectItem>
+                                        <SelectItem value="day">Día</SelectItem>
+                                        <SelectItem value="month">Mes</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-4 md:p-6">
-                        <div className="w-full overflow-x-auto">
-                            <Table className="min-w-full border">
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-24 border-r text-center font-bold">Hora</TableHead>
-                                        {daysOfWeek.map(day => <TableHead key={day} className="border-r text-center font-bold">{day}</TableHead>)}
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {scheduleGrid.map((row, timeIndex) => {
-                                        const currentTimeSlot = timeSlots[timeIndex];
-                                         if (row.every(entry => entry === null)) {
-                                            return (
-                                                <TableRow key={currentTimeSlot}>
-                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{currentTimeSlot}</TableCell>
-                                                    {daysOfWeek.map(day => <TableCell key={day} className="border-r p-1 align-top h-24"></TableCell>)}
-                                                </TableRow>
-                                            );
-                                        }
+                    <CardContent className="p-0 overflow-x-auto">
+                        <div className="grid grid-cols-[auto_repeat(6,_minmax(120px,_1fr))] text-sm">
+                             <div className="sticky left-0 z-10 bg-card border-r border-b"></div> 
+                             {Object.keys(daysOfWeekMap).filter(d => d !== 'Domingo').map(day => (
+                                <div key={day} className="border-b p-2 text-center">
+                                    <p className="font-semibold">{day}</p>
+                                </div>
+                            ))}
 
-                                        const firstEntryInRow = row.find(entry => entry && entry.hora.startsWith(currentTimeSlot));
-                                        if (firstEntryInRow && firstEntryInRow.hora.startsWith(currentTimeSlot)) {
-                                            return (
-                                                <TableRow key={currentTimeSlot}>
-                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{currentTimeSlot}</TableCell>
-                                                    {row.map((entry, dayIndex) => {
-                                                        if (entry && entry.hora.startsWith(currentTimeSlot)) {
-                                                            return (
-                                                                <TableCell key={`${dayIndex}-${timeIndex}`} rowSpan={entry.duracion} className="border-r p-1 align-top h-24">
-                                                                    <AssignClassDialog
-                                                                        key={entry.id}
-                                                                        grupo={selectedGrupo}
-                                                                        carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
-                                                                        docentes={docentes}
-                                                                        salones={salonesBySede[selectedSede] || []}
-                                                                        onClassAssigned={onClassAssigned}
-                                                                        sedes={sedes}
-                                                                        existingSchedule={entry}
-                                                                    >
-                                                                        <div className="bg-primary/5 p-2 rounded-md border-l-4 border-primary h-full flex flex-col justify-center text-xs cursor-pointer hover:bg-primary/10">
-                                                                            <p className="font-bold text-primary">{entry.materiaNombre}</p>
-                                                                            <p className="text-muted-foreground">{entry.docenteNombre}</p>
-                                                                            <p className="text-muted-foreground font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                                                        </div>
-                                                                    </AssignClassDialog>
-                                                                </TableCell>
-                                                            );
-                                                        } else if (!entry) {
-                                                            return <TableCell key={`${dayIndex}-${timeIndex}`} className="border-r p-1 align-top h-24"></TableCell>;
-                                                        }
-                                                        return null; // Don't render cells that are spanned over
-                                                    })}
-                                                </TableRow>
-                                            );
-                                        }
-                                        return null; // Don't render rows that are entirely spanned over
-                                    })}
-                                </TableBody>
-                            </Table>
+                            <div className="col-start-1 col-end-8 row-start-2 row-end-[-1] grid grid-cols-[auto_repeat(6,_minmax(120px,_1fr))] grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                               <div className="col-start-1 col-end-2 row-start-1 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                                    {allTimeSlots.map(hour => (
+                                        <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground">
+                                            {hour.toString().padStart(2, '0')}:00
+                                        </div>
+                                    ))}
+                               </div>
+
+                               <div className="col-start-2 col-end-8 row-start-1 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))] border-l">
+                                  {allTimeSlots.map(hour => (
+                                    <div key={hour} className="border-b"></div>
+                                  ))}
+                               </div>
+                               <div className="col-start-2 col-end-8 row-start-1 row-end-[-1] grid grid-cols-6">
+                                    {Array.from({length: 6}).map((_, i) => (
+                                         <div key={i} className="border-r"></div>
+                                    ))}
+                               </div>
+                                
+                               {(selectedGrupo.horario || []).map((entry, index) => (
+                                   <div key={entry.id || index} style={getGridPosition(entry)} className="relative flex p-1 m-px rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
+                                       <AssignClassDialog
+                                            key={entry.id}
+                                            grupo={selectedGrupo}
+                                            carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
+                                            docentes={docentes}
+                                            salones={salonesBySede[selectedSede] || []}
+                                            onClassAssigned={onClassAssigned}
+                                            sedes={sedes}
+                                            existingSchedule={entry}
+                                        >
+                                           <div className="flex flex-col w-full h-full cursor-pointer p-1">
+                                              <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
+                                              <p className="text-gray-600">{entry.docenteNombre}</p>
+                                              <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                           </div>
+                                       </AssignClassDialog>
+                                   </div>
+                               ))}
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -393,8 +414,6 @@ function AssignClassDialog({
             })
         };
         
-        // TODO: Implementar validación de colisiones más robusta
-        
         setIsSaving(true);
         try {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
@@ -445,9 +464,9 @@ function AssignClassDialog({
 
     const availableEndTimes = useMemo(() => {
         if (!selectedHoraInicio) return [];
-        const startIndex = allTimeSlots.indexOf(selectedHoraInicio);
+        const startIndex = allTimeSlots.indexOf(parseInt(selectedHoraInicio.split(':')[0]));
         if (startIndex === -1) return [];
-        return allTimeSlots.slice(startIndex + 1);
+        return allTimeSlots.slice(startIndex + 1).map(h => `${h.toString().padStart(2, '0')}:00`);
     }, [selectedHoraInicio]);
 
 
@@ -464,11 +483,11 @@ function AssignClassDialog({
                 <div className="grid grid-cols-2 gap-4 py-4">
                     <div className="space-y-2">
                         <Label>Día</Label>
-                        <Select value={selectedDia} onValueChange={setSelectedDia}><SelectTrigger><SelectValue placeholder="Selecciona un día..." /></SelectTrigger><SelectContent>{daysOfWeek.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedDia} onValueChange={setSelectedDia}><SelectTrigger><SelectValue placeholder="Selecciona un día..." /></SelectTrigger><SelectContent>{Object.keys(daysOfWeekMap).filter(d => d !== "Domingo").map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
                     </div>
                      <div className="space-y-2">
                         <Label>Hora de Inicio</Label>
-                        <Select value={selectedHoraInicio} onValueChange={setSelectedHoraInicio}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{allTimeSlots.slice(0, -1).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedHoraInicio} onValueChange={setSelectedHoraInicio}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{allTimeSlots.slice(0, -1).map(t => <SelectItem key={t} value={`${t.toString().padStart(2, '0')}:00`}>{`${t.toString().padStart(2, '0')}:00`}</SelectItem>)}</SelectContent></Select>
                     </div>
                     <div className="space-y-2">
                         <Label>Hora Fin</Label>
@@ -514,5 +533,3 @@ function AssignClassDialog({
         </Dialog>
     );
 }
-
-    
