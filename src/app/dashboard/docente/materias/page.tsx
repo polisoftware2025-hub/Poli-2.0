@@ -44,6 +44,22 @@ export default function MySubjectsPage() {
       setIsLoading(true);
       setError(null);
       try {
+        // 1. Get all student enrollments to count students per subject
+        const studentsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes"));
+        const studentCountPerSubject = new Map<string, number>();
+
+        studentsSnapshot.forEach(studentDoc => {
+            const studentData = studentDoc.data();
+            if (studentData.materiasInscritas && Array.isArray(studentData.materiasInscritas)) {
+                studentData.materiasInscritas.forEach((materia: any) => {
+                    if (materia.id) {
+                        studentCountPerSubject.set(materia.id, (studentCountPerSubject.get(materia.id) || 0) + 1);
+                    }
+                });
+            }
+        });
+
+        // 2. Get all groups to find which ones the teacher is assigned to via schedule
         const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
         const allGroupsSnapshot = await getDocs(groupsRef);
         
@@ -59,18 +75,18 @@ export default function MySubjectsPage() {
                             grupoCodigo: groupData.codigoGrupo,
                             idCarrera: groupData.idCarrera,
                             idSede: groupData.idSede,
-                            totalEstudiantes: groupData.estudiantes?.length || 0,
                         });
                     }
                 });
             }
         });
         
+        // 3. Cache for sede and carrera names to avoid repeated reads
         const sedesCache = new Map();
         const carrerasCache = new Map();
-
         const subjectsMap = new Map<string, Subject>();
 
+        // 4. Aggregate data for the teacher's subjects
         for (const assignment of teacherAssignments) {
             let sedeNombre = sedesCache.get(assignment.idSede);
             if (!sedeNombre) {
@@ -94,7 +110,6 @@ export default function MySubjectsPage() {
                 const existingSubject = subjectsMap.get(assignment.materiaId)!;
                 if (!existingSubject.groups.some(g => g.id === assignment.grupoId)) {
                      existingSubject.groups.push({ id: assignment.grupoId, codigoGrupo: assignment.grupoCodigo });
-                     existingSubject.totalEstudiantes += assignment.totalEstudiantes;
                 }
             } else {
                 subjectsMap.set(assignment.materiaId, {
@@ -102,7 +117,7 @@ export default function MySubjectsPage() {
                     nombre: assignment.materiaNombre,
                     carreraNombre: carreraNombre || "N/A",
                     sedeNombre: sedeNombre || "N/A",
-                    totalEstudiantes: assignment.totalEstudiantes,
+                    totalEstudiantes: studentCountPerSubject.get(assignment.materiaId) || 0,
                     groups: [{ id: assignment.grupoId, codigoGrupo: assignment.grupoCodigo }]
                 });
             }
