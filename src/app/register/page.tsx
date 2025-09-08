@@ -18,7 +18,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import {
   GraduationCap,
@@ -332,7 +331,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Nombre <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="John" {...field} />
+              <Input placeholder="John" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -342,7 +341,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Nombre (Opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Fitzgerald" {...field} />
+              <Input placeholder="Fitzgerald" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -352,7 +351,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Doe" {...field} />
+              <Input placeholder="Doe" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -362,7 +361,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Smith" {...field} />
+              <Input placeholder="Smith" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -392,7 +391,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Número de Identificación <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="123456789" {...field} />
+              <Input placeholder="123456789" {...field} onChange={e => field.onChange(e.target.value.replace(/[^0-9]/g, ''))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -482,7 +481,7 @@ const Step2 = () => {
           <FormItem>
             <FormLabel>Teléfono / Celular <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="3001234567" {...field} />
+              <Input placeholder="3001234567" {...field} onChange={e => field.onChange(e.target.value.replace(/[^0-9]/g, ''))} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -561,7 +560,7 @@ interface Sede {
 }
 
 const Step3 = () => {
-    const { control, setValue } = useFormContext();
+    const { control } = useFormContext();
     const [sedes, setSedes] = useState<Sede[]>([]);
     const [carreras, setCarreras] = useState<Carrera[]>([]);
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true });
@@ -585,12 +584,6 @@ const Step3 = () => {
         };
         fetchInitialData();
     }, []);
-    
-    const resetDependentFields = () => {
-        setValue("carreraId", "");
-        setValue("modalidad", "");
-        setValue("jornada", "");
-    };
 
   return (
     <div className="space-y-6">
@@ -598,7 +591,7 @@ const Step3 = () => {
         <FormField control={control} name="sedeId" render={({ field }) => (
             <FormItem>
                 <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields(); }} defaultValue={field.value} disabled={isLoading.sedes}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.sedes}>
                 <FormControl>
                     <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger>
                 </FormControl>
@@ -611,7 +604,7 @@ const Step3 = () => {
         <FormField control={control} name="carreraId" render={({ field }) => (
             <FormItem>
                 <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields(); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
+                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
                 <FormControl>
                     <SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger>
                 </FormControl>
@@ -624,9 +617,9 @@ const Step3 = () => {
         <FormField control={control} name="modalidad" render={({ field }) => (
             <FormItem>
                 <FormLabel>Modalidad <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={(value) => { field.onChange(value); resetDependentFields(); }} defaultValue={field.value} disabled={!selectedSede || !selectedSede}>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                    <SelectTrigger><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede y carrera" : "Selecciona modalidad"} /></div></SelectTrigger>
+                    <SelectTrigger><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={"Selecciona modalidad"} /></div></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                     <SelectItem value="Virtual">Virtual</SelectItem>
@@ -640,9 +633,9 @@ const Step3 = () => {
         <FormField control={control} name="jornada" render={({ field }) => (
             <FormItem>
                 <FormLabel>Jornada <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedSede || !selectedSede}>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                    <SelectTrigger><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede y carrera" : "Selecciona jornada"} /></div></SelectTrigger>
+                    <SelectTrigger><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={"Selecciona jornada"} /></div></SelectTrigger>
                 </FormControl>
                 <SelectContent>
                     <SelectItem value="Diurna">Diurna</SelectItem>
@@ -716,4 +709,3 @@ const Step5_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
-
