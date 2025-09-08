@@ -74,7 +74,7 @@ export default function SchedulesAdminPage() {
         return {
             start,
             end,
-            days: eachDayOfInterval({ start, end }),
+            days: eachDayOfInterval({ start, end: endOfWeek(currentDate, { weekStartsOn: 1 }) }).slice(0, 6), // Only Mon-Sat
         };
     }, [currentDate]);
 
@@ -168,7 +168,7 @@ export default function SchedulesAdminPage() {
         if (startRow === -1) return {};
 
         return {
-            gridColumn: `${dayIndex + 1}`,
+            gridColumn: `${dayIndex}`,
             gridRow: `${startRow + 1} / span ${duration}`
         }
     }
@@ -262,27 +262,26 @@ export default function SchedulesAdminPage() {
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
                         <div className="grid grid-cols-[auto_repeat(6,_1fr)] text-sm">
-                            {/* Empty corner */}
-                            <div className="sticky left-0 z-10 bg-card border-r border-b"></div> 
-                            
                             {/* Days Header */}
-                            {Object.keys(daysOfWeekMap).map(day => (
-                                <div key={day} className="border-b p-2 text-center font-semibold">
-                                    {day}
-                                </div>
-                            ))}
-
+                            <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
+                                {Object.keys(daysOfWeekMap).map(day => (
+                                    <div key={day} className="p-2 text-center font-semibold border-r last:border-r-0">
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
+                            
                             {/* Time Column */}
-                            <div className="col-start-1 col-end-2 row-start-2 row-end-[-1] grid grid-rows-16">
+                            <div className="col-start-1 row-start-2 grid grid-rows-16 border-r">
                                 {allTimeSlots.map(hour => (
-                                    <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground border-r h-[60px] flex items-start justify-end pt-1">
+                                    <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground h-[60px] flex items-start justify-end pt-1">
                                         {hour.toString().padStart(2, '0')}:00
                                     </div>
                                 ))}
                             </div>
                             
                             {/* Grid Background and Entries */}
-                            <div className="col-start-2 col-end-[-1] row-start-2 row-end-[-1] grid grid-cols-6 grid-rows-16 relative">
+                            <div className="col-start-2 col-span-6 row-start-2 grid grid-cols-6 grid-rows-16 relative">
                                 {/* Grid lines */}
                                 {Array.from({ length: 16 * 6 }).map((_, i) => (
                                     <div key={i} className="border-b border-r h-[60px]"></div>
@@ -533,3 +532,4 @@ function AssignClassDialog({
     );
 }
 
+    
