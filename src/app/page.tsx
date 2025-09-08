@@ -40,7 +40,7 @@ interface Program {
     imageHint: string;
 }
 
-const DEFAULT_HERO_IMAGE = "/images/default-hero.jpg"; // Add a default hero image to your public folder
+const DEFAULT_HERO_IMAGE = "https://picsum.photos/1920/1080"; 
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
