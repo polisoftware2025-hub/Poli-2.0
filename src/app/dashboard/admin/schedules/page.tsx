@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School } from "lucide-react";
+import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School, Sun, Moon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -46,7 +46,7 @@ interface Group {
     horario?: ScheduleEntry[];
 }
 
-const timeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
+const allTimeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 export default function SchedulesAdminPage() {
@@ -59,6 +59,7 @@ export default function SchedulesAdminPage() {
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedGrupo, setSelectedGrupo] = useState<Group | null>(null);
+    const [jornada, setJornada] = useState<'am' | 'pm'>('am');
     
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false, docentes: true });
     const { toast } = useToast();
@@ -142,6 +143,13 @@ export default function SchedulesAdminPage() {
         }
     }, [selectedGrupo]);
     
+    const timeSlots = useMemo(() => {
+        if (jornada === 'am') {
+            return allTimeSlots.filter(t => parseInt(t.split(':')[0]) < 14); // 7 AM a 1 PM
+        }
+        return allTimeSlots.filter(t => parseInt(t.split(':')[0]) >= 14); // 2 PM a 9 PM
+    }, [jornada]);
+
     const scheduleGrid = useMemo(() => {
         const grid: (ScheduleEntry | null)[][] = timeSlots.map(() => Array(daysOfWeek.length).fill(null));
         if (!selectedGrupo?.horario) return grid;
@@ -160,7 +168,7 @@ export default function SchedulesAdminPage() {
             }
         });
         return grid;
-    }, [selectedGrupo]);
+    }, [selectedGrupo, timeSlots]);
 
     return (
         <div className="flex flex-col gap-8">
@@ -208,15 +216,19 @@ export default function SchedulesAdminPage() {
                                 {carreras.find(c => c.id === selectedGrupo.idCarrera)?.nombre} - Sede: {sedes.find(s => s.id === selectedGrupo.idSede)?.nombre}
                             </CardDescription>
                         </div>
-                        <AssignClassDialog
-                            key={selectedGrupo.id} // Re-mount modal when group changes
-                            grupo={selectedGrupo}
-                            carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
-                            docentes={docentes}
-                            salones={salonesBySede[selectedSede] || []}
-                            onClassAssigned={onClassAssigned}
-                            sedes={sedes}
-                        />
+                        <div className="flex items-center gap-2">
+                             <Button variant={jornada === 'am' ? 'secondary' : 'outline'} onClick={() => setJornada('am')}><Sun className="mr-2 h-4 w-4" />Jornada Mañana</Button>
+                             <Button variant={jornada === 'pm' ? 'secondary' : 'outline'} onClick={() => setJornada('pm')}><Moon className="mr-2 h-4 w-4" />Jornada Tarde</Button>
+                             <AssignClassDialog
+                                key={selectedGrupo.id} // Re-mount modal when group changes
+                                grupo={selectedGrupo}
+                                carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
+                                docentes={docentes}
+                                salones={salonesBySede[selectedSede] || []}
+                                onClassAssigned={onClassAssigned}
+                                sedes={sedes}
+                            />
+                        </div>
                     </CardHeader>
                     <CardContent className="p-4 md:p-6">
                         <div className="w-full overflow-x-auto">
@@ -229,22 +241,23 @@ export default function SchedulesAdminPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {scheduleGrid.map((row, timeIndex) => {
+                                        const currentTimeSlot = timeSlots[timeIndex];
                                          if (row.every(entry => entry === null)) {
                                             return (
-                                                <TableRow key={timeSlots[timeIndex]}>
-                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{timeSlots[timeIndex]}</TableCell>
+                                                <TableRow key={currentTimeSlot}>
+                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{currentTimeSlot}</TableCell>
                                                     {daysOfWeek.map(day => <TableCell key={day} className="border-r p-1 align-top h-24"></TableCell>)}
                                                 </TableRow>
                                             );
                                         }
 
-                                        const firstEntryInRow = row.find(entry => entry && entry.hora.startsWith(timeSlots[timeIndex]));
-                                        if (firstEntryInRow && firstEntryInRow.hora.startsWith(timeSlots[timeIndex])) {
+                                        const firstEntryInRow = row.find(entry => entry && entry.hora.startsWith(currentTimeSlot));
+                                        if (firstEntryInRow && firstEntryInRow.hora.startsWith(currentTimeSlot)) {
                                             return (
-                                                <TableRow key={timeSlots[timeIndex]}>
-                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{timeSlots[timeIndex]}</TableCell>
+                                                <TableRow key={currentTimeSlot}>
+                                                    <TableCell className="border-r text-center font-mono text-xs text-muted-foreground">{currentTimeSlot}</TableCell>
                                                     {row.map((entry, dayIndex) => {
-                                                        if (entry && entry.hora.startsWith(timeSlots[timeIndex])) {
+                                                        if (entry && entry.hora.startsWith(currentTimeSlot)) {
                                                             return (
                                                                 <TableCell key={`${dayIndex}-${timeIndex}`} rowSpan={entry.duracion} className="border-r p-1 align-top h-24">
                                                                     <AssignClassDialog
@@ -432,9 +445,9 @@ function AssignClassDialog({
 
     const availableEndTimes = useMemo(() => {
         if (!selectedHoraInicio) return [];
-        const startIndex = timeSlots.indexOf(selectedHoraInicio);
+        const startIndex = allTimeSlots.indexOf(selectedHoraInicio);
         if (startIndex === -1) return [];
-        return timeSlots.slice(startIndex + 1);
+        return allTimeSlots.slice(startIndex + 1);
     }, [selectedHoraInicio]);
 
 
@@ -455,7 +468,7 @@ function AssignClassDialog({
                     </div>
                      <div className="space-y-2">
                         <Label>Hora de Inicio</Label>
-                        <Select value={selectedHoraInicio} onValueChange={setSelectedHoraInicio}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{timeSlots.slice(0, -1).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedHoraInicio} onValueChange={setSelectedHoraInicio}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{allTimeSlots.slice(0, -1).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
                     </div>
                     <div className="space-y-2">
                         <Label>Hora Fin</Label>
@@ -502,3 +515,4 @@ function AssignClassDialog({
     );
 }
 
+    
