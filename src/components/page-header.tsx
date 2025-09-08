@@ -100,9 +100,13 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
         <Home className="h-4 w-4" />
       </Link>
       {pathSegments.map((segment, index) => {
+        // Skip the 'dashboard' and role segments
         if (segment === 'dashboard' || segment === userRole) return null;
-        
-        const currentPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
+
+        // Build the path for the current segment
+        const subPath = pathSegments.slice(0, index + 1).join('/');
+        const currentPath = subPath.startsWith('dashboard') ? `/${subPath}` : `/dashboard/${subPath}`;
+
         const isLast = index === pathSegments.length - 1;
 
         return (
