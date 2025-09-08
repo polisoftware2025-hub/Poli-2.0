@@ -54,23 +54,30 @@ export function generateSchedulePdf(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(poliBlue[0], poliBlue[1], poliBlue[2]);
     
-    doc.text("Estudiante:", leftMargin, startY);
-    if(userInfo.carreraNombre) doc.text("Carrera:", leftMargin, startY + 7);
+    if (userRole === 'docente') {
+        doc.text("Docente:", leftMargin, startY);
+    } else {
+        doc.text("Estudiante:", leftMargin, startY);
+        if(userInfo.carreraNombre) doc.text("Carrera:", leftMargin, startY + 7);
+        if(userInfo.sedeNombre) doc.text("Sede:", rightMargin, startY);
+    }
     
-    doc.text("Sede:", rightMargin, startY);
-    doc.text("Generado:", rightMargin, startY + 7);
+    doc.text("Generado:", rightMargin, startY + (userRole === 'docente' ? 0 : 7));
     
     doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
 
     doc.text(userInfo.nombreCompleto, leftMargin + 22, startY);
-    if (userInfo.carreraNombre) {
-        const careerLines = doc.splitTextToSize(userInfo.carreraNombre, 70);
-        doc.text(careerLines, leftMargin + 22, startY + 7);
+    
+    if (userRole !== 'docente') {
+        if (userInfo.carreraNombre) {
+            const careerLines = doc.splitTextToSize(userInfo.carreraNombre, 70);
+            doc.text(careerLines, leftMargin + 22, startY + 7);
+        }
+        doc.text(userInfo.sedeNombre || "N/A", rightMargin + 10, startY);
     }
     
-    doc.text(userInfo.sedeNombre || "N/A", rightMargin + 10, startY);
-    doc.text(new Date().toLocaleDateString('es-ES'), rightMargin + 20, startY + 7);
+    doc.text(new Date().toLocaleDateString('es-ES'), rightMargin + 20, startY + (userRole === 'docente' ? 0 : 7));
 
     startY += 20;
 
@@ -102,13 +109,20 @@ export function generateSchedulePdf(
 
             if (isFirstSlot) {
                 const location = entry.modalidad === 'Virtual' ? 'Virtual' : (entry.salonNombre || 'N/A');
+                let cellContent: any[] = [
+                    { content: entry.materiaNombre, styles: { fontStyle: 'bold', fontSize: 9, textColor: poliBlue } },
+                    { content: `(${entry.hora})`, styles: { fontSize: 7, textColor: 80 } },
+                    { content: entry.modalidad === 'Presencial' ? location : 'Virtual', styles: { fontStyle: 'italic', fontSize: 7, textColor: 80 } }
+                ];
+                
+                if (userRole === 'docente' && entry.grupoCodigo) {
+                    cellContent.splice(1, 0, { content: `Grupo: ${entry.grupoCodigo}`, styles: { fontSize: 8, textColor: 80 } });
+                } else if (userRole === 'estudiante') {
+                    cellContent.splice(1, 0, { content: entry.docenteNombre, styles: { fontSize: 7, textColor: 80 } });
+                }
+
                 rowData.push({
-                    content: [
-                        { content: entry.materiaNombre, styles: { fontStyle: 'bold', fontSize: 9, textColor: poliBlue } },
-                        { content: `(${entry.hora})`, styles: { fontSize: 7, textColor: 80 } },
-                        { content: entry.docenteNombre, styles: { fontSize: 7, textColor: 80 } },
-                        { content: location, styles: { fontStyle: 'italic', fontSize: 7, textColor: 80 } }
-                    ],
+                    content: cellContent,
                     rowSpan: entry.duracion,
                     styles: { fillColor: [230, 240, 255] } // Light blue for class cells
                 });
@@ -145,9 +159,11 @@ export function generateSchedulePdf(
                 data.cell.styles.font = 'helvetica';
                 
                 const stylesArray: any[] = data.cell.raw.content.map((item: any) => item.styles);
-                data.cell.styles.cellStyles = {
-                     0: stylesArray[0], 1: stylesArray[1], 2: stylesArray[2], 3: stylesArray[3] 
-                };
+                const cellStyles: { [key: number]: any } = {};
+                stylesArray.forEach((style, index) => {
+                    cellStyles[index] = style;
+                });
+                data.cell.styles.cellStyles = cellStyles;
             }
         },
         willDrawCell: (data) => {
