@@ -46,8 +46,17 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
       )
   }
 
-
   const pathSegments = pathname.split('/').filter(segment => segment);
+  const dashboardBaseIndex = pathSegments.indexOf('dashboard');
+  const roleSegment = userRole ? pathSegments.find(p => p === userRole) : null;
+  
+  // Determine where the meaningful path parts begin (after 'dashboard' and the role segment)
+  let startIndex = dashboardBaseIndex + 1;
+  if(roleSegment) {
+    startIndex = pathSegments.indexOf(roleSegment) + 1;
+  }
+
+  const relevantSegments = pathSegments.slice(startIndex);
 
   const getBreadcrumbName = (segment: string) => {
     const names: { [key: string]: string } = {
@@ -99,15 +108,9 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
       <Link href={homePath} className="hover:text-primary transition-colors">
         <Home className="h-4 w-4" />
       </Link>
-      {pathSegments.map((segment, index) => {
-        // Skip the 'dashboard' and role segments
-        if (segment === 'dashboard' || segment === userRole) return null;
-
-        // Build the path for the current segment
-        const subPath = pathSegments.slice(0, index + 1).join('/');
-        const currentPath = subPath.startsWith('dashboard') ? `/${subPath}` : `/dashboard/${subPath}`;
-
-        const isLast = index === pathSegments.length - 1;
+      {relevantSegments.map((segment, index) => {
+        const isLast = index === relevantSegments.length - 1;
+        const currentPath = `${homePath}/${relevantSegments.slice(0, index + 1).join('/')}`;
 
         return (
           <React.Fragment key={currentPath}>
