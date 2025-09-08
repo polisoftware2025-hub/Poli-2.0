@@ -1,4 +1,5 @@
 
+
       
 "use client";
 
@@ -257,16 +258,11 @@ export default function DashboardLayout({
                     <span>Configuración</span>
                   </Link>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Cerrar Sesión</span>
-                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarHeader>
           <SidebarContent>
-            <SidebarMenu>
+            <SidebarMenu className="flex-1">
                {itemsToRender.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
@@ -285,6 +281,21 @@ export default function DashboardLayout({
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+             <SidebarMenu className="mt-auto">
+                <SidebarMenuItem>
+                    <SidebarMenuButton
+                    onClick={handleLogout}
+                    className="text-red-300 hover:bg-red-100/20 hover:text-red-200 border-t border-red-500/50 mt-4"
+                     tooltip={{
+                      children: "Cerrar Sesión",
+                      className: "group-data-[collapsible=icon]:flex hidden",
+                    }}
+                    >
+                    <LogOut />
+                    <span>Cerrar Sesión</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
