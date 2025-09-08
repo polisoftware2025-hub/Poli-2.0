@@ -17,6 +17,10 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
+import { useEffect, useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const performanceData = [
   { program: "Sistemas", average: 4.1 },
@@ -26,15 +30,49 @@ const performanceData = [
   { program: "Gastronomía", average: 4.5 },
 ];
 
-const mostUsedFeatures = [
-    { name: "Registro de Notas", count: 1250, role: "Docente" },
-    { name: "Consulta de Horario", count: 980, role: "Estudiante" },
-    { name: "Toma de Asistencia", count: 850, role: "Docente" },
-    { name: "Ver Calificaciones", count: 2100, role: "Estudiante" },
-    { name: "Gestión de Usuarios", count: 150, role: "Admin" },
-]
+interface CareerStudentData {
+    name: string;
+    students: number;
+}
 
 export default function AnalyticsPage() {
+  const [careerData, setCareerData] = useState<CareerStudentData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStudentDistribution = async () => {
+      setIsLoading(true);
+      try {
+        const studentsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes"));
+        const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+        
+        const careerMap = new Map(careersSnapshot.docs.map(doc => [doc.id, doc.data().nombre]));
+        const studentCounts = new Map<string, number>();
+
+        studentsSnapshot.forEach(doc => {
+            const student = doc.data();
+            if (student.carreraId) {
+                const currentCount = studentCounts.get(student.carreraId) || 0;
+                studentCounts.set(student.carreraId, currentCount + 1);
+            }
+        });
+
+        const chartData = Array.from(studentCounts.entries()).map(([careerId, count]) => ({
+            name: (careerMap.get(careerId) || 'N/A').substring(0,10) + '.', // Shorten name for chart
+            students: count,
+        }));
+        
+        setCareerData(chartData);
+
+      } catch (error) {
+        console.error("Error fetching student distribution:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchStudentDistribution();
+  }, []);
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -153,32 +191,31 @@ export default function AnalyticsPage() {
 
        <Card>
         <CardHeader>
-          <CardTitle>Funciones Más Utilizadas</CardTitle>
+          <CardTitle>Distribución de Estudiantes por Carrera</CardTitle>
           <CardDescription>
-            Métricas de uso de las principales funciones de la plataforma.
+            Visualización del número de estudiantes inscritos en cada programa académico.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Función</TableHead>
-                <TableHead>Rol Principal</TableHead>
-                <TableHead className="text-right">Veces Usada (últimos 30 días)</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mostUsedFeatures.map((feature) => (
-                <TableRow key={feature.name}>
-                  <TableCell className="font-medium">{feature.name}</TableCell>
-                  <TableCell>
-                      <Badge variant="outline">{feature.role}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right font-mono">{feature.count.toLocaleString()}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          {isLoading ? (
+             <Skeleton className="w-full h-[350px]" />
+          ) : (
+            <ResponsiveContainer width="100%" height={350}>
+              <BarChart data={careerData}>
+                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} interval={0} />
+                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                  <Tooltip
+                      contentStyle={{
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "var(--radius)",
+                      }}
+                  />
+                  <Legend iconType="circle" />
+                  <Bar dataKey="students" name="Estudiantes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
 
