@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar as CalendarIcon, Download, Clock, User, Building, BookOpen } from "lucide-react";
+import { Calendar as CalendarIcon, Download, Clock, User, Building, BookOpen, ChevronLeft, ChevronRight, Filter, Expand } from "lucide-react";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData, doc, getDoc } from "firebase/firestore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +11,16 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { generateSchedulePdf } from "@/lib/schedule-pdf-generator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { eachDayOfInterval, startOfWeek, endOfWeek, format, isToday } from "date-fns";
+import { es } from "date-fns/locale";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
 
 interface ScheduleEntry {
     id: string;
@@ -35,8 +45,11 @@ interface UserInfo {
   sedeNombre?: string;
 }
 
-const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
-const timeSlots = Array.from({ length: 15 }, (_, i) => 7 + i); // 7 AM to 9 PM (21:00)
+const timeSlots = Array.from({ length: 16 }, (_, i) => 7 + i); // 7 AM to 10 PM (22:00)
+
+const daysOfWeekMap: { [key: string]: number } = {
+  "Lunes": 1, "Martes": 2, "Miércoles": 3, "Jueves": 4, "Viernes": 5, "Sábado": 6, "Domingo": 0
+};
 
 export default function HorariosPage() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
@@ -44,6 +57,17 @@ export default function HorariosPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const week = useMemo(() => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const end = endOfWeek(currentDate, { weekStartsOn: 1 });
+    return {
+      start,
+      end,
+      days: eachDayOfInterval({ start, end }),
+    };
+  }, [currentDate]);
   
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -106,7 +130,7 @@ export default function HorariosPage() {
         }
 
         setUserInfo(userInfoData);
-        sortAndSetSchedule(finalSchedule);
+        setSchedule(finalSchedule);
 
       } catch (error) {
         console.error("Error fetching schedule:", error);
@@ -118,102 +142,126 @@ export default function HorariosPage() {
   }, [userId, userRole]);
 
 
-  const sortAndSetSchedule = (finalSchedule: any[]) => {
-      finalSchedule.sort((a, b) => daysOfWeek.indexOf(a.dia) - daysOfWeek.indexOf(b.dia) || a.hora.localeCompare(b.hora));
-      setSchedule(finalSchedule);
-  };
-  
   const handleDownloadPdf = () => {
     if (!userInfo || schedule.length === 0) return;
     generateSchedulePdf(schedule, userInfo, userRole || "estudiante");
   }
   
   const getGridPosition = (entry: ScheduleEntry) => {
-    const dayIndex = daysOfWeek.indexOf(entry.dia) + 2; // +2 because grid columns start at 1, and col 1 is for time
+    const dayIndex = daysOfWeekMap[entry.dia as keyof typeof daysOfWeekMap];
+    if (dayIndex === undefined) return {}; 
+
     const startTime = parseInt(entry.hora.split(':')[0]);
-    const startRow = timeSlots.indexOf(startTime) + 2; // +2 because grid rows start at 1, and row 1 is for header
+    const startRow = timeSlots.indexOf(startTime);
     const duration = entry.duracion;
 
+    if (startRow === -1) return {};
+
     return {
-        gridColumn: `${dayIndex} / span 1`,
-        gridRow: `${startRow} / span ${duration}`
+        gridColumn: `${dayIndex + 1} / span 1`, // CSS Grid is 1-based
+        gridRow: `${startRow + 1} / span ${duration}` // CSS Grid is 1-based
     }
   }
+  
+  const changeWeek = (direction: 'next' | 'prev' | 'today') => {
+      if (direction === 'today') {
+          setCurrentDate(new Date());
+      } else {
+          const newDate = new Date(currentDate);
+          newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
+          setCurrentDate(newDate);
+      }
+  };
 
   return (
-    <div className="flex flex-col gap-8">
-      <PageHeader
-        title="Mi Horario"
-        description="Visualiza tu agenda de clases y planifica tu semana."
-        icon={<CalendarIcon className="h-8 w-8 text-primary" />}
-      />
-
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle>Horario Semanal</CardTitle>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0}> 
-                    <Button variant="outline" onClick={handleDownloadPdf} disabled={schedule.length === 0 || isLoading}>
-                        <Download className="mr-2 h-4 w-4"/>Descargar PDF
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {schedule.length === 0 && (
-                    <TooltipContent>
-                        <p>No hay horario disponible para descargar.</p>
-                    </TooltipContent>
-                )}
-              </Tooltip>
-            </TooltipProvider>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center gap-4">
+        <div className="hidden h-8 w-1 bg-primary rounded-full md:block"></div>
+        <h1 className="text-3xl font-bold text-gray-800">Mi horario</h1>
+      </div>
+      
+      <Card className="w-full">
+        <CardHeader className="border-b p-4">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Hoy</Button>
+                <div className="flex items-center">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
+                </div>
+                <p className="text-sm font-medium text-gray-700">
+                    {format(week.start, "dd/MM/yyyy")} - {format(week.end, "dd/MM/yyyy")}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/>Exportar horario ICS</Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadPdf} disabled={schedule.length === 0 || isLoading}><Download className="mr-2 h-4 w-4"/>Documento PDF</Button>
+                <Button variant="outline" size="sm"><Filter className="mr-2 h-4 w-4"/>Filtrar</Button>
+                <Button variant="outline" size="sm" className="hidden md:flex"><Expand className="mr-2 h-4 w-4" /> Ampliar</Button>
+                 <Select defaultValue="week">
+                    <SelectTrigger className="w-[180px] h-9 text-sm">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="week">Semana completa</SelectItem>
+                        <SelectItem value="day">Día</SelectItem>
+                        <SelectItem value="month">Mes</SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
           </div>
         </CardHeader>
-        {isLoading ? (
-            <CardContent><p>Cargando horario...</p></CardContent>
-        ) : schedule.length > 0 ? (
-            <CardContent className="overflow-x-auto">
-               <div className="grid grid-cols-[auto_repeat(6,_minmax(120px,_1fr))] grid-rows-[auto_repeat(15,_minmax(60px,_1fr))] gap-px bg-border -ml-px -mt-px border-l border-t">
-                  {/* Header de Días */}
-                  <div className="sticky top-0 z-10 p-2 text-center font-semibold bg-gray-100 border-b border-r">Hora</div>
-                  {daysOfWeek.map(day => (
-                      <div key={day} className="sticky top-0 z-10 p-2 text-center font-semibold bg-gray-100 border-b border-r">{day}</div>
-                  ))}
+        <CardContent className="p-0 overflow-x-auto">
+             <div className="grid grid-cols-[auto_repeat(7,_minmax(100px,_1fr))] text-sm">
+                {/* Header Días y Fechas */}
+                <div className="sticky left-0 z-10 bg-card border-r border-b"></div> {/* Esquina superior izquierda vacía */}
+                {week.days.map(day => (
+                    <div key={day.toString()} className="border-b p-2 text-center">
+                        <p className="text-xs uppercase text-muted-foreground">{format(day, 'E', { locale: es })}</p>
+                        <p className={`text-lg font-semibold ${isToday(day) ? 'text-primary' : ''}`}>
+                            {format(day, 'd')}
+                        </p>
+                    </div>
+                ))}
+                
+                {/* Cuadrícula de Horas y Eventos */}
+                <div className="col-start-1 col-end-9 row-start-2 row-end-[-1] grid grid-cols-[auto_repeat(7,_minmax(100px,_1fr))] grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                   {/* Columna de Horas */}
+                   <div className="col-start-1 col-end-2 row-start-1 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))]">
+                        {timeSlots.map(hour => (
+                            <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground">
+                                {hour.toString().padStart(2, '0')}:00
+                            </div>
+                        ))}
+                   </div>
 
-                  {/* Filas de Horas */}
-                  {timeSlots.map(hour => (
-                      <div key={hour} className="p-2 text-center text-xs font-mono text-muted-foreground bg-gray-100 border-b border-r">
-                          {`${hour.toString().padStart(2, '0')}:00`}
-                      </div>
-                  ))}
-                  
-                  {/* Celdas de Horario */}
-                  {timeSlots.flatMap(hour => daysOfWeek.map(day => (
-                      <div key={`${day}-${hour}`} className="bg-background border-b border-r"></div>
-                  )))}
+                   {/* Fondo de Cuadrícula */}
+                   <div className="col-start-2 col-end-9 row-start-1 row-end-[-1] grid grid-rows-[repeat(16,_minmax(60px,_1fr))] border-l">
+                      {timeSlots.map(hour => (
+                        <div key={hour} className="border-b"></div>
+                      ))}
+                   </div>
+                   <div className="col-start-2 col-end-9 row-start-1 row-end-[-1] grid grid-cols-7">
+                        {Array.from({length: 7}).map((_, i) => (
+                             <div key={i} className="border-r"></div>
+                        ))}
+                   </div>
 
-                  {/* Eventos del Horario */}
-                  {schedule.map(entry => (
-                      <div key={entry.id} style={getGridPosition(entry)} className="relative flex flex-col p-2 m-px rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden">
-                          <p className="font-bold text-xs text-blue-800">{entry.materiaNombre}</p>
-                          <p className="text-[11px] text-gray-600">{entry.docenteNombre}</p>
-                          <p className="text-[11px] font-semibold text-gray-700 mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                      </div>
-                  ))}
-               </div>
-            </CardContent>
-        ) : (
-            <CardContent>
-                <Alert>
-                    <CalendarIcon className="h-4 w-4"/>
-                    <AlertTitle>Horario no disponible</AlertTitle>
-                    <AlertDescription>
-                       No se encontró un horario de clases para ti. Si crees que esto es un error, por favor contacta a soporte.
-                    </AlertDescription>
-                </Alert>
-            </CardContent>
-        )}
+                   {/* Eventos */}
+                   {isLoading ? <p>Cargando...</p> : (
+                       schedule.map(entry => (
+                           <div key={entry.id} style={getGridPosition(entry)} className="relative flex p-2 m-px rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
+                               <div className="flex flex-col">
+                                  <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
+                                  <p className="text-gray-600">{entry.hora.split(' - ')[0]}</p>
+                               </div>
+                           </div>
+                       ))
+                   )}
+
+                </div>
+             </div>
+        </CardContent>
       </Card>
     </div>
   );
