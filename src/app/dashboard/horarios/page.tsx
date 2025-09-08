@@ -9,9 +9,6 @@ import { collection, query, where, getDocs, DocumentData, doc, getDoc } from "fi
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Calendar } from "@/components/ui/calendar";
-import { startOfWeek, format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { generateSchedulePdf } from "@/lib/schedule-pdf-generator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -32,22 +29,14 @@ interface ScheduleEntry {
     grupoCodigo?: string;
 }
 
-interface Group {
-    id: string;
-    codigoGrupo: string;
-    horario?: ScheduleEntry[];
-    idCarrera: string;
-    idSede: string;
-}
-
 interface UserInfo {
   nombreCompleto: string;
   carreraNombre?: string;
   sedeNombre?: string;
 }
 
-
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const timeSlots = Array.from({ length: 15 }, (_, i) => 7 + i); // 7 AM to 9 PM (21:00)
 
 export default function HorariosPage() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
@@ -55,7 +44,6 @@ export default function HorariosPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-  const [currentDate, setCurrentDate] = useState<Date | undefined>(new Date());
   
   useEffect(() => {
     const storedUserId = localStorage.getItem('userId');
@@ -91,8 +79,8 @@ export default function HorariosPage() {
                 const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", studentData.grupo);
                 const groupSnap = await getDoc(groupRef);
                 if (groupSnap.exists()) {
-                    const groupData = groupSnap.data() as Group;
-                    finalSchedule = groupData.horario?.map(h => ({ ...h, grupoCodigo: groupData.codigoGrupo })) || [];
+                    const groupData = groupSnap.data();
+                    finalSchedule = groupData.horario?.map((h: any) => ({ ...h, grupoCodigo: groupData.codigoGrupo })) || [];
                 }
               }
               
@@ -106,9 +94,9 @@ export default function HorariosPage() {
         } else if (userRole === 'docente') {
             const allGroupsSnapshot = await getDocs(groupsRef);
             allGroupsSnapshot.forEach(groupDoc => {
-                const groupData = groupDoc.data() as Group;
+                const groupData = groupDoc.data();
                 if (groupData.horario && Array.isArray(groupData.horario)) {
-                    groupData.horario.forEach(h => {
+                    groupData.horario.forEach((h: any) => {
                         if (h.docenteId === userId) {
                             finalSchedule.push({ ...h, grupoCodigo: groupData.codigoGrupo });
                         }
@@ -139,28 +127,18 @@ export default function HorariosPage() {
     if (!userInfo || schedule.length === 0) return;
     generateSchedulePdf(schedule, userInfo, userRole || "estudiante");
   }
+  
+  const getGridPosition = (entry: ScheduleEntry) => {
+    const dayIndex = daysOfWeek.indexOf(entry.dia) + 2; // +2 because grid columns start at 1, and col 1 is for time
+    const startTime = parseInt(entry.hora.split(':')[0]);
+    const startRow = timeSlots.indexOf(startTime) + 2; // +2 because grid rows start at 1, and row 1 is for header
+    const duration = entry.duracion;
 
-  const markedDays = useMemo(() => {
-    const datesWithClasses: Date[] = [];
-    const referenceDate = new Date();
-    const weekStart = startOfWeek(referenceDate, { weekStartsOn: 1 });
-
-    schedule.forEach(entry => {
-      const dayIndex = daysOfWeek.indexOf(entry.dia);
-      if (dayIndex !== -1) {
-        const classDate = new Date(weekStart);
-        classDate.setDate(weekStart.getDate() + dayIndex);
-        datesWithClasses.push(classDate);
-      }
-    });
-    return datesWithClasses;
-  }, [schedule]);
-
-  const classesForSelectedDay = useMemo(() => {
-    if (!currentDate) return [];
-    const dayOfWeek = format(currentDate, 'EEEE', { locale: es });
-    return schedule.filter(entry => entry.dia.toLowerCase() === dayOfWeek.toLowerCase());
-  }, [currentDate, schedule]);
+    return {
+        gridColumn: `${dayIndex} / span 1`,
+        gridRow: `${startRow} / span ${duration}`
+    }
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -173,7 +151,7 @@ export default function HorariosPage() {
       <Card>
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <CardTitle>Horario de Clases</CardTitle>
+            <CardTitle>Horario Semanal</CardTitle>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -195,68 +173,35 @@ export default function HorariosPage() {
         {isLoading ? (
             <CardContent><p>Cargando horario...</p></CardContent>
         ) : schedule.length > 0 ? (
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="md:col-span-1">
-                    <Calendar
-                        mode="single"
-                        selected={currentDate}
-                        onSelect={setCurrentDate}
-                        locale={es}
-                        modifiers={{ marked: markedDays }}
-                        modifiersClassNames={{ marked: 'bg-primary/20 rounded-full' }}
-                    />
-                </div>
-                <div className="md:col-span-2">
-                    <h3 className="text-lg font-semibold mb-4 border-b pb-2">
-                        Clases para el {currentDate ? format(currentDate, "EEEE, d 'de' MMMM", { locale: es }) : ''}
-                    </h3>
-                    {classesForSelectedDay.length > 0 ? (
-                        <div className="space-y-4">
-                            {classesForSelectedDay.map((entry, index) => (
-                                <Card key={index} className="bg-muted/50">
-                                    <CardContent className="p-4 grid grid-cols-2 gap-4">
-                                        <div className="flex items-center gap-2">
-                                            <BookOpen className="h-5 w-5 text-primary"/>
-                                            <div>
-                                                <p className="text-sm text-muted-foreground">Materia</p>
-                                                <p className="font-semibold">{entry.materiaNombre}</p>
-                                            </div>
-                                        </div>
-                                         <div className="flex items-center gap-2">
-                                            <Clock className="h-5 w-5 text-primary"/>
-                                            <div>
-                                                <p className="text-sm text-muted-foreground">Horario</p>
-                                                <p className="font-semibold">{entry.hora}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <User className="h-5 w-5 text-primary"/>
-                                            <div>
-                                                <p className="text-sm text-muted-foreground">Docente</p>
-                                                <p className="font-semibold">{entry.docenteNombre}</p>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <Building className="h-5 w-5 text-primary"/>
-                                            <div>
-                                                <p className="text-sm text-muted-foreground">Ubicación</p>
-                                                <p className="font-semibold">{entry.modalidad === "Presencial" ? `${entry.sedeNombre} - ${entry.salonNombre}` : 'Virtual'}</p>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    ) : (
-                        <Alert>
-                            <CalendarIcon className="h-4 w-4"/>
-                            <AlertTitle>No hay clases programadas</AlertTitle>
-                            <AlertDescription>
-                                No tienes clases asignadas para el día seleccionado.
-                            </AlertDescription>
-                        </Alert>
-                    )}
-                </div>
+            <CardContent className="overflow-x-auto">
+               <div className="grid grid-cols-[auto_repeat(6,_minmax(120px,_1fr))] grid-rows-[auto_repeat(15,_minmax(60px,_1fr))] gap-px bg-border -ml-px -mt-px border-l border-t">
+                  {/* Header de Días */}
+                  <div className="sticky top-0 z-10 p-2 text-center font-semibold bg-gray-100 border-b border-r">Hora</div>
+                  {daysOfWeek.map(day => (
+                      <div key={day} className="sticky top-0 z-10 p-2 text-center font-semibold bg-gray-100 border-b border-r">{day}</div>
+                  ))}
+
+                  {/* Filas de Horas */}
+                  {timeSlots.map(hour => (
+                      <div key={hour} className="p-2 text-center text-xs font-mono text-muted-foreground bg-gray-100 border-b border-r">
+                          {`${hour.toString().padStart(2, '0')}:00`}
+                      </div>
+                  ))}
+                  
+                  {/* Celdas de Horario */}
+                  {timeSlots.flatMap(hour => daysOfWeek.map(day => (
+                      <div key={`${day}-${hour}`} className="bg-background border-b border-r"></div>
+                  )))}
+
+                  {/* Eventos del Horario */}
+                  {schedule.map(entry => (
+                      <div key={entry.id} style={getGridPosition(entry)} className="relative flex flex-col p-2 m-px rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden">
+                          <p className="font-bold text-xs text-blue-800">{entry.materiaNombre}</p>
+                          <p className="text-[11px] text-gray-600">{entry.docenteNombre}</p>
+                          <p className="text-[11px] font-semibold text-gray-700 mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                      </div>
+                  ))}
+               </div>
             </CardContent>
         ) : (
             <CardContent>
