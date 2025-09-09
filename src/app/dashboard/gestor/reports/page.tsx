@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { generatePdfReport } from "@/lib/report-generator";
+import { cn } from "@/lib/utils";
 
 interface Career {
   id: string;
