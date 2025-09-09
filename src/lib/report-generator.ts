@@ -67,36 +67,53 @@ const addFooter = (doc: jsPDFWithAutoTable) => {
 const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportConfig) => {
     const head = [['#', 'Nombre Completo', 'Correo Institucional', 'Carrera', 'Grupo', 'Estado']];
     const body = [];
+    let studentsToFetch = [];
 
-    const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
-    let q = query(studentsRef);
-    if(config.careerId !== 'all') {
-        q = query(q, where("carreraId", "==", config.careerId));
+    // If a specific group is selected, fetch students directly from that group's document
+    if (config.groupId !== 'all') {
+        const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", config.groupId);
+        const groupSnap = await getDoc(groupRef);
+        if (groupSnap.exists() && groupSnap.data().estudiantes?.length > 0) {
+            studentsToFetch = groupSnap.data().estudiantes.map((s: any) => s.id);
+        }
+    } else { // Otherwise, fetch all students for the selected career
+        const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+        let q = query(studentsRef);
+        if(config.careerId !== 'all') {
+            q = query(q, where("carreraId", "==", config.careerId));
+        }
+        const studentsSnap = await getDocs(q);
+        studentsToFetch = studentsSnap.docs.map(s => s.id);
     }
-     if(config.groupId !== 'all') {
-        q = query(q, where("grupo", "==", config.groupId));
-    }
 
-    const studentsSnap = await getDocs(q);
-    
-    let i = 1;
-    for (const studentDoc of studentsSnap.docs) {
-        const data = studentDoc.data();
-        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", studentDoc.id);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.exists() ? userSnap.data() : null;
+    if (studentsToFetch.length === 0) {
+        body.push([{ content: 'No se encontraron estudiantes para los filtros seleccionados.', colSpan: 6, styles: { halign: 'center' } }]);
+    } else {
+        let i = 1;
+        // Fetch details for the collected student IDs
+        for (const studentId of studentsToFetch) {
+            const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
+            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", studentId);
 
-        const careerName = config.careers.find(c => c.id === data.carreraId)?.nombre || 'N/A';
-        const groupCode = config.groups.find(g => g.id === data.grupo)?.codigoGrupo || 'N/A';
+            const [studentSnap, userSnap] = await Promise.all([getDoc(studentRef), getDoc(userRef)]);
+            
+            if (!studentSnap.exists() || !userSnap.exists()) continue;
 
-        body.push([
-            i++,
-            data.nombreCompleto || 'N/A',
-            data.correoInstitucional || userData?.correo || 'N/A',
-            careerName,
-            groupCode,
-            data.estado || 'N/A'
-        ]);
+            const studentData = studentSnap.data();
+            const userData = userSnap.data();
+
+            const careerName = config.careers.find(c => c.id === studentData.carreraId)?.nombre || 'N/A';
+            const groupCode = config.groups.find(g => g.id === studentData.grupo)?.codigoGrupo || 'N/A';
+            
+            body.push([
+                i++,
+                userData.nombreCompleto || 'N/A',
+                userData.correoInstitucional || userData.correo || 'N/A',
+                careerName,
+                groupCode,
+                studentData.estado || 'N/A'
+            ]);
+        }
     }
 
     doc.autoTable({
@@ -107,6 +124,7 @@ const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportCon
         headStyles: { fillColor: [0, 33, 71] },
     });
 };
+
 
 const generateAcademicPerformance = async (doc: jsPDFWithAutoTable, config: ReportConfig) => {
     const head = [['Carrera', 'Estudiantes', 'Promedio General', 'Tasa Aprobación']];
