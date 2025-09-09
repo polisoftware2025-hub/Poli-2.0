@@ -125,11 +125,12 @@ export default function DashboardLayout({
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
                     if(data.estado === "pendiente") {
+                      const fechaRegistro = data.fechaRegistro?.toDate ? data.fechaRegistro.toDate() : data.fechaRegistro;
                       fetchedNotifications.push({
                           id: doc.id,
                           title: "Nueva solicitud de preinscripción",
                           description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
-                          time: formatDistanceToNow(data.fechaRegistro.toDate(), { addSuffix: true, locale: es }),
+                          time: fechaRegistro ? formatDistanceToNow(fechaRegistro, { addSuffix: true, locale: es }) : "Hace un momento",
                           read: false
                       });
                     }
@@ -143,12 +144,13 @@ export default function DashboardLayout({
                      const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", noteData.grupoId);
                      const groupSnap = await getDoc(groupRef);
                      const subjectName = groupSnap.exists() ? groupSnap.data().materia.nombre : 'una materia';
+                     const fechaNota = noteData.fecha?.toDate ? noteData.fecha.toDate() : new Date();
                      
                      fetchedNotifications.push({
                          id: noteDoc.id,
                          title: "Nueva Calificación Disponible",
                          description: `Se ha publicado tu nota para ${subjectName}.`,
-                         time: formatDistanceToNow(noteData.fecha.toDate(), { addSuffix: true, locale: es }),
+                         time: formatDistanceToNow(fechaNota, { addSuffix: true, locale: es }),
                          read: false
                      });
                  }
