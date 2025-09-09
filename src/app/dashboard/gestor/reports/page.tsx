@@ -19,6 +19,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { generatePdfReport } from "@/lib/report-generator";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 interface Career {
   id: string;
@@ -42,9 +43,7 @@ interface Sede {
 export default function ReportsPage() {
   const [reportType, setReportType] = useState("");
   const [careerFilter, setCareerFilter] = useState("all");
-  const [groupFilter, setGroupFilter] = useState("all");
-  const [format, setFormat] = useState("pdf");
-
+  
   const [careers, setCareers] = useState<Career[]>([]);
   const [allGroups, setAllGroups] = useState<Group[]>([]);
   const [sedes, setSedes] = useState<Sede[]>([]);
@@ -90,25 +89,21 @@ export default function ReportsPage() {
 
   // Memoized filtered groups based on selected career
   const filteredGroups = useMemo(() => {
-    let groups = allGroups;
+    if (careerFilter === 'all') {
+      return [];
+    }
+    
+    let groups = allGroups.filter(group => group.idCarrera === careerFilter);
 
     if (reportType === 'enrollment_list') {
         groups = groups.filter(group => group.estudiantes && group.estudiantes.length > 0);
     }
-
-    if (careerFilter === 'all') {
-      return groups;
-    }
     
-    return groups.filter(group => group.idCarrera === careerFilter);
+    return groups;
   }, [allGroups, careerFilter, reportType]);
 
-  const handleCareerChange = (value: string) => {
-    setCareerFilter(value);
-    setGroupFilter("all"); // Reset group filter when career changes
-  };
 
-  const handleGenerateReport = async () => {
+  const handleGenerateReport = async (groupId: string = "all") => {
     if (!reportType) {
         toast({ variant: "destructive", title: "Selección requerida", description: "Por favor, selecciona un tipo de reporte." });
         return;
@@ -127,7 +122,7 @@ export default function ReportsPage() {
         await generatePdfReport({
             reportType,
             careerId: careerFilter,
-            groupId: groupFilter,
+            groupId: groupId,
             generatedBy: gestorName,
             careers, 
             groups: allGroups
@@ -148,95 +143,86 @@ export default function ReportsPage() {
         icon={<FileText className="h-8 w-8 text-primary" />}
       />
 
-      <Card className="max-w-2xl mx-auto w-full">
-        <CardHeader>
-          <CardTitle>Generador de Informes</CardTitle>
-          <CardDescription>
-            Selecciona el tipo de reporte, los filtros y el formato deseado para la exportación.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="report-type">Tipo de Reporte</Label>
-                <Select value={reportType} onValueChange={setReportType}>
-                    <SelectTrigger id="report-type">
-                        <SelectValue placeholder="Seleccionar tipo de reporte..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="academic_performance">Rendimiento Académico por Carrera</SelectItem>
-                        <SelectItem value="enrollment_list">Listado de Alumnos Matriculados</SelectItem>
-                        <SelectItem value="dropout_report">Reporte de Deserción Escolar</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        <Card className="w-full">
+            <CardHeader>
+            <CardTitle>Configuración del Informe</CardTitle>
+            <CardDescription>
+                Selecciona el tipo de reporte y los filtros deseados.
+            </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="space-y-2">
+                    <Label htmlFor="report-type">1. Tipo de Reporte</Label>
+                    <Select value={reportType} onValueChange={setReportType}>
+                        <SelectTrigger id="report-type">
+                            <SelectValue placeholder="Seleccionar tipo de reporte..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="academic_performance">Rendimiento Académico por Carrera</SelectItem>
+                            <SelectItem value="enrollment_list">Listado de Alumnos Matriculados</SelectItem>
+                            <SelectItem value="dropout_report">Reporte de Deserción Escolar</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 <div className="space-y-2">
-                    <Label htmlFor="filter-career">Filtrar por Carrera</Label>
-                    <Select value={careerFilter} onValueChange={handleCareerChange} disabled={isLoading}>
+                <div className="space-y-2">
+                    <Label htmlFor="filter-career">2. Filtrar por Carrera</Label>
+                    <Select value={careerFilter} onValueChange={setCareerFilter} disabled={isLoading}>
                         <SelectTrigger id="filter-career">
                             <SelectValue placeholder="Todas las carreras" />
                         </SelectTrigger>
                         <SelectContent>
-                             <SelectItem value="all">Todas las carreras</SelectItem>
-                             {careers.map(career => (
-                                 <SelectItem key={career.id} value={career.id}>{career.nombre}</SelectItem>
-                             ))}
+                            <SelectItem value="all">Todas las carreras</SelectItem>
+                            {careers.map(career => (
+                                <SelectItem key={career.id} value={career.id}>{career.nombre}</SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="filter-group">Filtrar por Grupo</Label>
-                    <Select value={groupFilter} onValueChange={setGroupFilter} disabled={isLoading || filteredGroups.length === 0}>
-                        <SelectTrigger id="filter-group">
-                            <SelectValue placeholder={careerFilter === 'all' && reportType !== 'enrollment_list' ? "Selecciona una carrera primero" : "Todos los grupos"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                             <SelectItem value="all">Todos los grupos</SelectItem>
-                             {filteredGroups.map(group => (
-                                 <SelectItem key={group.id} value={group.id}>
-                                     <div className="flex items-center justify-between w-full">
-                                         <div className="flex flex-col text-left">
-                                             <span>{group.codigoGrupo}</span>
-                                             <span className="text-xs text-muted-foreground">{group.sedeNombre}</span>
-                                         </div>
-                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                             <Users className="h-3 w-3"/>
-                                             <span>{group.estudiantes?.length || 0}</span>
-                                             <div className={cn(
-                                                 "h-2 w-2 rounded-full",
-                                                 (group.estudiantes?.length || 0) > 0 ? "bg-green-500" : "bg-gray-400"
-                                             )}/>
-                                         </div>
-                                     </div>
-                                 </SelectItem>
-                             ))}
-                        </SelectContent>
-                    </Select>
+            </CardContent>
+             <CardFooter>
+                 <Button onClick={() => handleGenerateReport()} disabled={isGenerating || !reportType || (reportType === 'enrollment_list' && careerFilter === 'all')}>
+                    <Download className="mr-2 h-4 w-4" />
+                    {isGenerating ? "Generando..." : "Generar Reporte General"}
+                </Button>
+            </CardFooter>
+        </Card>
+        
+        <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Grupos Disponibles en la Carrera Seleccionada</h3>
+            {careerFilter === 'all' ? (
+                <p className="text-sm text-muted-foreground">Selecciona una carrera para ver los grupos disponibles.</p>
+            ) : isLoading ? (
+                <p className="text-sm text-muted-foreground">Cargando grupos...</p>
+            ) : filteredGroups.length > 0 ? (
+                <div className="grid grid-cols-1 gap-4">
+                    {filteredGroups.map(group => (
+                        <Card key={group.id}>
+                            <CardContent className="p-4 flex items-center justify-between">
+                                <div className="space-y-1">
+                                    <p className="font-semibold">{group.codigoGrupo}</p>
+                                    <p className="text-xs text-muted-foreground">{group.sedeNombre}</p>
+                                    <div className="flex items-center gap-2 text-xs">
+                                        <Users className="h-3 w-3" />
+                                        <span>{group.estudiantes?.length || 0} Estudiantes</span>
+                                    </div>
+                                </div>
+                                {reportType === 'enrollment_list' && (
+                                     <Button size="sm" variant="outline" onClick={() => handleGenerateReport(group.id)} disabled={isGenerating}>
+                                        <Download className="mr-2 h-4 w-4"/>
+                                        Reporte
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))}
                 </div>
-            </div>
-            
-            <div className="space-y-2">
-                <Label htmlFor="format">Formato de Exportación</Label>
-                <Select value={format} onValueChange={setFormat}>
-                    <SelectTrigger id="format">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="pdf">PDF (.pdf)</SelectItem>
-                        <SelectItem value="csv" disabled>CSV (Próximamente)</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            
-        </CardContent>
-        <CardFooter className="flex justify-end pt-4">
-             <Button onClick={handleGenerateReport} disabled={isGenerating}>
-                <Download className="mr-2 h-4 w-4" />
-                {isGenerating ? "Generando..." : "Generar Reporte"}
-            </Button>
-        </CardFooter>
-      </Card>
+            ) : (
+                <p className="text-sm text-muted-foreground">No se encontraron grupos para la carrera y el tipo de reporte seleccionados.</p>
+            )}
+        </div>
+      </div>
     </div>
   );
 }
