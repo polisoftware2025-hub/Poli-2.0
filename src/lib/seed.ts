@@ -14,7 +14,7 @@ const createSlug = (name: string) => {
 
 export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
-  slug: "comercio_exterior",
+  slug: "tecnologia-en-comercio-exterior-y-negocios-internacionales", // Slug for URL
   duracionCiclo: "9 Ciclos",
   modalidad: "Virtual / Presencial",
   descripcionGeneral: "Gestiona los procesos de importación definitiva (para consumo, con franquicia, en cumplimiento de garantía y reimportaciones) de productos al país, a partir de la planificación logística de sus operaciones, integrando y adecuando documentos, costos, medios de pago y requisitos conformes con la normatividad vigente en Colombia, con el fin de generar procesos rentables y eficientes.",
@@ -110,8 +110,8 @@ export async function seedCarrera() {
   try {
     const carrerasRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
     
-    // Usamos el slug como ID del documento para evitar duplicados fácilmente
-    const carreraDocRef = doc(carrerasRef, carreraData.slug);
+    // Use a consistent ID for the test career to match students and groups
+    const carreraDocRef = doc(carrerasRef, "comercio_exterior");
     
     await setDoc(carreraDocRef, carreraData);
     return { success: true, message: "Datos de carrera insertados/actualizados exitosamente." };
@@ -248,7 +248,7 @@ export async function seedInitialUsers() {
                 usuarioId: userData.id,
                 nombreCompleto: finalUserData.nombreCompleto,
                 documento: finalUserData.identificacion,
-                carreraId: carreraData.slug,
+                carreraId: "comercio_exterior", // Use the consistent ID
                 sedeId: "sede-norte",
                 modalidad: "Virtual",
                 grupo: groupDocId, // Assign to the correct group doc ID
