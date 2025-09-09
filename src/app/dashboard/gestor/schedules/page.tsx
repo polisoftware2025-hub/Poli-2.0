@@ -293,7 +293,7 @@ function AssignClassDialog({ grupos, scheduleForSalon, selectedSalonId, onClassA
                         <label>Grupo</label>
                         <Select value={selectedGrupo} onValueChange={setSelectedGrupo}>
                             <SelectTrigger><SelectValue placeholder="Selecciona un grupo..." /></SelectTrigger>
-                            <SelectContent>{grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.materia.nombre} ({g.codigoGrupo})</SelectItem>)}</SelectContent>
+                            <SelectContent>{grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.materia?.nombre || 'Materia no definida'} ({g.codigoGrupo})</SelectItem>)}</SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
@@ -320,5 +320,3 @@ function AssignClassDialog({ grupos, scheduleForSalon, selectedSalonId, onClassA
     );
 }
 
-
-    
