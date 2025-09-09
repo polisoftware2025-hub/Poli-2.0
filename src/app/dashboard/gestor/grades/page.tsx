@@ -25,12 +25,14 @@ interface User {
 interface Subject {
   id: string;
   nombre: string;
+  grupoId?: string; // Add grupoId to the subject interface
 }
 
 interface Grade {
     id: string;
     nota: number;
     materiaId: string;
+    grupoId: string;
 }
 
 interface AuditLog {
@@ -111,7 +113,19 @@ export default function GradeManagementPage() {
         const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", student.id);
         const studentSnap = await getDoc(studentRef);
         if (studentSnap.exists()) {
-            setStudentSubjects(studentSnap.data().materiasInscritas || []);
+            const studentData = studentSnap.data();
+            const materiasInscritas = studentData.materiasInscritas || [];
+
+            // Find the group associated with the student
+            const groupsQuery = query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"), where("estudiantes", "array-contains", { id: student.id, nombre: student.nombreCompleto }));
+            const groupsSnapshot = await getDocs(groupsQuery);
+            
+            const enrichedSubjects = materiasInscritas.map((materia: Subject) => {
+                const group = groupsSnapshot.docs.find(doc => doc.data().materia.id === materia.id);
+                return { ...materia, grupoId: group?.id };
+            });
+
+            setStudentSubjects(enrichedSubjects);
         }
 
         const gradesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
@@ -127,9 +141,14 @@ export default function GradeManagementPage() {
   };
   
   const currentGrade = useMemo(() => {
-      if (!selectedSubjectId) return null;
-      return studentGrades.find(g => g.materiaId === selectedSubjectId)?.nota;
-  }, [selectedSubjectId, studentGrades]);
+      if (!selectedSubjectId || !studentSubjects.length || !studentGrades.length) return null;
+      
+      const subjectInfo = studentSubjects.find(s => s.id === selectedSubjectId);
+      if (!subjectInfo || !subjectInfo.grupoId) return null;
+
+      const gradeInfo = studentGrades.find(g => g.grupoId === subjectInfo.grupoId);
+      return gradeInfo?.nota;
+  }, [selectedSubjectId, studentSubjects, studentGrades]);
   
   const handleSubmit = async () => {
     if (!selectedStudent || !selectedSubjectId || !newGrade || !reason) {
@@ -137,7 +156,13 @@ export default function GradeManagementPage() {
         return;
     }
     
-    const gradeDoc = studentGrades.find(g => g.materiaId === selectedSubjectId);
+    const subjectInfo = studentSubjects.find(s => s.id === selectedSubjectId);
+    if (!subjectInfo?.grupoId) {
+        toast({ variant: "destructive", title: "Error", description: "No se pudo determinar el grupo para esta materia." });
+        return;
+    }
+
+    const gradeDoc = studentGrades.find(g => g.grupoId === subjectInfo.grupoId);
     if (!gradeDoc) {
         toast({ variant: "destructive", title: "Error", description: "No se encontró una nota existente para esta materia." });
         return;
@@ -151,7 +176,7 @@ export default function GradeManagementPage() {
         const logsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/auditoria_notas");
         await addDoc(logsRef, {
             studentName: selectedStudent.nombreCompleto,
-            subjectName: studentSubjects.find(s => s.id === selectedSubjectId)?.nombre || "N/A",
+            subjectName: subjectInfo?.nombre || "N/A",
             oldGrade: currentGrade,
             newGrade: parseFloat(newGrade),
             user: gestorEmail,
@@ -242,16 +267,16 @@ export default function GradeManagementPage() {
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="old-grade">Nota Actual</Label>
-                            <Input id="old-grade" value={currentGrade === undefined ? '' : currentGrade} disabled />
+                            <Input id="old-grade" value={currentGrade === undefined || currentGrade === null ? '' : currentGrade} disabled />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="new-grade">Nueva Nota</Label>
-                            <Input id="new-grade" type="number" step="0.1" min="0" max="5" placeholder="0.0 - 5.0" value={newGrade} onChange={e => setNewGrade(e.target.value)} disabled={currentGrade === undefined} />
+                            <Input id="new-grade" type="number" step="0.1" min="0" max="5" placeholder="0.0 - 5.0" value={newGrade} onChange={e => setNewGrade(e.target.value)} disabled={currentGrade === undefined || currentGrade === null} />
                         </div>
                      </div>
                      <div className="space-y-2">
                         <Label htmlFor="reason">Motivo de la Corrección</Label>
-                        <Textarea id="reason" placeholder="Describe brevemente el motivo del cambio..." value={reason} onChange={e => setReason(e.target.value)} disabled={currentGrade === undefined}/>
+                        <Textarea id="reason" placeholder="Describe brevemente el motivo del cambio..." value={reason} onChange={e => setReason(e.target.value)} disabled={currentGrade === undefined || currentGrade === null}/>
                      </div>
                      <Button className="w-full" onClick={handleSubmit} disabled={isLoading.submit || !selectedStudent || !newGrade || !reason}>
                         <Edit className="mr-2 h-4 w-4" />
