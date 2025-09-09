@@ -67,29 +67,20 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
 
 type UserRole = "admin" | "gestor" | "docente" | "estudiante";
 
-const notifications = [
-    {
-        title: "¡Pago Liberado!",
-        description: "Tu pago de la matrícula ha sido procesado exitosamente.",
-        time: "hace 10 minutos",
-        read: false,
-    },
-    {
-        title: "Nueva Calificación Disponible",
-        description: "Tu nota para el parcial de Cálculo Diferencial ha sido publicada.",
-        time: "hace 2 horas",
-        read: false,
-    },
-    {
-        title: "Recordatorio de Tarea",
-        description: "La entrega del Prototipo de IA es mañana.",
-        time: "hace 1 día",
-        read: true,
-    },
-];
+interface Notification {
+    id: string;
+    title: string;
+    description: string;
+    time: string;
+    read: boolean;
+}
 
 export default function DashboardLayout({
   children,
@@ -101,21 +92,78 @@ export default function DashboardLayout({
   const { toast } = useToast();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("userEmail");
     const storedRole = localStorage.getItem("userRole") as UserRole;
-    if (storedEmail && storedRole) {
+    const storedUserId = localStorage.getItem("userId");
+    if (storedEmail && storedRole && storedUserId) {
       setUserEmail(storedEmail);
       setUserRole(storedRole);
+      setUserId(storedUserId);
     } else {
       router.push("/login");
     }
   }, [router]);
 
+  useEffect(() => {
+    if (!userRole || !userId) return;
+
+    const fetchNotifications = async () => {
+        setIsLoadingNotifications(true);
+        const fetchedNotifications: Notification[] = [];
+        try {
+            if (userRole === 'admin' || userRole === 'gestor') {
+                const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+                const q = query(studentsRef, where("estado", "==", "pendiente"), orderBy("fechaRegistro", "desc"), limit(5));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    fetchedNotifications.push({
+                        id: doc.id,
+                        title: "Nueva solicitud de preinscripción",
+                        description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
+                        time: formatDistanceToNow(data.fechaRegistro.toDate(), { addSuffix: true, locale: es }),
+                        read: false
+                    });
+                });
+            } else if (userRole === 'estudiante') {
+                 const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
+                 const q = query(notesRef, where("estudianteId", "==", userId), orderBy("fecha", "desc"), limit(5));
+                 const querySnapshot = await getDocs(q);
+                 for (const noteDoc of querySnapshot.docs) {
+                     const noteData = noteDoc.data();
+                     const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", noteData.grupoId);
+                     const groupSnap = await getDoc(groupRef);
+                     const subjectName = groupSnap.exists() ? groupSnap.data().materia.nombre : 'una materia';
+                     
+                     fetchedNotifications.push({
+                         id: noteDoc.id,
+                         title: "Nueva Calificación Disponible",
+                         description: `Se ha publicado tu nota para ${subjectName}.`,
+                         time: formatDistanceToNow(noteData.fecha.toDate(), { addSuffix: true, locale: es }),
+                         read: false
+                     });
+                 }
+            }
+            setNotifications(fetchedNotifications);
+        } catch (error) {
+            console.error("Error fetching notifications:", error);
+        } finally {
+            setIsLoadingNotifications(false);
+        }
+    };
+    
+    fetchNotifications();
+  }, [userRole, userId]);
+
   const handleLogout = async () => {
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userId");
     toast({
       title: "Cierre de sesión exitoso",
       description: "Has cerrado sesión correctamente.",
@@ -344,17 +392,23 @@ export default function DashboardLayout({
                        </div>
                    </div>
                    <Separator />
-                   <div className="divide-y divide-border">
-                       {notifications.map((item, index) => (
-                           <div key={index} className="flex items-start gap-4 p-4 hover:bg-muted/50">
-                                <div className="flex-1 space-y-1">
-                                    <p className="font-medium">{item.title}</p>
-                                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                                    <p className="text-xs text-muted-foreground">{item.time}</p>
+                   <div className="divide-y divide-border max-h-80 overflow-y-auto">
+                        {isLoadingNotifications ? (
+                            <div className="p-4 text-sm text-muted-foreground">Cargando...</div>
+                        ) : notifications.length > 0 ? (
+                            notifications.map((item) => (
+                                <div key={item.id} className="flex items-start gap-4 p-4 hover:bg-muted/50">
+                                    <div className="flex-1 space-y-1">
+                                        <p className="font-medium">{item.title}</p>
+                                        <p className="text-sm text-muted-foreground">{item.description}</p>
+                                        <p className="text-xs text-muted-foreground">{item.time}</p>
+                                    </div>
+                                    {!item.read && <div className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />}
                                 </div>
-                                {!item.read && <div className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />}
-                           </div>
-                       ))}
+                            ))
+                        ) : (
+                            <div className="p-4 text-sm text-muted-foreground">No tienes notificaciones nuevas.</div>
+                        )}
                    </div>
                    <Separator />
                    <div className="p-2 text-center">
