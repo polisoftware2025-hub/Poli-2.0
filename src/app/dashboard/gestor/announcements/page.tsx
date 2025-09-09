@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Send } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -16,13 +16,28 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from "@/components/ui/select";
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Form, FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form";
 import { sendAnnouncement } from "@/ai/flows/send-announcement-flow";
+import { db } from "@/lib/firebase";
+import { collection, getDocs } from "firebase/firestore";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Career {
+    id: string;
+    nombre: string;
+}
+
+interface Group {
+    id: string;
+    codigoGrupo: string;
+}
 
 const announcementSchema = z.object({
     title: z.string().min(5, "El título debe tener al menos 5 caracteres."),
@@ -39,7 +54,30 @@ type AnnouncementFormValues = z.infer<typeof announcementSchema>;
 
 export default function AnnouncementsPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingFilters, setIsFetchingFilters] = useState(true);
+  const [careers, setCareers] = useState<Career[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchFilters = async () => {
+        setIsFetchingFilters(true);
+        try {
+            const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+            setCareers(careersSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
+
+            const groupsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
+            setGroups(groupsSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo })));
+
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar las listas de destinatarios." });
+            console.error("Error fetching filters for announcements:", error);
+        } finally {
+            setIsFetchingFilters(false);
+        }
+    };
+    fetchFilters();
+  }, [toast]);
 
   const form = useForm<AnnouncementFormValues>({
     resolver: zodResolver(announcementSchema),
@@ -136,20 +174,41 @@ export default function AnnouncementsPage() {
                             render={({ field }) => (
                                 <FormItem>
                                 <Label>Destinatarios</Label>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccionar un grupo..." />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="Toda la comunidad">Toda la comunidad</SelectItem>
-                                        <SelectItem value="Todos los estudiantes">Todos los estudiantes</SelectItem>
-                                        <SelectItem value="Todos los docentes">Todos los docentes</SelectItem>
-                                        <SelectItem value="Carrera: Ingeniería de Sistemas">Carrera: Ingeniería de Sistemas</SelectItem>
-                                        <SelectItem value="Grupo: CD-001 (Cálculo)">Grupo: CD-001 (Cálculo)</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                 {isFetchingFilters ? (
+                                    <Skeleton className="h-10 w-full" />
+                                 ) : (
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar un grupo..." />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            <SelectGroup>
+                                                <SelectLabel>Generales</SelectLabel>
+                                                <SelectItem value="Toda la comunidad">Toda la comunidad</SelectItem>
+                                                <SelectItem value="Todos los estudiantes">Todos los estudiantes</SelectItem>
+                                                <SelectItem value="Todos los docentes">Todos los docentes</SelectItem>
+                                            </SelectGroup>
+                                            <SelectGroup>
+                                                <SelectLabel>Por Carrera</SelectLabel>
+                                                {careers.map(career => (
+                                                    <SelectItem key={career.id} value={`Carrera: ${career.nombre}`}>
+                                                        Carrera: {career.nombre}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                            <SelectGroup>
+                                                <SelectLabel>Por Grupo</SelectLabel>
+                                                 {groups.map(group => (
+                                                    <SelectItem key={group.id} value={`Grupo: ${group.codigoGrupo}`}>
+                                                        Grupo: {group.codigoGrupo}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+                                 )}
                                 <FormMessage />
                                 </FormItem>
                             )}
