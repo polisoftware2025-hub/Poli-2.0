@@ -72,7 +72,7 @@ export default function MyCoursesPage() {
                 }
                 
                 // Uniquely identify a course by the combination of group and subject
-                const courseId = `${groupDoc.id}-${slot.materiaId}`;
+                const courseId = `${groupDoc.id}___${slot.materiaId}`;
 
                 if (!teacherCourses.find(c => c.id === courseId)) {
                     // Fetch the full group document again to ensure we have the latest student count

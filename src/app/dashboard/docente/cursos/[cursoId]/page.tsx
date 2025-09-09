@@ -58,7 +58,13 @@ export default function CourseDetailPage() {
   useEffect(() => {
     setDocenteId(localStorage.getItem('userId'));
     if (cursoId) {
-      const [groupId, subjectId] = cursoId.split("-");
+      const [groupId, subjectId] = cursoId.split("___");
+
+      if (!groupId || !subjectId) {
+        toast({ variant: "destructive", title: "Error", description: "URL del curso no válida." });
+        notFound();
+        return;
+      }
 
       const fetchCourseDetails = async () => {
         setIsLoading(true);
