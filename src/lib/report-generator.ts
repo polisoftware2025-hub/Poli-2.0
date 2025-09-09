@@ -112,45 +112,38 @@ const generateAcademicPerformance = async (doc: jsPDFWithAutoTable, config: Repo
     const head = [['Carrera', 'Estudiantes', 'Promedio General', 'Tasa Aprobación']];
     const body = [];
     
-    // 1. Fetch all grades and students
-    const gradesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas"));
-    const studentsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes"));
-    
-    const studentCareerMap = new Map<string, string>();
-    studentsSnapshot.forEach(doc => {
-        studentCareerMap.set(doc.id, doc.data().carreraId);
-    });
+    const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+    const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
 
-    // 2. Process grades and group by career
-    const careerStats: { [careerId: string]: { totalNotes: number; noteSum: number; approvedCount: number, studentIds: Set<string>} } = {};
-
-    gradesSnapshot.forEach(gradeDoc => {
-        const gradeData = gradeDoc.data();
-        const studentId = gradeData.estudianteId;
-        const careerId = studentCareerMap.get(studentId);
-        
-        if (careerId) {
-            if (!careerStats[careerId]) {
-                careerStats[careerId] = { totalNotes: 0, noteSum: 0, approvedCount: 0, studentIds: new Set() };
-            }
-            careerStats[careerId].studentIds.add(studentId);
-            careerStats[careerId].totalNotes++;
-            careerStats[careerId].noteSum += gradeData.nota;
-            if (gradeData.nota >= 3.0) {
-                careerStats[careerId].approvedCount++;
-            }
-        }
-    });
-
-    // 3. Build table body
     for (const career of config.careers) {
         if(config.careerId !== 'all' && config.careerId !== career.id) continue;
         
-        const stats = careerStats[career.id];
-        if (stats) {
-            const average = (stats.noteSum / stats.totalNotes).toFixed(2);
-            const approvalRate = `${((stats.approvedCount / stats.totalNotes) * 100).toFixed(1)}%`;
-            body.push([career.nombre, stats.studentIds.size, average, approvalRate]);
+        const studentQuery = query(studentsRef, where("carreraId", "==", career.id));
+        const studentsSnapshot = await getDocs(studentQuery);
+        const studentIds = studentsSnapshot.docs.map(doc => doc.id);
+
+        if (studentIds.length > 0) {
+            const gradesQuery = query(notesRef, where("estudianteId", "in", studentIds));
+            const gradesSnapshot = await getDocs(gradesQuery);
+            
+            let totalNotes = 0;
+            let noteSum = 0;
+            let approvedCount = 0;
+
+            gradesSnapshot.forEach(gradeDoc => {
+                const gradeData = gradeDoc.data();
+                totalNotes++;
+                noteSum += gradeData.nota;
+                if (gradeData.nota >= 3.0) {
+                    approvedCount++;
+                }
+            });
+            
+            const average = totalNotes > 0 ? (noteSum / totalNotes).toFixed(2) : "N/A";
+            const approvalRate = totalNotes > 0 ? `${((approvedCount / totalNotes) * 100).toFixed(1)}%` : "N/A";
+            
+            body.push([career.nombre, studentIds.length, average, approvalRate]);
+
         } else {
             body.push([career.nombre, 0, "N/A", "N/A"]);
         }
@@ -169,32 +162,29 @@ const generateDropoutReport = async (doc: jsPDFWithAutoTable, config: ReportConf
      const head = [['Carrera', 'Estudiantes Totales', 'Deserciones', 'Tasa de Deserción']];
      const body = [];
      
-     // 1. Get all students and their careers
-     const studentsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes"));
-     const allUsersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios"));
-     
-     const userStatusMap = new Map<string, string>();
-     allUsersSnapshot.forEach(doc => userStatusMap.set(doc.id, doc.data().estado));
+     const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
 
-     // 2. Group by career
-     const careerStudents: { [careerId: string]: string[] } = {};
-     studentsSnapshot.forEach(doc => {
-         const data = doc.data();
-         if (!careerStudents[data.carreraId]) {
-             careerStudents[data.carreraId] = [];
-         }
-         careerStudents[data.carreraId].push(doc.id);
-     });
-
-     // 3. Calculate stats
      for (const career of config.careers) {
          if(config.careerId !== 'all' && config.careerId !== career.id) continue;
          
-         const studentIds = careerStudents[career.id] || [];
+         const studentsQuery = query(studentsRef, where("carreraId", "==", career.id));
+         const studentsSnapshot = await getDocs(studentsQuery);
+         const studentIds = studentsSnapshot.docs.map(doc => doc.id);
          const totalStudents = studentIds.length;
-         
+
          if (totalStudents > 0) {
-             const dropouts = studentIds.filter(id => userStatusMap.get(id) === 'inactivo' || userStatusMap.get(id) === 'retirado').length;
+             const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+             const usersQuery = query(usersRef, where("__name__", "in", studentIds));
+             const usersSnapshot = await getDocs(usersQuery);
+             
+             let dropouts = 0;
+             usersSnapshot.forEach(userDoc => {
+                 const userData = userDoc.data();
+                 if (userData.estado === 'inactivo' || userData.estado === 'retirado') {
+                     dropouts++;
+                 }
+             });
+
              const rate = `${((dropouts / totalStudents) * 100).toFixed(1)}%`;
              body.push([career.nombre, totalStudents, dropouts, rate]);
          } else {
