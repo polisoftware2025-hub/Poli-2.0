@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
 import { FileText, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -41,24 +41,25 @@ export default function ReportsPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
 
-  useEffect(() => {
-    const fetchFiltersData = async () => {
-      setIsLoading(true);
-      try {
-        const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
-        setCareers(careersSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
+  const fetchFiltersData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+      setCareers(careersSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
 
-        const groupsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
-        setGroups(groupsSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo })));
-      } catch (error) {
-        console.error("Error fetching filters data:", error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los filtros." });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchFiltersData();
+      const groupsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
+      setGroups(groupsSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo })));
+    } catch (error) {
+      console.error("Error fetching filters data:", error);
+      toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los filtros." });
+    } finally {
+      setIsLoading(false);
+    }
   }, [toast]);
+
+  useEffect(() => {
+    fetchFiltersData();
+  }, [fetchFiltersData]);
 
   const handleGenerateReport = async () => {
     if (!reportType) {
