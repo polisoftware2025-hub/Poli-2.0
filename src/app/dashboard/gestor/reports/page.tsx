@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { FileText, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -27,6 +27,7 @@ interface Career {
 interface Group {
   id: string;
   codigoGrupo: string;
+  idCarrera: string; // Important for filtering
 }
 
 export default function ReportsPage() {
@@ -36,7 +37,7 @@ export default function ReportsPage() {
   const [format, setFormat] = useState("pdf");
 
   const [careers, setCareers] = useState<Career[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [allGroups, setAllGroups] = useState<Group[]>([]); // Store all groups
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -48,7 +49,7 @@ export default function ReportsPage() {
       setCareers(careersSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
 
       const groupsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
-      setGroups(groupsSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo })));
+      setAllGroups(groupsSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo, idCarrera: doc.data().idCarrera })));
     } catch (error) {
       console.error("Error fetching filters data:", error);
       toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los filtros." });
@@ -60,6 +61,19 @@ export default function ReportsPage() {
   useEffect(() => {
     fetchFiltersData();
   }, [fetchFiltersData]);
+
+  // Memoized filtered groups based on selected career
+  const filteredGroups = useMemo(() => {
+    if (careerFilter === 'all') {
+      return allGroups; // Show all groups if no career is selected
+    }
+    return allGroups.filter(group => group.idCarrera === careerFilter);
+  }, [allGroups, careerFilter]);
+
+  const handleCareerChange = (value: string) => {
+    setCareerFilter(value);
+    setGroupFilter("all"); // Reset group filter when career changes
+  };
 
   const handleGenerateReport = async () => {
     if (!reportType) {
@@ -83,7 +97,7 @@ export default function ReportsPage() {
             groupId: groupFilter,
             generatedBy: gestorName,
             careers, 
-            groups 
+            groups: allGroups // Pass all groups to the generator
         });
     } catch (error) {
         console.error("Error generating report: ", error);
@@ -126,7 +140,7 @@ export default function ReportsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="space-y-2">
                     <Label htmlFor="filter-career">Filtrar por Carrera</Label>
-                    <Select value={careerFilter} onValueChange={setCareerFilter} disabled={isLoading}>
+                    <Select value={careerFilter} onValueChange={handleCareerChange} disabled={isLoading}>
                         <SelectTrigger id="filter-career">
                             <SelectValue placeholder="Todas las carreras" />
                         </SelectTrigger>
@@ -140,13 +154,13 @@ export default function ReportsPage() {
                 </div>
                  <div className="space-y-2">
                     <Label htmlFor="filter-group">Filtrar por Grupo</Label>
-                    <Select value={groupFilter} onValueChange={setGroupFilter} disabled={isLoading}>
+                    <Select value={groupFilter} onValueChange={setGroupFilter} disabled={isLoading || filteredGroups.length === 0}>
                         <SelectTrigger id="filter-group">
                             <SelectValue placeholder="Todos los grupos" />
                         </SelectTrigger>
                         <SelectContent>
                              <SelectItem value="all">Todos los grupos</SelectItem>
-                             {groups.map(group => (
+                             {filteredGroups.map(group => (
                                  <SelectItem key={group.id} value={group.id}>{group.codigoGrupo}</SelectItem>
                              ))}
                         </SelectContent>
