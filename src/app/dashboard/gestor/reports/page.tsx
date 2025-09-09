@@ -16,10 +16,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { generatePdfReport } from "@/lib/report-generator";
-import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
 
 interface Career {
   id: string;
@@ -87,20 +85,12 @@ export default function ReportsPage() {
     fetchFiltersData();
   }, [fetchFiltersData]);
 
-  // Memoized filtered groups based on selected career
   const filteredGroups = useMemo(() => {
     if (careerFilter === 'all') {
       return [];
     }
-    
-    let groups = allGroups.filter(group => group.idCarrera === careerFilter);
-
-    if (reportType === 'enrollment_list') {
-        groups = groups.filter(group => group.estudiantes && group.estudiantes.length > 0);
-    }
-    
-    return groups;
-  }, [allGroups, careerFilter, reportType]);
+    return allGroups.filter(group => group.idCarrera === careerFilter);
+  }, [allGroups, careerFilter]);
 
 
   const handleGenerateReport = async (groupId: string = "all") => {
@@ -109,8 +99,8 @@ export default function ReportsPage() {
         return;
     }
 
-    if (reportType === 'enrollment_list' && careerFilter === 'all') {
-        toast({ variant: "destructive", title: "Filtro Requerido", description: "Para este reporte, es obligatorio seleccionar una carrera." });
+    if (reportType === 'enrollment_list' && careerFilter === 'all' && groupId === 'all') {
+        toast({ variant: "destructive", title: "Filtro Requerido", description: "Para el listado de alumnos, debes seleccionar una carrera." });
         return;
     }
 
@@ -208,18 +198,16 @@ export default function ReportsPage() {
                                         <span>{group.estudiantes?.length || 0} Estudiantes</span>
                                     </div>
                                 </div>
-                                {reportType === 'enrollment_list' && (
-                                     <Button size="sm" variant="outline" onClick={() => handleGenerateReport(group.id)} disabled={isGenerating}>
-                                        <Download className="mr-2 h-4 w-4"/>
-                                        Reporte
-                                    </Button>
-                                )}
+                                <Button size="sm" variant="outline" onClick={() => handleGenerateReport(group.id)} disabled={isGenerating}>
+                                    <Download className="mr-2 h-4 w-4"/>
+                                    Reporte
+                                </Button>
                             </CardContent>
                         </Card>
                     ))}
                 </div>
             ) : (
-                <p className="text-sm text-muted-foreground">No se encontraron grupos para la carrera y el tipo de reporte seleccionados.</p>
+                <p className="text-sm text-muted-foreground">No se encontraron grupos para la carrera seleccionada.</p>
             )}
         </div>
       </div>
