@@ -212,9 +212,6 @@ export default function DashboardLayout({
  const teacherMenuItems = [
     { href: "/dashboard/docente", label: "Panel", icon: LayoutDashboard },
     { href: "/dashboard/docente/cursos", label: "Mis Cursos", icon: BookCopy },
-    { href: "/dashboard/docente/grupos", label: "Mis Grupos", icon: Users },
-    { href: "/dashboard/docente/notas", label: "Registro de Notas", icon: ClipboardCheck },
-    { href: "/dashboard/docente/asistencia", label: "Asistencias", icon: UserCheck },
     { href: "/dashboard/horarios", label: "Horario", icon: Calendar },
     { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
     { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },

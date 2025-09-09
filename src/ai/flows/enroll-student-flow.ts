@@ -9,7 +9,7 @@
  */
 
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, updateDoc, query, where, getDocs, writeBatch, serverTimestamp, addDoc, Timestamp } from "firebase/firestore";
+import { collection, doc, getDoc, updateDoc, query, where, getDocs, writeBatch, serverTimestamp, addDoc, Timestamp, arrayUnion } from "firebase/firestore";
 import { sendWelcomeEmail } from './send-welcome-email';
 import bcrypt from "bcryptjs";
 
@@ -120,6 +120,33 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
         const temporaryPassword = studentData.initialPassword; 
         const hashedPassword = await bcrypt.hash(temporaryPassword, 10);
         
+        // --- START: Auto-assign student to groups ---
+        const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+        let assignedGroup = studentData.grupo; // The pre-selected group from registration
+
+        if (!assignedGroup || assignedGroup === 'PENDIENTE') {
+            const q = query(
+                groupsRef,
+                where("idCarrera", "==", studentData.carreraId),
+                where("idSede", "==", studentData.sedeId),
+                where("ciclo", "==", startCycle)
+            );
+            const groupsSnapshot = await getDocs(q);
+            if (!groupsSnapshot.empty) {
+                // Assign to the first available group found
+                const firstGroup = groupsSnapshot.docs[0];
+                assignedGroup = firstGroup.id;
+                
+                const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", assignedGroup);
+                batch.update(groupRef, {
+                    estudiantes: arrayUnion({ id: studentId, nombre: userData.nombreCompleto })
+                });
+            } else {
+                 console.warn(`No se encontró un grupo para el estudiante ${studentId} en la carrera ${studentData.carreraId} y sede ${studentData.sedeId}.`);
+            }
+        }
+        // --- END: Auto-assign student to groups ---
+        
         // Handle invoice generation
         const cyclePrice = careerData.precioPorCiclo?.[startCycle];
         const paymentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
@@ -163,6 +190,7 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
             correoInstitucional: institutionalEmail,
             fechaActualizacion: serverTimestamp(),
             initialPassword: null, 
+            grupo: assignedGroup, // Update the group in student's record
         });
         
         batch.update(userRef, {

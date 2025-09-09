@@ -86,7 +86,7 @@ export default function TeacherDashboardPage() {
             <CardContent className="flex items-center justify-between">
                 <div className="text-5xl font-bold text-primary">{teacherData.pendingTasks}</div>
                     <Button asChild>
-                    <Link href="/dashboard/docente/notas">
+                    <Link href="/dashboard/docente/cursos">
                         Ir a Calificar
                     </Link>
                 </Button>
@@ -121,19 +121,19 @@ export default function TeacherDashboardPage() {
       
        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Button variant="outline" size="lg" className="h-auto py-6 flex-col gap-2" asChild>
-                <Link href="/dashboard/docente/grupos">
+                <Link href="/dashboard/docente/cursos">
                     <Users className="h-8 w-8 text-primary"/>
-                    <span className="font-semibold text-base">Mis Grupos</span>
+                    <span className="font-semibold text-base">Mis Cursos</span>
                 </Link>
             </Button>
             <Button variant="outline" size="lg" className="h-auto py-6 flex-col gap-2" asChild>
-                <Link href="/dashboard/docente/notas">
+                <Link href="/dashboard/docente/cursos">
                     <Edit className="h-8 w-8 text-primary"/>
                     <span className="font-semibold text-base">Registro de Notas</span>
                 </Link>
             </Button>
             <Button variant="outline" size="lg" className="h-auto py-6 flex-col gap-2" asChild>
-                <Link href="/dashboard/docente/asistencia">
+                <Link href="/dashboard/docente/cursos">
                     <UserCheck className="h-8 w-8 text-primary"/>
                     <span className="font-semibold text-base">Control de Asistencia</span>
                 </Link>
