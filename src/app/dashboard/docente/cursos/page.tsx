@@ -1,5 +1,3 @@
-
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -77,6 +75,10 @@ export default function MyCoursesPage() {
                 const courseId = `${groupDoc.id}-${slot.materiaId}`;
 
                 if (!teacherCourses.find(c => c.id === courseId)) {
+                    // Fetch the full group document again to ensure we have the latest student count
+                    const currentGroupDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", groupDoc.id));
+                    const currentGroupData = currentGroupDoc.data();
+
                     teacherCourses.push({
                         id: courseId,
                         subjectId: slot.materiaId,
@@ -85,7 +87,7 @@ export default function MyCoursesPage() {
                         groupCode: groupData.codigoGrupo,
                         careerName: careerName,
                         sedeName: sedeName,
-                        totalStudents: groupData.estudiantes?.length || 0,
+                        totalStudents: currentGroupData?.estudiantes?.length || 0,
                         schedule: `${slot.dia} ${slot.hora}`,
                         modalidad: slot.modalidad,
                     });
