@@ -201,7 +201,7 @@ export default function AnnouncementsPage() {
                                             <SelectGroup>
                                                 <SelectLabel>Por Grupo</SelectLabel>
                                                  {groups.map(group => (
-                                                    <SelectItem key={group.id} value={`Grupo: ${group.codigoGrupo}`}>
+                                                    <SelectItem key={group.id} value={`Grupo: ${group.id}-${group.codigoGrupo}`}>
                                                         Grupo: {group.codigoGrupo}
                                                     </SelectItem>
                                                 ))}
