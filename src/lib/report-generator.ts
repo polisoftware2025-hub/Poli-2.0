@@ -2,7 +2,7 @@
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { db } from './firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 
 interface ReportConfig {
     reportType: string;
