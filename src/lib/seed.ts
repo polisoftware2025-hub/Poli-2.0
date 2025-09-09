@@ -14,7 +14,7 @@ const createSlug = (name: string) => {
 
 export const carreraData = {
   nombre: "Tecnología en Comercio Exterior y Negocios Internacionales",
-  slug: "tecnologia-en-comercio-exterior-y-negocios-internacionales",
+  slug: "comercio_exterior",
   duracionCiclo: "9 Ciclos",
   modalidad: "Virtual / Presencial",
   descripcionGeneral: "Gestiona los procesos de importación definitiva (para consumo, con franquicia, en cumplimiento de garantía y reimportaciones) de productos al país, a partir de la planificación logística de sus operaciones, integrando y adecuando documentos, costos, medios de pago y requisitos conformes con la normatividad vigente en Colombia, con el fin de generar procesos rentables y eficientes.",
@@ -44,7 +44,7 @@ export const carreraData = {
 const gruposData = [
     {
         codigoGrupo: "C1-MB-001",
-        idCarrera: "tecnologia-en-comercio-exterior-y-negocios-internacionales",
+        idCarrera: "comercio_exterior",
         idSede: "sede-norte",
         ciclo: 1,
         materia: { id: "c1-mb", nombre: "Matemática Básica" },
@@ -75,7 +75,7 @@ const gruposData = [
     },
     {
         codigoGrupo: "C1-CA-002",
-        idCarrera: "tecnologia-en-comercio-exterior-y-negocios-internacionales",
+        idCarrera: "comercio_exterior",
         idSede: "sede-73",
         ciclo: 1,
         materia: { id: "c1-ca", nombre: "Clasificación Arancelaria" },
@@ -243,7 +243,7 @@ export async function seedInitialUsers() {
                 usuarioId: userData.id,
                 nombreCompleto: finalUserData.nombreCompleto,
                 documento: finalUserData.identificacion,
-                carreraId: createSlug(carreraData.nombre),
+                carreraId: carreraData.slug,
                 modalidad: "Virtual",
                 grupo: "PENDIENTE",
                 correoInstitucional: userData.correoInstitucional,
@@ -331,3 +331,4 @@ export async function seedSedesYSalones() {
     }
 }
 
+    
