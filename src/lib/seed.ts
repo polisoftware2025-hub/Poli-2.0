@@ -48,27 +48,26 @@ const gruposData = [
         idSede: "sede-norte",
         ciclo: 1,
         materia: { id: "c1-mb", nombre: "Matemática Básica" },
-        docente: { id: "docente01", nombre: "Ana Pérez", usuarioId: "user01", email: "docente@example.com" },
+        docente: { id: "docente01", nombre: "Docente User", usuarioId: "docente01", email: "docente@example.com" },
         modalidad: "Virtual",
         franjaHoraria: "Nocturna",
         estado: "activo",
         estudiantes: [
-            { id: "est001", nombre: "Juan Perez" },
-            { id: "est002", nombre: "Maria Lopez" },
+            { id: "est001", nombre: "Estudiante User" } // Ensure the test student is here
         ],
         horario: [ 
             { 
               id: "h1-c1-mb-001",
               dia: "Lunes", hora: "18:00 - 20:00", duracion: 2, 
               materiaId: "c1-mb", materiaNombre: "Matemática Básica",
-              docenteId: "docente01", docenteNombre: "Ana Pérez",
+              docenteId: "docente01", docenteNombre: "Docente User",
               modalidad: "Virtual"
             },
             { 
               id: "h2-c1-mb-001",
               dia: "Miércoles", hora: "18:00 - 20:00", duracion: 2, 
               materiaId: "c1-mb", materiaNombre: "Matemática Básica",
-              docenteId: "docente01", docenteNombre: "Ana Pérez",
+              docenteId: "docente01", docenteNombre: "Docente User",
               modalidad: "Virtual"
             }
         ]
@@ -83,9 +82,7 @@ const gruposData = [
         modalidad: "Presencial",
         franjaHoraria: "Diurna",
         estado: "activo",
-        estudiantes: [
-             { id: "est001", nombre: "Juan Perez" },
-        ],
+        estudiantes: [], // This group starts empty for testing purposes
         horario: [
             { 
               id: "h1-c1-ca-002",
@@ -138,25 +135,9 @@ export async function seedGrupos() {
                 const newGroupRef = doc(gruposRef);
                 batch.set(newGroupRef, grupo);
             } else {
-                // El grupo ya existe, verificamos si necesita actualización
                 const groupDoc = querySnapshot.docs[0];
-                const groupData = groupDoc.data();
-                
-                const updates: { [key: string]: any } = {};
-                
-                // Actualizar si no tiene 'estado'
-                if (!groupData.estado) {
-                   updates.estado = grupo.estado;
-                }
-                
-                // Actualizar si no tiene 'horario'
-                if (!groupData.horario) {
-                    updates.horario = grupo.horario;
-                }
-
-                if (Object.keys(updates).length > 0) {
-                    batch.update(groupDoc.ref, updates);
-                }
+                // El grupo ya existe, lo actualizamos para asegurar que los datos de prueba son consistentes
+                batch.update(groupDoc.ref, grupo);
             }
         }
         
@@ -197,6 +178,14 @@ export async function seedInitialUsers() {
       correoInstitucional: "docente@example.com",
       rol: { id: "docente", descripcion: "Docente" },
       contrasena: "Docente123.",
+      // Asignar grupo al docente
+      asignaciones: [
+        {
+          carreraId: "comercio_exterior",
+          grupoId: "C1-MB-001", // This ID is not the document ID, it's the codigoGrupo
+          sedeId: "sede-norte",
+        }
+      ]
     },
     {
       id: "est001",
@@ -212,28 +201,44 @@ export async function seedInitialUsers() {
     const batch = writeBatch(db);
     const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
     const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+    const gruposRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+
 
     const existingUsersSnapshot = await getDocs(usersRef);
     const existingEmails = new Set(
       existingUsersSnapshot.docs.map((doc) => doc.data().correoInstitucional)
     );
 
+    // Find the actual document ID of the group C1-MB-001
+    const groupQuery = query(gruposRef, where("codigoGrupo", "==", "C1-MB-001"));
+    const groupSnapshot = await getDocs(groupQuery);
+    const groupDocId = groupSnapshot.empty ? null : groupSnapshot.docs[0].id;
+
+
     for (const userData of testUsers) {
       if (!existingEmails.has(userData.correoInstitucional)) {
         const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
 
         const userDocRef = doc(usersRef, userData.id);
+        const { contrasena, asignaciones, ...userDataToSave } = userData;
+        
         const finalUserData: any = {
+          ...userDataToSave,
           nombreCompleto: `${userData.nombre1} ${userData.apellido1}`,
-          nombre1: userData.nombre1,
-          apellido1: userData.apellido1,
           identificacion: `ID-${userData.id}`,
-          correoInstitucional: userData.correoInstitucional,
-          rol: userData.rol,
           contrasena: hashedPassword,
           estado: "activo",
           fechaRegistro: Timestamp.fromDate(new Date()),
         };
+
+        if (userData.rol.id === 'docente' && groupDocId) {
+            finalUserData.asignaciones = [{
+                carreraId: "comercio_exterior",
+                grupoId: groupDocId,
+                sedeId: "sede-norte"
+            }];
+        }
+
         batch.set(userDocRef, finalUserData);
 
         if (userData.rol.id === 'estudiante') {
@@ -244,8 +249,9 @@ export async function seedInitialUsers() {
                 nombreCompleto: finalUserData.nombreCompleto,
                 documento: finalUserData.identificacion,
                 carreraId: carreraData.slug,
+                sedeId: "sede-norte",
                 modalidad: "Virtual",
-                grupo: "PENDIENTE",
+                grupo: groupDocId, // Assign to the correct group doc ID
                 correoInstitucional: userData.correoInstitucional,
                 cicloActual: 1,
                 materiasInscritas: assignedSubjects,
@@ -274,6 +280,7 @@ export async function seedInitialUsers() {
     return { success: false, message: errorMessage };
   }
 }
+
 
 export async function seedSedesYSalones() {
     const sedes = [
@@ -330,5 +337,3 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
-
-    
