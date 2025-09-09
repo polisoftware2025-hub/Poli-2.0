@@ -136,14 +136,17 @@ export async function processStudentEnrollment(input: ProcessStudentEnrollmentIn
                 // Assign to the first available group found
                 const firstGroup = groupsSnapshot.docs[0];
                 assignedGroup = firstGroup.id;
-                
-                const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", assignedGroup);
-                batch.update(groupRef, {
-                    estudiantes: arrayUnion({ id: studentId, nombre: userData.nombreCompleto })
-                });
             } else {
                  console.warn(`No se encontró un grupo para el estudiante ${studentId} en la carrera ${studentData.carreraId} y sede ${studentData.sedeId}.`);
             }
+        }
+        
+        // Ensure student is added to the assigned group
+        if (assignedGroup && assignedGroup !== 'PENDIENTE') {
+            const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", assignedGroup);
+            batch.update(groupRef, {
+                estudiantes: arrayUnion({ id: studentId, nombre: userData.nombreCompleto })
+            });
         }
         // --- END: Auto-assign student to groups ---
         
