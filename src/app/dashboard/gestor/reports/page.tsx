@@ -65,6 +65,12 @@ export default function ReportsPage() {
         toast({ variant: "destructive", title: "Selección requerida", description: "Por favor, selecciona un tipo de reporte." });
         return;
     }
+
+    if (reportType === 'enrollment_list' && careerFilter === 'all') {
+        toast({ variant: "destructive", title: "Filtro Requerido", description: "Para este reporte, es obligatorio seleccionar una carrera." });
+        return;
+    }
+
     setIsGenerating(true);
     toast({ title: "Generando Reporte", description: "Tu reporte se está procesando y la descarga comenzará en breve." });
     
@@ -111,7 +117,7 @@ export default function ReportsPage() {
                     <SelectContent>
                         <SelectItem value="academic_performance">Rendimiento Académico por Carrera</SelectItem>
                         <SelectItem value="enrollment_list">Listado de Alumnos Matriculados</SelectItem>
-                        <SelectItem value="dropout_report">Reporte de Deserción Escolar (Simulado)</SelectItem>
+                        <SelectItem value="dropout_report">Reporte de Deserción Escolar</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
