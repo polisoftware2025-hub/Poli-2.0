@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
@@ -45,7 +46,8 @@ interface AuditLog {
 
 export default function GradeManagementPage() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [students, setStudents] = useState<User[]>([]);
+  const [allStudents, setAllStudents] = useState<User[]>([]);
+  const [filteredStudents, setFilteredStudents] = useState<User[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<User | null>(null);
   const [studentSubjects, setStudentSubjects] = useState<Subject[]>([]);
   const [studentGrades, setStudentGrades] = useState<Grade[]>([]);
@@ -53,61 +55,56 @@ export default function GradeManagementPage() {
   const [newGrade, setNewGrade] = useState("");
   const [reason, setReason] = useState("");
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [isLoading, setIsLoading] = useState({ search: false, subjects: false, submit: false, logs: true });
+  const [isLoading, setIsLoading] = useState({ search: true, subjects: false, submit: false, logs: true });
   const { toast } = useToast();
   const [gestorEmail, setGestorEmail] = useState("gestor@example.com");
 
   useEffect(() => {
     const email = localStorage.getItem('userEmail');
     if (email) setGestorEmail(email);
-    fetchAuditLogs();
-  }, []);
 
-  const fetchAuditLogs = async () => {
-      setIsLoading(prev => ({...prev, logs: true}));
-      try {
-          const logsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/auditoria_notas");
-          const logsSnapshot = await getDocs(query(logsRef, where("date", "!=", null)));
-          const fetchedLogs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
-          fetchedLogs.sort((a, b) => b.date.toMillis() - a.date.toMillis());
-          setAuditLogs(fetchedLogs);
-      } catch (error) {
-          toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los registros de auditoría." });
-      } finally {
-          setIsLoading(prev => ({...prev, logs: false}));
-      }
-  };
+    const fetchInitialData = async () => {
+        setIsLoading(prev => ({...prev, search: true, logs: true}));
+        try {
+            // Fetch all students once
+            const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+            const q = query(usersRef, where("rol.id", "==", "estudiante"));
+            const studentsSnapshot = await getDocs(q);
+            setAllStudents(studentsSnapshot.docs.map(doc => ({ id: doc.id, nombreCompleto: doc.data().nombreCompleto })));
+
+            // Fetch audit logs
+            const logsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/auditoria_notas");
+            const logsSnapshot = await getDocs(query(logsRef, where("date", "!=", null)));
+            const fetchedLogs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
+            fetchedLogs.sort((a, b) => b.date.toMillis() - a.date.toMillis());
+            setAuditLogs(fetchedLogs);
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos iniciales." });
+        } finally {
+            setIsLoading(prev => ({...prev, search: false, logs: false}));
+        }
+    };
+    
+    fetchInitialData();
+  }, [toast]);
+
 
   useEffect(() => {
-    if (searchTerm.length < 3) {
-      setStudents([]);
-      return;
-    }
-
-    const searchStudents = async () => {
-      setIsLoading(prev => ({...prev, search: true}));
-      const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
-      const q = query(usersRef, 
-        where("rol.id", "==", "estudiante"),
-        where("nombreCompleto", ">=", searchTerm),
-        where("nombreCompleto", "<=", searchTerm + '\uf8ff')
+    if (searchTerm.length > 0) {
+      setFilteredStudents(
+        allStudents.filter(student =>
+          student.nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase())
+        )
       );
-      const querySnapshot = await getDocs(q);
-      setStudents(querySnapshot.docs.map(doc => ({ id: doc.id, nombreCompleto: doc.data().nombreCompleto })));
-      setIsLoading(prev => ({...prev, search: false}));
-    };
+    } else {
+      setFilteredStudents([]);
+    }
+  }, [searchTerm, allStudents]);
 
-    const debounce = setTimeout(searchStudents, 500);
-    return () => clearTimeout(debounce);
-  }, [searchTerm]);
-
-  const handleSelectStudent = async (studentId: string) => {
-    const student = students.find(s => s.id === studentId);
-    if (!student) return;
-
+  const handleSelectStudent = async (student: User) => {
     setSelectedStudent(student);
     setSearchTerm(student.nombreCompleto);
-    setStudents([]);
+    setFilteredStudents([]);
     setIsLoading(prev => ({...prev, subjects: true}));
 
     try {
@@ -163,7 +160,13 @@ export default function GradeManagementPage() {
         });
         
         toast({ title: "Éxito", description: "La nota se ha actualizado correctamente." });
-        fetchAuditLogs(); // Refresh logs
+        
+        // Refresh audit logs
+        const logsSnapshot = await getDocs(query(logsRef, where("date", "!=", null)));
+        const fetchedLogs = logsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
+        fetchedLogs.sort((a, b) => b.date.toMillis() - a.date.toMillis());
+        setAuditLogs(fetchedLogs);
+
         // Reset form
         setSelectedStudent(null);
         setSearchTerm("");
@@ -201,17 +204,18 @@ export default function GradeManagementPage() {
                         <Label htmlFor="student-search">Buscar Estudiante</Label>
                         <Input 
                             id="student-search" 
-                            placeholder="Nombre del estudiante..." 
+                            placeholder="Escribe para buscar..." 
                             value={searchTerm}
                             onChange={e => {
                                 setSearchTerm(e.target.value);
                                 setSelectedStudent(null);
                             }}
+                            disabled={isLoading.search}
                         />
-                        {students.length > 0 && (
+                        {filteredStudents.length > 0 && (
                             <div className="absolute z-10 w-full bg-card border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto">
-                                {students.map(student => (
-                                    <div key={student.id} onClick={() => handleSelectStudent(student.id)} className="p-2 hover:bg-muted cursor-pointer">
+                                {filteredStudents.map(student => (
+                                    <div key={student.id} onClick={() => handleSelectStudent(student)} className="p-2 hover:bg-muted cursor-pointer">
                                         {student.nombreCompleto}
                                     </div>
                                 ))}
@@ -249,7 +253,7 @@ export default function GradeManagementPage() {
                         <Label htmlFor="reason">Motivo de la Corrección</Label>
                         <Textarea id="reason" placeholder="Describe brevemente el motivo del cambio..." value={reason} onChange={e => setReason(e.target.value)} disabled={currentGrade === undefined}/>
                      </div>
-                     <Button className="w-full" onClick={handleSubmit} disabled={isLoading.submit}>
+                     <Button className="w-full" onClick={handleSubmit} disabled={isLoading.submit || !selectedStudent || !newGrade || !reason}>
                         <Edit className="mr-2 h-4 w-4" />
                         {isLoading.submit ? "Guardando..." : "Guardar Corrección"}
                      </Button>
@@ -285,7 +289,7 @@ export default function GradeManagementPage() {
                                         <TableCell colSpan={5}><Skeleton className="h-8 w-full"/></TableCell>
                                     </TableRow>
                                 ))
-                            ) : (
+                            ) : auditLogs.length > 0 ? (
                                 auditLogs.map(log => (
                                 <TableRow key={log.id}>
                                     <TableCell>
@@ -302,12 +306,13 @@ export default function GradeManagementPage() {
                                     <TableCell className="text-xs">{log.date.toDate().toLocaleDateString('es-ES')}</TableCell>
                                 </TableRow>
                                 ))
+                            ) : (
+                               <TableRow>
+                                  <TableCell colSpan={5} className="text-center h-24">No hay registros de auditoría.</TableCell>
+                               </TableRow>
                             )}
                         </TableBody>
                     </Table>
-                    {!isLoading.logs && auditLogs.length === 0 && (
-                        <p className="text-center text-muted-foreground py-6">No hay registros de auditoría.</p>
-                    )}
                 </CardContent>
              </Card>
         </div>
