@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { DollarSign, Search, Filter, MoreHorizontal, Eye, CheckCircle, Bell, TrendingUp, AlertCircle, FileText, Check, X, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -10,74 +10,56 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, DocumentData, Timestamp, doc, updateDoc } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const invoices = [
-  {
-    id: "INV-001",
-    studentName: "Laura Gómez",
-    studentId: "est007",
-    program: "Ingeniería de Sistemas",
-    issueDate: "2024-08-01",
-    dueDate: "2024-08-31",
-    amount: 3500000,
-    status: "Pagado",
-    receiptUrl: "/receipts/rec-001.pdf"
-  },
-  {
-    id: "INV-002",
-    studentName: "David Martínez",
-    studentId: "est008",
-    program: "Administración de Empresas",
-    issueDate: "2024-08-01",
-    dueDate: "2024-08-31",
-    status: "Pendiente de Validación",
-    amount: 3200000,
-    receiptUrl: "/receipts/rec-002.pdf"
-  },
-  {
-    id: "INV-003",
-    studentName: "Sofia Castro",
-    studentId: "est009",
-    program: "Mercadeo y Publicidad",
-    issueDate: "2024-07-15",
-    dueDate: "2024-08-15",
-    status: "Vencido",
-    amount: 3000000,
-    receiptUrl: null
-  },
-  {
-    id: "INV-004",
-    studentName: "Mateo Vargas",
-    studentId: "est010",
-    program: "Contaduría Pública",
-    issueDate: "2024-08-05",
-    dueDate: "2024-09-05",
-    status: "Pendiente",
-    amount: 2800000,
-    receiptUrl: null
-  },
-];
+interface Invoice {
+  id: string;
+  idEstudiante: string;
+  nombreEstudiante?: string;
+  carreraNombre?: string;
+  ciclo: number;
+  monto: number;
+  estado: "pendiente" | "pagado" | "vencido" | "pendiente-validacion" | "rechazado";
+  fechaGeneracion: Timestamp;
+  fechaMaximaPago: Timestamp;
+  comprobanteURL?: string;
+}
 
-const getInitials = (name: string) => {
+
+const getInitials = (name: string = "") => {
   const names = name.split(' ');
   if (names.length > 1) {
     return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
   }
-  return name.substring(0, 2).toUpperCase();
+  return name ? name.substring(0, 2).toUpperCase() : 'U';
 }
 
 const statusBadgeVariant: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
-  "Pendiente": "outline",
-  "Pagado": "secondary",
-  "Vencido": "destructive",
-  "Pendiente de Validación": "default",
+  "pendiente": "outline",
+  "pagado": "secondary",
+  "vencido": "destructive",
+  "pendiente-validacion": "default",
+  "rechazado": "destructive"
+};
+
+const statusText: { [key: string]: string } = {
+    "pendiente": "Pendiente",
+    "pagado": "Pagado",
+    "vencido": "Vencido",
+    "pendiente-validacion": "Pendiente de Validación",
+    "rechazado": "Rechazado",
+};
+
+const statusColors: { [key: string]: string } = {
+    "pendiente": "bg-yellow-100 text-yellow-800",
+    "pagado": "bg-green-100 text-green-800",
+    "vencido": "bg-red-100 text-red-800",
+    "rechazado": "bg-red-200 text-red-900",
+    "pendiente-validacion": "bg-blue-100 text-blue-800",
 };
 
 const formatCurrency = (value: number) => {
@@ -90,8 +72,89 @@ const formatCurrency = (value: number) => {
 
 
 export default function PaymentsReviewPage() {
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const [filter, setFilter] = useState("all");
-  const [selectedInvoice, setSelectedInvoice] = useState(invoices[1]); // Default to one with receipt
+  const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
+
+  const fetchInvoices = async () => {
+      setIsLoading(true);
+      try {
+          const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+          const usersSnapshot = await getDocs(usersRef);
+          const userMap = new Map<string, string>();
+          usersSnapshot.forEach(doc => userMap.set(doc.id, doc.data().nombreCompleto || 'N/A'));
+          
+          const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+          const careersSnapshot = await getDocs(careersRef);
+          const careerMap = new Map<string, string>();
+          careersSnapshot.forEach(doc => careerMap.set(doc.id, doc.data().nombre || 'N/A'));
+
+          const invoicesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
+          let q = query(invoicesRef);
+          if (filter !== "all") {
+              q = query(invoicesRef, where("estado", "==", filter));
+          }
+          const invoicesSnapshot = await getDocs(q);
+
+          const fetchedInvoices = invoicesSnapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                  id: doc.id,
+                  ...data,
+                  nombreEstudiante: userMap.get(data.idEstudiante) || 'Estudiante Desconocido',
+                  carreraNombre: careerMap.get(data.carreraId) || 'Carrera no asignada'
+              } as Invoice;
+          });
+          
+          fetchedInvoices.sort((a,b) => b.fechaGeneracion.toMillis() - a.fechaGeneracion.toMillis());
+          setInvoices(fetchedInvoices);
+          if (fetchedInvoices.length > 0) {
+              setSelectedInvoice(fetchedInvoices[0]);
+          }
+
+      } catch (error) {
+          console.error("Error fetching invoices:", error);
+      } finally {
+          setIsLoading(false);
+      }
+  };
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [filter]);
+  
+  const handleUpdateStatus = async (invoiceId: string, newStatus: "pagado" | "rechazado") => {
+      setIsActionLoading(true);
+      try {
+          const invoiceRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos", invoiceId);
+          await updateDoc(invoiceRef, { 
+              estado: newStatus,
+              ...(newStatus === "pagado" && { fechaPago: Timestamp.now() })
+           });
+          toast({ title: "Éxito", description: `La factura ha sido marcada como ${statusText[newStatus]}.` });
+          fetchInvoices(); // Refresh list
+      } catch (error) {
+          console.error("Error updating invoice status:", error);
+          toast({ variant: "destructive", title: "Error", description: "No se pudo actualizar la factura." });
+      } finally {
+          setIsActionLoading(false);
+      }
+  };
+  
+  const filteredInvoices = useMemo(() => {
+    return invoices.filter(invoice => {
+        const term = searchTerm.toLowerCase();
+        return (
+            invoice.nombreEstudiante?.toLowerCase().includes(term) ||
+            invoice.id.toLowerCase().includes(term)
+        );
+    });
+  }, [invoices, searchTerm]);
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -114,7 +177,7 @@ export default function PaymentsReviewPage() {
             <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <div className="relative flex-grow">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                    <Input placeholder="Buscar por estudiante o ID de factura..." className="pl-9" />
+                    <Input placeholder="Buscar por estudiante o ID de factura..." className="pl-9" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                 </div>
                 <Select value={filter} onValueChange={setFilter}>
                 <SelectTrigger className="w-full sm:w-56">
@@ -123,10 +186,11 @@ export default function PaymentsReviewPage() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="Pagado">Pagado</SelectItem>
-                    <SelectItem value="Pendiente de Validación">Pendiente de Validación</SelectItem>
-                    <SelectItem value="Pendiente">Pendiente</SelectItem>
-                    <SelectItem value="Vencido">Vencido</SelectItem>
+                    <SelectItem value="pagado">Pagado</SelectItem>
+                    <SelectItem value="pendiente-validacion">Pendiente de Validación</SelectItem>
+                    <SelectItem value="pendiente">Pendiente</SelectItem>
+                    <SelectItem value="vencido">Vencido</SelectItem>
+                    <SelectItem value="rechazado">Rechazado</SelectItem>
                 </SelectContent>
                 </Select>
                  <Button variant="outline">
@@ -146,32 +210,34 @@ export default function PaymentsReviewPage() {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {invoices.map((invoice) => (
+                    {isLoading ? (
+                        Array.from({length: 4}).map((_, i) => (
+                           <TableRow key={i}>
+                             <TableCell colSpan={5}><Skeleton className="h-10 w-full"/></TableCell>
+                           </TableRow>
+                        ))
+                    ) : filteredInvoices.map((invoice) => (
                     <TableRow key={invoice.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedInvoice(invoice)}>
                         <TableCell>
                         <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
-                            <AvatarFallback>{getInitials(invoice.studentName)}</AvatarFallback>
+                            <AvatarFallback>{getInitials(invoice.nombreEstudiante)}</AvatarFallback>
                             </Avatar>
                             <div>
-                            <p className="font-medium">{invoice.studentName}</p>
-                            <p className="text-sm text-muted-foreground">{invoice.program}</p>
+                            <p className="font-medium">{invoice.nombreEstudiante}</p>
+                            <p className="text-sm text-muted-foreground">{invoice.carreraNombre}</p>
                             </div>
                         </div>
                         </TableCell>
                         <TableCell className="font-mono text-xs">{invoice.id}</TableCell>
                         <TableCell>
-                        {new Date(invoice.dueDate).toLocaleDateString('es-ES', {
+                        {invoice.fechaMaximaPago.toDate().toLocaleDateString('es-ES', {
                             year: 'numeric', month: 'long', day: 'numeric'
                         })}
                         </TableCell>
                         <TableCell className="text-center">
-                        <Badge variant={statusBadgeVariant[invoice.status]} className={
-                            invoice.status === 'Pagado' ? 'bg-green-100 text-green-800' :
-                            invoice.status === 'Pendiente de Validación' ? 'bg-blue-100 text-blue-800' :
-                            invoice.status === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-800'
-                        }>
-                            {invoice.status}
+                        <Badge variant={statusBadgeVariant[invoice.estado]} className={statusColors[invoice.estado]}>
+                            {statusText[invoice.estado] || "N/A"}
                         </Badge>
                         </TableCell>
                         <TableCell className="text-right">
@@ -183,71 +249,68 @@ export default function PaymentsReviewPage() {
                     ))}
                 </TableBody>
                 </Table>
+                 {filteredInvoices.length === 0 && !isLoading && (
+                    <p className="text-center py-8 text-muted-foreground">No se encontraron facturas con los filtros actuales.</p>
+                )}
             </div>
             </CardContent>
         </Card>
         </div>
 
-        <div className="lg:col-span-1 flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Detalle de Factura</CardTitle>
-                    <CardDescription>{selectedInvoice.id}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Estudiante:</span>
-                        <span className="font-semibold">{selectedInvoice.studentName}</span>
-                    </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Monto:</span>
-                        <span className="font-semibold">{formatCurrency(selectedInvoice.amount)}</span>
-                    </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Fecha Venc.:</span>
-                        <span className="font-semibold">{new Date(selectedInvoice.dueDate).toLocaleDateString('es-ES')}</span>
-                    </div>
-                     <div className="flex justify-between items-center">
-                        <span className="text-muted-foreground">Estado:</span>
-                        <Badge variant={statusBadgeVariant[selectedInvoice.status]}>{selectedInvoice.status}</Badge>
-                    </div>
-
-                    {selectedInvoice.receiptUrl && (
-                        <>
-                        <Button variant="outline" className="w-full">
-                            <Download className="mr-2 h-4 w-4"/>
-                            Descargar Recibo
-                        </Button>
-                        <div className="flex gap-2 pt-2">
-                           <Button variant="destructive" className="w-full"><X className="mr-2 h-4 w-4"/> Rechazar</Button>
-                           <Button className="w-full bg-green-600 hover:bg-green-700"><Check className="mr-2 h-4 w-4"/> Aprobar</Button>
+        <div className="lg:col-span-1 flex flex-col gap-6 sticky top-20">
+             {selectedInvoice ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Detalle de Factura</CardTitle>
+                        <CardDescription>{selectedInvoice.id}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Estudiante:</span>
+                            <span className="font-semibold text-right">{selectedInvoice.nombreEstudiante}</span>
                         </div>
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Monto:</span>
+                            <span className="font-semibold">{formatCurrency(selectedInvoice.monto)}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Fecha Venc.:</span>
+                            <span className="font-semibold">{selectedInvoice.fechaMaximaPago.toDate().toLocaleDateString('es-ES')}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Estado:</span>
+                            <Badge variant={statusBadgeVariant[selectedInvoice.estado]} className={statusColors[selectedInvoice.estado]}>{statusText[selectedInvoice.estado]}</Badge>
+                        </div>
 
-             <Card>
-                <CardHeader>
-                    <CardTitle>Últimos Pagos Validados</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <ul className="space-y-3 text-sm">
-                       <li className="flex justify-between">
-                           <span>Carlos Rivas</span>
-                           <Badge variant="secondary">Aprobado</Badge>
-                       </li>
-                        <li className="flex justify-between">
-                           <span>Ana Martínez</span>
-                           <Badge variant="secondary">Aprobado</Badge>
-                       </li>
-                       <li className="flex justify-between">
-                           <span>Pedro Vargas</span>
-                           <Badge variant="destructive">Rechazado</Badge>
-                       </li>
-                    </ul>
-                </CardContent>
-             </Card>
+                        {selectedInvoice.comprobanteURL ? (
+                             <Button asChild variant="outline" className="w-full">
+                                <a href={selectedInvoice.comprobanteURL} target="_blank" rel="noopener noreferrer">
+                                    <Download className="mr-2 h-4 w-4"/>
+                                    Descargar Recibo
+                                </a>
+                             </Button>
+                        ) : <p className="text-xs text-center text-muted-foreground pt-2">No se ha adjuntado un comprobante de pago.</p>}
+
+                        {selectedInvoice.estado === 'pendiente-validacion' && (
+                            <div className="flex gap-2 pt-2">
+                               <Button variant="destructive" className="w-full" onClick={() => handleUpdateStatus(selectedInvoice!.id, 'rechazado')} disabled={isActionLoading}>
+                                   <X className="mr-2 h-4 w-4"/> {isActionLoading ? "Rechazando..." : "Rechazar"}
+                               </Button>
+                               <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => handleUpdateStatus(selectedInvoice!.id, 'pagado')} disabled={isActionLoading}>
+                                   <Check className="mr-2 h-4 w-4"/> {isActionLoading ? "Aprobando..." : "Aprobar"}
+                               </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+             ) : (
+                <Card>
+                    <CardContent className="p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
+                        <DollarSign className="h-12 w-12 mb-4"/>
+                        <p>Selecciona una factura de la lista para ver sus detalles y realizar acciones.</p>
+                    </CardContent>
+                </Card>
+             )}
         </div>
       </div>
 
