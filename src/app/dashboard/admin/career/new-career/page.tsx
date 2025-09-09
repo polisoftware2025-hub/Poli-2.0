@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -27,6 +26,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 interface Materia {
+  id?: string;
   nombre: string;
   codigo?: string;
   creditos: number;
@@ -70,8 +70,9 @@ export default function NewProgramPage() {
   const router = useRouter();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [currentCycleIndex, setCurrentCycleIndex] = useState<number | null>(null);
+  const [editingMateria, setEditingMateria] = useState<{ materia: Materia; cycleIndex: number; materiaIndex: number } | null>(null);
   const [newMateria, setNewMateria] = useState<Materia>({ nombre: "", codigo: "", creditos: 0 });
+  const [currentCycleIndex, setCurrentCycleIndex] = useState<number | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -146,15 +147,32 @@ export default function NewProgramPage() {
       }
   };
 
-  const handleAddMateria = () => {
-    if (currentCycleIndex !== null) {
-      const updatedCiclos = [...programDetails.ciclos];
-      updatedCiclos[currentCycleIndex].materias.push(newMateria);
-      setProgramDetails({ ...programDetails, ciclos: updatedCiclos });
-      setNewMateria({ nombre: "", codigo: "", creditos: 0 });
-      setIsDialogOpen(false);
-      setCurrentCycleIndex(null);
+    const openAddMateriaDialog = (cycleIndex: number) => {
+        setCurrentCycleIndex(cycleIndex);
+        setEditingMateria(null);
+        setNewMateria({ nombre: "", codigo: "", creditos: 0 });
+        setIsDialogOpen(true);
+    };
+
+    const openEditMateriaDialog = (materia: Materia, cycleIndex: number, materiaIndex: number) => {
+        setEditingMateria({ materia, cycleIndex, materiaIndex });
+        setNewMateria({ ...materia });
+        setIsDialogOpen(true);
+    };
+
+  const handleSaveMateria = () => {
+    const updatedCiclos = [...programDetails.ciclos];
+    if (editingMateria) {
+      const { cycleIndex, materiaIndex } = editingMateria;
+      updatedCiclos[cycleIndex].materias[materiaIndex] = newMateria;
+    } else if (currentCycleIndex !== null) {
+      updatedCiclos[currentCycleIndex].materias.push({ ...newMateria, id: crypto.randomUUID() });
     }
+
+    setProgramDetails({ ...programDetails, ciclos: updatedCiclos });
+    setIsDialogOpen(false);
+    setEditingMateria(null);
+    setCurrentCycleIndex(null);
   };
 
   const handleRemoveMateria = (cycleIndex: number, materiaIndex: number) => {
@@ -267,13 +285,16 @@ export default function NewProgramPage() {
                     <h4 className="font-semibold mb-2">Materias</h4>
                     <ul className="space-y-3">
                         {ciclo.materias.map((materia, materiaIndex) => (
-                        <li key={materia.codigo || materia.nombre} className="flex justify-between items-center text-gray-700 p-3 rounded-md bg-gray-50 border">
+                        <li key={materia.id || materiaIndex} className="flex justify-between items-center text-gray-700 p-3 rounded-md bg-gray-50 border">
                             <div>
                                 <span className="font-medium">{materia.nombre}</span>
                                 <span className="text-sm text-muted-foreground ml-2">({materia.codigo || 'N/A'})</span>
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full">{materia.creditos} créditos</span>
+                                 <Button variant="outline" size="icon" className="h-8 w-8" type="button" onClick={() => openEditMateriaDialog(materia, cycleIndex, materiaIndex)}>
+                                    <Edit className="h-4 w-4"/>
+                                </Button>
                                 <Button variant="destructive" size="icon" className="h-8 w-8" type="button" onClick={() => handleRemoveMateria(cycleIndex, materiaIndex)}>
                                     <Trash2 className="h-4 w-4"/>
                                 </Button>
@@ -282,37 +303,10 @@ export default function NewProgramPage() {
                         ))}
                     </ul>
 
-                    <Dialog open={isDialogOpen && currentCycleIndex === cycleIndex} onOpenChange={(isOpen) => { if(!isOpen) setCurrentCycleIndex(null); setIsDialogOpen(isOpen); }}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" type="button" onClick={() => { setCurrentCycleIndex(cycleIndex); setIsDialogOpen(true); }}>
-                                <Plus className="mr-2 h-4 w-4"/>
-                                Agregar Materia
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Agregar Nueva Materia al Ciclo {ciclo.numero}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div>
-                                    <Label htmlFor="subjectName">Nombre de la Materia</Label>
-                                    <Input id="subjectName" placeholder="Ej: Cálculo Integral" value={newMateria.nombre} onChange={(e) => setNewMateria({...newMateria, nombre: e.target.value})}/>
-                                </div>
-                                <div>
-                                    <Label htmlFor="subjectCode">Código</Label>
-                                    <Input id="subjectCode" placeholder="Ej: MAT-102" value={newMateria.codigo} onChange={(e) => setNewMateria({...newMateria, codigo: e.target.value})}/>
-                                </div>
-                                <div>
-                                    <Label htmlFor="subjectCredits">Créditos</Label>
-                                    <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                                <Button type="button" onClick={handleAddMateria}>Guardar Materia</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                    <Button variant="outline" type="button" onClick={() => openAddMateriaDialog(cycleIndex)}>
+                        <Plus className="mr-2 h-4 w-4"/>
+                        Agregar Materia
+                    </Button>
 
                     <Separator className="my-6"/>
 
@@ -350,6 +344,31 @@ export default function NewProgramPage() {
         </CardFooter>
       </Card>
 
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{editingMateria ? 'Editar Materia' : 'Agregar Nueva Materia'}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <div>
+                        <Label htmlFor="subjectName">Nombre de la Materia</Label>
+                        <Input id="subjectName" placeholder="Ej: Cálculo Integral" value={newMateria.nombre} onChange={(e) => setNewMateria({...newMateria, nombre: e.target.value})}/>
+                    </div>
+                    <div>
+                        <Label htmlFor="subjectCode">Código</Label>
+                        <Input id="subjectCode" placeholder="Ej: MAT-102" value={newMateria.codigo} onChange={(e) => setNewMateria({...newMateria, codigo: e.target.value})}/>
+                    </div>
+                    <div>
+                        <Label htmlFor="subjectCredits">Créditos</Label>
+                        <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
+                    <Button type="button" onClick={handleSaveMateria}>Guardar Materia</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </form>
   );
 }
