@@ -10,7 +10,7 @@ interface ReportConfig {
     groupId: string;
     generatedBy: string;
     careers: { id: string; nombre: string }[];
-    groups: { id: string; codigoGrupo: string }[];
+    groups: { id: string; codigoGrupo: string, estudiantes: any[] }[];
 }
 
 interface jsPDFWithAutoTable extends jsPDF {
