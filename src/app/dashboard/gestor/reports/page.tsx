@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { FileText, Download } from "lucide-react";
+import { FileText, Download, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +27,15 @@ interface Career {
 interface Group {
   id: string;
   codigoGrupo: string;
-  idCarrera: string; // Important for filtering
+  idCarrera: string;
+  idSede: string;
+  sedeNombre?: string;
+  estudiantes?: any[];
+}
+
+interface Sede {
+    id: string;
+    nombre: string;
 }
 
 export default function ReportsPage() {
@@ -37,7 +45,8 @@ export default function ReportsPage() {
   const [format, setFormat] = useState("pdf");
 
   const [careers, setCareers] = useState<Career[]>([]);
-  const [allGroups, setAllGroups] = useState<Group[]>([]); // Store all groups
+  const [allGroups, setAllGroups] = useState<Group[]>([]);
+  const [sedes, setSedes] = useState<Sede[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -48,8 +57,24 @@ export default function ReportsPage() {
       const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
       setCareers(careersSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre })));
 
+      const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
+      const sedesData = sedesSnapshot.docs.map(doc => ({ id: doc.id, nombre: doc.data().nombre }));
+      setSedes(sedesData);
+      const sedesMap = new Map(sedesData.map(s => [s.id, s.nombre]));
+
       const groupsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
-      setAllGroups(groupsSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo, idCarrera: doc.data().idCarrera })));
+      setAllGroups(groupsSnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+              id: doc.id,
+              codigoGrupo: data.codigoGrupo,
+              idCarrera: data.idCarrera,
+              idSede: data.idSede,
+              sedeNombre: sedesMap.get(data.idSede) || "Sede Desconocida",
+              estudiantes: data.estudiantes || []
+          };
+      }));
+
     } catch (error) {
       console.error("Error fetching filters data:", error);
       toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los filtros." });
@@ -64,11 +89,18 @@ export default function ReportsPage() {
 
   // Memoized filtered groups based on selected career
   const filteredGroups = useMemo(() => {
-    if (careerFilter === 'all') {
-      return allGroups; // Show all groups if no career is selected
+    let groups = allGroups;
+
+    if (reportType === 'enrollment_list') {
+        groups = groups.filter(group => group.estudiantes && group.estudiantes.length > 0);
     }
-    return allGroups.filter(group => group.idCarrera === careerFilter);
-  }, [allGroups, careerFilter]);
+
+    if (careerFilter === 'all') {
+      return groups;
+    }
+    
+    return groups.filter(group => group.idCarrera === careerFilter);
+  }, [allGroups, careerFilter, reportType]);
 
   const handleCareerChange = (value: string) => {
     setCareerFilter(value);
@@ -97,7 +129,7 @@ export default function ReportsPage() {
             groupId: groupFilter,
             generatedBy: gestorName,
             careers, 
-            groups: allGroups // Pass all groups to the generator
+            groups: allGroups
         });
     } catch (error) {
         console.error("Error generating report: ", error);
@@ -156,12 +188,27 @@ export default function ReportsPage() {
                     <Label htmlFor="filter-group">Filtrar por Grupo</Label>
                     <Select value={groupFilter} onValueChange={setGroupFilter} disabled={isLoading || filteredGroups.length === 0}>
                         <SelectTrigger id="filter-group">
-                            <SelectValue placeholder="Todos los grupos" />
+                            <SelectValue placeholder={careerFilter === 'all' && reportType !== 'enrollment_list' ? "Selecciona una carrera primero" : "Todos los grupos"} />
                         </SelectTrigger>
                         <SelectContent>
                              <SelectItem value="all">Todos los grupos</SelectItem>
                              {filteredGroups.map(group => (
-                                 <SelectItem key={group.id} value={group.id}>{group.codigoGrupo}</SelectItem>
+                                 <SelectItem key={group.id} value={group.id}>
+                                     <div className="flex items-center justify-between w-full">
+                                         <div className="flex flex-col text-left">
+                                             <span>{group.codigoGrupo}</span>
+                                             <span className="text-xs text-muted-foreground">{group.sedeNombre}</span>
+                                         </div>
+                                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                             <Users className="h-3 w-3"/>
+                                             <span>{group.estudiantes?.length || 0}</span>
+                                             <div className={cn(
+                                                 "h-2 w-2 rounded-full",
+                                                 (group.estudiantes?.length || 0) > 0 ? "bg-green-500" : "bg-gray-400"
+                                             )}/>
+                                         </div>
+                                     </div>
+                                 </SelectItem>
                              ))}
                         </SelectContent>
                     </Select>
