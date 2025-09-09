@@ -125,7 +125,7 @@ export default function DashboardLayout({
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
                     if(data.estado === "pendiente") {
-                      const fechaRegistro = data.fechaRegistro?.toDate ? data.fechaRegistro.toDate() : data.fechaRegistro;
+                      const fechaRegistro = data.fechaRegistro?.toDate ? data.fechaRegistro.toDate() : null;
                       fetchedNotifications.push({
                           id: doc.id,
                           title: "Nueva solicitud de preinscripción",
@@ -144,13 +144,13 @@ export default function DashboardLayout({
                      const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", noteData.grupoId);
                      const groupSnap = await getDoc(groupRef);
                      const subjectName = groupSnap.exists() ? groupSnap.data().materia.nombre : 'una materia';
-                     const fechaNota = noteData.fecha?.toDate ? noteData.fecha.toDate() : new Date();
+                     const fechaNota = noteData.fecha?.toDate ? noteData.fecha.toDate() : null;
                      
                      fetchedNotifications.push({
                          id: noteDoc.id,
                          title: "Nueva Calificación Disponible",
                          description: `Se ha publicado tu nota para ${subjectName}.`,
-                         time: formatDistanceToNow(fechaNota, { addSuffix: true, locale: es }),
+                         time: fechaNota ? formatDistanceToNow(fechaNota, { addSuffix: true, locale: es }) : "Hace un momento",
                          read: false
                      });
                  }
