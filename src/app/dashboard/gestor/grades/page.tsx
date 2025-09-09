@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Edit, ClipboardList, Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -112,27 +112,27 @@ export default function GradeManagementPage() {
     try {
         const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", student.id);
         const studentSnap = await getDoc(studentRef);
+
         if (studentSnap.exists()) {
             const studentData = studentSnap.data();
-            const materiasInscritas = studentData.materiasInscritas || [];
+            const materiasInscritas = (studentData.materiasInscritas || []).map((m: any) => ({
+                id: m.id,
+                nombre: m.nombre,
+                // Assign the student's main group ID to each subject for now.
+                // This assumes a student is in one group per cycle.
+                // A more complex system might have a group per subject.
+                grupoId: studentData.grupo, 
+            }));
 
-            // Find the group associated with the student
-            const groupsQuery = query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"), where("estudiantes", "array-contains", { id: student.id, nombre: student.nombreCompleto }));
-            const groupsSnapshot = await getDocs(groupsQuery);
-            
-            const enrichedSubjects = materiasInscritas.map((materia: Subject) => {
-                const group = groupsSnapshot.docs.find(doc => doc.data().materia.id === materia.id);
-                return { ...materia, grupoId: group?.id };
-            });
+            setStudentSubjects(materiasInscritas);
 
-            setStudentSubjects(enrichedSubjects);
+            const gradesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
+            const gradesQuery = query(gradesRef, where("estudianteId", "==", student.id));
+            const gradesSnapshot = await getDocs(gradesQuery);
+            setStudentGrades(gradesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Grade)));
+        } else {
+           toast({ variant: "destructive", title: "Error", description: "No se encontró el registro académico del estudiante." });
         }
-
-        const gradesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
-        const gradesQuery = query(gradesRef, where("estudianteId", "==", student.id));
-        const gradesSnapshot = await getDocs(gradesQuery);
-        setStudentGrades(gradesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Grade)));
-
     } catch (error) {
         toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos del estudiante." });
     } finally {
@@ -144,9 +144,11 @@ export default function GradeManagementPage() {
       if (!selectedSubjectId || !studentSubjects.length || !studentGrades.length) return null;
       
       const subjectInfo = studentSubjects.find(s => s.id === selectedSubjectId);
-      if (!subjectInfo || !subjectInfo.grupoId) return null;
+      if (!subjectInfo) return null;
 
+      // Now, find the grade by matching the student's main group ID.
       const gradeInfo = studentGrades.find(g => g.grupoId === subjectInfo.grupoId);
+      
       return gradeInfo?.nota;
   }, [selectedSubjectId, studentSubjects, studentGrades]);
   
@@ -234,6 +236,9 @@ export default function GradeManagementPage() {
                             onChange={e => {
                                 setSearchTerm(e.target.value);
                                 setSelectedStudent(null);
+                                setSelectedSubjectId("");
+                                setNewGrade("");
+                                setReason("");
                             }}
                             disabled={isLoading.search}
                         />
