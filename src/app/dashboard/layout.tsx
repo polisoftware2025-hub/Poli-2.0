@@ -68,7 +68,7 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, limit, orderBy } from "firebase/firestore";
+import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -118,17 +118,21 @@ export default function DashboardLayout({
         try {
             if (userRole === 'admin' || userRole === 'gestor') {
                 const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
-                const q = query(studentsRef, where("estado", "==", "pendiente"), orderBy("fechaRegistro", "desc"), limit(5));
+                // Simplified query to avoid composite index. Filter client-side.
+                const q = query(studentsRef, orderBy("fechaRegistro", "desc"), limit(20));
                 const querySnapshot = await getDocs(q);
+                
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
-                    fetchedNotifications.push({
-                        id: doc.id,
-                        title: "Nueva solicitud de preinscripción",
-                        description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
-                        time: formatDistanceToNow(data.fechaRegistro.toDate(), { addSuffix: true, locale: es }),
-                        read: false
-                    });
+                    if(data.estado === "pendiente") {
+                      fetchedNotifications.push({
+                          id: doc.id,
+                          title: "Nueva solicitud de preinscripción",
+                          description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
+                          time: formatDistanceToNow(data.fechaRegistro.toDate(), { addSuffix: true, locale: es }),
+                          read: false
+                      });
+                    }
                 });
             } else if (userRole === 'estudiante') {
                  const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
@@ -149,7 +153,8 @@ export default function DashboardLayout({
                      });
                  }
             }
-            setNotifications(fetchedNotifications);
+            // In a real app, we might want to cap the number of notifications after client-side filtering.
+            setNotifications(fetchedNotifications.slice(0, 5));
         } catch (error) {
             console.error("Error fetching notifications:", error);
         } finally {
