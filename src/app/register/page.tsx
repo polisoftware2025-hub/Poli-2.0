@@ -32,7 +32,8 @@ import {
   EyeOff,
   School,
   Clock,
-  Laptop
+  Laptop,
+  Users as UsersIcon
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
@@ -82,6 +83,7 @@ const step3Schema = z.object({
     carreraId: z.string().min(1, "Selecciona una carrera."),
     modalidad: z.string().min(1, "Selecciona una modalidad."),
     jornada: z.string().min(1, "Selecciona una jornada."),
+    grupo: z.string().min(1, "Selecciona un grupo."),
 });
 
 const step4Schema = z.object({
@@ -106,14 +108,14 @@ type AllStepsData = z.infer<typeof allStepsSchema>;
 const steps = [
     { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
     { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
-    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "modalidad", "jornada"] as Path<AllStepsData>[] },
+    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "modalidad", "jornada", "grupo"] as Path<AllStepsData>[] },
     { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
     { number: 5, title: "Confirmación", icon: CheckCircle, schema: z.object({}), fields: [] },
 ];
 
 const LOCAL_STORAGE_KEY = 'registrationFormData';
 
-const defaultFormValues: Omit<AllStepsData, "grupo"> = {
+const defaultFormValues: AllStepsData = {
     firstName: "",
     segundoNombre: "",
     lastName: "",
@@ -121,7 +123,7 @@ const defaultFormValues: Omit<AllStepsData, "grupo"> = {
     tipoIdentificacion: "",
     numeroIdentificacion: "",
     gender: "",
-    birthDate: undefined,
+    birthDate: undefined as any, // Needs to be undefined for placeholder to work
     phone: "",
     address: "",
     country: "",
@@ -131,6 +133,7 @@ const defaultFormValues: Omit<AllStepsData, "grupo"> = {
     carreraId: "",
     modalidad: "",
     jornada: "",
+    grupo: "",
     password: "",
     confirmPassword: "",
 };
@@ -145,7 +148,7 @@ export default function RegisterPage() {
   const methods = useForm<AllStepsData>({
     resolver: zodResolver(allStepsSchema),
     mode: "onTouched",
-    defaultValues: defaultFormValues as AllStepsData,
+    defaultValues: defaultFormValues,
   });
 
   const { handleSubmit, formState: { isSubmitting }, watch, reset, trigger } = methods;
@@ -211,13 +214,10 @@ export default function RegisterPage() {
   
   const processSubmit = async (data: AllStepsData) => {
       try {
-        // The 'grupo' field is no longer part of the form, so we create a placeholder
-        const dataToSend = { ...data, grupo: 'PENDIENTE' };
-
         const response = await fetch('/api/register-user', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(dataToSend),
+          body: JSON.stringify(data),
         });
 
         const responseData = await response.json();
@@ -558,14 +558,20 @@ interface Sede {
     id: string;
     nombre: string;
 }
+interface Grupo {
+    id: string;
+    codigoGrupo: string;
+}
 
 const Step3 = () => {
-    const { control } = useFormContext();
+    const { control, setValue } = useFormContext();
     const [sedes, setSedes] = useState<Sede[]>([]);
     const [carreras, setCarreras] = useState<Carrera[]>([]);
-    const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true });
+    const [grupos, setGrupos] = useState<Grupo[]>([]);
+    const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false });
 
     const selectedSede = useWatch({ control, name: "sedeId" });
+    const selectedCarrera = useWatch({ control, name: "carreraId" });
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -585,13 +591,39 @@ const Step3 = () => {
         fetchInitialData();
     }, []);
 
+    useEffect(() => {
+        if (!selectedSede || !selectedCarrera) {
+            setGrupos([]);
+            return;
+        }
+
+        const fetchGrupos = async () => {
+            setIsLoading(prev => ({ ...prev, grupos: true }));
+            try {
+                const q = query(
+                    collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
+                    where("idSede", "==", selectedSede),
+                    where("idCarrera", "==", selectedCarrera)
+                );
+                const gruposSnapshot = await getDocs(q);
+                setGrupos(gruposSnapshot.docs.map(doc => ({ id: doc.id, codigoGrupo: doc.data().codigoGrupo })));
+            } catch (error) {
+                console.error("Error fetching grupos:", error);
+            } finally {
+                setIsLoading(prev => ({ ...prev, grupos: false }));
+            }
+        };
+        
+        fetchGrupos();
+    }, [selectedSede, selectedCarrera]);
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField control={control} name="sedeId" render={({ field }) => (
             <FormItem>
                 <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.sedes}>
+                <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", "", { shouldValidate: true }); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.sedes}>
                 <FormControl>
                     <SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger>
                 </FormControl>
@@ -604,7 +636,7 @@ const Step3 = () => {
         <FormField control={control} name="carreraId" render={({ field }) => (
             <FormItem>
                 <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
+                <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
                 <FormControl>
                     <SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger>
                 </FormControl>
@@ -647,6 +679,24 @@ const Step3 = () => {
             </FormItem>
             )}
         />
+         <FormField control={control} name="grupo" render={({ field }) => (
+            <FormItem className="md:col-span-2">
+                <FormLabel>Grupo <span className="text-destructive">*</span></FormLabel>
+                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
+                    <FormControl>
+                        <SelectTrigger><div className="flex items-center gap-2"><UsersIcon className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} /></div></SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {grupos.length > 0 ? (
+                            grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)
+                        ) : (
+                            <SelectItem value="no-groups" disabled>No hay grupos disponibles</SelectItem>
+                        )}
+                    </SelectContent>
+                 </Select>
+                <FormMessage />
+            </FormItem>
+         )} />
       </div>
     </div>
   );
