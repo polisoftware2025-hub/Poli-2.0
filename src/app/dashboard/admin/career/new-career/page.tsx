@@ -4,7 +4,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookOpen, User, CheckCircle, Plus, Trash2, Edit, Upload, DollarSign } from "lucide-react";
+import { BookOpen, User, CheckCircle, Plus, Trash2, Edit, Upload, DollarSign, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,10 +20,14 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface Materia {
   id?: string;
@@ -33,6 +37,7 @@ interface Materia {
 }
 interface Ciclo {
   numero: number;
+  nombre?: string;
   materias: Materia[];
 }
 interface Career {
@@ -58,7 +63,7 @@ const initialProgram: Career = {
     modalidad: "Presencial / Virtual",
     titulo: "",
     ciclos: [
-      { numero: 1, materias: [] }
+      { numero: 1, nombre: "Ciclo 1", materias: [] }
     ],
     precioPorCiclo: { "1": 0 }
 };
@@ -73,10 +78,18 @@ export default function NewProgramPage() {
   const [editingMateria, setEditingMateria] = useState<{ materia: Materia; cycleIndex: number; materiaIndex: number } | null>(null);
   const [newMateria, setNewMateria] = useState<Materia>({ nombre: "", codigo: "", creditos: 0 });
   const [currentCycleIndex, setCurrentCycleIndex] = useState<number | null>(null);
+  const [currentCycleCredits, setCurrentCycleCredits] = useState(0);
+
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setProgramDetails(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleCycleNameChange = (cycleIndex: number, newName: string) => {
+    const updatedCiclos = [...programDetails.ciclos];
+    updatedCiclos[cycleIndex].nombre = newName;
+    setProgramDetails({ ...programDetails, ciclos: updatedCiclos });
   };
 
   const handlePriceChange = (cycleNumber: number, value: string) => {
@@ -89,6 +102,7 @@ export default function NewProgramPage() {
   const createSlug = (name: string) => {
     return name
       .toLowerCase()
+      .replace(/ñ/g, 'n')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)+/g, '');
   };
@@ -99,6 +113,7 @@ export default function NewProgramPage() {
         const newCycleNumber = lastCycle ? lastCycle.numero + 1 : 1;
         const newCycle = {
             numero: newCycleNumber,
+            nombre: `Ciclo ${newCycleNumber}`,
             materias: []
         };
         const newPrecios = { ...prevDetails.precioPorCiclo, [newCycleNumber]: 0 };
@@ -151,16 +166,40 @@ export default function NewProgramPage() {
         setCurrentCycleIndex(cycleIndex);
         setEditingMateria(null);
         setNewMateria({ nombre: "", codigo: "", creditos: 0 });
+        setCurrentCycleCredits(programDetails.ciclos[cycleIndex].materias.reduce((acc, m) => acc + m.creditos, 0));
         setIsDialogOpen(true);
     };
 
     const openEditMateriaDialog = (materia: Materia, cycleIndex: number, materiaIndex: number) => {
         setEditingMateria({ materia, cycleIndex, materiaIndex });
         setNewMateria({ ...materia });
+        const currentCredits = programDetails.ciclos[cycleIndex].materias.reduce((acc, m) => acc + m.creditos, 0);
+        setCurrentCycleCredits(currentCredits - materia.creditos);
         setIsDialogOpen(true);
     };
 
   const handleSaveMateria = () => {
+    // --- Validation 1: Unique Code ---
+    const allCodes = programDetails.ciclos.flatMap(c => c.materias.map(m => m.codigo));
+    const isCodeDuplicate = allCodes.some((code, index) => {
+        const isCurrentMateria = editingMateria ? 
+            programDetails.ciclos[editingMateria.cycleIndex].materias[editingMateria.materiaIndex].codigo === code : false;
+        return code === newMateria.codigo && !isCurrentMateria;
+    });
+
+    if (newMateria.codigo && isCodeDuplicate) {
+        toast({ variant: "destructive", title: "Código duplicado", description: "El código de materia ya está registrado. Ingrese un código único." });
+        return;
+    }
+
+    // --- Validation 2: Credit Limit ---
+    const finalCycleCredits = currentCycleCredits + (Number(newMateria.creditos) || 0);
+    if (finalCycleCredits > 10) {
+        toast({ variant: "destructive", title: "Límite de créditos excedido", description: "El ciclo solo puede tener un total de 10 créditos." });
+        return;
+    }
+
+
     const updatedCiclos = [...programDetails.ciclos];
     if (editingMateria) {
       const { cycleIndex, materiaIndex } = editingMateria;
@@ -262,11 +301,27 @@ export default function NewProgramPage() {
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full" defaultValue="ciclo-1">
-            {programDetails.ciclos.map((ciclo, cycleIndex) => (
+            {programDetails.ciclos.map((ciclo, cycleIndex) => {
+              const totalCredits = ciclo.materias.reduce((sum, m) => sum + m.creditos, 0);
+              return (
               <AccordionItem value={`ciclo-${ciclo.numero}`} key={ciclo.numero}>
                 <div className="flex items-center w-full">
                     <AccordionTrigger className="text-lg font-semibold hover:no-underline flex-grow">
-                        Ciclo {ciclo.numero}
+                        <div className="flex items-center gap-2">
+                           Ciclo {ciclo.numero}
+                           {totalCredits !== 10 && (
+                               <TooltipProvider>
+                                   <Tooltip>
+                                       <TooltipTrigger asChild>
+                                          <AlertTriangle className="h-5 w-5 text-yellow-500"/>
+                                       </TooltipTrigger>
+                                       <TooltipContent>
+                                           <p>Este ciclo tiene {totalCredits} créditos. Debe tener exactamente 10.</p>
+                                       </TooltipContent>
+                                   </Tooltip>
+                               </TooltipProvider>
+                           )}
+                        </div>
                     </AccordionTrigger>
                     <Button
                       variant="ghost"
@@ -282,6 +337,14 @@ export default function NewProgramPage() {
                     </Button>
                   </div>
                 <AccordionContent className="space-y-4">
+                    <div>
+                        <Label>Nombre del Ciclo</Label>
+                        <Input 
+                            value={ciclo.nombre || `Ciclo ${ciclo.numero}`} 
+                            onChange={(e) => handleCycleNameChange(cycleIndex, e.target.value)}
+                            placeholder="Ej: Fundamentación"
+                        />
+                    </div>
                     <h4 className="font-semibold mb-2">Materias</h4>
                     <ul className="space-y-3">
                         {ciclo.materias.map((materia, materiaIndex) => (
@@ -326,7 +389,7 @@ export default function NewProgramPage() {
                     </div>
                 </AccordionContent>
               </AccordionItem>
-            ))}
+            )})}
           </Accordion>
            <Button variant="secondary" className="mt-6" onClick={handleAddCycle} type="button">
                 <Plus className="mr-2 h-4 w-4"/>
@@ -348,6 +411,9 @@ export default function NewProgramPage() {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>{editingMateria ? 'Editar Materia' : 'Agregar Nueva Materia'}</DialogTitle>
+                    <DialogDescription>
+                        Los cambios se reflejarán después de guardar la carrera.
+                    </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div>
@@ -363,9 +429,17 @@ export default function NewProgramPage() {
                         <Input id="subjectCredits" type="number" placeholder="Ej: 3" value={newMateria.creditos} onChange={(e) => setNewMateria({...newMateria, creditos: parseInt(e.target.value) || 0})}/>
                     </div>
                 </div>
+                 <div className={cn(
+                    "text-sm font-medium p-2 rounded-md",
+                    (currentCycleCredits + (Number(newMateria.creditos) || 0)) > 10 ? "bg-red-100 text-red-800" :
+                    (currentCycleCredits + (Number(newMateria.creditos) || 0)) === 10 ? "bg-green-100 text-green-800" :
+                    "bg-blue-100 text-blue-800"
+                )}>
+                   Créditos actuales del ciclo: {currentCycleCredits + (Number(newMateria.creditos) || 0)} / 10
+                </div>
                 <DialogFooter>
                     <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>Cancelar</Button>
-                    <Button type="button" onClick={handleSaveMateria}>Guardar Materia</Button>
+                    <Button type="button" onClick={handleSaveMateria} disabled={(currentCycleCredits + (Number(newMateria.creditos) || 0)) > 10}>Guardar Materia</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
