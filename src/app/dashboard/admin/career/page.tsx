@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye, AlertTriangle } from "lucide-react";
+import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye, AlertTriangle, Check } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { db } from "@/lib/firebase";
@@ -165,52 +171,56 @@ export default function CareerAdminPage() {
                         <CardTitle className="text-yellow-800">Auditoría de Créditos por Ciclo</CardTitle>
                     </div>
                     <CardDescription className="text-yellow-700">
-                        Se encontraron ciclos que no cumplen con la regla de 10 créditos exactos.
+                        Se encontraron carreras con ciclos que no cumplen con la regla de 10 créditos exactos.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Carrera</TableHead>
-                                <TableHead>Ciclo</TableHead>
-                                <TableHead>Créditos Actuales</TableHead>
-                                <TableHead>Estado</TableHead>
-                                <TableHead className="text-right">Acción</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {Array.from(groupedAuditFindings.entries()).map(([careerId, { careerName, findings }]) => (
-                                <React.Fragment key={careerId}>
-                                    {findings.map((finding, index) => (
-                                        <TableRow key={`${careerId}-${finding.cycleNumber}`} className="bg-white">
-                                            {index === 0 && (
-                                                <TableCell rowSpan={findings.length} className="font-medium align-middle border-r">
-                                                    {careerName}
-                                                </TableCell>
-                                            )}
-                                            <TableCell>Ciclo {finding.cycleNumber}</TableCell>
-                                            <TableCell>{finding.currentCredits}/10</TableCell>
-                                            <TableCell>
-                                                <Badge variant={finding.status === 'Excede' ? 'destructive' : 'outline'} className={finding.status === 'Incompleto' ? 'border-yellow-600 text-yellow-800' : ''}>
-                                                    <AlertTriangle className="mr-1 h-3 w-3" />
-                                                    {finding.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button asChild variant="outline" size="sm">
-                                                    <Link href={`/dashboard/admin/career/edit/${careerId}`}>
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Corregir
-                                                    </Link>
-                                                </Button>
-                                            </TableCell>
+                    <Accordion type="single" collapsible className="w-full">
+                       {Array.from(groupedAuditFindings.entries()).map(([careerId, { careerName, findings }]) => (
+                           <AccordionItem key={careerId} value={`career-${careerId}`}>
+                             <AccordionTrigger className="hover:no-underline">
+                                 <div className="flex items-center gap-4">
+                                     <span className="font-semibold text-base">{careerName}</span>
+                                     <Badge variant="destructive">{findings.length} ciclos con errores</Badge>
+                                 </div>
+                             </AccordionTrigger>
+                             <AccordionContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Ciclo</TableHead>
+                                            <TableHead>Créditos Actuales</TableHead>
+                                            <TableHead>Estado</TableHead>
+                                            <TableHead className="text-right">Acción</TableHead>
                                         </TableRow>
-                                    ))}
-                                </React.Fragment>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {findings.map(finding => (
+                                            <TableRow key={finding.cycleNumber}>
+                                                <TableCell className="font-medium">Ciclo {finding.cycleNumber}</TableCell>
+                                                <TableCell>{finding.currentCredits}/10</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={finding.status === 'Excede' ? 'destructive' : 'outline'} className={finding.status === 'Incompleto' ? 'border-yellow-600 text-yellow-800' : ''}>
+                                                        {finding.status === 'Excede' ? <X className="mr-1 h-3 w-3"/> : <AlertTriangle className="mr-1 h-3 w-3" />}
+                                                        {finding.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button asChild variant="outline" size="sm">
+                                                        <Link href={`/dashboard/admin/career/edit/${careerId}`}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Corregir
+                                                        </Link>
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                             </AccordionContent>
+                           </AccordionItem>
+                       ))}
+                    </Accordion>
                 </CardContent>
             </Card>
         )}
