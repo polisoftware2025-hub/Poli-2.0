@@ -114,6 +114,28 @@ export default function SchedulesAdminPage() {
         fetchInitialData();
     }, [fetchInitialData]);
 
+    const fetchAllSchedulesForSede = async (sedeId: string) => {
+        if (!sedeId) return [];
+        try {
+            const q = query(
+                collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
+                where("idSede", "==", sedeId)
+            );
+            const gruposSnapshot = await getDocs(q);
+            const allSedeGroups = gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group));
+            
+            const allSchedules = allSedeGroups.flatMap(g => {
+                const groupHorario = g.horario || [];
+                return groupHorario.map(h => ({ ...h, grupoCodigo: g.codigoGrupo, grupoId: g.id }));
+            });
+            setAllSedeSchedules(allSchedules);
+        } catch (error) {
+            console.error("Error fetching all sede schedules:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron refrescar los horarios para la detección de conflictos." });
+        }
+    };
+
+
     const handleSedeChange = (sedeId: string) => {
         setSelectedSede(sedeId);
         setSelectedCarrera("");
@@ -135,20 +157,14 @@ export default function SchedulesAdminPage() {
         try {
             const q = query(
                 collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
-                where("idSede", "==", selectedSede)
+                where("idSede", "==", selectedSede),
+                where("idCarrera", "==", carreraId)
             );
             const gruposSnapshot = await getDocs(q);
-            const allSedeGroups = gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group));
+            setGrupos(gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group)));
             
-            const groupsForSelectedCareer = allSedeGroups.filter(g => g.idCarrera === carreraId);
-            setGrupos(groupsForSelectedCareer);
-
-            const allSchedules = allSedeGroups.flatMap(g => {
-                const groupHorario = g.horario || [];
-                // Add group code to each entry for conflict checking if needed
-                return groupHorario.map(h => ({ ...h, grupoCodigo: g.codigoGrupo, grupoId: g.id }));
-            });
-            setAllSedeSchedules(allSchedules);
+            // Fetch all schedules for the current sede for conflict detection
+            await fetchAllSchedulesForSede(selectedSede);
             
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los grupos." });
@@ -164,21 +180,16 @@ export default function SchedulesAdminPage() {
 
     const onClassAssigned = useCallback(async () => {
         if (selectedGrupo) {
-            // Re-fetch only the updated group data
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", selectedGrupo.id);
             const grupoSnap = await getDoc(grupoRef);
             if (grupoSnap.exists()) {
                 const updatedGroupData = { id: grupoSnap.id, ...grupoSnap.data() } as Group;
                 setSelectedGrupo(updatedGroupData);
-                
-                // Update the group in the local list
                 setGrupos(prev => prev.map(g => g.id === updatedGroupData.id ? updatedGroupData : g));
-
-                // Re-fetch all schedules for the sede to keep conflict data fresh
-                handleCarreraChange(selectedCarrera);
+                await fetchAllSchedulesForSede(selectedSede);
             }
         }
-    }, [selectedGrupo, selectedCarrera]);
+    }, [selectedGrupo, selectedSede]);
 
     const handleOpenDialog = (entry: ScheduleEntry | null) => {
         setSelectedScheduleEntry(entry);
@@ -283,45 +294,42 @@ export default function SchedulesAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
-                        <div className="grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))]">
+                         <div className="grid" style={{ gridTemplateColumns: 'auto repeat(6, minmax(140px, 1fr))' }}>
+                            {/* Time Column Placeholder */}
+                            <div className="row-start-1 col-start-1"></div>
                             {/* Days Header */}
-                            <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
-                                {Object.keys(daysOfWeekMap).map(day => (
-                                    <div key={day} className="p-2 text-center font-semibold border-r last:border-r-0">
-                                        {day}
+                            {Object.keys(daysOfWeekMap).map(day => (
+                                <div key={day} className="p-2 text-center font-semibold border-b border-r">
+                                    {day}
+                                </div>
+                            ))}
+                            {/* Grid Body */}
+                            <div className="col-start-1 row-start-2 grid border-r" style={{ gridTemplateRows: `repeat(${allTimeSlots.length}, minmax(60px, 1fr))` }}>
+                                {/* Time Column */}
+                                {allTimeSlots.map(hour => (
+                                    <div key={hour} className="pr-2 text-right text-xs text-muted-foreground flex items-start justify-end pt-1 border-b">
+                                        {hour.toString().padStart(2, '0')}:00
                                     </div>
                                 ))}
                             </div>
-                             {/* Grid Body */}
-                            <div className="col-start-1 col-span-7 row-start-2 grid grid-cols-[auto_repeat(7,_1fr)]">
-                                {/* Time Column */}
-                                <div className="col-span-1 grid grid-rows-16 border-r">
-                                    {allTimeSlots.map(hour => (
-                                        <div key={hour} className="pr-2 text-right text-xs text-muted-foreground h-[60px] flex items-start justify-end pt-1 border-b">
-                                            {hour.toString().padStart(2, '0')}:00
-                                        </div>
-                                    ))}
-                                </div>
-                                {/* Schedule Grid */}
-                                <div className="col-span-6 grid grid-cols-6 grid-rows-16 relative">
-                                    {/* Grid background lines */}
-                                    {Array.from({ length: 16 * 6 }).map((_, i) => (
-                                        <div key={i} className="border-b border-r h-[60px]"></div>
-                                    ))}
-                                    {/* Schedule Entries */}
-                                    {(selectedGrupo.horario || []).map((entry, index) => (
-                                        <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
-                                            <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
-                                                <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
-                                                    <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
-                                                    <p className="text-gray-600">{entry.docenteNombre}</p>
-                                                    <div className="flex-grow"></div>
-                                                    <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                                </div>
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                            <div className="col-start-2 col-span-6 row-start-2 grid relative" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: `repeat(${allTimeSlots.length}, minmax(60px, 1fr))`}}>
+                                {/* Grid background lines */}
+                                {Array.from({ length: allTimeSlots.length * 6 }).map((_, i) => (
+                                    <div key={i} className="border-b border-r"></div>
+                                ))}
+                                {/* Schedule Entries */}
+                                {(selectedGrupo.horario || []).map((entry, index) => (
+                                    <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-full">
+                                        <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
+                                            <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
+                                                <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
+                                                <p className="text-gray-600">{entry.docenteNombre}</p>
+                                                <div className="flex-grow"></div>
+                                                <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                            </div>
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </CardContent>
@@ -390,26 +398,29 @@ function AssignClassDialog({
     
     const materiasDelCiclo = useMemo(() => {
         if (!carrera) return [];
-        return carrera.ciclos.find(c => c.numero === grupo.ciclo)?.materias || [];
+        const ciclo = carrera.ciclos.find(c => c.numero === grupo.ciclo);
+        return ciclo ? ciclo.materias : [];
     }, [carrera, grupo.ciclo]);
 
     useEffect(() => {
-        if(existingSchedule) {
-            setSelectedDia(existingSchedule.dia);
-            setSelectedHoraInicio(existingSchedule.hora.split(' - ')[0]);
-            setSelectedHoraFin(existingSchedule.hora.split(' - ')[1]);
-            setSelectedMateria(existingSchedule.materiaId);
-            setSelectedDocente(existingSchedule.docenteId);
-            setModalidad(existingSchedule.modalidad);
-            setSelectedSalon(existingSchedule.salonId || "");
-        } else {
-            setSelectedDia("");
-            setSelectedHoraInicio("");
-            setSelectedHoraFin("");
-            setSelectedMateria("");
-            setSelectedDocente("");
-            setModalidad("Presencial");
-            setSelectedSalon("");
+        if(open) {
+          if(existingSchedule) {
+              setSelectedDia(existingSchedule.dia);
+              setSelectedHoraInicio(existingSchedule.hora.split(' - ')[0]);
+              setSelectedHoraFin(existingSchedule.hora.split(' - ')[1]);
+              setSelectedMateria(existingSchedule.materiaId);
+              setSelectedDocente(existingSchedule.docenteId);
+              setModalidad(existingSchedule.modalidad);
+              setSelectedSalon(existingSchedule.salonId || "");
+          } else {
+              setSelectedDia("");
+              setSelectedHoraInicio("");
+              setSelectedHoraFin("");
+              setSelectedMateria("");
+              setSelectedDocente("");
+              setModalidad("Presencial");
+              setSelectedSalon("");
+          }
         }
     }, [existingSchedule, open]);
     
@@ -418,10 +429,10 @@ function AssignClassDialog({
     }, [selectedHoraInicio]);
     
     useEffect(() => {
-      if (!materiasDelCiclo.some(m => m.id === selectedMateria)) {
-          setSelectedMateria("");
+      if (carrera && !materiasDelCiclo.some(m => m.id === selectedMateria)) {
+        setSelectedMateria("");
       }
-    }, [materiasDelCiclo, selectedMateria]);
+    }, [carrera, materiasDelCiclo, selectedMateria]);
     
     const availableSalones = useMemo(() => {
         if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return salones;
@@ -557,7 +568,7 @@ function AssignClassDialog({
                     </div>
                     <div className="space-y-2 col-span-2">
                         <Label>Materia</Label>
-                        <Select value={selectedMateria} onValueChange={setSelectedMateria}><SelectTrigger><SelectValue placeholder="Selecciona una materia..." /></SelectTrigger><SelectContent>{materiasDelCiclo.map((m, i) => <SelectItem key={`${m.id}-${i}`} value={m.id}>{m.nombre}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedMateria} onValueChange={setSelectedMateria}><SelectTrigger><SelectValue placeholder="Selecciona una materia..." /></SelectTrigger><SelectContent>{materiasDelCiclo.map((m, i) => <SelectItem key={m.id + '-' + i} value={m.id}>{m.nombre}</SelectItem>)}</SelectContent></Select>
                     </div>
                     <div className="space-y-2 col-span-2">
                         <Label>Docente</Label>
