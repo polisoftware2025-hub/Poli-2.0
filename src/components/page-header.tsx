@@ -21,6 +21,11 @@ const truncateString = (str: string, num: number) => {
     return str.slice(0, num) + "...";
 };
 
+const isDynamicSegment = (segment: string) => {
+    // A simple heuristic: check if it's a long string with mixed chars, likely a Firestore ID.
+    return segment.length > 15 && /[a-zA-Z]/.test(segment) && /[0-9]/.test(segment);
+}
+
 
 const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart[] }) => {
   const pathname = usePathname();
@@ -66,11 +71,13 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
   // Dashboard breadcrumbs logic
   const homePath = getDashboardHomePath();
   const pathSegments = pathname.split('/').filter(Boolean);
-  const dashboardBaseIndex = pathSegments.findIndex(p => p === 'dashboard');
   
+  const dashboardBaseIndex = pathSegments.findIndex(p => p === 'dashboard');
   if (dashboardBaseIndex === -1) {
     return null; // Don't render breadcrumbs if not in a dashboard context
   }
+
+  const breadcrumbParts = pathSegments.slice(dashboardBaseIndex + 1).filter(p => p !== userRole);
 
   const getBreadcrumbName = (segment: string) => {
     const names: { [key: string]: string } = {
@@ -91,19 +98,12 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     if (names[segment]) {
         return names[segment];
     }
-    // Check if it's a dynamic ID (e.g., a long alphanumeric string) and return a generic name if so
-    if (segment.length > 20 && /[a-zA-Z]/.test(segment) && /[0-9]/.test(segment)) {
-        return "Detalle"; 
+    // If it's a dynamic segment (ID), don't display it. The parent function will handle filtering it out from links.
+    if (isDynamicSegment(segment)) {
+        return getBreadcrumbName(pathSegments[pathSegments.indexOf(segment) - 1] || segment) || segment; // Try to get name from parent
     }
     return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
-  
-  // Create breadcrumb parts from path segments
-  let breadcrumbParts = pathSegments.slice(dashboardBaseIndex + 1);
-  if (userRole) {
-      // Remove role from the display path
-      breadcrumbParts = breadcrumbParts.filter(p => p !== userRole);
-  }
 
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
@@ -111,8 +111,13 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
         <Home className="h-4 w-4" />
       </Link>
       {breadcrumbParts.map((segment, index) => {
-        const isLast = index === breadcrumbParts.length - 1;
-        const path = `/dashboard/${userRole}/${breadcrumbParts.slice(0, index + 1).join('/')}`;
+        if (isDynamicSegment(segment)) return null; // Don't render dynamic segments (IDs)
+
+        const isLast = index === breadcrumbParts.length - 1 || isDynamicSegment(breadcrumbParts[index + 1]);
+        
+        // Build the path by joining only non-dynamic segments up to the current one.
+        const pathArray = [userRole, ...breadcrumbParts.slice(0, index + 1).filter(p => !isDynamicSegment(p))];
+        const path = `/dashboard/${pathArray.join('/')}`;
         
         return (
           <React.Fragment key={path}>
