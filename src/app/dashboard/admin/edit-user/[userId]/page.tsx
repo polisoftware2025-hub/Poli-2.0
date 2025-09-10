@@ -55,7 +55,7 @@ type UserData = {
     tipoIdentificacion: string;
     identificacion: string;
     genero: string;
-    fechaNacimiento: Timestamp;
+    fechaNacimiento?: Timestamp;
     telefono: string;
     direccion: string;
     correo: string;
@@ -158,6 +158,14 @@ export default function EditUserPage() {
         </div>
     );
   }
+  
+  const birthDateValue = useMemo(() => {
+    if (userData?.fechaNacimiento && userData.fechaNacimiento.toDate) {
+      return format(userData.fechaNacimiento.toDate(), "PPP", { locale: es });
+    }
+    return "No disponible";
+  }, [userData]);
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -202,7 +210,7 @@ export default function EditUserPage() {
                         </div>
                         <div>
                             <Label>Fecha de Nacimiento</Label>
-                            <Input value={userData ? format(userData.fechaNacimiento.toDate(), "PPP", { locale: es }) : ""} disabled />
+                            <Input value={birthDateValue} disabled />
                         </div>
                          <FormField name="genero" render={({ field }) => (
                              <FormItem>
@@ -392,3 +400,6 @@ function AcademicInfoSection() {
         </section>
     );
 }
+
+
+    
