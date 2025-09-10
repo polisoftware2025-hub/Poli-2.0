@@ -169,7 +169,7 @@ export default function SchedulesAdminPage() {
         if (dayIndex === undefined) return {}; 
 
         const startTime = parseInt(entry.hora.split(':')[0]);
-        const startRow = startTime - 7; // Direct calculation: 7:00 -> 0, 8:00 -> 1, etc.
+        const startRow = startTime - 7;
         const duration = entry.duracion;
 
         if (startRow < 0 || startRow >= allTimeSlots.length) return {};
@@ -263,43 +263,43 @@ export default function SchedulesAdminPage() {
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
                         <div className="grid grid-cols-[auto_repeat(6,_1fr)] text-sm">
-                            {/* Days Header */}
-                            <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
-                                {Object.keys(daysOfWeekMap).map(day => (
-                                    <div key={day} className="p-2 text-center font-semibold border-r last:border-r-0">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-                            
                             {/* Time Column */}
-                            <div className="col-start-1 row-start-2 grid grid-rows-16 border-r">
+                            <div className="col-start-1 row-start-1 pt-10">
                                 {allTimeSlots.map(hour => (
                                     <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground h-[60px] flex items-start justify-end pt-1">
                                         {hour.toString().padStart(2, '0')}:00
                                     </div>
                                 ))}
                             </div>
-                            
-                            {/* Grid Background and Entries */}
-                            <div className="col-start-2 col-span-6 row-start-2 grid grid-cols-6 grid-rows-16 relative">
-                                {/* Grid lines */}
-                                {Array.from({ length: 16 * 6 }).map((_, i) => (
-                                    <div key={i} className="border-b border-r h-[60px]"></div>
+                            {/* Schedule Grid */}
+                            <div className="col-start-2 col-span-6 grid grid-cols-6">
+                                {/* Days Header */}
+                                {Object.keys(daysOfWeekMap).map(day => (
+                                    <div key={day} className="p-2 text-center font-semibold border-b border-r last:border-r-0">
+                                        {day}
+                                    </div>
                                 ))}
-                                
-                                {/* Schedule Entries */}
-                                {(selectedGrupo.horario || []).map((entry, index) => (
-                                    <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
-                                       <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
-                                            <div className="flex flex-col w-full h-full cursor-pointer p-1 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
-                                              <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
-                                              <p className="text-gray-600">{entry.docenteNombre}</p>
-                                              <p className="text-gray-600 font-semibold mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                           </div>
-                                       </button>
-                                   </div>
-                               ))}
+                                {/* Grid Background and Entries */}
+                                <div className="col-span-6 grid grid-cols-6 grid-rows-16 relative">
+                                    {/* Grid lines */}
+                                    {Array.from({ length: 16 * 6 }).map((_, i) => (
+                                        <div key={i} className="border-b border-r h-[60px]"></div>
+                                    ))}
+                                    
+                                    {/* Schedule Entries */}
+                                    {(selectedGrupo.horario || []).map((entry, index) => (
+                                        <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
+                                           <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
+                                                <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
+                                                  <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
+                                                  <p className="text-gray-600">{entry.docenteNombre}</p>
+                                                  <div className="flex-grow"></div>
+                                                  <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                               </div>
+                                           </button>
+                                       </div>
+                                   ))}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -391,13 +391,14 @@ function AssignClassDialog({
     
     useEffect(() => {
         if (!materiasDelCiclo.some(m => m.id === selectedMateria)) {
-            setSelectedMateria("");
+            // This logic can be removed if we trust the context switch to handle it
         }
     }, [materiasDelCiclo, selectedMateria]);
 
     useEffect(() => {
+        if(!open) return;
         setSelectedHoraFin("");
-    }, [selectedHoraInicio]);
+    }, [selectedHoraInicio, open]);
 
 
     const handleSubmit = async () => {
@@ -551,4 +552,3 @@ function AssignClassDialog({
         </Dialog>
     );
 }
-
