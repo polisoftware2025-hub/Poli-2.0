@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 
 interface ScheduleEntry {
@@ -51,6 +52,17 @@ const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sába
 const daysOfWeekMap: { [key: string]: number } = {
   "Lunes": 1, "Martes": 2, "Miércoles": 3, "Jueves": 4, "Viernes": 5, "Sábado": 6
 };
+
+// Function to generate a consistent, soft color from a string (subject name)
+const stringToHslColor = (str: string, s: number, l: number): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = hash % 360;
+  return `hsl(${h}, ${s}%, ${l}%)`;
+};
+
 
 export default function HorariosPage() {
   const [schedule, setSchedule] = useState<ScheduleEntry[]>([]);
@@ -150,17 +162,19 @@ export default function HorariosPage() {
   
   const getGridPosition = (entry: ScheduleEntry) => {
     const dayIndex = daysOfWeekMap[entry.dia as keyof typeof daysOfWeekMap];
-    if (dayIndex === undefined) return {}; 
+    if (dayIndex === undefined) return {};
 
     const startTime = parseInt(entry.hora.split(':')[0]);
-    const startRow = timeSlots.indexOf(`${startTime.toString().padStart(2, '0')}:00`);
+    // The grid starts at 7 AM, so subtract 7 to get the correct 0-based row index.
+    const startRow = startTime - 7; 
     const duration = entry.duracion;
 
-    if (startRow === -1) return {};
+    // Make sure the class starts within the visible hours
+    if (startRow < 0 || startRow >= timeSlots.length) return {};
 
     return {
         gridColumn: `${dayIndex}`,
-        gridRow: `${startRow + 1} / span ${duration}`
+        gridRow: `${startRow + 1} / span ${duration}` // CSS grid rows are 1-indexed
     }
   }
   
@@ -224,56 +238,62 @@ export default function HorariosPage() {
                     </AlertDescription>
                 </Alert>
             ) : (
-                <div className="grid grid-cols-[auto_repeat(6,_1fr)] text-sm">
+                <div className="grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))]">
+                    {/* Time Column Placeholder */}
+                    <div className="row-start-1 col-start-1"></div>
+
                     {/* Days Header */}
                     <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
                         {daysOfWeek.map((day, index) => (
-                            <div key={day} className="p-2 text-center font-semibold border-r last:border-r-0">
-                                <p className="text-xs uppercase text-muted-foreground">{format(week.days[index], 'E', { locale: es })}</p>
+                            <div key={day} className="p-2 text-center font-semibold border-r">
+                                 <p className="text-xs uppercase text-muted-foreground">{format(week.days[index], 'E', { locale: es })}</p>
                                 <p className={`text-lg font-semibold ${isToday(week.days[index]) ? 'text-primary' : ''}`}>
                                     {format(week.days[index], 'd')}
                                 </p>
                             </div>
                         ))}
                     </div>
-                    
-                    {/* Time Column */}
-                    <div className="col-start-1 row-start-2 grid grid-rows-16 border-r">
+                    {/* Grid Body */}
+                    <div className="col-start-1 row-start-2 grid border-r" style={{ gridTemplateRows: `repeat(${timeSlots.length}, minmax(60px, 1fr))` }}>
+                        {/* Time Column */}
                         {timeSlots.map(hour => (
-                            <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground h-[60px] flex items-start justify-end pt-1">
+                            <div key={hour} className="pr-2 text-right text-xs text-muted-foreground flex items-start justify-end pt-1 border-b h-[60px]">
                                 {hour}
                             </div>
                         ))}
                     </div>
-                    
-                    {/* Grid Background and Entries */}
-                    <div className="col-start-2 col-span-6 row-start-2 grid grid-cols-6 grid-rows-16 relative">
-                        {/* Grid lines */}
-                        {Array.from({ length: 16 * 6 }).map((_, i) => (
+                    <div className="col-start-2 col-span-6 row-start-2 grid relative grid-cols-6" style={{ gridTemplateRows: `repeat(${timeSlots.length}, minmax(60px, 1fr))`}}>
+                        {/* Grid background lines */}
+                        {Array.from({ length: timeSlots.length * 6 }).map((_, i) => (
                             <div key={i} className="border-b border-r h-[60px]"></div>
                         ))}
                         
                         {/* Schedule Entries */}
-                        {schedule.map(entry => (
-                            <div key={entry.id} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
+                        {schedule.map(entry => {
+                          const color = stringToHslColor(entry.materiaNombre, 80, 85); // Light pastel color
+                          const borderColor = stringToHslColor(entry.materiaNombre, 60, 60); // Darker border color
+                          return (
+                            <div key={entry.id} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-full">
                                 <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <div className="flex flex-col w-full h-full p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
-                                                <p className="font-bold text-blue-800 truncate">{entry.materiaNombre}</p>
+                                             <div className="flex flex-col w-full h-full p-2 rounded-lg shadow-sm overflow-hidden text-xs" style={{ backgroundColor: color, borderLeft: `4px solid ${borderColor}` }}>
+                                                <p className="font-bold text-gray-800 truncate" style={{ color: stringToHslColor(entry.materiaNombre, 80, 20) }}>{entry.materiaNombre}</p>
                                                 <p className="text-gray-600">{userRole === 'estudiante' ? entry.docenteNombre : entry.grupoCodigo}</p>
-                                                <p className="text-gray-600 font-semibold mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                                <div className="flex-grow"></div>
+                                                <p className="text-gray-600 font-semibold truncate">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
                                             </div>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <p>{entry.materiaNombre}</p>
-                                            <p>{entry.hora}</p>
-                                            <p>{userRole === 'estudiante' ? `Docente: ${entry.docenteNombre}` : `Grupo: ${entry.grupoCodigo}`}</p>
+                                            <p className="font-bold">{entry.materiaNombre}</p>
+                                            <p><span className="font-semibold">Horario:</span> {entry.hora}</p>
+                                            <p><span className="font-semibold">{userRole === 'estudiante' ? 'Docente:' : 'Grupo:'}</span> {userRole === 'estudiante' ? entry.docenteNombre : entry.grupoCodigo}</p>
+                                            <p><span className="font-semibold">Ubicación:</span> {entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
                            </div>
-                       ))}
+                         )})}
                     </div>
                 </div>
             )}
@@ -282,4 +302,3 @@ export default function HorariosPage() {
     </div>
   );
 }
-
