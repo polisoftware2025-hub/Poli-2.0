@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -59,7 +60,7 @@ export default function SchedulesAdminPage() {
     const [docentes, setDocentes] = useState<Docente[]>([]);
     const [grupos, setGrupos] = useState<Group[]>([]);
     const [salonesBySede, setSalonesBySede] = useState<{ [key: string]: Salon[] }>({});
-    const [allSedeSchedules, setAllSedeSchedules] = useState<ScheduleEntry[]>([]);
+    const [allSedeSchedules, setAllSedeSchedules] = useState<(ScheduleEntry & { grupoId?: string })[]>([]);
     
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
@@ -114,7 +115,7 @@ export default function SchedulesAdminPage() {
         fetchInitialData();
     }, [fetchInitialData]);
 
-    const fetchAllSchedulesForSede = async (sedeId: string) => {
+    const fetchAllSchedulesForSede = useCallback(async (sedeId: string) => {
         if (!sedeId) return [];
         try {
             const q = query(
@@ -126,14 +127,14 @@ export default function SchedulesAdminPage() {
             
             const allSchedules = allSedeGroups.flatMap(g => {
                 const groupHorario = g.horario || [];
-                return groupHorario.map(h => ({ ...h, grupoCodigo: g.codigoGrupo, grupoId: g.id }));
+                return groupHorario.map(h => ({ ...h, grupoId: g.id }));
             });
             setAllSedeSchedules(allSchedules);
         } catch (error) {
             console.error("Error fetching all sede schedules:", error);
             toast({ variant: "destructive", title: "Error", description: "No se pudieron refrescar los horarios para la detección de conflictos." });
         }
-    };
+    }, [toast]);
 
 
     const handleSedeChange = (sedeId: string) => {
@@ -149,7 +150,6 @@ export default function SchedulesAdminPage() {
         setSelectedGrupo(null);
         if (!carreraId || !selectedSede) {
             setGrupos([]);
-            setAllSedeSchedules([]);
             return;
         }
 
@@ -163,7 +163,6 @@ export default function SchedulesAdminPage() {
             const gruposSnapshot = await getDocs(q);
             setGrupos(gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group)));
             
-            // Fetch all schedules for the current sede for conflict detection
             await fetchAllSchedulesForSede(selectedSede);
             
         } catch (error) {
@@ -177,19 +176,21 @@ export default function SchedulesAdminPage() {
         const grupo = grupos.find(g => g.id === grupoId) || null;
         setSelectedGrupo(grupo);
     };
-
+    
     const onClassAssigned = useCallback(async () => {
-        if (selectedGrupo) {
-            const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", selectedGrupo.id);
-            const grupoSnap = await getDoc(grupoRef);
-            if (grupoSnap.exists()) {
-                const updatedGroupData = { id: grupoSnap.id, ...grupoSnap.data() } as Group;
-                setSelectedGrupo(updatedGroupData);
-                setGrupos(prev => prev.map(g => g.id === updatedGroupData.id ? updatedGroupData : g));
-                await fetchAllSchedulesForSede(selectedSede);
-            }
+        if (!selectedGrupo) return;
+
+        const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", selectedGrupo.id);
+        const grupoSnap = await getDoc(grupoRef);
+
+        if (grupoSnap.exists()) {
+            const updatedGroupData = { id: grupoSnap.id, ...grupoSnap.data() } as Group;
+            setSelectedGrupo(updatedGroupData);
+            setGrupos(prev => prev.map(g => g.id === updatedGroupData.id ? updatedGroupData : g));
+            await fetchAllSchedulesForSede(selectedSede);
         }
-    }, [selectedGrupo, selectedSede]);
+    }, [selectedGrupo, selectedSede, fetchAllSchedulesForSede]);
+
 
     const handleOpenDialog = (entry: ScheduleEntry | null) => {
         setSelectedScheduleEntry(entry);
@@ -294,38 +295,40 @@ export default function SchedulesAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
-                         <div className="grid" style={{ gridTemplateColumns: 'auto repeat(6, minmax(140px, 1fr))' }}>
+                         <div className="grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))]">
                             {/* Time Column Placeholder */}
                             <div className="row-start-1 col-start-1"></div>
                             {/* Days Header */}
-                            {Object.keys(daysOfWeekMap).map(day => (
-                                <div key={day} className="p-2 text-center font-semibold border-b border-r">
-                                    {day}
-                                </div>
-                            ))}
+                            <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
+                                {Object.keys(daysOfWeekMap).map(day => (
+                                    <div key={day} className="p-2 text-center font-semibold border-r">
+                                        {day}
+                                    </div>
+                                ))}
+                            </div>
                             {/* Grid Body */}
                             <div className="col-start-1 row-start-2 grid border-r" style={{ gridTemplateRows: `repeat(${allTimeSlots.length}, minmax(60px, 1fr))` }}>
                                 {/* Time Column */}
                                 {allTimeSlots.map(hour => (
-                                    <div key={hour} className="pr-2 text-right text-xs text-muted-foreground flex items-start justify-end pt-1 border-b">
+                                    <div key={hour} className="pr-2 text-right text-xs text-muted-foreground flex items-start justify-end pt-1 border-b h-[60px]">
                                         {hour.toString().padStart(2, '0')}:00
                                     </div>
                                 ))}
                             </div>
-                            <div className="col-start-2 col-span-6 row-start-2 grid relative" style={{ gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: `repeat(${allTimeSlots.length}, minmax(60px, 1fr))`}}>
+                            <div className="col-start-2 col-span-6 row-start-2 grid relative grid-cols-6" style={{ gridTemplateRows: `repeat(${allTimeSlots.length}, minmax(60px, 1fr))`}}>
                                 {/* Grid background lines */}
                                 {Array.from({ length: allTimeSlots.length * 6 }).map((_, i) => (
-                                    <div key={i} className="border-b border-r"></div>
+                                    <div key={i} className="border-b border-r h-[60px]"></div>
                                 ))}
                                 {/* Schedule Entries */}
                                 {(selectedGrupo.horario || []).map((entry, index) => (
                                     <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-full">
                                         <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
                                             <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
-                                                <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
-                                                <p className="text-gray-600">{entry.docenteNombre}</p>
+                                                <p className="font-bold text-blue-800 truncate">{entry.materiaNombre}</p>
+                                                <p className="text-gray-600 truncate">{entry.docenteNombre}</p>
                                                 <div className="flex-grow"></div>
-                                                <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                                <p className="text-gray-600 font-semibold truncate">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
                                             </div>
                                         </button>
                                     </div>
@@ -428,12 +431,6 @@ function AssignClassDialog({
       setSelectedHoraFin("");
     }, [selectedHoraInicio]);
     
-    useEffect(() => {
-      if (carrera && !materiasDelCiclo.some(m => m.id === selectedMateria)) {
-        setSelectedMateria("");
-      }
-    }, [carrera, materiasDelCiclo, selectedMateria]);
-    
     const availableSalones = useMemo(() => {
         if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return salones;
 
@@ -443,6 +440,7 @@ function AssignClassDialog({
         const occupiedSalons = allSchedules
             .filter(entry => {
                 if (existingSchedule && entry.id === existingSchedule.id) return false;
+                if (entry.grupoId === grupo.id) return false;
                 return entry.dia === selectedDia && entry.modalidad === 'Presencial';
             })
             .filter(entry => {
@@ -454,7 +452,7 @@ function AssignClassDialog({
             
         return salones.filter(salon => !occupiedSalons.includes(salon.id));
 
-    }, [salones, allSchedules, selectedDia, selectedHoraInicio, selectedHoraFin, modalidad, existingSchedule]);
+    }, [salones, allSchedules, selectedDia, selectedHoraInicio, selectedHoraFin, modalidad, existingSchedule, grupo.id]);
 
 
     const handleSubmit = async () => {
