@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School, Filter, Download, Expand, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School, Filter, Download, Expand, ChevronLeft, ChevronRight, Clock, User } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -14,9 +14,13 @@ import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, wh
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { getDoc } from "firebase/firestore";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, addMinutes, getDay, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+
 
 interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string }[] }[]; }
@@ -48,9 +52,20 @@ interface Group {
     horario?: ScheduleEntry[];
 }
 
-const allTimeSlots = Array.from({ length: 16 }, (_, i) => 7 + i); // 7 AM a 10 PM (22:00)
-const daysOfWeekMap: { [key: string]: number } = {
-  "Lunes": 1, "Martes": 2, "Miércoles": 3, "Jueves": 4, "Viernes": 5, "Sábado": 6
+const timeSlots = Array.from({ length: 16 * 2 }, (_, i) => {
+    const hour = 7 + Math.floor(i / 2);
+    const minute = i % 2 === 0 ? '00' : '30';
+    return `${hour.toString().padStart(2, '0')}:${minute}`;
+});
+const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+const stringToHslColor = (str: string, s: number, l: number): string => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const h = hash % 360;
+  return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
 
@@ -71,6 +86,8 @@ export default function SchedulesAdminPage() {
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false, docentes: true });
     const { toast } = useToast();
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    const isMobile = useIsMobile();
 
     const week = useMemo(() => {
         const start = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -196,23 +213,7 @@ export default function SchedulesAdminPage() {
         setSelectedScheduleEntry(entry);
         setIsAssignDialogOpen(true);
     };
-
-    const getGridPosition = (entry: ScheduleEntry) => {
-        const dayIndex = daysOfWeekMap[entry.dia as keyof typeof daysOfWeekMap];
-        if (dayIndex === undefined) return {}; 
-
-        const startTime = parseInt(entry.hora.split(':')[0]);
-        const startRow = startTime - 7;
-        const duration = entry.duracion;
-
-        if (startRow < 0 || startRow >= allTimeSlots.length) return {};
-
-        return {
-            gridColumn: `${dayIndex}`,
-            gridRow: `${startRow + 1} / span ${duration}`
-        }
-    }
-
+    
     const changeWeek = (direction: 'next' | 'prev' | 'today') => {
         if (direction === 'today') {
             setCurrentDate(new Date());
@@ -261,82 +262,13 @@ export default function SchedulesAdminPage() {
             </Card>
 
             {selectedGrupo ? (
-                <Card>
-                    <CardHeader className="border-b p-4">
-                        <div className="flex flex-wrap items-center justify-between gap-4">
-                            <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Hoy</Button>
-                                <div className="flex items-center">
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
-                                </div>
-                                <p className="text-sm font-medium text-gray-700">
-                                    {format(week.start, "dd/MM/yyyy")} - {format(week.end, "dd/MM/yyyy")}
-                                </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                 <Button onClick={() => handleOpenDialog(null)}>
-                                    <Plus className="mr-2 h-4 w-4" />Asignar Horario
-                                </Button>
-                                <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/>Exportar</Button>
-                                <Button variant="outline" size="sm"><Filter className="mr-2 h-4 w-4"/>Filtrar</Button>
-                                <Button variant="outline" size="sm" className="hidden md:flex"><Expand className="mr-2 h-4 w-4" /> Ampliar</Button>
-                                <Select defaultValue="week">
-                                    <SelectTrigger className="w-[180px] h-9 text-sm">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="week">Semana completa</SelectItem>
-                                        <SelectItem value="day">Día</SelectItem>
-                                        <SelectItem value="month">Mes</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-0 overflow-x-auto">
-                         <div className="grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))]">
-                            {/* Time Column Placeholder */}
-                            <div className="row-start-1 col-start-1"></div>
-                            {/* Days Header */}
-                            <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
-                                {Object.keys(daysOfWeekMap).map(day => (
-                                    <div key={day} className="p-2 text-center font-semibold border-r">
-                                        {day}
-                                    </div>
-                                ))}
-                            </div>
-                            {/* Grid Body */}
-                            <div className="col-start-1 row-start-2 grid border-r" style={{ gridTemplateRows: `repeat(${allTimeSlots.length}, minmax(60px, 1fr))` }}>
-                                {/* Time Column */}
-                                {allTimeSlots.map(hour => (
-                                    <div key={hour} className="pr-2 text-right text-xs text-muted-foreground flex items-start justify-end pt-1 border-b h-[60px]">
-                                        {hour.toString().padStart(2, '0')}:00
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="col-start-2 col-span-6 row-start-2 grid relative grid-cols-6" style={{ gridTemplateRows: `repeat(${allTimeSlots.length}, minmax(60px, 1fr))`}}>
-                                {/* Grid background lines */}
-                                {Array.from({ length: allTimeSlots.length * 6 }).map((_, i) => (
-                                    <div key={i} className="border-b border-r h-[60px]"></div>
-                                ))}
-                                {/* Schedule Entries */}
-                                {(selectedGrupo.horario || []).map((entry, index) => (
-                                    <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-full">
-                                        <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
-                                            <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
-                                                <p className="font-bold text-blue-800 truncate">{entry.materiaNombre}</p>
-                                                <p className="text-gray-600 truncate">{entry.docenteNombre}</p>
-                                                <div className="flex-grow"></div>
-                                                <p className="text-gray-600 font-semibold truncate">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                            </div>
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <ScheduleView
+                    schedule={selectedGrupo.horario || []}
+                    week={week}
+                    changeWeek={changeWeek}
+                    onOpenAssignDialog={handleOpenDialog}
+                    isMobile={isMobile}
+                />
             ) : (
                 <Alert>
                     <Calendar className="h-4 w-4" />
@@ -366,6 +298,221 @@ export default function SchedulesAdminPage() {
     );
 }
 
+function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile }: any) {
+    
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentTime(new Date());
+        }, 60000); // Update every minute
+        return () => clearInterval(timer);
+    }, []);
+
+    const timeToPosition = (date: Date) => {
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        if (hours < 7) return 0;
+        if (hours >= 23) return 100;
+        const totalMinutes = (hours - 7) * 60 + minutes;
+        const totalDayMinutes = (23-7) * 60;
+        return (totalMinutes / totalDayMinutes) * 100;
+    };
+    
+    const currentTimePosition = timeToPosition(currentTime);
+    const currentDayOfWeek = getDay(currentTime); // Sunday is 0, Monday is 1
+    const isCurrentWeek = isSameDay(week.start, startOfWeek(new Date(), { weekStartsOn: 1 }));
+
+    if (isMobile) {
+        return <MobileScheduleView schedule={schedule} week={week} changeWeek={changeWeek} onOpenAssignDialog={onOpenAssignDialog} />
+    }
+
+    return (
+        <Card className="overflow-hidden">
+            <CardHeader className="border-b p-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Hoy</Button>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
+                        </div>
+                        <p className="text-sm font-medium text-gray-700">
+                            {format(week.start, "dd/MM/yyyy")} - {format(week.end, "dd/MM/yyyy")}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button onClick={() => onOpenAssignDialog(null)}>
+                            <Plus className="mr-2 h-4 w-4" />Asignar Horario
+                        </Button>
+                        <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/>Exportar</Button>
+                        <Button variant="outline" size="sm"><Filter className="mr-2 h-4 w-4"/>Filtrar</Button>
+                        <Button variant="outline" size="sm" className="hidden md:flex"><Expand className="mr-2 h-4 w-4" /> Ampliar</Button>
+                        <Select defaultValue="week">
+                            <SelectTrigger className="w-[180px] h-9 text-sm">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="week">Semana completa</SelectItem>
+                                <SelectItem value="day">Día</SelectItem>
+                                <SelectItem value="month">Mes</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
+                <div className="grid grid-cols-[4rem_repeat(6,minmax(0,1fr))] min-w-[70rem]">
+                    {/* Placeholder for top-left corner */}
+                    <div className="row-start-1 col-start-1 sticky left-0 z-10 bg-card border-b border-r"></div>
+                    
+                    {/* Days Header */}
+                    {daysOfWeek.map((day, index) => (
+                        <div key={day} className="col-start-auto text-center py-2 border-b border-r">
+                            <p className="text-xs uppercase text-muted-foreground">{day}</p>
+                             <p className={cn("text-lg font-semibold", isToday(week.days[index]) && "text-primary")}>
+                                {format(week.days[index], 'd')}
+                            </p>
+                        </div>
+                    ))}
+                    
+                    {/* Time Column */}
+                    <div className="row-start-2 col-start-1 sticky left-0 z-10 bg-card border-r">
+                        {timeSlots.map((time, index) => (
+                            index % 2 === 0 && (
+                                <div key={time} className="h-16 relative flex justify-end pr-2 pt-1">
+                                    <span className="text-xs text-muted-foreground -translate-y-1/2">{time}</span>
+                                </div>
+                            )
+                        ))}
+                    </div>
+                    
+                    {/* Grid Body */}
+                    <div className="row-start-2 col-start-2 col-span-6 grid grid-cols-6 relative">
+                        {/* Background lines */}
+                        {timeSlots.map((time, index) => daysOfWeek.map(day => (
+                            <div key={`${day}-${time}`} className="h-8 border-b border-r"></div>
+                        )))}
+
+                         {/* Current Time Indicator */}
+                        {isCurrentWeek && currentDayOfWeek >= 1 && currentDayOfWeek <= 6 && (
+                            <div
+                                className="absolute w-full h-px bg-red-500 z-20"
+                                style={{ top: `${currentTimePosition}%` }}
+                            >
+                                <div className="absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full bg-red-500"></div>
+                            </div>
+                        )}
+                        
+                        {/* Schedule Entries */}
+                        {schedule.map((entry: any, index: number) => {
+                            const dayIndex = daysOfWeek.indexOf(entry.dia);
+                            if (dayIndex === -1) return null;
+                            const start = parseInt(entry.hora.split(':')[0]) + parseInt(entry.hora.split(':')[1]) / 60;
+                            const top = ((start - 7) / 16) * 100;
+                            const height = (entry.duracion / 16) * 100;
+                            
+                            const color = stringToHslColor(entry.materiaNombre, 80, 85);
+                            const borderColor = stringToHslColor(entry.materiaNombre, 60, 60);
+
+                            return (
+                                <div
+                                    key={entry.id || index}
+                                    className="absolute w-full p-1"
+                                    style={{
+                                        top: `${top}%`,
+                                        height: `${height}%`,
+                                        left: `${(dayIndex / 6) * 100}%`,
+                                        width: `${100 / 6}%`
+                                    }}
+                                >
+                                     <button className="w-full h-full text-left" onClick={() => onOpenAssignDialog(entry)}>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg border-l-4 overflow-hidden text-xs" style={{ backgroundColor: color, borderColor: borderColor }}>
+                                                        <p className="font-bold text-gray-800 truncate" style={{ color: stringToHslColor(entry.materiaNombre, 80, 20) }}>{entry.materiaNombre}</p>
+                                                        <p className="text-gray-600 truncate">{entry.docenteNombre}</p>
+                                                        <div className="flex-grow"></div>
+                                                        <p className="text-gray-600 font-semibold truncate">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                                    </div>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p className="font-bold">{entry.materiaNombre}</p>
+                                                    <p><span className="font-semibold">Horario:</span> {entry.hora}</p>
+                                                    <p><span className="font-semibold">Docente:</span> {entry.docenteNombre}</p>
+                                                    <p><span className="font-semibold">Ubicación:</span> {entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function MobileScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
+    const groupedSchedule = useMemo(() => {
+        const groups: { [key: string]: any[] } = {};
+        daysOfWeek.forEach(day => groups[day] = []);
+        schedule.forEach((entry: any) => {
+            if (groups[entry.dia]) {
+                groups[entry.dia].push(entry);
+            }
+        });
+        Object.values(groups).forEach(dayEntries => {
+            dayEntries.sort((a,b) => parseInt(a.hora.split(':')[0]) - parseInt(b.hora.split(':')[0]));
+        });
+        return groups;
+    }, [schedule]);
+
+    return (
+        <Card>
+             <CardHeader className="border-b p-4">
+                <div className="flex flex-col gap-4">
+                     <div className="flex items-center justify-between">
+                        <p className="text-lg font-medium text-gray-700">
+                            {format(week.start, "MMMM yyyy", { locale: es })}
+                        </p>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
+                        </div>
+                    </div>
+                     <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Volver a la semana actual</Button>
+                </div>
+             </CardHeader>
+             <CardContent className="p-4 space-y-4">
+                {daysOfWeek.map((day, index) => (
+                    <div key={day}>
+                        <h3 className="font-bold mb-2">{day} <span className="text-muted-foreground font-normal">{format(week.days[index], 'd')}</span></h3>
+                        <div className="space-y-2">
+                        {groupedSchedule[day].length > 0 ? groupedSchedule[day].map((entry: any) => (
+                            <button key={entry.id} className="w-full" onClick={() => onOpenAssignDialog(entry)}>
+                                <div className="p-3 rounded-md border text-left">
+                                    <p className="font-semibold">{entry.materiaNombre}</p>
+                                    <p className="text-sm text-muted-foreground">{entry.hora}</p>
+                                    <p className="text-sm text-muted-foreground">{entry.docenteNombre}</p>
+                                    <p className="text-sm text-muted-foreground">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                </div>
+                            </button>
+                        )) : (
+                            <p className="text-sm text-muted-foreground pl-3">No hay clases programadas.</p>
+                        )}
+                        </div>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    );
+}
+
+// AssignClassDialog remains mostly the same, but with updated time logic.
 function AssignClassDialog({ 
     open,
     onOpenChange,
@@ -434,8 +581,8 @@ function AssignClassDialog({
     const availableSalones = useMemo(() => {
         if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return salones;
 
-        const start = parseInt(selectedHoraInicio.split(':')[0]);
-        const end = parseInt(selectedHoraFin.split(':')[0]);
+        const start = parseInt(selectedHoraInicio.split(':')[0]) + parseInt(selectedHoraInicio.split(':')[1]) / 60;
+        const end = parseInt(selectedHoraFin.split(':')[0]) + parseInt(selectedHoraFin.split(':')[1]) / 60;
 
         const occupiedSalons = allSchedules
             .filter(entry => {
@@ -444,7 +591,7 @@ function AssignClassDialog({
                 return entry.dia === selectedDia && entry.modalidad === 'Presencial';
             })
             .filter(entry => {
-                const entryStart = parseInt(entry.hora.split(':')[0]);
+                const entryStart = parseInt(entry.hora.split(':')[0]) + parseInt(entry.hora.split(':')[1]) / 60;
                 const entryEnd = entryStart + entry.duracion;
                 return Math.max(start, entryStart) < Math.min(end, entryEnd);
             })
@@ -461,8 +608,8 @@ function AssignClassDialog({
             return;
         }
 
-        const horaInicioNum = parseInt(selectedHoraInicio.split(':')[0]);
-        const horaFinNum = parseInt(selectedHoraFin.split(':')[0]);
+        const horaInicioNum = parseInt(selectedHoraInicio.split(':')[0]) + parseInt(selectedHoraInicio.split(':')[1]) / 60;
+        const horaFinNum = parseInt(selectedHoraFin.split(':')[0]) + parseInt(selectedHoraFin.split(':')[1]) / 60;
         const duracion = horaFinNum - horaInicioNum;
         
         if (duracion <= 0) {
@@ -535,9 +682,9 @@ function AssignClassDialog({
 
     const availableEndTimes = useMemo(() => {
         if (!selectedHoraInicio) return [];
-        const startIndex = allTimeSlots.indexOf(parseInt(selectedHoraInicio.split(':')[0]));
+        const startIndex = timeSlots.indexOf(selectedHoraInicio);
         if (startIndex === -1) return [];
-        return allTimeSlots.slice(startIndex + 1).map(h => `${h.toString().padStart(2, '0')}:00`);
+        return timeSlots.slice(startIndex + 1);
     }, [selectedHoraInicio]);
 
 
@@ -551,11 +698,11 @@ function AssignClassDialog({
                 <div className="grid grid-cols-2 gap-4 py-4">
                     <div className="space-y-2">
                         <Label>Día</Label>
-                        <Select value={selectedDia} onValueChange={setSelectedDia}><SelectTrigger><SelectValue placeholder="Selecciona un día..." /></SelectTrigger><SelectContent>{Object.keys(daysOfWeekMap).map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedDia} onValueChange={setSelectedDia}><SelectTrigger><SelectValue placeholder="Selecciona un día..." /></SelectTrigger><SelectContent>{daysOfWeek.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select>
                     </div>
                      <div className="space-y-2">
                         <Label>Hora de Inicio</Label>
-                        <Select value={selectedHoraInicio} onValueChange={setSelectedHoraInicio}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{allTimeSlots.slice(0, -1).map(t => <SelectItem key={t} value={`${t.toString().padStart(2, '0')}:00`}>{`${t.toString().padStart(2, '0')}:00`}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedHoraInicio} onValueChange={setSelectedHoraInicio}><SelectTrigger><SelectValue placeholder="Selecciona una hora..." /></SelectTrigger><SelectContent>{timeSlots.slice(0, -1).map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select>
                     </div>
                     <div className="space-y-2">
                         <Label>Hora Fin</Label>
@@ -612,3 +759,4 @@ function AssignClassDialog({
         </Dialog>
     );
 }
+  
