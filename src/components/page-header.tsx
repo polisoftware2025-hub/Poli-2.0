@@ -72,7 +72,11 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     return null; // Don't render breadcrumbs if not in a dashboard context
   }
 
-  const relevantSegments = pathSegments.slice(dashboardBaseIndex + 1);
+  // Filter out the dynamic ID segment (slug) from the breadcrumbs path
+  const relevantSegments = pathSegments.slice(dashboardBaseIndex + 1).filter(segment => {
+      // Heuristic: assume segments that are long and/or contain numbers/hyphens are dynamic IDs
+      return !/^[a-z0-9-]{10,}$/.test(segment) || isNaN(parseInt(segment, 10));
+  });
 
   const getBreadcrumbName = (segment: string) => {
     const names: { [key: string]: string } = {
@@ -88,13 +92,13 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
       'requests': 'Solicitudes', 'reports': 'Reportes', 'grades': 'Calificaciones',
       'announcements': 'Anuncios', 'grupos': 'Mis Grupos', 'notas': 'Registro de Notas',
       'asistencia': 'Toma de Asistencia', 'details': 'Detalles', 'new-career': 'Nueva Carrera',
-      'edit': 'Editar'
+      'edit': 'Editar', 'asignar-docente': 'Asignar Docente', 'media': 'Media'
     };
     if (names[segment]) {
         return names[segment];
     }
-    // If it's a slug-like string, return a generic name
-    if (segment.length > 10 || segment.match(/^[a-z0-9-_]+$/)) {
+    // If it's a slug-like string, return a generic name, but this is less likely now
+    if (segment.length > 20) {
       return "Detalle";
     }
     return segment.charAt(0).toUpperCase() + segment.slice(1);
@@ -111,9 +115,19 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
 
         const isLast = index === relevantSegments.length - 1;
         
-        const pathBeforeCurrent = relevantSegments.slice(0, index).filter(s => s !== userRole);
-        const currentPath = `/dashboard/${userRole}/${[...pathBeforeCurrent, segment].join('/')}`;
-
+        // Build the path up to the current segment
+        const pathParts = [];
+        let foundRole = false;
+        for (let i = 0; i <= index; i++) {
+            const currentSegment = relevantSegments[i];
+            if (currentSegment === userRole) {
+                foundRole = true;
+                continue;
+            }
+             pathParts.push(currentSegment);
+        }
+        const currentPath = `/dashboard/${userRole}/${pathParts.join('/')}`;
+        
         return (
           <React.Fragment key={currentPath}>
             <ChevronRight className="h-4 w-4 mx-1" />
