@@ -64,6 +64,8 @@ export default function SchedulesAdminPage() {
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedGrupo, setSelectedGrupo] = useState<Group | null>(null);
+    const [selectedScheduleEntry, setSelectedScheduleEntry] = useState<ScheduleEntry | null>(null);
+    const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
     
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false, docentes: true });
     const { toast } = useToast();
@@ -158,6 +160,11 @@ export default function SchedulesAdminPage() {
         }
     }, [selectedGrupo]);
 
+    const handleOpenDialog = (entry: ScheduleEntry | null) => {
+        setSelectedScheduleEntry(entry);
+        setIsAssignDialogOpen(true);
+    };
+
     const getGridPosition = (entry: ScheduleEntry) => {
         const dayIndex = daysOfWeekMap[entry.dia as keyof typeof daysOfWeekMap];
         if (dayIndex === undefined) return {}; 
@@ -236,15 +243,9 @@ export default function SchedulesAdminPage() {
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <AssignClassDialog
-                                    key={selectedGrupo.id} 
-                                    grupo={selectedGrupo}
-                                    carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
-                                    docentes={docentes}
-                                    salones={salonesBySede[selectedSede] || []}
-                                    onClassAssigned={onClassAssigned}
-                                    sedes={sedes}
-                                />
+                                 <Button onClick={() => handleOpenDialog(null)}>
+                                    <Plus className="mr-2 h-4 w-4" />Asignar Horario
+                                </Button>
                                 <Button variant="outline" size="sm"><Download className="mr-2 h-4 w-4"/>Exportar</Button>
                                 <Button variant="outline" size="sm"><Filter className="mr-2 h-4 w-4"/>Filtrar</Button>
                                 <Button variant="outline" size="sm" className="hidden md:flex"><Expand className="mr-2 h-4 w-4" /> Ampliar</Button>
@@ -291,22 +292,13 @@ export default function SchedulesAdminPage() {
                                 {/* Schedule Entries */}
                                 {(selectedGrupo.horario || []).map((entry, index) => (
                                     <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
-                                        <AssignClassDialog
-                                            key={entry.id}
-                                            grupo={selectedGrupo}
-                                            carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
-                                            docentes={docentes}
-                                            salones={salonesBySede[selectedSede] || []}
-                                            onClassAssigned={onClassAssigned}
-                                            sedes={sedes}
-                                            existingSchedule={entry}
-                                        >
-                                           <div className="flex flex-col w-full h-full cursor-pointer p-1 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
+                                       <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
+                                            <div className="flex flex-col w-full h-full cursor-pointer p-1 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
                                               <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
                                               <p className="text-gray-600">{entry.docenteNombre}</p>
                                               <p className="text-gray-600 font-semibold mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
                                            </div>
-                                       </AssignClassDialog>
+                                       </button>
                                    </div>
                                ))}
                             </div>
@@ -322,30 +314,46 @@ export default function SchedulesAdminPage() {
                     </AlertDescription>
                 </Alert>
             )}
+
+            {isAssignDialogOpen && selectedGrupo && (
+                 <AssignClassDialog
+                    key={selectedGrupo.id + (selectedScheduleEntry?.id || 'new')}
+                    open={isAssignDialogOpen}
+                    onOpenChange={setIsAssignDialogOpen}
+                    grupo={selectedGrupo}
+                    carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
+                    docentes={docentes}
+                    salones={salonesBySede[selectedSede] || []}
+                    onClassAssigned={onClassAssigned}
+                    sedes={sedes}
+                    existingSchedule={selectedScheduleEntry}
+                />
+            )}
         </div>
     );
 }
 
 function AssignClassDialog({ 
+    open,
+    onOpenChange,
     grupo, 
     carrera, 
     docentes, 
     salones, 
     onClassAssigned, 
     sedes,
-    existingSchedule, 
-    children 
+    existingSchedule
 }: { 
-    grupo: Group, 
-    carrera?: Career, 
-    docentes: Docente[], 
-    salones: Salon[], 
-    onClassAssigned: () => void,
-    sedes: Sede[],
-    existingSchedule?: ScheduleEntry | null,
-    children?: React.ReactNode 
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    grupo: Group;
+    carrera?: Career;
+    docentes: Docente[];
+    salones: Salon[];
+    onClassAssigned: () => void;
+    sedes: Sede[];
+    existingSchedule?: ScheduleEntry | null;
 }) {
-    const [open, setOpen] = useState(false);
     const [selectedDia, setSelectedDia] = useState(existingSchedule?.dia || "");
     const [selectedHoraInicio, setSelectedHoraInicio] = useState(existingSchedule?.hora.split(' - ')[0] || "");
     const [selectedHoraFin, setSelectedHoraFin] = useState(existingSchedule?.hora.split(' - ')[1] || "");
@@ -429,7 +437,7 @@ function AssignClassDialog({
                 toast({ title: "Éxito", description: "La clase ha sido asignada correctamente." });
             }
             onClassAssigned();
-            setOpen(false);
+            onOpenChange(false);
         } catch (error) {
             console.error("Error assigning class:", error);
             toast({ variant: "destructive", title: "Error", description: "No se pudo asignar la clase." });
@@ -451,7 +459,7 @@ function AssignClassDialog({
                 await updateDoc(grupoRef, { horario: arrayRemove(fullScheduleEntryToRemove) });
                 toast({ title: "Clase Eliminada", description: "La clase ha sido eliminada del horario." });
                 onClassAssigned();
-                setOpen(false);
+                onOpenChange(false);
             } else {
                  throw new Error("No se encontró la clase para eliminar.");
             }
@@ -472,10 +480,7 @@ function AssignClassDialog({
 
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {children ? children : <Button><Plus className="mr-2 h-4 w-4" />Asignar Horario</Button>}
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[480px]">
                 <DialogHeader>
                     <DialogTitle>{existingSchedule ? 'Editar' : 'Asignar'} Clase a {grupo.codigoGrupo}</DialogTitle>
@@ -526,7 +531,7 @@ function AssignClassDialog({
                         )}
                     </div>
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+                        <Button variant="outline" onClick={() => onOpenChange(false)}>Cancelar</Button>
                         <Button onClick={handleSubmit} disabled={isSaving}>{isSaving ? "Guardando..." : "Guardar"}</Button>
                     </div>
                 </DialogFooter>
@@ -534,3 +539,5 @@ function AssignClassDialog({
         </Dialog>
     );
 }
+
+    
