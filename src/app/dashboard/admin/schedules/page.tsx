@@ -386,6 +386,12 @@ function AssignClassDialog({
             setSelectedSalon("");
         }
     }, [existingSchedule, open]); // Depend on 'open' to reset form
+    
+    useEffect(() => {
+        if(selectedHoraInicio){
+            setSelectedHoraFin("");
+        }
+    }, [selectedHoraInicio]);
 
 
     const handleSubmit = async () => {
@@ -539,5 +545,3 @@ function AssignClassDialog({
         </Dialog>
     );
 }
-
-    
