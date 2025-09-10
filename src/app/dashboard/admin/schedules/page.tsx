@@ -60,6 +60,7 @@ export default function SchedulesAdminPage() {
     const [docentes, setDocentes] = useState<Docente[]>([]);
     const [grupos, setGrupos] = useState<Group[]>([]);
     const [salonesBySede, setSalonesBySede] = useState<{ [key: string]: Salon[] }>({});
+    const [allSedeSchedules, setAllSedeSchedules] = useState<ScheduleEntry[]>([]);
     
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
@@ -119,6 +120,7 @@ export default function SchedulesAdminPage() {
         setSelectedCarrera("");
         setSelectedGrupo(null);
         setGrupos([]);
+        setAllSedeSchedules([]);
     };
 
     const handleCarreraChange = async (carreraId: string) => {
@@ -126,6 +128,7 @@ export default function SchedulesAdminPage() {
         setSelectedGrupo(null);
         if (!carreraId || !selectedSede) {
             setGrupos([]);
+            setAllSedeSchedules([]);
             return;
         }
 
@@ -133,11 +136,19 @@ export default function SchedulesAdminPage() {
         try {
             const q = query(
                 collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
-                where("idSede", "==", selectedSede),
-                where("idCarrera", "==", carreraId)
+                where("idSede", "==", selectedSede)
+                // We fetch all groups for the sede to check for conflicts later
             );
             const gruposSnapshot = await getDocs(q);
-            setGrupos(gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group)));
+            const allSedeGroups = gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group));
+            
+            const groupsForSelectedCareer = allSedeGroups.filter(g => g.idCarrera === carreraId);
+            setGrupos(groupsForSelectedCareer);
+
+            // Store all schedules for conflict checking
+            const allSchedules = allSedeGroups.flatMap(g => g.horario || []);
+            setAllSedeSchedules(allSchedules);
+            
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los grupos." });
         } finally {
@@ -156,9 +167,11 @@ export default function SchedulesAdminPage() {
             const grupoSnap = await getDoc(grupoRef);
             if (grupoSnap.exists()) {
                 setSelectedGrupo({ id: grupoSnap.id, ...grupoSnap.data() } as Group);
+                 // Re-fetch all schedules in case of changes
+                handleCarreraChange(selectedCarrera);
             }
         }
-    }, [selectedGrupo]);
+    }, [selectedGrupo, selectedCarrera]);
 
     const handleOpenDialog = (entry: ScheduleEntry | null) => {
         setSelectedScheduleEntry(entry);
@@ -263,7 +276,7 @@ export default function SchedulesAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
-                        <div className="grid grid-cols-[auto_repeat(6,_minmax(120px,_1fr))] text-sm">
+                        <div className="grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))] text-sm">
                             {/* Days Header */}
                             <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
                                 {Object.keys(daysOfWeekMap).map(day => (
@@ -272,34 +285,36 @@ export default function SchedulesAdminPage() {
                                     </div>
                                 ))}
                             </div>
-                            {/* Time Column */}
-                            <div className="col-start-1 row-start-2 grid grid-rows-16 border-r">
-                                {allTimeSlots.map(hour => (
-                                    <div key={hour} className="relative -top-3 pr-2 text-right text-xs text-muted-foreground h-[60px] flex items-start justify-end pt-1">
-                                        {hour.toString().padStart(2, '0')}:00
-                                    </div>
-                                ))}
-                            </div>
-                            {/* Grid Background and Entries */}
-                            <div className="col-start-2 col-span-6 row-start-2 grid grid-cols-6 grid-rows-16 relative">
-                                {/* Grid lines */}
-                                {Array.from({ length: 16 * 6 }).map((_, i) => (
-                                    <div key={i} className="border-b border-r h-[60px]"></div>
-                                ))}
-                                
-                                {/* Schedule Entries */}
-                                {(selectedGrupo.horario || []).map((entry, index) => (
-                                    <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
-                                        <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
-                                            <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
-                                                <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
-                                                <p className="text-gray-600">{entry.docenteNombre}</p>
-                                                <div className="flex-grow"></div>
-                                                <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                            </div>
-                                        </button>
-                                    </div>
-                                ))}
+                            {/* Grid with Time and Entries */}
+                            <div className="col-start-1 col-span-7 row-start-2 grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))]">
+                                {/* Time Column */}
+                                <div className="row-span-16 grid grid-rows-16 border-r">
+                                    {allTimeSlots.map(hour => (
+                                        <div key={hour} className="pr-2 text-right text-xs text-muted-foreground h-[60px] flex items-start justify-end pt-1 border-b">
+                                            {hour.toString().padStart(2, '0')}:00
+                                        </div>
+                                    ))}
+                                </div>
+                                {/* Schedule Grid */}
+                                <div className="col-start-2 col-span-6 row-span-16 grid grid-cols-6 grid-rows-16 relative">
+                                    {/* Grid background lines */}
+                                    {Array.from({ length: 16 * 6 }).map((_, i) => (
+                                        <div key={i} className="border-b border-r h-[60px]"></div>
+                                    ))}
+                                    {/* Schedule Entries */}
+                                    {(selectedGrupo.horario || []).map((entry, index) => (
+                                        <div key={entry.id || index} style={getGridPosition(entry)} className="absolute p-1 m-px w-[calc(100%_-_2px)] h-[calc(100%_-_2px)]">
+                                            <button className="w-full h-full text-left" onClick={() => handleOpenDialog(entry)}>
+                                                <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg bg-blue-50 border-l-4 border-blue-500 shadow-sm overflow-hidden text-xs">
+                                                    <p className="font-bold text-blue-800">{entry.materiaNombre}</p>
+                                                    <p className="text-gray-600">{entry.docenteNombre}</p>
+                                                    <div className="flex-grow"></div>
+                                                    <p className="text-gray-600 font-semibold">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                                </div>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -326,6 +341,7 @@ export default function SchedulesAdminPage() {
                     onClassAssigned={onClassAssigned}
                     sedes={sedes}
                     existingSchedule={selectedScheduleEntry}
+                    allSchedules={allSedeSchedules}
                 />
             )}
         </div>
@@ -341,7 +357,8 @@ function AssignClassDialog({
     salones, 
     onClassAssigned, 
     sedes,
-    existingSchedule
+    existingSchedule,
+    allSchedules,
 }: { 
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -352,6 +369,7 @@ function AssignClassDialog({
     onClassAssigned: () => void;
     sedes: Sede[];
     existingSchedule?: ScheduleEntry | null;
+    allSchedules: ScheduleEntry[];
 }) {
     const [selectedDia, setSelectedDia] = useState(existingSchedule?.dia || "");
     const [selectedHoraInicio, setSelectedHoraInicio] = useState(existingSchedule?.hora.split(' - ')[0] || "");
@@ -396,6 +414,30 @@ function AssignClassDialog({
     useEffect(() => {
       setSelectedMateria("");
     }, [materiasDelCiclo]);
+    
+    const availableSalones = useMemo(() => {
+        if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return salones;
+
+        const start = parseInt(selectedHoraInicio.split(':')[0]);
+        const end = parseInt(selectedHoraFin.split(':')[0]);
+
+        const occupiedSalons = allSchedules
+            .filter(entry => {
+                // Exclude the class being edited from conflict check
+                if (existingSchedule && entry.id === existingSchedule.id) return false;
+                return entry.dia === selectedDia && entry.modalidad === 'Presencial';
+            })
+            .filter(entry => {
+                const entryStart = parseInt(entry.hora.split(':')[0]);
+                const entryEnd = entryStart + entry.duracion;
+                // Check for any overlap
+                return Math.max(start, entryStart) < Math.min(end, entryEnd);
+            })
+            .map(entry => entry.salonId);
+            
+        return salones.filter(salon => !occupiedSalons.includes(salon.id));
+
+    }, [salones, allSchedules, selectedDia, selectedHoraInicio, selectedHoraFin, modalidad, existingSchedule]);
 
 
     const handleSubmit = async () => {
@@ -527,7 +569,18 @@ function AssignClassDialog({
                     {modalidad === 'Presencial' && (
                         <div className="space-y-2">
                             <Label>Salón</Label>
-                            <Select value={selectedSalon} onValueChange={setSelectedSalon}><SelectTrigger><SelectValue placeholder="Selecciona un salón..." /></SelectTrigger><SelectContent>{salones.map(s => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}</SelectContent></Select>
+                            <Select value={selectedSalon} onValueChange={setSelectedSalon} disabled={!selectedDia || !selectedHoraFin}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecciona un salón..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {salones.map(s => (
+                                        <SelectItem key={s.id} value={s.id} disabled={!availableSalones.some(as => as.id === s.id)}>
+                                            {s.nombre} {!availableSalones.some(as => as.id === s.id) && "(Ocupado)"}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     )}
                 </div>
