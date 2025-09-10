@@ -89,11 +89,13 @@ export function generateSchedulePdf(
 
     schedule.forEach(entry => {
         const dayIndex = daysOfWeek.indexOf(entry.dia);
-        const startTime = entry.hora.split(' - ')[0];
-        const timeIndex = timeSlots.indexOf(startTime);
+        const [startTime] = entry.hora.split(' - ');
+        const [startHour] = startTime.split(':').map(Number);
+        const timeIndex = timeSlots.indexOf(`${startHour.toString().padStart(2, '0')}:00`);
         
         if (dayIndex !== -1 && timeIndex !== -1) {
-            for (let i = 0; i < entry.duracion; i++) {
+            const durationInHours = Math.ceil(entry.duracion);
+            for (let i = 0; i < durationInHours; i++) {
                 if (timeIndex + i < timeSlots.length) {
                     scheduleGrid[timeIndex + i][dayIndex] = entry;
                 }
@@ -105,14 +107,14 @@ export function generateSchedulePdf(
         const rowData: any[] = [];
         daysOfWeek.forEach((_, dayIndex) => {
             const entry = scheduleGrid[timeIndex][dayIndex];
-            const isFirstSlot = entry && entry.hora.startsWith(time);
+            const isFirstSlot = entry && entry.hora.startsWith(time.split(':')[0]);
 
             if (isFirstSlot) {
                 const location = entry.modalidad === 'Virtual' ? 'Virtual' : (entry.salonNombre || 'N/A');
                 let cellContent: any[] = [
                     { content: entry.materiaNombre, styles: { fontStyle: 'bold', fontSize: 9, textColor: poliBlue } },
                     { content: `(${entry.hora})`, styles: { fontSize: 7, textColor: 80 } },
-                    { content: entry.modalidad === 'Presencial' ? location : 'Virtual', styles: { fontStyle: 'italic', fontSize: 7, textColor: 80 } }
+                    { content: location, styles: { fontStyle: 'italic', fontSize: 7, textColor: 80 } }
                 ];
                 
                 if (userRole === 'docente' && entry.grupoCodigo) {
@@ -123,7 +125,7 @@ export function generateSchedulePdf(
 
                 rowData.push({
                     content: cellContent,
-                    rowSpan: entry.duracion,
+                    rowSpan: Math.ceil(entry.duracion),
                     styles: { fillColor: [230, 240, 255] } // Light blue for class cells
                 });
             } else if (!entry) {
@@ -213,3 +215,5 @@ export function generateSchedulePdf(
     const fileName = `Horario_${userInfo.nombreCompleto.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
 }
+
+    

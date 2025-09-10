@@ -408,9 +408,14 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile
                         {schedule.map((entry: any, index: number) => {
                             const dayIndex = daysOfWeek.indexOf(entry.dia);
                             if (dayIndex === -1) return null;
-                            const start = parseInt(entry.hora.split(':')[0]) + parseInt(entry.hora.split(':')[1]) / 60;
-                            const top = ((start - 7) / 16) * 100;
-                            const height = (entry.duracion / 16) * 100;
+                            
+                            const [startHourStr, startMinuteStr] = entry.hora.split(' - ')[0].split(':');
+                            const startHour = parseInt(startHourStr);
+                            const startMinute = parseInt(startMinuteStr);
+                            const start = startHour + startMinute / 60;
+                            
+                            const top = ((start - 7) / 16) * 100 * 2; // Each hour is 2 slots
+                            const height = (entry.duracion / 16) * 100 * 2;
                             
                             const color = stringToHslColor(entry.materiaNombre, 80, 85);
                             const borderColor = stringToHslColor(entry.materiaNombre, 60, 60);
@@ -466,7 +471,11 @@ function MobileScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: 
             }
         });
         Object.values(groups).forEach(dayEntries => {
-            dayEntries.sort((a,b) => parseInt(a.hora.split(':')[0]) - parseInt(b.hora.split(':')[0]));
+            dayEntries.sort((a,b) => {
+                const [startHourA] = a.hora.split(' - ')[0].split(':').map(Number);
+                const [startHourB] = b.hora.split(' - ')[0].split(':').map(Number);
+                return startHourA - startHourB;
+            });
         });
         return groups;
     }, [schedule]);
@@ -556,8 +565,9 @@ function AssignClassDialog({
         if(open) {
           if(existingSchedule) {
               setSelectedDia(existingSchedule.dia);
-              setSelectedHoraInicio(existingSchedule.hora.split(' - ')[0]);
-              setSelectedHoraFin(existingSchedule.hora.split(' - ')[1]);
+              const [start, end] = existingSchedule.hora.split(' - ');
+              setSelectedHoraInicio(start);
+              setSelectedHoraFin(end);
               setSelectedMateria(existingSchedule.materiaId);
               setSelectedDocente(existingSchedule.docenteId);
               setModalidad(existingSchedule.modalidad);
@@ -591,7 +601,8 @@ function AssignClassDialog({
                 return entry.dia === selectedDia && entry.modalidad === 'Presencial';
             })
             .filter(entry => {
-                const entryStart = parseInt(entry.hora.split(':')[0]) + parseInt(entry.hora.split(':')[1]) / 60;
+                const [entryStartHour, entryStartMinute] = entry.hora.split(' - ')[0].split(':').map(Number);
+                const entryStart = entryStartHour + entryStartMinute / 60;
                 const entryEnd = entryStart + entry.duracion;
                 return Math.max(start, entryStart) < Math.min(end, entryEnd);
             })
@@ -608,8 +619,11 @@ function AssignClassDialog({
             return;
         }
 
-        const horaInicioNum = parseInt(selectedHoraInicio.split(':')[0]) + parseInt(selectedHoraInicio.split(':')[1]) / 60;
-        const horaFinNum = parseInt(selectedHoraFin.split(':')[0]) + parseInt(selectedHoraFin.split(':')[1]) / 60;
+        const [startHour, startMinute] = selectedHoraInicio.split(':').map(Number);
+        const [endHour, endMinute] = selectedHoraFin.split(':').map(Number);
+
+        const horaInicioNum = startHour + startMinute / 60;
+        const horaFinNum = endHour + endMinute / 60;
         const duracion = horaFinNum - horaInicioNum;
         
         if (duracion <= 0) {
@@ -760,3 +774,5 @@ function AssignClassDialog({
     );
 }
   
+
+    
