@@ -325,6 +325,13 @@ export default function SchedulesAdminPage() {
     );
 }
 
+const sanitizeForFirestore = (obj: any) => {
+    if (!obj) return obj;
+    return JSON.parse(JSON.stringify(obj), (key, value) => {
+        return value === undefined ? null : value;
+    });
+};
+
 function AssignClassDialog({ 
     grupo, 
     carrera, 
@@ -412,17 +419,19 @@ function AssignClassDialog({
             })
         };
         
+        const sanitizedSlot = sanitizeForFirestore(newSlot);
+
         setIsSaving(true);
         try {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
             if (existingSchedule) {
                 // Create a temporary array, remove the old item, add the new one.
                 const currentHorario = grupo.horario?.filter(h => h.id !== existingSchedule.id) || [];
-                const newHorario = [...currentHorario, newSlot];
+                const newHorario = [...currentHorario, sanitizedSlot];
                 await updateDoc(grupoRef, { horario: newHorario });
                 toast({ title: "Éxito", description: "La clase ha sido actualizada correctamente." });
             } else {
-                await updateDoc(grupoRef, { horario: arrayUnion(newSlot) });
+                await updateDoc(grupoRef, { horario: arrayUnion(sanitizedSlot) });
                 toast({ title: "Éxito", description: "La clase ha sido asignada correctamente." });
             }
             onClassAssigned();
