@@ -169,10 +169,10 @@ export default function SchedulesAdminPage() {
         if (dayIndex === undefined) return {}; 
 
         const startTime = parseInt(entry.hora.split(':')[0]);
-        const startRow = allTimeSlots.indexOf(startTime);
+        const startRow = startTime - 7; // Direct calculation: 7:00 -> 0, 8:00 -> 1, etc.
         const duration = entry.duracion;
 
-        if (startRow === -1) return {};
+        if (startRow < 0 || startRow >= allTimeSlots.length) return {};
 
         return {
             gridColumn: `${dayIndex}`,
@@ -390,10 +390,10 @@ function AssignClassDialog({
     }, [existingSchedule, open]); // Depend on 'open' to reset form
     
     useEffect(() => {
-        if (!carrera) {
+        if (!materiasDelCiclo.some(m => m.id === selectedMateria)) {
             setSelectedMateria("");
         }
-    }, [carrera]);
+    }, [materiasDelCiclo, selectedMateria]);
 
     useEffect(() => {
         setSelectedHoraFin("");
@@ -551,3 +551,4 @@ function AssignClassDialog({
         </Dialog>
     );
 }
+
