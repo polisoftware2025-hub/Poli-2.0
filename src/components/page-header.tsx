@@ -72,12 +72,6 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     return null; // Don't render breadcrumbs if not in a dashboard context
   }
 
-  // Filter out the dynamic ID segment (slug) from the breadcrumbs path
-  const relevantSegments = pathSegments.slice(dashboardBaseIndex + 1).filter(segment => {
-      // Heuristic: assume segments that are long and/or contain numbers/hyphens are dynamic IDs
-      return !/^[a-z0-9-]{10,}$/.test(segment) || isNaN(parseInt(segment, 10));
-  });
-
   const getBreadcrumbName = (segment: string) => {
     const names: { [key: string]: string } = {
       'dashboard': 'Panel', 'materias': 'Materias', 'notifications': 'Notificaciones',
@@ -97,44 +91,36 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     if (names[segment]) {
         return names[segment];
     }
-    // If it's a slug-like string, return a generic name, but this is less likely now
-    if (segment.length > 20) {
-      return "Detalle";
+    // Check if it's a dynamic ID (e.g., a long alphanumeric string) and return a generic name if so
+    if (segment.length > 20 && /[a-zA-Z]/.test(segment) && /[0-9]/.test(segment)) {
+        return "Detalle"; 
     }
     return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
   
+  // Create breadcrumb parts from path segments
+  let breadcrumbParts = pathSegments.slice(dashboardBaseIndex + 1);
+  if (userRole) {
+      // Remove role from the display path
+      breadcrumbParts = breadcrumbParts.filter(p => p !== userRole);
+  }
+
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
       <Link href={homePath} className="hover:text-primary transition-colors">
         <Home className="h-4 w-4" />
       </Link>
-      {relevantSegments.map((segment, index) => {
-        // Skip role segment in breadcrumb path
-        if (segment === userRole) return null;
-
-        const isLast = index === relevantSegments.length - 1;
-        
-        // Build the path up to the current segment
-        const pathParts = [];
-        let foundRole = false;
-        for (let i = 0; i <= index; i++) {
-            const currentSegment = relevantSegments[i];
-            if (currentSegment === userRole) {
-                foundRole = true;
-                continue;
-            }
-             pathParts.push(currentSegment);
-        }
-        const currentPath = `/dashboard/${userRole}/${pathParts.join('/')}`;
+      {breadcrumbParts.map((segment, index) => {
+        const isLast = index === breadcrumbParts.length - 1;
+        const path = `/dashboard/${userRole}/${breadcrumbParts.slice(0, index + 1).join('/')}`;
         
         return (
-          <React.Fragment key={currentPath}>
+          <React.Fragment key={path}>
             <ChevronRight className="h-4 w-4 mx-1" />
             {isLast ? (
               <span className="font-medium text-foreground">{getBreadcrumbName(segment)}</span>
             ) : (
-              <Link href={currentPath} className="hover:text-primary transition-colors">
+              <Link href={path} className="hover:text-primary transition-colors">
                 {getBreadcrumbName(segment)}
               </Link>
             )}
