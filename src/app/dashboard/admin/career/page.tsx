@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
@@ -346,4 +346,3 @@ export default function CareerAdminPage() {
     </div>
   );
 }
-
