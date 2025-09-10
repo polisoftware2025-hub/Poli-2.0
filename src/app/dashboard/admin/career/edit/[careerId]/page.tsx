@@ -60,6 +60,13 @@ function truncateString(str: string, num: number) {
     return str.slice(0, num) + "...";
 }
 
+const createStableMateriaId = (materia: { nombre: string, codigo?: string }) => {
+    const namePart = materia.nombre.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const codePart = materia.codigo?.toLowerCase().replace(/[^a-z0-9]/g, '-') || '';
+    return `${namePart}-${codePart}`.replace(/--+/g, '-').replace(/^-|-$/g, '');
+};
+
+
 export default function EditCareerPage() {
   const params = useParams();
   const careerId = params.careerId as string;
@@ -125,10 +132,21 @@ export default function EditCareerPage() {
     
     setIsLoading(true);
     try {
+        // --- DATA SANITIZATION AND MIGRATION LOGIC ---
+        const sanitizedProgram = { ...programDetails };
+        sanitizedProgram.ciclos = sanitizedProgram.ciclos.map(ciclo => ({
+            ...ciclo,
+            materias: ciclo.materias.map(materia => ({
+                ...materia,
+                id: createStableMateriaId(materia) // Ensure all subjects have stable IDs
+            }))
+        }));
+        
         const careerDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", programDetails.id);
-        const { id, ...dataToUpdate } = programDetails;
+        const { id, ...dataToUpdate } = sanitizedProgram;
         await updateDoc(careerDocRef, dataToUpdate);
-        toast({ title: "Éxito", description: "La carrera ha sido actualizada." });
+
+        toast({ title: "Éxito", description: "La carrera ha sido actualizada y sus datos han sido normalizados." });
         router.push("/dashboard/admin/career");
     } catch (error) {
         console.error("Error updating career:", error);
@@ -214,12 +232,14 @@ export default function EditCareerPage() {
     }
 
     const updatedCiclos = [...programDetails.ciclos];
+    const materiaToSave = { ...newMateria, id: createStableMateriaId(newMateria) };
+
 
     if (editingMateria) {
       const { cycleIndex, materiaIndex } = editingMateria;
-      updatedCiclos[cycleIndex].materias[materiaIndex] = newMateria;
+      updatedCiclos[cycleIndex].materias[materiaIndex] = materiaToSave;
     } else if (currentCycleIndex !== null) {
-      updatedCiclos[currentCycleIndex].materias.push({ ...newMateria, id: crypto.randomUUID() });
+      updatedCiclos[currentCycleIndex].materias.push(materiaToSave);
     }
 
     setProgramDetails({ ...programDetails, ciclos: updatedCiclos });

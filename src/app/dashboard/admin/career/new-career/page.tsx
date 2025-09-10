@@ -53,6 +53,12 @@ interface Career {
   precioPorCiclo: { [key: string]: number };
 }
 
+const createStableMateriaId = (materia: { nombre: string, codigo?: string }) => {
+    const namePart = materia.nombre.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const codePart = materia.codigo?.toLowerCase().replace(/[^a-z0-9]/g, '-') || '';
+    return `${namePart}-${codePart}`.replace(/--+/g, '-').replace(/^-|-$/g, '');
+};
+
 const initialProgram: Career = {
     nombre: "",
     slug: "",
@@ -148,10 +154,21 @@ export default function NewProgramPage() {
       }
       
       const slug = createSlug(programDetails.nombre);
+      
+      // Sanitize all subject IDs before saving
+      const sanitizedProgram = { ...programDetails, slug };
+      sanitizedProgram.ciclos = sanitizedProgram.ciclos.map(ciclo => ({
+        ...ciclo,
+        materias: ciclo.materias.map(materia => ({
+            ...materia,
+            id: createStableMateriaId(materia)
+        }))
+      }));
+
 
       try {
           const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
-          await addDoc(careersCollection, { ...programDetails, slug });
+          await addDoc(careersCollection, sanitizedProgram);
           toast({ title: "Éxito", description: "La carrera ha sido creada correctamente." });
           router.push("/dashboard/admin/career");
       } catch (error) {
@@ -199,13 +216,14 @@ export default function NewProgramPage() {
         return;
     }
 
-
     const updatedCiclos = [...programDetails.ciclos];
+    const materiaToSave = { ...newMateria, id: createStableMateriaId(newMateria) };
+
     if (editingMateria) {
       const { cycleIndex, materiaIndex } = editingMateria;
-      updatedCiclos[cycleIndex].materias[materiaIndex] = newMateria;
+      updatedCiclos[cycleIndex].materias[materiaIndex] = materiaToSave;
     } else if (currentCycleIndex !== null) {
-      updatedCiclos[currentCycleIndex].materias.push({ ...newMateria, id: crypto.randomUUID() });
+      updatedCiclos[currentCycleIndex].materias.push(materiaToSave);
     }
 
     setProgramDetails({ ...programDetails, ciclos: updatedCiclos });
