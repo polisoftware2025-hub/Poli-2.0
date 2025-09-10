@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -137,7 +136,6 @@ export default function SchedulesAdminPage() {
             const q = query(
                 collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
                 where("idSede", "==", selectedSede)
-                // We fetch all groups for the sede to check for conflicts later
             );
             const gruposSnapshot = await getDocs(q);
             const allSedeGroups = gruposSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Group));
@@ -145,8 +143,11 @@ export default function SchedulesAdminPage() {
             const groupsForSelectedCareer = allSedeGroups.filter(g => g.idCarrera === carreraId);
             setGrupos(groupsForSelectedCareer);
 
-            // Store all schedules for conflict checking
-            const allSchedules = allSedeGroups.flatMap(g => g.horario || []);
+            const allSchedules = allSedeGroups.flatMap(g => {
+                const groupHorario = g.horario || [];
+                // Add group code to each entry for conflict checking if needed
+                return groupHorario.map(h => ({ ...h, grupoCodigo: g.codigoGrupo, grupoId: g.id }));
+            });
             setAllSedeSchedules(allSchedules);
             
         } catch (error) {
@@ -163,11 +164,17 @@ export default function SchedulesAdminPage() {
 
     const onClassAssigned = useCallback(async () => {
         if (selectedGrupo) {
+            // Re-fetch only the updated group data
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", selectedGrupo.id);
             const grupoSnap = await getDoc(grupoRef);
             if (grupoSnap.exists()) {
-                setSelectedGrupo({ id: grupoSnap.id, ...grupoSnap.data() } as Group);
-                 // Re-fetch all schedules in case of changes
+                const updatedGroupData = { id: grupoSnap.id, ...grupoSnap.data() } as Group;
+                setSelectedGrupo(updatedGroupData);
+                
+                // Update the group in the local list
+                setGrupos(prev => prev.map(g => g.id === updatedGroupData.id ? updatedGroupData : g));
+
+                // Re-fetch all schedules for the sede to keep conflict data fresh
                 handleCarreraChange(selectedCarrera);
             }
         }
@@ -276,7 +283,7 @@ export default function SchedulesAdminPage() {
                         </div>
                     </CardHeader>
                     <CardContent className="p-0 overflow-x-auto">
-                        <div className="grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))] text-sm">
+                        <div className="grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))]">
                             {/* Days Header */}
                             <div className="col-start-2 col-span-6 grid grid-cols-6 border-b">
                                 {Object.keys(daysOfWeekMap).map(day => (
@@ -285,10 +292,10 @@ export default function SchedulesAdminPage() {
                                     </div>
                                 ))}
                             </div>
-                            {/* Grid with Time and Entries */}
-                            <div className="col-start-1 col-span-7 row-start-2 grid grid-cols-[auto_repeat(6,_minmax(140px,_1fr))]">
+                             {/* Grid Body */}
+                            <div className="col-start-1 col-span-7 row-start-2 grid grid-cols-[auto_repeat(7,_1fr)]">
                                 {/* Time Column */}
-                                <div className="row-span-16 grid grid-rows-16 border-r">
+                                <div className="col-span-1 grid grid-rows-16 border-r">
                                     {allTimeSlots.map(hour => (
                                         <div key={hour} className="pr-2 text-right text-xs text-muted-foreground h-[60px] flex items-start justify-end pt-1 border-b">
                                             {hour.toString().padStart(2, '0')}:00
@@ -296,7 +303,7 @@ export default function SchedulesAdminPage() {
                                     ))}
                                 </div>
                                 {/* Schedule Grid */}
-                                <div className="col-start-2 col-span-6 row-span-16 grid grid-cols-6 grid-rows-16 relative">
+                                <div className="col-span-6 grid grid-cols-6 grid-rows-16 relative">
                                     {/* Grid background lines */}
                                     {Array.from({ length: 16 * 6 }).map((_, i) => (
                                         <div key={i} className="border-b border-r h-[60px]"></div>
@@ -369,7 +376,7 @@ function AssignClassDialog({
     onClassAssigned: () => void;
     sedes: Sede[];
     existingSchedule?: ScheduleEntry | null;
-    allSchedules: ScheduleEntry[];
+    allSchedules: (ScheduleEntry & { grupoId?: string })[];
 }) {
     const [selectedDia, setSelectedDia] = useState(existingSchedule?.dia || "");
     const [selectedHoraInicio, setSelectedHoraInicio] = useState(existingSchedule?.hora.split(' - ')[0] || "");
@@ -396,7 +403,6 @@ function AssignClassDialog({
             setModalidad(existingSchedule.modalidad);
             setSelectedSalon(existingSchedule.salonId || "");
         } else {
-            // Reset state when opening for a new entry
             setSelectedDia("");
             setSelectedHoraInicio("");
             setSelectedHoraFin("");
@@ -405,15 +411,17 @@ function AssignClassDialog({
             setModalidad("Presencial");
             setSelectedSalon("");
         }
-    }, [existingSchedule, open]); // Depend on 'open' to reset form
+    }, [existingSchedule, open]);
     
     useEffect(() => {
       setSelectedHoraFin("");
     }, [selectedHoraInicio]);
     
     useEffect(() => {
-      setSelectedMateria("");
-    }, [materiasDelCiclo]);
+      if (!materiasDelCiclo.some(m => m.id === selectedMateria)) {
+          setSelectedMateria("");
+      }
+    }, [materiasDelCiclo, selectedMateria]);
     
     const availableSalones = useMemo(() => {
         if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return salones;
@@ -423,14 +431,12 @@ function AssignClassDialog({
 
         const occupiedSalons = allSchedules
             .filter(entry => {
-                // Exclude the class being edited from conflict check
                 if (existingSchedule && entry.id === existingSchedule.id) return false;
                 return entry.dia === selectedDia && entry.modalidad === 'Presencial';
             })
             .filter(entry => {
                 const entryStart = parseInt(entry.hora.split(':')[0]);
                 const entryEnd = entryStart + entry.duracion;
-                // Check for any overlap
                 return Math.max(start, entryStart) < Math.min(end, entryEnd);
             })
             .map(entry => entry.salonId);
@@ -455,31 +461,28 @@ function AssignClassDialog({
             return;
         }
 
-        const newSlot: ScheduleEntry = { 
+        const newSlotData = { 
             id: existingSchedule?.id || crypto.randomUUID(),
             dia: selectedDia, 
             hora: `${selectedHoraInicio} - ${selectedHoraFin}`,
             duracion: duracion,
             materiaId: selectedMateria,
-            materiaNombre: materiasDelCiclo.find(m => m.id === selectedMateria)?.nombre || 'N/A',
+            materiaNombre: materiasDelCiclo.find(m => m.id === selectedMateria)?.nombre,
             docenteId: selectedDocente,
-            docenteNombre: docentes.find(d => d.id === selectedDocente)?.nombreCompleto || 'N/A',
+            docenteNombre: docentes.find(d => d.id === selectedDocente)?.nombreCompleto,
             modalidad: modalidad,
-            ...(modalidad === 'Presencial' && {
-                sedeId: grupo.idSede,
-                sedeNombre: sedes.find(s => s.id === grupo.idSede)?.nombre,
-                salonId: selectedSalon,
-                salonNombre: salones.find(s => s.id === selectedSalon)?.nombre,
-            })
+            sedeId: modalidad === 'Presencial' ? grupo.idSede : undefined,
+            sedeNombre: modalidad === 'Presencial' ? sedes.find(s => s.id === grupo.idSede)?.nombre : undefined,
+            salonId: modalidad === 'Presencial' ? selectedSalon : undefined,
+            salonNombre: modalidad === 'Presencial' ? salones.find(s => s.id === selectedSalon)?.nombre : undefined,
         };
-        
-        const sanitizedSlot = sanitizeForFirestore(newSlot);
 
+        const sanitizedSlot = sanitizeForFirestore(newSlotData);
+        
         setIsSaving(true);
         try {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
             if (existingSchedule) {
-                // Create a temporary array, remove the old item, add the new one.
                 const currentHorario = grupo.horario?.filter(h => h.id !== existingSchedule.id) || [];
                 const newHorario = [...currentHorario, sanitizedSlot];
                 await updateDoc(grupoRef, { horario: newHorario });
@@ -504,8 +507,6 @@ function AssignClassDialog({
         setIsSaving(true);
         try {
             const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", grupo.id);
-            // Firestore does not allow removing items from an array by property value directly in an update.
-            // We need to get the full object to remove it.
             const fullScheduleEntryToRemove = grupo.horario?.find(h => h.id === existingSchedule.id);
             if(fullScheduleEntryToRemove){
                 await updateDoc(grupoRef, { horario: arrayRemove(fullScheduleEntryToRemove) });
