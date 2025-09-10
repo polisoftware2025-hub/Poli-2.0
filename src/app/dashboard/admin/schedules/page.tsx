@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -364,7 +363,10 @@ function AssignClassDialog({
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
     
-    const materiasDelCiclo = carrera?.ciclos.find(c => c.numero === grupo.ciclo)?.materias || [];
+    const materiasDelCiclo = useMemo(() => {
+        if (!carrera) return [];
+        return carrera.ciclos.find(c => c.numero === grupo.ciclo)?.materias || [];
+    }, [carrera, grupo.ciclo]);
 
     useEffect(() => {
         if(existingSchedule) {
@@ -388,9 +390,13 @@ function AssignClassDialog({
     }, [existingSchedule, open]); // Depend on 'open' to reset form
     
     useEffect(() => {
-        if(selectedHoraInicio){
-            setSelectedHoraFin("");
+        if (!carrera) {
+            setSelectedMateria("");
         }
+    }, [carrera]);
+
+    useEffect(() => {
+        setSelectedHoraFin("");
     }, [selectedHoraInicio]);
 
 
