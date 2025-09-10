@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { getDoc } from "firebase/firestore";
 import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday } from "date-fns";
 import { es } from "date-fns/locale";
+import { sanitizeForFirestore } from "@/lib/firestore-utils";
 
 interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string }[] }[]; }
@@ -325,13 +326,6 @@ export default function SchedulesAdminPage() {
     );
 }
 
-const sanitizeForFirestore = (obj: any) => {
-    if (!obj) return obj;
-    return JSON.parse(JSON.stringify(obj), (key, value) => {
-        return value === undefined ? null : value;
-    });
-};
-
 function AssignClassDialog({ 
     grupo, 
     carrera, 
@@ -505,7 +499,7 @@ function AssignClassDialog({
                     </div>
                     <div className="space-y-2 col-span-2">
                         <Label>Materia</Label>
-                        <Select value={selectedMateria} onValueChange={setSelectedMateria}><SelectTrigger><SelectValue placeholder="Selecciona una materia..." /></SelectTrigger><SelectContent>{materiasDelCiclo.map(m => <SelectItem key={m.id} value={m.id}>{m.nombre}</SelectItem>)}</SelectContent></Select>
+                        <Select value={selectedMateria} onValueChange={setSelectedMateria}><SelectTrigger><SelectValue placeholder="Selecciona una materia..." /></SelectTrigger><SelectContent>{materiasDelCiclo.map((m, i) => <SelectItem key={`${m.id}-${i}`} value={m.id}>{m.nombre}</SelectItem>)}</SelectContent></Select>
                     </div>
                     <div className="space-y-2 col-span-2">
                         <Label>Docente</Label>
@@ -540,4 +534,3 @@ function AssignClassDialog({
         </Dialog>
     );
 }
-
