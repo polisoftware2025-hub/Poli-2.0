@@ -44,17 +44,17 @@ interface Career {
 }
 
 interface AuditFinding {
-    careerId: string;
-    careerName: string;
     cycleNumber: number;
     currentCredits: number;
     status: 'Excede' | 'Incompleto';
 }
 
+type GroupedAuditFindings = Map<string, { careerName: string; findings: AuditFinding[] }>;
+
 
 export default function CareerAdminPage() {
   const [careers, setCareers] = useState<Career[]>([]);
-  const [auditFindings, setAuditFindings] = useState<AuditFinding[]>([]);
+  const [groupedAuditFindings, setGroupedAuditFindings] = useState<GroupedAuditFindings>(new Map());
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
@@ -89,15 +89,16 @@ export default function CareerAdminPage() {
       setCareers(careersWithStudentCounts);
 
       // --- Audit Logic ---
-      const findings: AuditFinding[] = [];
+      const findingsMap: GroupedAuditFindings = new Map();
       careersWithStudentCounts.forEach(career => {
         if (career.ciclos && Array.isArray(career.ciclos)) {
             career.ciclos.forEach(ciclo => {
                 const totalCredits = ciclo.materias.reduce((sum, materia) => sum + materia.creditos, 0);
                 if (totalCredits !== 10) {
-                    findings.push({
-                        careerId: career.id,
-                        careerName: career.nombre,
+                    if (!findingsMap.has(career.id)) {
+                        findingsMap.set(career.id, { careerName: career.nombre, findings: [] });
+                    }
+                    findingsMap.get(career.id)!.findings.push({
                         cycleNumber: ciclo.numero,
                         currentCredits: totalCredits,
                         status: totalCredits > 10 ? 'Excede' : 'Incompleto'
@@ -106,7 +107,7 @@ export default function CareerAdminPage() {
             });
         }
       });
-      setAuditFindings(findings);
+      setGroupedAuditFindings(findingsMap);
 
     } catch (error) {
       console.error("Error fetching careers: ", error);
@@ -156,7 +157,7 @@ export default function CareerAdminPage() {
         icon={<BookCopy className="h-8 w-8 text-primary" />}
       />
 
-       {auditFindings.length > 0 && (
+       {groupedAuditFindings.size > 0 && (
             <Card className="border-yellow-400 bg-yellow-50">
                 <CardHeader>
                     <div className="flex items-center gap-3">
@@ -179,26 +180,34 @@ export default function CareerAdminPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {auditFindings.map((finding, index) => (
-                                <TableRow key={index} className="bg-white">
-                                    <TableCell className="font-medium">{finding.careerName}</TableCell>
-                                    <TableCell>Ciclo {finding.cycleNumber}</TableCell>
-                                    <TableCell>{finding.currentCredits}/10</TableCell>
-                                    <TableCell>
-                                        <Badge variant={finding.status === 'Excede' ? 'destructive' : 'outline'} className={finding.status === 'Incompleto' ? 'border-yellow-600 text-yellow-800' : ''}>
-                                            <AlertTriangle className="mr-1 h-3 w-3" />
-                                            {finding.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button asChild variant="outline" size="sm">
-                                            <Link href={`/dashboard/admin/career/edit/${finding.careerId}`}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Corregir
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
+                            {Array.from(groupedAuditFindings.entries()).map(([careerId, { careerName, findings }]) => (
+                                <React.Fragment key={careerId}>
+                                    {findings.map((finding, index) => (
+                                        <TableRow key={`${careerId}-${finding.cycleNumber}`} className="bg-white">
+                                            {index === 0 && (
+                                                <TableCell rowSpan={findings.length} className="font-medium align-middle border-r">
+                                                    {careerName}
+                                                </TableCell>
+                                            )}
+                                            <TableCell>Ciclo {finding.cycleNumber}</TableCell>
+                                            <TableCell>{finding.currentCredits}/10</TableCell>
+                                            <TableCell>
+                                                <Badge variant={finding.status === 'Excede' ? 'destructive' : 'outline'} className={finding.status === 'Incompleto' ? 'border-yellow-600 text-yellow-800' : ''}>
+                                                    <AlertTriangle className="mr-1 h-3 w-3" />
+                                                    {finding.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button asChild variant="outline" size="sm">
+                                                    <Link href={`/dashboard/admin/career/edit/${careerId}`}>
+                                                        <Edit className="mr-2 h-4 w-4" />
+                                                        Corregir
+                                                    </Link>
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </React.Fragment>
                             ))}
                         </TableBody>
                     </Table>
@@ -338,4 +347,3 @@ export default function CareerAdminPage() {
   );
 }
 
-    
