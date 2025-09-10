@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -85,6 +84,14 @@ export default function EditUserPage() {
   });
   
   const selectedRole = useWatch({ control: form.control, name: "rol" });
+  
+  const birthDateValue = useMemo(() => {
+    if (userData?.fechaNacimiento && userData.fechaNacimiento.toDate) {
+      return format(userData.fechaNacimiento.toDate(), "PPP", { locale: es });
+    }
+    return "No disponible";
+  }, [userData]);
+
 
   useEffect(() => {
     if (!userId) return;
@@ -150,6 +157,7 @@ export default function EditUserPage() {
     }
   };
 
+
   if (isFetching) {
     return (
         <div className="flex flex-col gap-8">
@@ -158,14 +166,6 @@ export default function EditUserPage() {
         </div>
     );
   }
-  
-  const birthDateValue = useMemo(() => {
-    if (userData?.fechaNacimiento && userData.fechaNacimiento.toDate) {
-      return format(userData.fechaNacimiento.toDate(), "PPP", { locale: es });
-    }
-    return "No disponible";
-  }, [userData]);
-
 
   return (
     <div className="flex flex-col gap-8">
@@ -400,5 +400,3 @@ function AcademicInfoSection() {
         </section>
     );
 }
-
-    
