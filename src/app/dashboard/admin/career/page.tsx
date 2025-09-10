@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye } from "lucide-react";
+import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,23 +31,35 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
 
 interface Career {
   id: string;
   nombre: string;
   slug?: string;
   estudiantes: number;
-  ciclos?: any[];
+  ciclos?: { numero: number; materias: { creditos: number }[] }[];
   status?: string;
 }
 
+interface AuditFinding {
+    careerId: string;
+    careerName: string;
+    cycleNumber: number;
+    currentCredits: number;
+    status: 'Excede' | 'Incompleto';
+}
+
+
 export default function CareerAdminPage() {
   const [careers, setCareers] = useState<Career[]>([]);
+  const [auditFindings, setAuditFindings] = useState<AuditFinding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
-  const fetchCareers = async () => {
+  const fetchCareersAndAudit = async () => {
     setIsLoading(true);
     try {
       const careersCollection = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
@@ -76,6 +88,26 @@ export default function CareerAdminPage() {
 
       setCareers(careersWithStudentCounts);
 
+      // --- Audit Logic ---
+      const findings: AuditFinding[] = [];
+      careersWithStudentCounts.forEach(career => {
+        if (career.ciclos && Array.isArray(career.ciclos)) {
+            career.ciclos.forEach(ciclo => {
+                const totalCredits = ciclo.materias.reduce((sum, materia) => sum + materia.creditos, 0);
+                if (totalCredits !== 10) {
+                    findings.push({
+                        careerId: career.id,
+                        careerName: career.nombre,
+                        cycleNumber: ciclo.numero,
+                        currentCredits: totalCredits,
+                        status: totalCredits > 10 ? 'Excede' : 'Incompleto'
+                    });
+                }
+            });
+        }
+      });
+      setAuditFindings(findings);
+
     } catch (error) {
       console.error("Error fetching careers: ", error);
       toast({
@@ -89,7 +121,7 @@ export default function CareerAdminPage() {
   };
   
   useEffect(() => {
-    fetchCareers();
+    fetchCareersAndAudit();
   }, []);
 
   const handleDelete = async (careerId: string) => {
@@ -99,7 +131,7 @@ export default function CareerAdminPage() {
         title: "Éxito",
         description: "La carrera ha sido eliminada.",
       });
-      fetchCareers(); 
+      fetchCareersAndAudit(); 
     } catch (error) {
       console.error("Error deleting career: ", error);
       toast({
@@ -123,6 +155,56 @@ export default function CareerAdminPage() {
         description="Administra los programas académicos de la institución."
         icon={<BookCopy className="h-8 w-8 text-primary" />}
       />
+
+       {auditFindings.length > 0 && (
+            <Card className="border-yellow-400 bg-yellow-50">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <AlertTriangle className="h-6 w-6 text-yellow-600" />
+                        <CardTitle className="text-yellow-800">Auditoría de Créditos por Ciclo</CardTitle>
+                    </div>
+                    <CardDescription className="text-yellow-700">
+                        Se encontraron ciclos que no cumplen con la regla de 10 créditos exactos.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Carrera</TableHead>
+                                <TableHead>Ciclo</TableHead>
+                                <TableHead>Créditos Actuales</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead className="text-right">Acción</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {auditFindings.map((finding, index) => (
+                                <TableRow key={index} className="bg-white">
+                                    <TableCell className="font-medium">{finding.careerName}</TableCell>
+                                    <TableCell>Ciclo {finding.cycleNumber}</TableCell>
+                                    <TableCell>{finding.currentCredits}/10</TableCell>
+                                    <TableCell>
+                                        <Badge variant={finding.status === 'Excede' ? 'destructive' : 'outline'} className={finding.status === 'Incompleto' ? 'border-yellow-600 text-yellow-800' : ''}>
+                                            <AlertTriangle className="mr-1 h-3 w-3" />
+                                            {finding.status}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <Button asChild variant="outline" size="sm">
+                                            <Link href={`/dashboard/admin/career/edit/${finding.careerId}`}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Corregir
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        )}
 
       <Card>
         <CardHeader>
@@ -255,3 +337,5 @@ export default function CareerAdminPage() {
     </div>
   );
 }
+
+    
