@@ -12,29 +12,12 @@ import { MediaManagementDialog } from "@/components/dashboard/admin/media-manage
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Materia } from "@/types";
 import { ImageIcon, Clapperboard } from "lucide-react";
+import { createHash } from 'crypto';
 
-interface Career {
-  id: string;
-  nombre: string;
-  imagenURL?: string;
-}
-
-interface SiteImage {
-    id: string;
-    name: string;
-    description: string;
-    imageUrl: string;
-}
 
 // Simple hash function to get a numeric seed from a string
-const getSeedFromString = (str: string): number => {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-        const char = str.charCodeAt(i);
-        hash = (hash << 5) - hash + char;
-        hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
+const getSeedFromString = (str: string): string => {
+    return createHash('md5').update(str).digest('hex');
 };
 
 
@@ -206,7 +189,7 @@ export default function MediaManagementPage() {
            <Card>
             <CardHeader>
               <CardTitle>Imágenes de Materias (Generadas Automáticamente)</CardTitle>
-              <CardDescription>Imágenes de placeholder abstractas y únicas para cada materia.</CardDescription>
+              <CardDescription>Imágenes de patrones abstractos y únicos para cada materia.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
@@ -214,7 +197,7 @@ export default function MediaManagementPage() {
               ) : (
                 subjects.map(item => {
                     const seed = getSeedFromString(item.id || item.nombre);
-                    const imageUrl = `https://picsum.photos/seed/${seed}/600/400`;
+                    const imageUrl = `https://www.gravatar.com/avatar/${seed}?d=identicon&s=400`;
                     return (
                         <Card key={item.id}>
                             <CardHeader className="p-4">
@@ -224,10 +207,10 @@ export default function MediaManagementPage() {
                                 <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden">
                                     <Image 
                                         src={imageUrl} 
-                                        alt={`Imagen abstracta para ${item.nombre}`} 
+                                        alt={`Patrón abstracto para ${item.nombre}`} 
                                         fill 
                                         style={{ objectFit: 'cover' }}
-                                        data-ai-hint="abstract"
+                                        data-ai-hint="abstract geometric"
                                     />
                                 </div>
                             </CardContent>
@@ -241,5 +224,18 @@ export default function MediaManagementPage() {
       </Tabs>
     </div>
   );
+}
+
+interface Career {
+  id: string;
+  nombre: string;
+  imagenURL?: string;
+}
+
+interface SiteImage {
+    id: string;
+    name: string;
+    description: string;
+    imageUrl: string;
 }
 
