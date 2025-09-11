@@ -353,7 +353,7 @@ export default function DashboardLayout({
         </Sidebar>
       </div>
       <SidebarInset>
-        <div className="flex-1 overflow-x-auto">
+        <div className="flex-1 bg-background">
           <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
             <div className="flex items-center gap-4">
                 <SidebarTrigger>
@@ -425,7 +425,7 @@ export default function DashboardLayout({
               </Popover>
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
         <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
             © {new Date().getFullYear()} Politécnico Internacional. Todos los derechos reservados.
