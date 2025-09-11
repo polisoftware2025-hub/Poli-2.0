@@ -189,7 +189,7 @@ export default function MediaManagementPage() {
            <Card>
             <CardHeader>
               <CardTitle>Imágenes de Materias (Generadas Automáticamente)</CardTitle>
-              <CardDescription>Imágenes de patrones abstractos y únicos para cada materia.</CardDescription>
+              <CardDescription>Imágenes abstractas y artísticas únicas para cada materia.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
@@ -197,7 +197,7 @@ export default function MediaManagementPage() {
               ) : (
                 subjects.map(item => {
                     const seed = getSeedFromString(item.id || item.nombre);
-                    const imageUrl = `https://www.gravatar.com/avatar/${seed}?d=identicon&s=400`;
+                    const imageUrl = `https://picsum.photos/seed/${seed}/600/400`;
                     return (
                         <Card key={item.id}>
                             <CardHeader className="p-4">
@@ -207,10 +207,10 @@ export default function MediaManagementPage() {
                                 <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden">
                                     <Image 
                                         src={imageUrl} 
-                                        alt={`Patrón abstracto para ${item.nombre}`} 
+                                        alt={`Imagen abstracta para ${item.nombre}`} 
                                         fill 
                                         style={{ objectFit: 'cover' }}
-                                        data-ai-hint="abstract geometric"
+                                        data-ai-hint="abstract texture"
                                     />
                                 </div>
                             </CardContent>
