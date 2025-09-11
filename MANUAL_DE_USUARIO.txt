@@ -1,0 +1,103 @@
+# MANUAL DE USUARIO - Sistema de Gestión Académica "Poli 2.0"
+
+## 1. Introducción
+
+Bienvenido al manual de usuario del sistema "Poli 2.0". Esta guía está diseñada para ayudarte a navegar y utilizar todas las funcionalidades de la plataforma de manera eficiente, según el rol que te haya sido asignado.
+
+El sistema "Poli 2.0" centraliza la gestión académica y administrativa, proporcionando herramientas específicas para estudiantes, docentes, gestores y administradores.
+
+---
+
+## 2. Acceso al Sistema
+
+### 2.1. Registro de Nuevos Aspirantes
+
+Si eres un nuevo estudiante que desea inscribirse en el politécnico, debes seguir estos pasos:
+
+1.  **Accede a la Página de Registro:** Desde la página principal, haz clic en el botón "Inscríbete" o navega directamente a la sección de registro.
+2.  **Completa el Formulario de Múltiples Pasos:**
+    *   **Paso 1: Datos Personales:** Ingresa tu nombre completo, tipo y número de identificación, fecha de nacimiento y género.
+    *   **Paso 2: Datos de Contacto:** Proporciona tu número de teléfono, dirección de residencia y correo electrónico personal.
+    *   **Paso 3: Inscripción Académica:** Selecciona la sede, la carrera de tu interés, la modalidad (presencial/virtual) y la jornada. El sistema te mostrará los grupos disponibles.
+    *   **Paso 4: Datos de Acceso:** Crea una contraseña segura para tu futura cuenta.
+    *   **Paso 5: Confirmación:** Revisa que todos los datos sean correctos y finaliza el registro.
+3.  **Espera la Aprobación:** Tu solicitud será enviada al equipo de admisiones. Recibirás un correo electrónico de bienvenida con tus credenciales institucionales una vez que tu solicitud sea aprobada.
+
+### 2.2. Inicio de Sesión
+
+Una vez que tengas tus credenciales (correo institucional y contraseña):
+
+1.  Navega a la página de "Iniciar Sesión".
+2.  Ingresa tu correo institucional (ej. `nombre.apellido@pi.edu.co`).
+3.  Ingresa tu contraseña.
+4.  Haz clic en "Ingresar". Serás redirigido automáticamente al panel de control correspondiente a tu rol.
+
+### 2.3. Recuperación de Contraseña
+
+Si olvidaste tu contraseña:
+
+1.  En la página de inicio de sesión, haz clic en "¿Olvidaste tu contraseña?".
+2.  Ingresa tu **correo electrónico personal** (el que usaste durante el registro).
+3.  Recibirás un correo con un enlace para restablecer tu contraseña.
+4.  Sigue el enlace y establece una nueva contraseña segura.
+
+---
+
+## 3. Guía por Roles
+
+### 3.1. Manual del Estudiante
+
+Como estudiante, tendrás acceso a las siguientes funcionalidades desde tu panel:
+
+-   **Panel Principal:** Un resumen de tus materias actuales, tareas pendientes y un calendario interactivo con próximos eventos.
+-   **Mis Materias:** Visualiza las materias en las que estás inscrito, con la opción de verlas en formato de cuadrícula o lista.
+-   **Mis Calificaciones:** Consulta tus notas detalladas por materia, tu promedio ponderado y el total de créditos aprobados.
+-   **Mi Horario:** Visualiza tu horario de clases semanal en un formato de calendario claro y fácil de leer.
+-   **Mis Asistencias:** Revisa tu historial de asistencias y faltas para cada una de tus materias.
+-   **Mis Pagos:** Consulta tu historial de transacciones, los montos pagados y el saldo pendiente. Desde aquí puedes simular el pago de facturas pendientes.
+-   **Evaluación Docente:** Al final del período, podrás calificar el desempeño de tus docentes.
+-   **Mi Perfil:** Actualiza tu información personal y cambia tu contraseña.
+
+### 3.2. Manual del Docente
+
+Como docente, tu panel está diseñado para facilitar la gestión de tus cursos:
+
+-   **Panel Principal:** Accesos directos a tus herramientas más utilizadas y un resumen de tus grupos.
+-   **Mis Cursos:** Visualiza todas las clases y grupos que tienes asignados. Desde aquí puedes acceder a la gestión de cada curso.
+-   **Gestionar Curso (Detalle):**
+    *   **Pestaña de Estudiantes:** Consulta la lista completa de estudiantes inscritos en ese grupo.
+    *   **Pestaña de Notas:** Selecciona un estudiante y registra su calificación final para la materia.
+    *   **Pestaña de Asistencia:** Marca el estado (Presente, Ausente, Tarde) de cada estudiante para la sesión actual.
+-   **Mi Horario:** Consulta tu horario de clases semanal completo.
+-   **Mi Perfil:** Actualiza tu información personal y cambia tu contraseña.
+
+### 3.3. Manual del Gestor Académico
+
+Como gestor, tienes acceso a funciones de supervisión y administración clave:
+
+-   **Panel Principal:** Un resumen de alertas importantes (pagos por validar, pre-inscripciones pendientes) y estadísticas clave.
+-   **Revisión de Pagos:** Visualiza todas las facturas de los estudiantes, filtra por estado (pagado, pendiente, vencido) y valida los comprobantes de pago.
+-   **Gestión de Preinscripciones:** Revisa la lista de aspirantes pendientes. Puedes ver el detalle de cada solicitud y aprobarla o rechazarla.
+    *   **Aprobar:** Inscribe automáticamente al estudiante, le asigna credenciales y envía un correo de bienvenida.
+-   **Gestión de Horarios:** Visualiza y asigna las clases para cada grupo, sede y carrera, especificando materia, docente, salón y horario.
+-   **Gestión de Notas:** Permite corregir o modificar una calificación final de un estudiante, dejando un registro de auditoría.
+-   **Generación de Reportes:** Crea y descarga reportes en PDF, como listas de estudiantes matriculados o informes de rendimiento.
+-   **Enviar Anuncios:** Redacta y envía comunicados masivos a toda la comunidad, a estudiantes de una carrera específica o a un grupo particular.
+
+### 3.4. Manual del Administrador
+
+Como administrador, tienes control total sobre la configuración y los datos del sistema:
+
+-   **Panel Principal:** Estadísticas generales (total de usuarios, carreras, etc.) y herramientas para poblar la base de datos con datos iniciales (`seeding`).
+-   **Gestión de Usuarios:** Crea, visualiza, edita y deshabilita las cuentas de todos los usuarios (estudiantes, docentes, gestores, otros administradores).
+-   **Gestión de Carreras:** Crea nuevos programas académicos, edita su información (descripción, perfil), y gestiona su plan de estudios (ciclos y materias).
+-   **Gestión de Materias:** Visualiza el catálogo completo de materias de la institución. La edición se realiza desde la gestión de cada carrera.
+-   **Gestión de Grupos:** Crea y administra los grupos, asignándolos a una sede, carrera y ciclo.
+-   **Gestión de Horarios y Aulas:** Asigna clases a los grupos, vinculando docentes, materias y salones en horarios específicos. Detecta conflictos.
+-   **Asignar Docentes a Grupos:** Vincula a los docentes con los grupos que tendrán a su cargo, lo que define su carga académica.
+-   **Gestión de Media:** Administra las imágenes principales del sitio y de las carreras. Las imágenes de las materias se generan automáticamente.
+-   **Analíticas y Reportes:** Accede a todas las funciones de reportes y a un panel de analíticas avanzado.
+
+---
+
+Para cualquier duda o problema técnico no resuelto en este manual, por favor, contacta al soporte técnico de la institución.
