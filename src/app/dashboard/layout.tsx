@@ -67,7 +67,7 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, limit, orderBy, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, limit, orderBy, doc, getDoc, Timestamp } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -142,7 +142,7 @@ export default function DashboardLayout({
                      const noteData = noteDoc.data();
                      const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", noteData.grupoId);
                      const groupSnap = await getDoc(groupRef);
-                     const subjectName = groupSnap.exists() ? groupSnap.data().materia.nombre : 'una materia';
+                     const subjectName = groupSnap.exists() ? groupSnap.data()?.materia?.nombre : 'una materia';
                      const fechaNota = noteData.fecha?.toDate ? noteData.fecha.toDate() : new Date();
                      
                      fetchedNotifications.push({
