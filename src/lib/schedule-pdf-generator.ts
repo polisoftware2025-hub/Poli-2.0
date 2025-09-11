@@ -35,7 +35,6 @@ export function generateSchedulePdf(
     const timeSlots = Array.from({ length: 15 }, (_, i) => `${(7 + i).toString().padStart(2, '0')}:00`);
     const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
     const poliBlue = [0, 33, 71];
-    const lightGray = 240;
 
     // --- Header ---
     doc.setFillColor(poliBlue[0], poliBlue[1], poliBlue[2]);
@@ -54,30 +53,28 @@ export function generateSchedulePdf(
     doc.setFont("helvetica", "bold");
     doc.setTextColor(poliBlue[0], poliBlue[1], poliBlue[2]);
     
-    if (userRole === 'docente') {
-        doc.text("Docente:", leftMargin, startY);
-    } else {
-        doc.text("Estudiante:", leftMargin, startY);
-        if(userInfo.carreraNombre) doc.text("Carrera:", leftMargin, startY + 7);
-        if(userInfo.sedeNombre) doc.text("Sede:", rightMargin, startY);
-    }
+    let roleText = "Estudiante:";
+    if (userRole === 'docente') roleText = "Docente:";
+    if (userRole === 'admin') roleText = "Grupo:";
+
+    doc.text(roleText, leftMargin, startY);
+    if(userInfo.carreraNombre) doc.text("Carrera:", leftMargin, startY + 7);
+    if(userInfo.sedeNombre) doc.text("Sede:", rightMargin, startY);
     
-    doc.text("Generado:", rightMargin, startY + (userRole === 'docente' ? 0 : 7));
+    doc.text("Generado:", rightMargin, startY + 7);
     
     doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
 
-    doc.text(userInfo.nombreCompleto, leftMargin + 22, startY);
+    doc.text(userInfo.nombreCompleto, leftMargin + (roleText.length * 2), startY);
     
-    if (userRole !== 'docente') {
-        if (userInfo.carreraNombre) {
-            const careerLines = doc.splitTextToSize(userInfo.carreraNombre, 70);
-            doc.text(careerLines, leftMargin + 22, startY + 7);
-        }
-        doc.text(userInfo.sedeNombre || "N/A", rightMargin + 10, startY);
+    if (userInfo.carreraNombre) {
+        const careerLines = doc.splitTextToSize(userInfo.carreraNombre, 70);
+        doc.text(careerLines, leftMargin + 22, startY + 7);
     }
+    doc.text(userInfo.sedeNombre || "N/A", rightMargin + 10, startY);
     
-    doc.text(new Date().toLocaleDateString('es-ES'), rightMargin + 20, startY + (userRole === 'docente' ? 0 : 7));
+    doc.text(new Date().toLocaleDateString('es-ES'), rightMargin + 20, startY + 7);
 
     startY += 20;
 
@@ -119,14 +116,14 @@ export function generateSchedulePdf(
                 
                 if (userRole === 'docente' && entry.grupoCodigo) {
                     cellContent.splice(1, 0, { content: `Grupo: ${entry.grupoCodigo}`, styles: { fontSize: 8, textColor: 80 } });
-                } else if (userRole === 'estudiante') {
+                } else if (userRole === 'estudiante' || userRole === 'admin') {
                     cellContent.splice(1, 0, { content: entry.docenteNombre, styles: { fontSize: 7, textColor: 80 } });
                 }
 
                 rowData.push({
                     content: cellContent,
                     rowSpan: Math.ceil(entry.duracion),
-                    styles: { fillColor: [230, 240, 255] } // Light blue for class cells
+                    styles: { fillColor: [230, 240, 255] } 
                 });
             } else if (!entry) {
                 rowData.push({ content: '', styles: { fillColor: [250, 250, 250] } });
@@ -155,7 +152,6 @@ export function generateSchedulePdf(
             lineColor: 220
         },
         didParseCell: (data) => {
-            // This is for multicontent cells
             if(Array.isArray(data.cell.raw?.content)){
                 data.cell.text = data.cell.raw.content.map((item: any) => item.content);
                 data.cell.styles.font = 'helvetica';
@@ -169,7 +165,6 @@ export function generateSchedulePdf(
             }
         },
         willDrawCell: (data) => {
-            // For custom styling inside cells
              if (data.cell.raw?.styles?.cellStyles) {
                 doc.setFont(data.cell.styles.font, data.cell.styles.fontStyle);
                 doc.setFontSize(data.cell.styles.fontSize);
@@ -187,7 +182,7 @@ export function generateSchedulePdf(
                     doc.text(line, data.cell.x + 2, y);
                     y += style.fontSize * 0.35 + 1.5;
                 })
-                 return false; // Prevent default rendering
+                 return false; 
             }
         },
     });
