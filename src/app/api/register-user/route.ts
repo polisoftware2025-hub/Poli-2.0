@@ -3,27 +3,56 @@ import { db } from "@/lib/firebase";
 import { collection, doc, writeBatch, serverTimestamp, query, where, getDocs, Timestamp } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
+import { validateEmail, validateIdNumber, validateName, validatePassword, validatePhoneNumber, validateRequired, validateSelection } from "@/lib/validators";
 
-// Manual validation function instead of Zod
+// Manual validation function for backend
 const validateRegistrationData = (data: any) => {
     const errors: { [key: string]: string } = {};
 
-    if (!data.firstName || typeof data.firstName !== 'string' || data.firstName.trim().length < 1) errors.firstName = "El primer nombre es requerido.";
-    if (!data.lastName || typeof data.lastName !== 'string' || data.lastName.trim().length < 1) errors.lastName = "El primer apellido es requerido.";
-    if (!data.segundoApellido || typeof data.segundoApellido !== 'string' || data.segundoApellido.trim().length < 1) errors.segundoApellido = "El segundo apellido es requerido.";
-    if (!data.tipoIdentificacion) errors.tipoIdentificacion = "El tipo de identificación es requerido.";
-    if (!data.numeroIdentificacion || typeof data.numeroIdentificacion !== 'string' || data.numeroIdentificacion.trim().length < 5) errors.numeroIdentificacion = "El número de identificación es requerido.";
-    if (!data.gender) errors.gender = "El género es requerido.";
-    if (!data.birthDate) errors.birthDate = "La fecha de nacimiento es requerida.";
-    if (!data.phone || !/^\d{7,15}$/.test(data.phone)) errors.phone = "El teléfono no es válido.";
-    if (!data.address || typeof data.address !== 'string' || data.address.trim().length < 5) errors.address = "La dirección es requerida.";
-    if (!data.country) errors.country = "El país es requerido.";
-    if (!data.city) errors.city = "La ciudad es requerida.";
-    if (!data.correoPersonal || !/\S+@\S+\.\S+/.test(data.correoPersonal)) errors.correoPersonal = "El correo personal no es válido.";
-    if (!data.sedeId) errors.sedeId = "La sede es requerida.";
-    if (!data.carreraId) errors.carreraId = "La carrera es requerida.";
-    if (!data.grupo) errors.grupo = "El grupo es requerido.";
-    if (!data.password || typeof data.password !== 'string' || data.password.length < 8) errors.password = "La contraseña debe tener al menos 8 caracteres.";
+    const nameValidation = validateName(data.firstName);
+    if(nameValidation !== true) errors.firstName = nameValidation;
+
+    const lastNameValidation = validateName(data.lastName);
+    if(lastNameValidation !== true) errors.lastName = lastNameValidation;
+    
+    const idTypeValidation = validateSelection(data.tipoIdentificacion);
+    if(idTypeValidation !== true) errors.tipoIdentificacion = idTypeValidation;
+
+    const idNumberValidation = validateIdNumber(data.numeroIdentificacion);
+    if(idNumberValidation !== true) errors.numeroIdentificacion = idNumberValidation;
+
+    const genderValidation = validateSelection(data.gender);
+    if(genderValidation !== true) errors.gender = genderValidation;
+
+    const birthDateValidation = validateRequired(data.birthDate);
+    if(birthDateValidation !== true) errors.birthDate = birthDateValidation;
+
+    const phoneValidation = validatePhoneNumber(data.phone);
+    if(phoneValidation !== true) errors.phone = phoneValidation;
+
+    const addressValidation = validateRequired(data.address);
+    if(addressValidation !== true) errors.address = addressValidation;
+
+    const countryValidation = validateSelection(data.country);
+    if(countryValidation !== true) errors.country = countryValidation;
+
+    const cityValidation = validateSelection(data.city);
+    if(cityValidation !== true) errors.city = cityValidation;
+
+    const emailValidation = validateEmail(data.correoPersonal);
+    if(emailValidation !== true) errors.correoPersonal = emailValidation;
+
+    const sedeValidation = validateSelection(data.sedeId);
+    if(sedeValidation !== true) errors.sedeId = sedeValidation;
+
+    const carreraValidation = validateSelection(data.carreraId);
+    if(carreraValidation !== true) errors.carreraId = carreraValidation;
+
+    const grupoValidation = validateSelection(data.grupo);
+    if(grupoValidation !== true) errors.grupo = grupoValidation;
+
+    const passwordValidation = validatePassword(data.password);
+    if(passwordValidation !== true) errors.password = passwordValidation;
     
     if (Object.keys(errors).length > 0) {
         return { isValid: false, errors };
@@ -42,7 +71,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ message: "El cuerpo de la solicitud no es un JSON válido." }, { status: 400 });
     }
 
-    // Remove metodoPago from validation, as it's no longer part of the form
     const { metodoPago, ...dataToValidate } = rawBody;
     const { isValid, errors } = validateRegistrationData(dataToValidate);
 
@@ -76,7 +104,7 @@ export async function POST(req: Request) {
           tipoIdentificacion: data.tipoIdentificacion,
           identificacion: data.numeroIdentificacion,
           genero: data.gender,
-          fechaNacimiento: Timestamp.fromDate(new Date(data.birthDate)), // Convert string to Date, then to Timestamp
+          fechaNacimiento: Timestamp.fromDate(new Date(data.birthDate)), 
           telefono: data.phone,
           direccion: data.address,
           ciudad: data.city,
@@ -102,7 +130,7 @@ export async function POST(req: Request) {
           estado: "pendiente",
           estaInscrito: false,
           fechaRegistro: serverTimestamp(),
-          initialPassword: data.password, // Keep initial password for activation
+          initialPassword: data.password, 
         };
         
         const batch = writeBatch(db);

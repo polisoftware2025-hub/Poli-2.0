@@ -14,8 +14,6 @@ import { Eye, EyeOff, GraduationCap, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   Form,
   FormField,
@@ -26,16 +24,12 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { validateEmail, validateRequired } from "@/lib/validators";
 
-
-const loginSchema = z.object({
-  email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." })
-    .refine(email => email.endsWith('@pi.edu.co') || email.endsWith('@example.com'), {
-      message: "Solo se permiten correos institucionales (@pi.edu.co) o de prueba (@example.com)."
-    }),
-  password: z.string().min(1, { message: "La contraseña es obligatoria." }),
-});
-
+type LoginFormValues = {
+  email: string;
+  password: string;
+}
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -43,15 +37,15 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm<LoginFormValues>({
+    mode: "onTouched",
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+  const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
 
     const testUsers: { [key: string]: { role: string; id: string } } = {
@@ -145,6 +139,7 @@ export default function LoginPage() {
               <FormField
                 control={form.control}
                 name="email"
+                rules={{ validate: validateEmail }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Correo Institucional</FormLabel>
@@ -163,6 +158,7 @@ export default function LoginPage() {
               <FormField
                 control={form.control}
                 name="password"
+                rules={{ validate: validateRequired }}
                 render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center justify-between">

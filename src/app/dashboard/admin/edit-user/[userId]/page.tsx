@@ -1,11 +1,10 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { useForm, FormProvider, useWatch, useFormContext } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { PageHeader } from "@/components/page-header";
-import { User, Phone, KeyRound, BookOpen, School } from "lucide-react";
+import { User, Phone, KeyRound, BookOpen } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -21,30 +20,23 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
+import { validateEmail, validateName, validatePassword, validatePhoneNumber, validateRequired, validateSelection } from "@/lib/validators";
 
-const editUserSchema = z.object({
-  nombre1: z.string().min(1, "Campo requerido"),
-  nombre2: z.string().optional(),
-  apellido1: z.string().min(1, "Campo requerido"),
-  apellido2: z.string().min(1, "Campo requerido"),
-  genero: z.string().min(1, "Campo requerido"),
-  telefono: z.string().min(1, "Campo requerido"),
-  direccion: z.string().min(1, "Campo requerido"),
-  correo: z.string().email(),
-  rol: z.string().min(1, "El rol es obligatorio"),
-  contrasena: z.string().optional(),
-  sedeId: z.string().optional(),
-  carreraId: z.string().optional(),
-  grupo: z.string().optional(),
-}).refine(data => {
-    if(data.rol === 'estudiante') {
-        return !!data.sedeId && !!data.carreraId && !!data.grupo;
-    }
-    return true;
-}, {
-    message: "Sede, carrera y grupo son requeridos para el rol de estudiante.",
-    path: ["sedeId"],
-});
+type EditUserFormValues = {
+  nombre1: string;
+  nombre2?: string;
+  apellido1: string;
+  apellido2: string;
+  genero: string;
+  telefono: string;
+  direccion: string;
+  correo: string;
+  rol: string;
+  contrasena?: string;
+  sedeId?: string;
+  carreraId?: string;
+  grupo?: string;
+};
 
 type UserData = {
     nombre1: string;
@@ -79,8 +71,8 @@ export default function EditUserPage() {
   const { toast } = useToast();
   const userId = params.userId as string;
 
-  const form = useForm<z.infer<typeof editUserSchema>>({
-    resolver: zodResolver(editUserSchema),
+  const form = useForm<EditUserFormValues>({
+    mode: 'onTouched',
   });
   
   const selectedRole = useWatch({ control: form.control, name: "rol" });
@@ -132,7 +124,7 @@ export default function EditUserPage() {
     fetchUser();
   }, [userId, form, router, toast]);
   
-  const onSubmit = async (values: z.infer<typeof editUserSchema>) => {
+  const onSubmit = async (values: EditUserFormValues) => {
     if (!userId) return;
     setIsLoading(true);
     try {
@@ -188,16 +180,16 @@ export default function EditUserPage() {
                         <h3 className="text-xl font-semibold">Información Personal</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField name="nombre1" render={({ field }) => (
+                        <FormField name="nombre1" rules={{validate: validateName}} render={({ field }) => (
                             <FormItem><FormLabel>Primer Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField name="nombre2" render={({ field }) => (
                             <FormItem><FormLabel>Segundo Nombre (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField name="apellido1" render={({ field }) => (
+                        <FormField name="apellido1" rules={{validate: validateName}} render={({ field }) => (
                             <FormItem><FormLabel>Primer Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField name="apellido2" render={({ field }) => (
+                        <FormField name="apellido2" rules={{validate: validateName}} render={({ field }) => (
                             <FormItem><FormLabel>Segundo Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                         <div>
@@ -212,7 +204,7 @@ export default function EditUserPage() {
                             <Label>Fecha de Nacimiento</Label>
                             <Input value={birthDateValue} disabled />
                         </div>
-                         <FormField name="genero" render={({ field }) => (
+                         <FormField name="genero" rules={{validate: validateSelection}} render={({ field }) => (
                              <FormItem>
                                 <FormLabel>Género</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -238,13 +230,13 @@ export default function EditUserPage() {
                         <h3 className="text-xl font-semibold">Datos de Contacto</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <FormField name="telefono" render={({ field }) => (
+                        <FormField name="telefono" rules={{validate: validatePhoneNumber}} render={({ field }) => (
                             <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                         <FormField name="correo" render={({ field }) => (
+                         <FormField name="correo" rules={{validate: validateEmail}} render={({ field }) => (
                             <FormItem><FormLabel>Correo Personal</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                        <FormField name="direccion" render={({ field }) => (
+                        <FormField name="direccion" rules={{validate: validateRequired}} render={({ field }) => (
                             <FormItem className="md:col-span-2"><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
@@ -259,7 +251,7 @@ export default function EditUserPage() {
                         <h3 className="text-xl font-semibold">Credenciales y Rol</h3>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField name="rol" render={({ field }) => (
+                          <FormField name="rol" rules={{validate: validateSelection}} render={({ field }) => (
                              <FormItem>
                                 <FormLabel>Rol del Usuario</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -366,7 +358,7 @@ function AcademicInfoSection() {
                 <h3 className="text-xl font-semibold">Información Académica</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormField control={control} name="sedeId" render={({ field }) => (
+                <FormField control={control} name="sedeId" rules={{validate: validateSelection}} render={({ field }) => (
                     <FormItem>
                         <FormLabel>Sede</FormLabel>
                         <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", ""); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.sedes}>
@@ -376,7 +368,7 @@ function AcademicInfoSection() {
                         <FormMessage />
                     </FormItem>
                 )} />
-                <FormField control={control} name="carreraId" render={({ field }) => (
+                <FormField control={control} name="carreraId" rules={{validate: validateSelection}} render={({ field }) => (
                     <FormItem>
                         <FormLabel>Carrera</FormLabel>
                         <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
@@ -386,7 +378,7 @@ function AcademicInfoSection() {
                         <FormMessage />
                     </FormItem>
                 )} />
-                <FormField control={control} name="grupo" render={({ field }) => (
+                <FormField control={control} name="grupo" rules={{validate: validateSelection}} render={({ field }) => (
                     <FormItem>
                         <FormLabel>Grupo</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>

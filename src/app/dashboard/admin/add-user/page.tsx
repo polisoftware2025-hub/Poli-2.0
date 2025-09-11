@@ -1,11 +1,10 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch, useFormContext } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { PageHeader } from "@/components/page-header";
-import { UserPlus, User, Phone, BookOpen, KeyRound, School } from "lucide-react";
+import { UserPlus, User, Phone, BookOpen, KeyRound } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -23,33 +22,26 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { validateEmail, validateIdNumber, validateName, validatePassword, validatePhoneNumber, validateRequired, validateSelection } from "@/lib/validators";
 
-const addUserSchema = z.object({
-  nombre1: z.string().min(1, "Campo requerido"),
-  nombre2: z.string().optional(),
-  apellido1: z.string().min(1, "Campo requerido"),
-  apellido2: z.string().min(1, "Campo requerido"),
-  tipoIdentificacion: z.string().min(1, "Campo requerido"),
-  identificacion: z.string().min(1, "Campo requerido"),
-  genero: z.string().min(1, "Campo requerido"),
-  fechaNacimiento: z.date({ required_error: "La fecha es obligatoria." }),
-  telefono: z.string().min(1, "Campo requerido"),
-  direccion: z.string().min(1, "Campo requerido"),
-  correo: z.string().email(),
-  rol: z.string().min(1, "El rol es obligatorio"),
-  contrasena: z.string().min(8, "Mínimo 8 caracteres"),
-  sedeId: z.string().optional(),
-  carreraId: z.string().optional(),
-  grupo: z.string().optional(),
-}).refine(data => {
-    if(data.rol === 'estudiante') {
-        return !!data.sedeId && !!data.carreraId && !!data.grupo;
-    }
-    return true;
-}, {
-    message: "Sede, carrera y grupo son requeridos para el rol de estudiante.",
-    path: ["sedeId"], // You can choose which field to attach the error to
-});
+type AddUserFormValues = {
+  nombre1: string;
+  nombre2?: string;
+  apellido1: string;
+  apellido2: string;
+  tipoIdentificacion: string;
+  identificacion: string;
+  genero: string;
+  fechaNacimiento: Date;
+  telefono: string;
+  direccion: string;
+  correo: string;
+  rol: string;
+  contrasena: string;
+  sedeId?: string;
+  carreraId?: string;
+  grupo?: string;
+};
 
 interface Carrera { id: string; nombre: string; }
 interface Grupo { id: string; codigoGrupo: string; }
@@ -60,8 +52,8 @@ export default function AddUserPage() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const form = useForm<z.infer<typeof addUserSchema>>({
-    resolver: zodResolver(addUserSchema),
+  const form = useForm<AddUserFormValues>({
+    mode: 'onTouched',
     defaultValues: {
       nombre1: "",
       nombre2: "",
@@ -84,7 +76,7 @@ export default function AddUserPage() {
 
   const selectedRole = useWatch({ control: form.control, name: "rol" });
   
-  const onSubmit = async (values: z.infer<typeof addUserSchema>) => {
+  const onSubmit = async (values: AddUserFormValues) => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/admin/users', {
@@ -135,19 +127,19 @@ export default function AddUserPage() {
                           <h3 className="text-xl font-semibold">Información Personal</h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField name="nombre1" render={({ field }) => (
+                          <FormField name="nombre1" rules={{ validate: validateName }} render={({ field }) => (
                               <FormItem><FormLabel>Primer Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
                           <FormField name="nombre2" render={({ field }) => (
                               <FormItem><FormLabel>Segundo Nombre (Opcional)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
-                          <FormField name="apellido1" render={({ field }) => (
+                          <FormField name="apellido1" rules={{ validate: validateName }} render={({ field }) => (
                               <FormItem><FormLabel>Primer Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
-                          <FormField name="apellido2" render={({ field }) => (
+                          <FormField name="apellido2" rules={{ validate: validateName }} render={({ field }) => (
                               <FormItem><FormLabel>Segundo Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
-                          <FormField name="tipoIdentificacion" render={({ field }) => (
+                          <FormField name="tipoIdentificacion" rules={{ validate: validateSelection }} render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Tipo de Identificación</FormLabel>
                                   <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -160,10 +152,10 @@ export default function AddUserPage() {
                                   <FormMessage />
                               </FormItem>
                           )} />
-                          <FormField name="identificacion" render={({ field }) => (
+                          <FormField name="identificacion" rules={{ validate: validateIdNumber }} render={({ field }) => (
                               <FormItem><FormLabel>Número de Identificación</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
-                          <FormField name="fechaNacimiento" render={({ field }) => (
+                          <FormField name="fechaNacimiento" rules={{ validate: (value: Date) => validateRequired(value) }} render={({ field }) => (
                               <FormItem className="flex flex-col justify-end">
                                   <FormLabel>Fecha de Nacimiento</FormLabel>
                                   <Popover>
@@ -180,7 +172,7 @@ export default function AddUserPage() {
                                   <FormMessage />
                               </FormItem>
                           )} />
-                          <FormField name="genero" render={({ field }) => (
+                          <FormField name="genero" rules={{ validate: validateSelection }} render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Género</FormLabel>
                                   <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -206,13 +198,13 @@ export default function AddUserPage() {
                           <h3 className="text-xl font-semibold">Datos de Contacto</h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField name="telefono" render={({ field }) => (
+                          <FormField name="telefono" rules={{ validate: validatePhoneNumber }} render={({ field }) => (
                               <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
-                          <FormField name="correo" render={({ field }) => (
+                          <FormField name="correo" rules={{ validate: validateEmail }} render={({ field }) => (
                               <FormItem><FormLabel>Correo Personal</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
-                          <FormField name="direccion" render={({ field }) => (
+                          <FormField name="direccion" rules={{ validate: validateRequired }} render={({ field }) => (
                               <FormItem className="md:col-span-2"><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
                       </div>
@@ -227,7 +219,7 @@ export default function AddUserPage() {
                           <h3 className="text-xl font-semibold">Credenciales y Rol</h3>
                       </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField name="rol" render={({ field }) => (
+                            <FormField name="rol" rules={{ validate: validateSelection }} render={({ field }) => (
                               <FormItem>
                                   <FormLabel>Rol del Usuario</FormLabel>
                                   <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -242,7 +234,7 @@ export default function AddUserPage() {
                                   <FormMessage />
                               </FormItem>
                           )} />
-                          <FormField name="contrasena" render={({ field }) => (
+                          <FormField name="contrasena" rules={{ validate: validatePassword }} render={({ field }) => (
                               <FormItem><FormLabel>Contraseña Provisional</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
                           )} />
                       </div>
@@ -333,7 +325,7 @@ function AcademicInfoSection() {
                 <h3 className="text-xl font-semibold">Información Académica</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <FormField control={control} name="sedeId" render={({ field }) => (
+                <FormField control={control} name="sedeId" rules={{validate: validateSelection}} render={({ field }) => (
                     <FormItem>
                         <FormLabel>Sede</FormLabel>
                         <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", ""); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.sedes}>
@@ -343,7 +335,7 @@ function AcademicInfoSection() {
                         <FormMessage />
                     </FormItem>
                 )} />
-                <FormField control={control} name="carreraId" render={({ field }) => (
+                <FormField control={control} name="carreraId" rules={{validate: validateSelection}} render={({ field }) => (
                     <FormItem>
                         <FormLabel>Carrera</FormLabel>
                         <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", ""); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
@@ -353,7 +345,7 @@ function AcademicInfoSection() {
                         <FormMessage />
                     </FormItem>
                 )} />
-                <FormField control={control} name="grupo" render={({ field }) => (
+                <FormField control={control} name="grupo" rules={{validate: validateSelection}} render={({ field }) => (
                     <FormItem>
                         <FormLabel>Grupo</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>

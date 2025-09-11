@@ -3,23 +3,23 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import { z } from "zod";
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string(),
-});
+import { validateEmail, validateRequired } from "@/lib/validators";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const validation = loginSchema.safeParse(body);
+    
+    const emailValidation = validateEmail(body.email);
+    if(emailValidation !== true) {
+        return NextResponse.json({ message: emailValidation }, { status: 400 });
+    }
 
-    if (!validation.success) {
-      return NextResponse.json({ message: "Datos inválidos.", error: validation.error.format() }, { status: 400 });
+    const passwordValidation = validateRequired(body.password);
+    if(passwordValidation !== true) {
+        return NextResponse.json({ message: "La contraseña es obligatoria." }, { status: 400 });
     }
     
-    const { email, password } = validation.data;
+    const { email, password } = body;
 
     const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
     const q = query(usuariosRef, where("correoInstitucional", "==", email));
@@ -32,6 +32,10 @@ export async function POST(req: Request) {
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data();
     
+    if (!userData.contrasena) {
+      return NextResponse.json({ message: "La cuenta no tiene una contraseña configurada." }, { status: 400 });
+    }
+
     const isMatch = await bcrypt.compare(password, userData.contrasena);
 
     if (!isMatch) {

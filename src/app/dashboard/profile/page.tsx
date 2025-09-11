@@ -9,38 +9,35 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { User, Shield, Briefcase, Eye, EyeOff } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { validatePassword } from "@/lib/validators";
 
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1, "La contraseña actual es obligatoria."),
-  newPassword: z.string().min(8, "Mínimo 8 caracteres.")
-    .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
-    .regex(/[a-z]/, "Debe contener al menos una minúscula.")
-    .regex(/[0-9]/, "Debe contener al menos un número.")
-    .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
-  confirmPassword: z.string(),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Las contraseñas no coinciden.",
-  path: ["confirmPassword"],
-});
+type ChangePasswordFormValues = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
 
 interface AcademicInfo {
     carrera: string;
@@ -145,8 +142,8 @@ export default function ProfilePage() {
     fetchUserInfo();
   }, [userId, toast]);
   
-  const form = useForm<z.infer<typeof changePasswordSchema>>({
-    resolver: zodResolver(changePasswordSchema),
+  const form = useForm<ChangePasswordFormValues>({
+    mode: "onTouched",
     defaultValues: {
       currentPassword: "",
       newPassword: "",
@@ -154,7 +151,7 @@ export default function ProfilePage() {
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof changePasswordSchema>) => {
+  const onSubmit = async (values: ChangePasswordFormValues) => {
     setIsLoading(true);
 
     if (!userEmail) {
@@ -293,6 +290,7 @@ export default function ProfilePage() {
                  <FormField
                     control={form.control}
                     name="currentPassword"
+                    rules={{ required: "La contraseña actual es obligatoria." }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Contraseña Actual</FormLabel>
@@ -311,6 +309,7 @@ export default function ProfilePage() {
                  <FormField
                     control={form.control}
                     name="newPassword"
+                    rules={{ validate: validatePassword }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nueva Contraseña</FormLabel>
@@ -329,6 +328,9 @@ export default function ProfilePage() {
                   <FormField
                     control={form.control}
                     name="confirmPassword"
+                    rules={{
+                        validate: (value) => value === form.getValues("newPassword") || "Las contraseñas no coinciden."
+                    }}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Confirmar Nueva Contraseña</FormLabel>

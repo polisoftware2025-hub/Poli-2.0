@@ -1,16 +1,14 @@
 
 "use client";
 
-import { useState, useEffect, useCallback, useTransition } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Users, Plus, Edit, Trash2, MoreVertical, Search, Filter } from "lucide-react";
+import { Users, Plus, Edit, Trash2, MoreVertical, Filter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useForm, FormProvider } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useForm } from "react-hook-form";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -41,20 +39,17 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { validateRequired, validateSelection, validatePositiveInteger } from "@/lib/validators";
 
-
-const groupSchema = z.object({
-  codigoGrupo: z.string().min(1, "El código del grupo es requerido."),
-  idSede: z.string().min(1, "La sede es requerida."),
-  idCarrera: z.string().min(1, "La carrera es requerida."),
-  ciclo: z.coerce.number().min(1, "El ciclo debe ser al menos 1.").max(12, "El ciclo no puede ser mayor a 12."),
-  estado: z.string().min(1, "El estado es requerido."),
-});
-
-type GroupFormValues = z.infer<typeof groupSchema>;
+type GroupFormValues = {
+  codigoGrupo: string;
+  idSede: string;
+  idCarrera: string;
+  ciclo: number;
+  estado: string;
+};
 
 interface Sede { id: string; nombre: string; }
 interface Carrera { id: string; nombre: string; }
@@ -288,11 +283,10 @@ interface GroupFormDialogProps {
 }
 
 function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSuccess }: GroupFormDialogProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const form = useForm<GroupFormValues>({
-    resolver: zodResolver(groupSchema),
+    mode: 'onTouched',
     defaultValues: group ? {
       codigoGrupo: group.codigoGrupo || "",
       idSede: group.idSede || "",
@@ -308,8 +302,9 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
     },
   });
 
+  const { formState: { isSubmitting }, handleSubmit } = form;
+
   const onSubmit = async (values: GroupFormValues) => {
-    setIsSubmitting(true);
     try {
       if (group) {
         // Update
@@ -328,8 +323,6 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
       onOpenChange(false);
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el grupo." });
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -341,10 +334,11 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
           <DialogDescription>Completa la información del grupo.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="idSede"
+              rules={{validate: validateSelection}}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Sede</FormLabel>
@@ -359,6 +353,7 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
             <FormField
               control={form.control}
               name="idCarrera"
+              rules={{validate: validateSelection}}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Carrera</FormLabel>
@@ -373,6 +368,7 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
             <FormField
               control={form.control}
               name="codigoGrupo"
+              rules={{validate: validateRequired}}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Código del Grupo</FormLabel>
@@ -384,10 +380,11 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
             <FormField
               control={form.control}
               name="ciclo"
+              rules={{validate: validatePositiveInteger}}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ciclo</FormLabel>
-                  <FormControl><Input type="number" placeholder="Ej: 1" {...field} /></FormControl>
+                  <FormControl><Input type="number" placeholder="Ej: 1" {...field} onChange={e => field.onChange(parseInt(e.target.value, 10))} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -395,6 +392,7 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
             <FormField
               control={form.control}
               name="estado"
+              rules={{validate: validateSelection}}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Estado</FormLabel>

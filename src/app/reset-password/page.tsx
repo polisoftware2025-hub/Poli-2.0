@@ -15,22 +15,21 @@ import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
+import { validatePassword } from "@/lib/validators";
 
-const resetPasswordSchema = z.object({
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres.")
-    .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
-    .regex(/[a-z]/, "Debe contener al menos una minúscula.")
-    .regex(/[0-9]/, "Debe contener al menos un número.")
-    .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
-  confirmPassword: z.string(),
-}).refine(data => data.password === data.confirmPassword, {
-  message: "Las contraseñas no coinciden.",
-  path: ["confirmPassword"],
-});
+type ResetPasswordFormValues = {
+  password: string;
+  confirmPassword: string;
+};
 
 function ResetPasswordComponent() {
   const [showPassword, setShowPassword] = useState(false);
@@ -54,12 +53,12 @@ function ResetPasswordComponent() {
     }
   }, [token, router, toast]);
 
-  const form = useForm<z.infer<typeof resetPasswordSchema>>({
-    resolver: zodResolver(resetPasswordSchema),
+  const form = useForm<ResetPasswordFormValues>({
+    mode: "onTouched",
     defaultValues: { password: "", confirmPassword: "" },
   });
 
-  const onSubmit = async (values: z.infer<typeof resetPasswordSchema>) => {
+  const onSubmit = async (values: ResetPasswordFormValues) => {
     setIsLoading(true);
     try {
       const response = await fetch('/api/reset-password', {
@@ -140,6 +139,7 @@ function ResetPasswordComponent() {
             <FormField
               control={form.control}
               name="password"
+              rules={{ validate: validatePassword }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Nueva Contraseña</FormLabel>
@@ -168,6 +168,9 @@ function ResetPasswordComponent() {
             <FormField
               control={form.control}
               name="confirmPassword"
+              rules={{
+                  validate: (value) => value === form.getValues("password") || "Las contraseñas no coinciden."
+              }}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Confirmar Contraseña</FormLabel>
