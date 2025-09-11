@@ -2,7 +2,7 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { BarChart3, Users, TrendingUp, CheckCircle, BookCopy } from "lucide-react";
+import { BarChart3, Users, TrendingUp, CheckCircle, BookCopy, Library } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Bar,
@@ -35,6 +35,11 @@ interface PerformanceData {
 interface DistributionData {
     name: string;
     Estudiantes: number;
+}
+
+interface ChartData {
+    name: string;
+    total: number;
 }
 
 const StatCard = ({ title, value, description, icon: Icon, color }: StatCardProps) => (
@@ -88,6 +93,8 @@ export default function AnalyticsPage() {
   });
   const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
   const [distributionData, setDistributionData] = useState<DistributionData[]>([]);
+  const [careerChartData, setCareerChartData] = useState<ChartData[]>([]);
+  const [subjectChartData, setSubjectChartData] = useState<ChartData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -143,6 +150,23 @@ export default function AnalyticsPage() {
                 Estudiantes: count,
             }));
             setDistributionData(distData);
+            
+            // New: Calculate Total Careers and Subjects for Charts
+            const totalCareers = careersSnapshot.size;
+            let totalSubjects = 0;
+            careersSnapshot.forEach(doc => {
+                const careerData = doc.data();
+                if (careerData.ciclos && Array.isArray(careerData.ciclos)) {
+                    careerData.ciclos.forEach((ciclo: any) => {
+                        if (ciclo.materias && Array.isArray(ciclo.materias)) {
+                            totalSubjects += ciclo.materias.length;
+                        }
+                    });
+                }
+            });
+
+            setCareerChartData([{ name: "Carreras", total: totalCareers }]);
+            setSubjectChartData([{ name: "Materias", total: totalSubjects }]);
 
         } catch (error) {
             console.error("Error fetching analytics data:", error);
@@ -222,7 +246,47 @@ export default function AnalyticsPage() {
         </Card>
       </div>
 
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Total de Carreras Registradas</CardTitle>
+                    <CardDescription>Conteo total de programas académicos activos.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? <Skeleton className="h-[350px] w-full" /> : (
+                        <ResponsiveContainer width="100%" height={350}>
+                            <BarChart data={careerChartData} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
+                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={40} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Total de Materias Registradas</CardTitle>
+                    <CardDescription>Suma de todas las materias en todos los pensums.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                     {isLoading ? <Skeleton className="h-[350px] w-full" /> : (
+                        <ResponsiveContainer width="100%" height={350}>
+                            <BarChart data={subjectChartData} layout="vertical">
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
+                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={40} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </CardContent>
+            </Card>
+       </div>
+
     </div>
   );
 }
-
