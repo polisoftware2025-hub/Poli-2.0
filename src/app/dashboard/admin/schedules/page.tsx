@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -301,28 +302,8 @@ export default function SchedulesAdminPage() {
 
 function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, viewMode, setViewMode, isFullScreen, setIsFullScreen, handleDownloadPdf, docentes, selectedDocenteFilter, setSelectedDocenteFilter }: any) {
     const isMobile = useIsMobile();
-    const [currentTime, setCurrentTime] = useState(new Date());
-
-    useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => clearInterval(timer);
-    }, []);
-
-    const timeToPosition = (date: Date) => {
-        const hours = date.getHours();
-        const minutes = date.getMinutes();
-        if (hours < 7) return 0;
-        if (hours >= 23) return 100;
-        const totalMinutes = (hours - 7) * 60 + minutes;
-        const totalDayMinutes = (23-7) * 60;
-        return (totalMinutes / totalDayMinutes) * 100;
-    };
     
-    const currentTimePosition = timeToPosition(currentTime);
-    const currentDayOfWeek = getDay(currentTime);
-    const isCurrentWeek = isSameDay(week.start, startOfWeek(new Date(), { weekStartsOn: 1 }));
-
-    const CurrentView = viewMode === 'day' ? DayView : WeekView;
+    const CurrentView = (isMobile || viewMode === 'day') ? DayView : WeekView;
 
     return (
         <Card className={cn("overflow-hidden flex flex-col", isFullScreen && "h-full")}>
@@ -344,32 +325,54 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, viewMode
                             <SelectContent><SelectItem value="all">Todos los Docentes</SelectItem>{docentes.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.nombreCompleto}</SelectItem>)}</SelectContent>
                         </Select>
                         <Button variant="outline" size="icon" onClick={() => setIsFullScreen(!isFullScreen)} className="h-9 w-9">{isFullScreen ? <Minimize className="h-4 w-4"/> : <Maximize className="h-4 w-4"/>}</Button>
-                        <Select defaultValue="week" value={viewMode} onValueChange={(v) => setViewMode(v)}>
-                            <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
-                            <SelectContent><SelectItem value="week">Semana</SelectItem><SelectItem value="day">Día</SelectItem></SelectContent>
-                        </Select>
+                        {!isMobile && (
+                            <Select defaultValue="week" value={viewMode} onValueChange={(v) => setViewMode(v)}>
+                                <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
+                                <SelectContent><SelectItem value="week">Semana</SelectItem><SelectItem value="day">Día</SelectItem></SelectContent>
+                            </Select>
+                        )}
                     </div>
                 </div>
             </CardHeader>
             <CardContent className="p-0 overflow-auto flex-1">
-                 <CurrentView schedule={schedule} week={week} isCurrentWeek={isCurrentWeek} currentTimePosition={currentTimePosition} currentDayOfWeek={currentDayOfWeek} onOpenAssignDialog={onOpenAssignDialog} />
+                 <CurrentView schedule={schedule} week={week} isCurrentWeek={isSameDay(week.start, startOfWeek(new Date(), { weekStartsOn: 1 }))} onOpenAssignDialog={onOpenAssignDialog} />
             </CardContent>
         </Card>
     );
 }
 
-function WeekView({ schedule, week, isCurrentWeek, currentTimePosition, currentDayOfWeek, onOpenAssignDialog }: any) {
+function WeekView({ schedule, week, isCurrentWeek, onOpenAssignDialog }: any) {
+    const [currentTime, setCurrentTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const timeToPosition = (date: Date) => {
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        if (hours < 7) return 0;
+        if (hours >= 23) return 100;
+        const totalMinutes = (hours - 7) * 60 + minutes;
+        const totalDayMinutes = (23-7) * 60;
+        return (totalMinutes / totalDayMinutes) * 100;
+    };
+    
+    const currentTimePosition = timeToPosition(currentTime);
+    const currentDayOfWeek = getDay(currentTime);
+
     return (
-        <div className="grid grid-cols-[4rem_repeat(6,minmax(0,1fr))] min-w-[70rem]">
+        <div className="grid grid-cols-[4rem_repeat(6,minmax(140px,1fr))]">
             <div className="row-start-1 col-start-1 sticky left-0 z-10 bg-card border-b border-r"></div>
             {daysOfWeek.map((day, index) => (
                 <div key={day} className="col-start-auto text-center py-2 border-b border-r">
-                    <p className="text-xs uppercase text-muted-foreground">{day}</p>
+                    <p className="text-xs uppercase text-muted-foreground">{format(week.days[index], 'E', { locale: es })}</p>
                     <p className={cn("text-lg font-semibold", isToday(week.days[index]) && "text-primary")}>{format(week.days[index], 'd')}</p>
                 </div>
             ))}
             <div className="row-start-2 col-start-1 sticky left-0 z-10 bg-card border-r">
-                {timeSlots.map((time, index) => index % 2 === 0 && <div key={time} className="h-16 relative flex justify-end pr-2 pt-1"><span className="text-xs text-muted-foreground -translate-y-1/2">{time}</span></div>)}
+                {timeSlots.map((time, index) => index % 2 === 0 && <div key={time} className="h-16 relative flex justify-end pr-2"><span className="text-xs text-muted-foreground -translate-y-1/2">{time}</span></div>)}
             </div>
             <div className="row-start-2 col-start-2 col-span-6 grid grid-cols-6 relative">
                 {timeSlots.map((time, index) => daysOfWeek.map(day => <div key={`${day}-${time}`} className="h-8 border-b border-r"></div>))}
@@ -406,50 +409,57 @@ function WeekView({ schedule, week, isCurrentWeek, currentTimePosition, currentD
     );
 }
 
-function DayView({ schedule, week, isCurrentWeek, currentTimePosition, onOpenAssignDialog }: any) {
+function DayView({ schedule, week, onOpenAssignDialog }: any) {
     const today = new Date();
-    const currentDayStr = format(isCurrentWeek ? today : week.start, 'EEEE', { locale: es });
-    const capitalizedDay = currentDayStr.charAt(0).toUpperCase() + currentDayStr.slice(1);
-    
-    const daySchedule = schedule.filter((entry:any) => entry.dia === capitalizedDay);
+    const [selectedDay, setSelectedDay] = useState(isToday(today) && getDay(today) >= 1 && getDay(today) <= 6 ? today : week.start);
+
+    const daySchedule = schedule.filter((entry:any) => {
+        const dayIndex = daysOfWeek.indexOf(entry.dia);
+        return dayIndex + 1 === getDay(selectedDay);
+    });
 
     return (
-         <div className="grid grid-cols-[4rem_1fr]">
-            <div className="row-start-1 col-start-1 sticky left-0 z-10 bg-card border-b border-r"></div>
-            <div className="col-start-2 text-center py-2 border-b border-r">
-                <p className="text-xs uppercase text-muted-foreground">{capitalizedDay}</p>
-                <p className={cn("text-lg font-semibold", isToday(week.start) && "text-primary")}>{format(week.start, 'd')}</p>
+        <div className="flex flex-col">
+             <div className="flex justify-around p-2 border-b">
+                {week.days.map((day: Date) => (
+                    <Button key={day.toString()} variant={isSameDay(day, selectedDay) ? "secondary" : "ghost"} onClick={() => setSelectedDay(day)} className="flex-col h-auto">
+                        <span className="text-xs">{format(day, 'E', { locale: es })}</span>
+                        <span className="text-lg font-bold">{format(day, 'd')}</span>
+                    </Button>
+                ))}
             </div>
-            <div className="row-start-2 col-start-1 sticky left-0 z-10 bg-card border-r">
-                {timeSlots.map((time, index) => index % 2 === 0 && <div key={time} className="h-16 relative flex justify-end pr-2 pt-1"><span className="text-xs text-muted-foreground -translate-y-1/2">{time}</span></div>)}
-            </div>
-             <div className="row-start-2 col-start-2 grid grid-cols-1 relative">
-                {timeSlots.map((time) => <div key={`day-${time}`} className="h-8 border-b border-r"></div>)}
-                {isToday(week.start) && <div className="absolute w-full h-px bg-red-500 z-20" style={{ top: `${currentTimePosition}%` }}><div className="absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full bg-red-500"></div></div>}
-                {daySchedule.map((entry: any, index: number) => {
-                    const [startHourStr, startMinuteStr] = entry.hora.split(' - ')[0].split(':');
-                    const startRowIndex = (parseInt(startHourStr) - 7) * 2 + (parseInt(startMinuteStr) / 30);
-                    const top = (startRowIndex / timeSlots.length) * 100;
-                    const [endHourStr, endMinuteStr] = entry.hora.split(' - ')[1].split(':');
-                    const endRowIndex = (parseInt(endHourStr) - 7) * 2 + (parseInt(endMinuteStr) / 30);
-                    const durationInSlots = endRowIndex - startRowIndex;
-                    const height = (durationInSlots / timeSlots.length) * 100;
-                    const color = stringToHslColor(entry.materiaNombre, 80, 85);
-                    const borderColor = stringToHslColor(entry.materiaNombre, 60, 60);
+             <div className="grid grid-cols-[4rem_1fr]">
+                <div className="row-start-2 col-start-1 sticky left-0 z-10 bg-card border-r">
+                    {timeSlots.map((time, index) => index % 2 === 0 && <div key={time} className="h-16 relative flex justify-end pr-2"><span className="text-xs text-muted-foreground -translate-y-1/2">{time}</span></div>)}
+                </div>
+                 <div className="row-start-2 col-start-2 grid grid-cols-1 relative">
+                    {timeSlots.map((time) => <div key={`day-${time}`} className="h-8 border-b border-r"></div>)}
+                    {isToday(selectedDay) && <div className="absolute w-full h-px bg-red-500 z-20" style={{ top: `${(new Date().getHours() - 7 + new Date().getMinutes()/60) / 16 * 100}%` }}><div className="absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full bg-red-500"></div></div>}
+                    {daySchedule.map((entry: any, index: number) => {
+                        const [startHourStr, startMinuteStr] = entry.hora.split(' - ')[0].split(':');
+                        const startRowIndex = (parseInt(startHourStr) - 7) * 2 + (parseInt(startMinuteStr) / 30);
+                        const top = (startRowIndex / timeSlots.length) * 100;
+                        const [endHourStr, endMinuteStr] = entry.hora.split(' - ')[1].split(':');
+                        const endRowIndex = (parseInt(endHourStr) - 7) * 2 + (parseInt(endMinuteStr) / 30);
+                        const durationInSlots = endRowIndex - startRowIndex;
+                        const height = (durationInSlots / timeSlots.length) * 100;
+                        const color = stringToHslColor(entry.materiaNombre, 80, 85);
+                        const borderColor = stringToHslColor(entry.materiaNombre, 60, 60);
 
-                    return (
-                        <div key={entry.id || index} className="absolute w-full p-1" style={{ top: `${top}%`, height: `${height}%`, left: 0 }}>
-                             <button className="w-full h-full text-left" onClick={() => onOpenAssignDialog(entry)}>
-                                <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg border-l-4 overflow-hidden text-sm" style={{ backgroundColor: color, borderColor: borderColor }}>
-                                    <p className="font-bold text-gray-800" style={{ color: stringToHslColor(entry.materiaNombre, 80, 20) }}>{entry.materiaNombre}</p>
-                                    <p className="text-gray-600 text-xs">{entry.hora}</p>
-                                    <p className="text-gray-600 text-xs">{entry.docenteNombre}</p>
-                                    <p className="text-gray-600 font-semibold text-xs mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                </div>
-                            </button>
-                        </div>
-                    );
-                })}
+                        return (
+                            <div key={entry.id || index} className="absolute w-full p-1" style={{ top: `${top}%`, height: `${height}%`, left: 0 }}>
+                                <button className="w-full h-full text-left" onClick={() => onOpenAssignDialog(entry)}>
+                                    <div className="flex flex-col w-full h-full cursor-pointer p-2 rounded-lg border-l-4 overflow-hidden text-sm" style={{ backgroundColor: color, borderColor: borderColor }}>
+                                        <p className="font-bold text-gray-800" style={{ color: stringToHslColor(entry.materiaNombre, 80, 20) }}>{entry.materiaNombre}</p>
+                                        <p className="text-gray-600 text-xs">{entry.hora}</p>
+                                        <p className="text-gray-600 text-xs">{entry.docenteNombre}</p>
+                                        <p className="text-gray-600 font-semibold text-xs mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                    </div>
+                                </button>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
         </div>
     );
@@ -597,7 +607,3 @@ function AssignClassDialog({ open, onOpenChange, grupo, carrera, docentes, salon
         </Dialog>
     );
 }
-    
-
-    
-
