@@ -18,8 +18,6 @@ import { es } from "date-fns/locale";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
-
 
 interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string }[] }[]; }
@@ -85,7 +83,6 @@ export default function SchedulesAdminPage() {
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false, docentes: true });
     const { toast } = useToast();
     const [currentDate, setCurrentDate] = useState(new Date());
-    const isMobile = useIsMobile();
 
     const week = useMemo(() => {
         const start = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -265,7 +262,6 @@ export default function SchedulesAdminPage() {
                     week={week}
                     changeWeek={changeWeek}
                     onOpenAssignDialog={handleOpenDialog}
-                    isMobile={isMobile}
                 />
             ) : (
                 <Alert>
@@ -296,7 +292,7 @@ export default function SchedulesAdminPage() {
     );
 }
 
-function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile }: any) {
+function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
     
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -320,11 +316,6 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile
     const currentTimePosition = timeToPosition(currentTime);
     const currentDayOfWeek = getDay(currentTime); // Sunday is 0, Monday is 1
     const isCurrentWeek = isSameDay(week.start, startOfWeek(new Date(), { weekStartsOn: 1 }));
-    
-     if (isMobile) {
-        return <MobileScheduleView schedule={schedule} week={week} changeWeek={changeWeek} onOpenAssignDialog={onOpenAssignDialog} />
-    }
-
 
     return (
         <Card className="overflow-hidden">
@@ -468,61 +459,6 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile
     );
 }
 
-function MobileScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
-    const groupedSchedule = useMemo(() => {
-        const groups: { [key: string]: any[] } = {};
-        daysOfWeek.forEach(day => groups[day] = []);
-        schedule.forEach((entry: any) => {
-            if (groups[entry.dia]) {
-                groups[entry.dia].push(entry);
-            }
-        });
-        Object.values(groups).forEach(dayEntries => {
-            dayEntries.sort((a,b) => parseInt(a.hora.split(':')[0]) - parseInt(b.hora.split(':')[0]));
-        });
-        return groups;
-    }, [schedule]);
-
-    return (
-        <Card>
-             <CardHeader className="border-b p-4">
-                <div className="flex flex-col gap-4">
-                     <div className="flex items-center justify-between">
-                        <p className="text-lg font-medium text-gray-700">
-                            {format(week.start, "MMMM yyyy", { locale: es })}
-                        </p>
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
-                        </div>
-                    </div>
-                     <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Volver a la semana actual</Button>
-                </div>
-             </CardHeader>
-             <CardContent className="p-4 space-y-4">
-                {daysOfWeek.map((day, index) => (
-                    <div key={day}>
-                        <h3 className="font-bold mb-2">{day} <span className="text-muted-foreground font-normal">{format(week.days[index], 'd')}</span></h3>
-                        <div className="space-y-2">
-                        {groupedSchedule[day].length > 0 ? groupedSchedule[day].map((entry: any) => (
-                            <button key={entry.id} className="w-full text-left p-3 rounded-md border" onClick={() => onOpenAssignDialog(entry)}>
-                                <p className="font-semibold">{entry.materiaNombre}</p>
-                                <p className="text-sm text-muted-foreground">{entry.hora}</p>
-                                <p className="text-sm text-muted-foreground">{entry.docenteNombre}</p>
-                                <p className="text-sm text-muted-foreground">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                            </button>
-                        )) : (
-                            <p className="text-sm text-muted-foreground pl-3">No hay clases programadas.</p>
-                        )}
-                        </div>
-                    </div>
-                ))}
-            </CardContent>
-        </Card>
-    );
-}
-
-// AssignClassDialog remains mostly the same, but with updated time logic.
 function AssignClassDialog({ 
     open,
     onOpenChange,
@@ -597,7 +533,9 @@ function AssignClassDialog({
 
         const occupiedSalons = allSchedules
             .filter(entry => {
+                // Excluir la clase actual que se está editando de la comprobación de conflictos.
                 if (existingSchedule && entry.id === existingSchedule.id) return false;
+                // No comprobar conflictos con otras clases del mismo grupo.
                 if (entry.grupoId === grupo.id) return false;
                 return entry.dia === selectedDia && entry.modalidad === 'Presencial';
             })
@@ -608,6 +546,7 @@ function AssignClassDialog({
                 const [entryEndHour, entryEndMinute] = entry.hora.split(' - ')[1].split(':').map(Number);
                 const entryEnd = entryEndHour + entryEndMinute / 60;
 
+                // Comprueba si hay superposición de tiempo.
                 return Math.max(start, entryStart) < Math.min(end, entryEnd);
             })
             .map(entry => entry.salonId);
@@ -749,9 +688,14 @@ function AssignClassDialog({
                                     <SelectValue placeholder="Selecciona un salón..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {salones.map(s => (
-                                        <SelectItem key={s.id} value={s.id} disabled={!availableSalones.some(as => as.id === s.id)}>
-                                            {s.nombre} {!availableSalones.some(as => as.id === s.id) && "(Ocupado)"}
+                                    {availableSalones.map(s => (
+                                        <SelectItem key={s.id} value={s.id}>
+                                            {s.nombre}
+                                        </SelectItem>
+                                    ))}
+                                    {salones.filter(s => !availableSalones.some(as => as.id === s.id)).map(s => (
+                                        <SelectItem key={s.id} value={s.id} disabled>
+                                            {s.nombre} (Ocupado)
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
