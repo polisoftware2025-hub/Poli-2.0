@@ -52,8 +52,15 @@ export default function GradesPage() {
         }
         
         const studentData = studentSnap.data();
-        const studentSubjects = new Map(studentData.materiasInscritas.map((m: any) => [m.id, m]));
-
+        
+        let careerData: DocumentData | null = null;
+        if (studentData.carreraId) {
+            const careerRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", studentData.carreraId);
+            const careerSnap = await getDoc(careerRef);
+            if (careerSnap.exists()) {
+                careerData = careerSnap.data();
+            }
+        }
 
         const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
         const q = query(notesRef, where("estudianteId", "==", userId));
@@ -74,8 +81,16 @@ export default function GradesPage() {
 
               if (!materiaId) continue;
               
-              const subjectDetails = studentSubjects.get(materiaId);
-              const creditos = subjectDetails ? subjectDetails.creditos : 0;
+              let creditos = 0;
+              if (careerData && careerData.ciclos) {
+                  for (const ciclo of careerData.ciclos) {
+                      const materiaEncontrada = ciclo.materias.find((m: any) => m.id === materiaId);
+                      if (materiaEncontrada) {
+                          creditos = materiaEncontrada.creditos;
+                          break;
+                      }
+                  }
+              }
 
               fetchedGrades.push({
                 id: noteDoc.id,
@@ -83,9 +98,9 @@ export default function GradesPage() {
                 codigoGrupo: groupData.codigoGrupo,
                 notaFinal: noteData.nota,
                 creditos: creditos,
-                desglose: [
-                  { actividad: noteData.observacion || "Nota registrada por docente", nota: noteData.nota, porcentaje: 100 }
-                ],
+                desglose: noteData.historial && noteData.historial.length > 0 
+                  ? noteData.historial.map((h: any) => ({ actividad: h.type, nota: h.grade, porcentaje: 0 }))
+                  : [{ actividad: noteData.observacion || "Nota registrada por docente", nota: noteData.nota, porcentaje: 100 }],
               });
             }
           }
