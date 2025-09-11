@@ -1,4 +1,5 @@
 
+
       
 "use client";
 
@@ -60,6 +61,7 @@ import {
   Send,
   ImageIcon,
   BookUp,
+  ShieldCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -135,7 +137,7 @@ export default function DashboardLayout({
                 });
             } else if (userRole === 'estudiante') {
                  const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
-                 const q = query(notesRef, where("estudianteId", "==", userId), limit(5));
+                 const q = query(notesRef, where("estudianteId", "==", userId));
                  const querySnapshot = await getDocs(q);
                  
                  for (const noteDoc of querySnapshot.docs) {
@@ -195,6 +197,7 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/groups", label: "Grupos", icon: Users },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar },
     { href: "/dashboard/admin/asignar-docente", label: "Asignar Docentes", icon: BookUp },
+    { href: "/dashboard/admin/validate-teachers", label: "Validar Docentes", icon: ShieldCheck },
     { href: "/dashboard/admin/payments", label: "Gestión Pagos", icon: CreditCard },
     { href: "/dashboard/admin/media", label: "Gestión de Media", icon: ImageIcon },
     { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3 },
@@ -230,6 +233,7 @@ export default function DashboardLayout({
       { href: "/dashboard/gestor/pre-register", label: "Pre-Inscripción", icon: ClipboardList },
       { href: "/dashboard/gestor/schedules", label: "Gestión de Horarios", icon: Calendar },
       { href: "/dashboard/gestor/grades", label: "Gestión de Notas", icon: Edit },
+      { href: "/dashboard/admin/validate-teachers", label: "Validar Docentes", icon: ShieldCheck },
       { href: "/dashboard/gestor/reports", label: "Reportes", icon: FileText },
       { href: "/dashboard/gestor/announcements", label: "Anuncios", icon: Send },
       { href: "/dashboard/gestor/notifications", label: "Notificaciones", icon: Bell },
