@@ -10,7 +10,7 @@ interface ReportConfig {
     groupId: string;
     generatedBy: string;
     careers: { id: string; nombre: string }[];
-    groups: { id: string; codigoGrupo: string, estudiantes: any[] }[];
+    groups: { id: string; codigoGrupo: string, idCarrera: string, estudiantes: any[] }[];
 }
 
 interface jsPDFWithAutoTable extends jsPDF {
@@ -67,31 +67,15 @@ const addFooter = (doc: jsPDFWithAutoTable) => {
 const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportConfig) => {
     const head = [['#', 'Nombre Completo', 'Correo Institucional', 'Carrera', 'Grupo', 'Estado']];
     const body = [];
-    let studentIdsToFetch: string[] = [];
 
-    const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
-    let groupsQuery = query(groupsRef);
+    // Filter groups based on the selection (all, specific career, or specific group)
+    const targetGroups = config.groupId !== 'all'
+        ? config.groups.filter(g => g.id === config.groupId)
+        : config.careerId !== 'all'
+        ? config.groups.filter(g => g.idCarrera === config.careerId)
+        : config.groups;
     
-    if (config.groupId !== 'all') {
-        groupsQuery = query(groupsQuery, where("__name__", "==", config.groupId));
-    } else if (config.careerId !== 'all') {
-        groupsQuery = query(groupsQuery, where("idCarrera", "==", config.careerId));
-    }
-
-    const groupsSnapshot = await getDocs(groupsQuery);
-    
-    const studentsByGroup: { [key: string]: string[] } = {};
-    const groupCodeMap = new Map<string, string>();
-    groupsSnapshot.forEach(doc => {
-        const groupData = doc.data();
-        if (groupData.estudiantes && groupData.estudiantes.length > 0) {
-            const ids = groupData.estudiantes.map((s: any) => s.id);
-            studentIdsToFetch.push(...ids);
-            studentsByGroup[doc.id] = ids;
-            groupCodeMap.set(doc.id, groupData.codigoGrupo);
-        }
-    });
-
+    let studentIdsToFetch = targetGroups.flatMap(g => g.estudiantes?.map(s => s.id) || []);
     studentIdsToFetch = [...new Set(studentIdsToFetch)]; // Remove duplicates
 
     if (studentIdsToFetch.length === 0) {
@@ -122,31 +106,18 @@ const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportCon
         for (const studentId of studentIdsToFetch) {
             const studentDetails = studentDetailsMap.get(studentId);
             if (!studentDetails) continue;
-            
-            try {
-                const studentDocRef = doc(estudiantesRef, studentId);
-                const studentDoc = await getDoc(studentDocRef);
 
-                if (!studentDoc.exists()) {
-                  continue;
-                }
+            const group = targetGroups.find(g => g.estudiantes?.some(s => s.id === studentId));
+            const career = config.careers.find(c => c.id === group?.idCarrera);
 
-                const studentData = studentDoc.data();
-                const careerName = config.careers.find(c => c.id === studentData.carreraId)?.nombre || 'N/A';
-                const groupCode = groupCodeMap.get(studentData.grupo) || 'N/A';
-                
-                body.push([
-                    i++,
-                    studentDetails.nombreCompleto,
-                    studentDetails.correoInstitucional,
-                    careerName,
-                    groupCode,
-                    studentDetails.estado
-                ]);
-            } catch (err) {
-                console.error(`Error fetching document for student ${studentId}:`, err);
-                // Continue to the next student if one fails
-            }
+            body.push([
+                i++,
+                studentDetails.nombreCompleto,
+                studentDetails.correoInstitucional,
+                career?.nombre || 'N/A',
+                group?.codigoGrupo || 'N/A',
+                studentDetails.estado
+            ]);
         }
     }
 
