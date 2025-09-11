@@ -353,78 +353,80 @@ export default function DashboardLayout({
         </Sidebar>
       </div>
       <SidebarInset>
-        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
-           <div className="flex items-center gap-4">
-               <SidebarTrigger>
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-               </SidebarTrigger>
-           </div>
-            
-           <div className="flex flex-1 items-center justify-center">
-             <Link href="/dashboard" className="flex items-center gap-2 font-poppins text-2xl font-bold text-card-foreground">
-                <GraduationCap className="h-8 w-8" />
-                <span>Poli 2.0</span>
-            </Link>
-           </div>
-           
-           <div className="flex items-center gap-4">
-             <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input placeholder="Buscar..." className="pl-9 bg-background" />
+        <div className="flex-1 overflow-x-auto">
+          <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm sm:px-6">
+            <div className="flex items-center gap-4">
+                <SidebarTrigger>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+                </SidebarTrigger>
             </div>
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative rounded-full">
-                        <Bell className="h-5 w-5"/>
-                        {notifications.some(n => !n.read) && (
-                            <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                            </span>
-                        )}
-                        <span className="sr-only">Notificaciones</span>
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 p-0" align="end">
-                   <div className="p-4">
-                       <div className="flex items-center justify-between">
-                           <h4 className="font-semibold">Notificaciones</h4>
-                           <Button variant="ghost" size="sm" className="text-sm">
-                               <Check className="mr-2 h-4 w-4" />
-                               Marcar todo como leído
-                           </Button>
-                       </div>
-                   </div>
-                   <Separator />
-                   <div className="divide-y divide-border max-h-80 overflow-y-auto">
-                        {isLoadingNotifications ? (
-                            <div className="p-4 text-sm text-muted-foreground">Cargando...</div>
-                        ) : notifications.length > 0 ? (
-                            notifications.map((item) => (
-                                <div key={item.id} className="flex items-start gap-4 p-4 hover:bg-muted/50">
-                                    <div className="flex-1 space-y-1">
-                                        <p className="font-medium">{item.title}</p>
-                                        <p className="text-sm text-muted-foreground">{item.description}</p>
-                                        <p className="text-xs text-muted-foreground">{item.time}</p>
-                                    </div>
-                                    {!item.read && <div className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />}
-                                </div>
-                            ))
-                        ) : (
-                            <div className="p-4 text-sm text-muted-foreground">No tienes notificaciones nuevas.</div>
-                        )}
-                   </div>
-                   <Separator />
-                   <div className="p-2 text-center">
-                       <Button variant="link" asChild className="text-primary">
-                           <Link href="/dashboard/notifications">Ver todas las notificaciones</Link>
-                       </Button>
-                   </div>
-                </PopoverContent>
-            </Popover>
-           </div>
-        </header>
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
+              
+            <div className="flex flex-1 items-center justify-center">
+              <Link href="/dashboard" className="flex items-center gap-2 font-poppins text-2xl font-bold text-card-foreground">
+                  <GraduationCap className="h-8 w-8" />
+                  <span>Poli 2.0</span>
+              </Link>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Input placeholder="Buscar..." className="pl-9 bg-background" />
+              </div>
+              <Popover>
+                  <PopoverTrigger asChild>
+                      <Button variant="ghost" size="icon" className="relative rounded-full">
+                          <Bell className="h-5 w-5"/>
+                          {notifications.some(n => !n.read) && (
+                              <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                              </span>
+                          )}
+                          <span className="sr-only">Notificaciones</span>
+                      </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-0" align="end">
+                    <div className="p-4">
+                        <div className="flex items-center justify-between">
+                            <h4 className="font-semibold">Notificaciones</h4>
+                            <Button variant="ghost" size="sm" className="text-sm">
+                                <Check className="mr-2 h-4 w-4" />
+                                Marcar todo como leído
+                            </Button>
+                        </div>
+                    </div>
+                    <Separator />
+                    <div className="divide-y divide-border max-h-80 overflow-y-auto">
+                          {isLoadingNotifications ? (
+                              <div className="p-4 text-sm text-muted-foreground">Cargando...</div>
+                          ) : notifications.length > 0 ? (
+                              notifications.map((item) => (
+                                  <div key={item.id} className="flex items-start gap-4 p-4 hover:bg-muted/50">
+                                      <div className="flex-1 space-y-1">
+                                          <p className="font-medium">{item.title}</p>
+                                          <p className="text-sm text-muted-foreground">{item.description}</p>
+                                          <p className="text-xs text-muted-foreground">{item.time}</p>
+                                      </div>
+                                      {!item.read && <div className="mt-1 h-2.5 w-2.5 rounded-full bg-primary" />}
+                                  </div>
+                              ))
+                          ) : (
+                              <div className="p-4 text-sm text-muted-foreground">No tienes notificaciones nuevas.</div>
+                          )}
+                    </div>
+                    <Separator />
+                    <div className="p-2 text-center">
+                        <Button variant="link" asChild className="text-primary">
+                            <Link href="/dashboard/notifications">Ver todas las notificaciones</Link>
+                        </Button>
+                    </div>
+                  </PopoverContent>
+              </Popover>
+            </div>
+          </header>
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 bg-background">{children}</main>
+        </div>
         <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
             © {new Date().getFullYear()} Politécnico Internacional. Todos los derechos reservados.
         </footer>
