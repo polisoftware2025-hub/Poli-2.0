@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
             });
             
             const perfData = Object.entries(gradesByCareer).map(([careerId, grades]) => ({
-                name: (careersMap.get(careerId) || "Desconocida").substring(0, 10) + ".",
+                name: careersMap.get(careerId) || "Desconocida",
                 Promedio: grades.reduce((a, b) => a + b, 0) / grades.length,
             }));
             setPerformanceData(perfData);
@@ -141,7 +141,7 @@ export default function AnalyticsPage() {
                 }
             });
             const distData = Object.entries(studentsByCareer).map(([careerId, count]) => ({
-                name: (careersMap.get(careerId) || "Desconocida").substring(0, 10) + ".",
+                name: careersMap.get(careerId) || "Desconocida",
                 Estudiantes: count,
             }));
             setDistributionData(distData);
@@ -187,7 +187,7 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height={350}>
                 <BarChart data={performanceData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                    <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={80}/>
                     <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} domain={[0, 5]} tickFormatter={(value) => `${value}`} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend iconType="circle" />
@@ -252,7 +252,7 @@ export default function AnalyticsPage() {
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={distributionData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} interval={0} />
+                  <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={80}/>
                   <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Legend iconType="circle" />
