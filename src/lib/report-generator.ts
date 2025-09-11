@@ -127,7 +127,9 @@ const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportCon
                 const studentDocRef = doc(estudiantesRef, studentId);
                 const studentDoc = await getDoc(studentDocRef);
 
-                if (!studentDoc.exists()) continue;
+                if (!studentDoc.exists()) {
+                  continue;
+                }
 
                 const studentData = studentDoc.data();
                 const careerName = config.careers.find(c => c.id === studentData.carreraId)?.nombre || 'N/A';
