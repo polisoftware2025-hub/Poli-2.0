@@ -15,6 +15,7 @@ type BreadcrumbPart = {
 
 // Helper function to truncate long strings
 const truncateString = (str: string, num: number) => {
+    if (!str) return '';
     if (str.length <= num) {
         return str;
     }
@@ -22,6 +23,7 @@ const truncateString = (str: string, num: number) => {
 };
 
 const isDynamicSegment = (segment: string) => {
+    if (!segment) return false; // Defensive check for null/undefined segments
     // A simple heuristic: check if it's a long string with mixed chars, likely a Firestore ID.
     return segment.length > 15 && /[a-zA-Z]/.test(segment) && /[0-9]/.test(segment);
 }
@@ -118,9 +120,9 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
         const isLast = index === breadcrumbParts.length - 1 || isDynamicSegment(breadcrumbParts[index + 1]);
         const isLeafNode = leafSegments.includes(segment);
         
-        let path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index + 1)].filter(p => !isDynamicSegment(p) && !leafSegments.includes(p)).join('/')}`;
-        if(isLeafNode){
-           path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index)].filter(p => !isDynamicSegment(p)).join('/')}`;
+        let path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index)].filter(p => !isDynamicSegment(p)).join('/')}`;
+        if(!isLeafNode) {
+           path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index + 1)].filter(p => !isDynamicSegment(p)).join('/')}`;
         }
         
         return (
