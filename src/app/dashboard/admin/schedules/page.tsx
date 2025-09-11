@@ -521,10 +521,6 @@ function AssignClassDialog({
         }
     }, [existingSchedule, open]);
     
-    useEffect(() => {
-      setSelectedHoraFin("");
-    }, [selectedHoraInicio]);
-    
     const occupiedSalonIds = useMemo(() => {
         if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return new Set();
 
@@ -683,8 +679,8 @@ function AssignClassDialog({
                             <SelectContent>
                                 {salones.map(s => {
                                     const isOccupied = occupiedSalonIds.has(s.id);
-                                    // The salon is selectable if it's NOT occupied, OR if it's the one currently being edited.
-                                    const isSelectable = !isOccupied || s.id === existingSchedule?.salonId;
+                                    const isCurrentSelection = s.id === existingSchedule?.salonId;
+                                    const isSelectable = !isOccupied || isCurrentSelection;
                                     return (
                                         <SelectItem key={s.id} value={s.id} disabled={!isSelectable}>
                                             {s.nombre} {!isSelectable && "(Ocupado)"}
