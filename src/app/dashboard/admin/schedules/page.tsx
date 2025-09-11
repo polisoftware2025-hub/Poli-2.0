@@ -14,10 +14,9 @@ import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, wh
 import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { getDoc } from "firebase/firestore";
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, addMinutes, getDay, isSameDay } from "date-fns";
+import { format, startOfWeek, endOfWeek, eachDayOfInterval, isToday, getDay, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -86,8 +85,6 @@ export default function SchedulesAdminPage() {
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false, docentes: true });
     const { toast } = useToast();
     const [currentDate, setCurrentDate] = useState(new Date());
-
-    const isMobile = useIsMobile();
 
     const week = useMemo(() => {
         const start = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -267,7 +264,6 @@ export default function SchedulesAdminPage() {
                     week={week}
                     changeWeek={changeWeek}
                     onOpenAssignDialog={handleOpenDialog}
-                    isMobile={isMobile}
                 />
             ) : (
                 <Alert>
@@ -298,7 +294,7 @@ export default function SchedulesAdminPage() {
     );
 }
 
-function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile }: any) {
+function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
     
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -322,10 +318,6 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile
     const currentTimePosition = timeToPosition(currentTime);
     const currentDayOfWeek = getDay(currentTime); // Sunday is 0, Monday is 1
     const isCurrentWeek = isSameDay(week.start, startOfWeek(new Date(), { weekStartsOn: 1 }));
-
-    if (isMobile) {
-        return <MobileScheduleView schedule={schedule} week={week} changeWeek={changeWeek} onOpenAssignDialog={onOpenAssignDialog} />
-    }
 
     return (
         <Card className="overflow-hidden">
@@ -362,7 +354,7 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile
                 </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-                <div className="grid grid-cols-[4rem_repeat(6,minmax(0,1fr))] min-w-[70rem]">
+                <div className="grid grid-cols-[4rem_repeat(6,minmax(140px,1fr))]">
                     {/* Placeholder for top-left corner */}
                     <div className="row-start-1 col-start-1 sticky left-0 z-10 bg-card border-b border-r"></div>
                     
@@ -412,10 +404,18 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile
                             const [startHourStr, startMinuteStr] = entry.hora.split(' - ')[0].split(':');
                             const startHour = parseInt(startHourStr);
                             const startMinute = parseInt(startMinuteStr);
-                            const start = startHour + startMinute / 60;
                             
-                            const top = ((start - 7) / 16) * 100 * 2; // Each hour is 2 slots
-                            const height = (entry.duracion / 16) * 100 * 2;
+                            // Each hour has 2 slots of 30 minutes
+                            const startRowIndex = (startHour - 7) * 2 + (startMinute / 30);
+                            const top = (startRowIndex / (timeSlots.length)) * 100;
+
+                            const [endHourStr, endMinuteStr] = entry.hora.split(' - ')[1].split(':');
+                            const endHour = parseInt(endHourStr);
+                            const endMinute = parseInt(endMinuteStr);
+                            const endRowIndex = (endHour - 7) * 2 + (endMinute / 30);
+                            
+                            const durationInSlots = endRowIndex - startRowIndex;
+                            const height = (durationInSlots / (timeSlots.length)) * 100;
                             
                             const color = stringToHslColor(entry.materiaNombre, 80, 85);
                             const borderColor = stringToHslColor(entry.materiaNombre, 60, 60);
@@ -456,66 +456,6 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile
                         })}
                     </div>
                 </div>
-            </CardContent>
-        </Card>
-    );
-}
-
-function MobileScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
-    const groupedSchedule = useMemo(() => {
-        const groups: { [key: string]: any[] } = {};
-        daysOfWeek.forEach(day => groups[day] = []);
-        schedule.forEach((entry: any) => {
-            if (groups[entry.dia]) {
-                groups[entry.dia].push(entry);
-            }
-        });
-        Object.values(groups).forEach(dayEntries => {
-            dayEntries.sort((a,b) => {
-                const [startHourA] = a.hora.split(' - ')[0].split(':').map(Number);
-                const [startHourB] = b.hora.split(' - ')[0].split(':').map(Number);
-                return startHourA - startHourB;
-            });
-        });
-        return groups;
-    }, [schedule]);
-
-    return (
-        <Card>
-             <CardHeader className="border-b p-4">
-                <div className="flex flex-col gap-4">
-                     <div className="flex items-center justify-between">
-                        <p className="text-lg font-medium text-gray-700">
-                            {format(week.start, "MMMM yyyy", { locale: es })}
-                        </p>
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
-                        </div>
-                    </div>
-                     <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Volver a la semana actual</Button>
-                </div>
-             </CardHeader>
-             <CardContent className="p-4 space-y-4">
-                {daysOfWeek.map((day, index) => (
-                    <div key={day}>
-                        <h3 className="font-bold mb-2">{day} <span className="text-muted-foreground font-normal">{format(week.days[index], 'd')}</span></h3>
-                        <div className="space-y-2">
-                        {groupedSchedule[day].length > 0 ? groupedSchedule[day].map((entry: any) => (
-                            <button key={entry.id} className="w-full" onClick={() => onOpenAssignDialog(entry)}>
-                                <div className="p-3 rounded-md border text-left">
-                                    <p className="font-semibold">{entry.materiaNombre}</p>
-                                    <p className="text-sm text-muted-foreground">{entry.hora}</p>
-                                    <p className="text-sm text-muted-foreground">{entry.docenteNombre}</p>
-                                    <p className="text-sm text-muted-foreground">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
-                                </div>
-                            </button>
-                        )) : (
-                            <p className="text-sm text-muted-foreground pl-3">No hay clases programadas.</p>
-                        )}
-                        </div>
-                    </div>
-                ))}
             </CardContent>
         </Card>
     );
@@ -603,7 +543,10 @@ function AssignClassDialog({
             .filter(entry => {
                 const [entryStartHour, entryStartMinute] = entry.hora.split(' - ')[0].split(':').map(Number);
                 const entryStart = entryStartHour + entryStartMinute / 60;
-                const entryEnd = entryStart + entry.duracion;
+                
+                const [entryEndHour, entryEndMinute] = entry.hora.split(' - ')[1].split(':').map(Number);
+                const entryEnd = entryEndHour + entryEndMinute / 60;
+
                 return Math.max(start, entryStart) < Math.min(end, entryEnd);
             })
             .map(entry => entry.salonId);
