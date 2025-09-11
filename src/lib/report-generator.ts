@@ -121,22 +121,29 @@ const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportCon
         for (const studentId of studentIdsToFetch) {
             const studentDetails = studentDetailsMap.get(studentId);
             if (!studentDetails) continue;
-
-            const studentDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId));
-            if (!studentDoc.exists()) continue;
-
-            const studentData = studentDoc.data();
-            const careerName = config.careers.find(c => c.id === studentData.carreraId)?.nombre || 'N/A';
-            const groupCode = groupCodeMap.get(studentData.grupo) || 'N/A';
             
-            body.push([
-                i++,
-                studentDetails.nombreCompleto,
-                studentDetails.correoInstitucional,
-                careerName,
-                groupCode,
-                studentDetails.estado
-            ]);
+            try {
+                const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
+                const studentDoc = await getDoc(studentDocRef);
+
+                if (!studentDoc.exists()) continue;
+
+                const studentData = studentDoc.data();
+                const careerName = config.careers.find(c => c.id === studentData.carreraId)?.nombre || 'N/A';
+                const groupCode = groupCodeMap.get(studentData.grupo) || 'N/A';
+                
+                body.push([
+                    i++,
+                    studentDetails.nombreCompleto,
+                    studentDetails.correoInstitucional,
+                    careerName,
+                    groupCode,
+                    studentDetails.estado
+                ]);
+            } catch (err) {
+                console.error(`Error fetching document for student ${studentId}:`, err);
+                // Continue to the next student if one fails
+            }
         }
     }
 
