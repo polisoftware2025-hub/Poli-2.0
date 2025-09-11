@@ -70,14 +70,16 @@ export default function GradesPage() {
 
             if (groupSnap.exists()) {
               const groupData = groupSnap.data();
-              const materiaId = groupData.materia.id;
+              const materiaId = groupData.materia?.id;
+
+              if (!materiaId) continue;
               
               const subjectDetails = studentSubjects.get(materiaId);
               const creditos = subjectDetails ? subjectDetails.creditos : 0;
 
               fetchedGrades.push({
                 id: noteDoc.id,
-                materia: groupData.materia.nombre,
+                materia: groupData.materia?.nombre || "Materia Desconocida",
                 codigoGrupo: groupData.codigoGrupo,
                 notaFinal: noteData.nota,
                 creditos: creditos,
