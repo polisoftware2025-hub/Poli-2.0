@@ -7,9 +7,8 @@ import { Users, BookOpen, UserCheck, Calendar, FileText, CheckSquare, Send, Edit
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import {
   Bar,
   BarChart,
@@ -21,6 +20,11 @@ import {
   Line,
   LineChart,
 } from "recharts";
+import { db } from "@/lib/firebase";
+import { collection, getDocs, query, where, limit, orderBy, Timestamp } from "firebase/firestore";
+import { formatDistanceToNow } from "date-fns";
+import { es } from "date-fns/locale";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const quickAccessTools = [
     { title: "Revisar Pagos Pendientes", icon: CheckSquare, href: "/dashboard/gestor/payments", color: "text-orange-500", bgColor: "bg-orange-50" },
@@ -36,23 +40,32 @@ const enrollmentData = [
   { name: '2024-2', value: 1482 },
 ];
 
-const topCareersData = [
-  { name: 'Admin.', students: 420 },
-  { name: 'Sistemas', students: 350 },
-  { name: 'Contaduría', students: 310 },
-  { name: 'Mercadeo', students: 280 },
-  { name: 'Psicología', students: 220 },
-];
+interface Stats {
+    studentCount: number;
+    teacherCount: number;
+    careerCount: number;
+    groupCount: number;
+}
 
-const recentActivity = [
-    { action: "Pago validado", user: "Laura Gómez", time: "hace 5 min" },
-    { action: "Solicitud aprobada", user: "David Martínez", time: "hace 1 hora" },
-    { action: "Reporte generado", user: "Reporte de Deserción", time: "hace 3 horas" },
-]
+interface Activity {
+    action: string;
+    user: string;
+    time: string;
+}
+
+interface AlertData {
+    pendingPayments: number;
+    pendingRegistrations: number;
+}
 
 export default function ManagerDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [stats, setStats] = useState<Stats>({ studentCount: 0, teacherCount: 0, careerCount: 0, groupCount: 0 });
+  const [topCareersData, setTopCareersData] = useState<{ name: string; students: number }[]>([]);
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+  const [alerts, setAlerts] = useState<AlertData>({ pendingPayments: 0, pendingRegistrations: 0 });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -66,6 +79,87 @@ export default function ManagerDashboardPage() {
       router.push('/login');
     }
   }, [router]);
+  
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+        setIsLoading(true);
+        try {
+            // Fetch stats
+            const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+            const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+            const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+
+            const [usersSnap, careersSnap, groupsSnap] = await Promise.all([
+                getDocs(usersRef),
+                getDocs(careersRef),
+                getDocs(groupsSnap),
+            ]);
+
+            const studentCount = usersSnap.docs.filter(doc => doc.data().rol.id === 'estudiante' && doc.data().estado === 'activo').length;
+            const teacherCount = usersSnap.docs.filter(doc => doc.data().rol.id === 'docente').length;
+            setStats({
+                studentCount,
+                teacherCount,
+                careerCount: careersSnap.size,
+                groupCount: groupsSnap.size,
+            });
+
+            // Fetch top careers data
+            const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+            const studentsSnap = await getDocs(studentsRef);
+            const studentCountsByCareer: { [key: string]: number } = {};
+            studentsSnap.forEach(doc => {
+                const careerId = doc.data().carreraId;
+                if (careerId) {
+                    studentCountsByCareer[careerId] = (studentCountsByCareer[careerId] || 0) + 1;
+                }
+            });
+
+            const careersMap = new Map(careersSnap.docs.map(doc => [doc.id, doc.data().nombre]));
+            const careersChartData = Object.entries(studentCountsByCareer)
+                .map(([careerId, count]) => ({
+                    name: (careersMap.get(careerId) || 'N/A').substring(0, 10) + '.',
+                    students: count,
+                }))
+                .sort((a, b) => b.students - a.students)
+                .slice(0, 5);
+            setTopCareersData(careersChartData);
+
+            // Fetch recent activities & alerts
+            const auditLogsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/auditoria_notas");
+            const paymentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
+            const pendingStudentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
+            
+            const [logsSnap, paymentsSnap, pendingStudentsSnap] = await Promise.all([
+                getDocs(query(auditLogsRef, orderBy("date", "desc"), limit(2))),
+                getDocs(query(paymentsRef, where("estado", "==", "pendiente-validacion"))),
+                getDocs(query(pendingStudentsRef, where("estado", "==", "pendiente")))
+            ]);
+
+            const activities: Activity[] = logsSnap.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    action: `Nota modificada para ${data.subjectName}`,
+                    user: data.studentName,
+                    time: formatDistanceToNow(data.date.toDate(), { addSuffix: true, locale: es }),
+                }
+            });
+            setRecentActivity(activities);
+            setAlerts({
+                pendingPayments: paymentsSnap.size,
+                pendingRegistrations: pendingStudentsSnap.size,
+            })
+
+        } catch (error) {
+            console.error("Failed to fetch dashboard data:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    if (userEmail) {
+        fetchDashboardData();
+    }
+  }, [userEmail]);
 
   if (!userEmail) {
     return (
@@ -91,7 +185,6 @@ export default function ManagerDashboardPage() {
             <Input placeholder="Búsqueda rápida de estudiantes, carreras o grupos..." className="pl-9" />
         </div>
 
-        {/* Quick Access */}
          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
            {quickAccessTools.map((tool) => (
                 <Card key={tool.title} className="hover:shadow-lg transition-shadow">
@@ -114,46 +207,32 @@ export default function ManagerDashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 flex flex-col gap-6">
-            {/* General Stats */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+                {isLoading ? Array.from({length: 4}).map((_, i) => <Skeleton key={i} className="h-24"/>) : (
+                <>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardDescription>Estudiantes Activos</CardDescription>
-                         <CardTitle className="text-3xl">1,482</CardTitle>
-                    </CardHeader>
+                    <CardHeader className="pb-2"><CardDescription>Estudiantes Activos</CardDescription><CardTitle className="text-3xl">{stats.studentCount}</CardTitle></CardHeader>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardDescription>Docentes</CardDescription>
-                         <CardTitle className="text-3xl">96</CardTitle>
-                    </CardHeader>
+                    <CardHeader className="pb-2"><CardDescription>Docentes</CardDescription><CardTitle className="text-3xl">{stats.teacherCount}</CardTitle></CardHeader>
                 </Card>
                 <Card>
-                    <CardHeader className="pb-2">
-                        <CardDescription>Carreras Activas</CardDescription>
-                         <CardTitle className="text-3xl">12</CardTitle>
-                    </CardHeader>
+                    <CardHeader className="pb-2"><CardDescription>Carreras Activas</CardDescription><CardTitle className="text-3xl">{stats.careerCount}</CardTitle></CardHeader>
                 </Card>
                  <Card>
-                    <CardHeader className="pb-2">
-                        <CardDescription>Grupos (2024-2)</CardDescription>
-                         <CardTitle className="text-3xl">45</CardTitle>
-                    </CardHeader>
+                    <CardHeader className="pb-2"><CardDescription>Grupos</CardDescription><CardTitle className="text-3xl">{stats.groupCount}</CardTitle></CardHeader>
                 </Card>
+                </>
+                )}
             </div>
             
-            {/* Trend Graphs */}
             <Card>
-                <CardHeader>
-                    <CardTitle>Tendencias de Matrícula</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Tendencias de Matrícula (Ejemplo)</CardTitle></CardHeader>
                  <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
                         <LineChart data={enrollmentData}>
-                            <XAxis dataKey="name" stroke="#888888" fontSize={12} />
-                            <YAxis stroke="#888888" fontSize={12}/>
-                            <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))" }} />
-                            <Legend />
+                            <XAxis dataKey="name" stroke="#888888" fontSize={12} /><YAxis stroke="#888888" fontSize={12}/>
+                            <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))" }} /><Legend />
                             <Line type="monotone" dataKey="value" name="Estudiantes" stroke="hsl(var(--primary))" strokeWidth={2} />
                         </LineChart>
                     </ResponsiveContainer>
@@ -161,58 +240,50 @@ export default function ManagerDashboardPage() {
             </Card>
 
             <Card>
-                 <CardHeader>
-                    <CardTitle>Inscripciones por Carrera</CardTitle>
-                </CardHeader>
+                 <CardHeader><CardTitle>Inscripciones por Carrera</CardTitle></CardHeader>
                 <CardContent>
+                    {isLoading ? <Skeleton className="h-[250px] w-full" /> : (
                      <ResponsiveContainer width="100%" height={250}>
                         <BarChart data={topCareersData}>
-                            <XAxis dataKey="name" stroke="#888888" fontSize={12}/>
-                            <YAxis stroke="#888888" fontSize={12}/>
-                            <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))" }} />
+                            <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={60} />
+                            <YAxis stroke="#888888" fontSize={12} allowDecimals={false} /><Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))" }} />
                              <Bar dataKey="students" name="Estudiantes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
+                    )}
                 </CardContent>
             </Card>
         </div>
 
         <div className="lg:col-span-1 flex flex-col gap-6">
-            {/* Alerts */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
-                       <div className="flex items-center gap-2">
-                         <Bell className="h-5 w-5 text-primary"/> Alertas
-                       </div>
-                       <Button variant="link" size="sm" asChild>
-                           <Link href="/dashboard/gestor/notifications">Ver todas</Link>
-                       </Button>
+                       <div className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary"/> Alertas</div>
+                       <Button variant="link" size="sm" asChild><Link href="/dashboard/gestor/notifications">Ver todas</Link></Button>
                     </CardTitle>
                 </CardHeader>
                  <CardContent>
+                    {isLoading ? <Skeleton className="h-20 w-full"/> : (
                     <ul className="space-y-4">
-                        <li className="flex gap-3">
-                           <div className="h-2 w-2 rounded-full bg-red-500 mt-1.5 shrink-0"/>
-                           <p className="text-sm">23 matrículas vencen en los próximos 7 días.</p>
+                        <li className="flex gap-3"><div className="h-2 w-2 rounded-full bg-yellow-500 mt-1.5 shrink-0"/>
+                           <p className="text-sm">
+                             <span className="font-bold">{alerts.pendingPayments}</span> pagos pendientes de validación.
+                           </p>
                         </li>
-                        <li className="flex gap-3">
-                            <div className="h-2 w-2 rounded-full bg-yellow-500 mt-1.5 shrink-0"/>
-                           <p className="text-sm">15 pagos pendientes de validación.</p>
-                        </li>
-                         <li className="flex gap-3">
-                           <div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 shrink-0"/>
-                           <p className="text-sm">8 nuevas solicitudes de estudiantes.</p>
+                         <li className="flex gap-3"><div className="h-2 w-2 rounded-full bg-blue-500 mt-1.5 shrink-0"/>
+                           <p className="text-sm">
+                             <span className="font-bold">{alerts.pendingRegistrations}</span> nuevas solicitudes de estudiantes.
+                           </p>
                         </li>
                     </ul>
+                    )}
                  </CardContent>
             </Card>
-            {/* Recent Activity */}
             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-primary"/> Actividad Reciente</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5 text-primary"/> Actividad Reciente</CardTitle></CardHeader>
                 <CardContent>
+                    {isLoading ? <Skeleton className="h-24 w-full"/> : (
                     <Table>
                         <TableBody>
                         {recentActivity.map((activity, index) => (
@@ -226,10 +297,10 @@ export default function ManagerDashboardPage() {
                         ))}
                         </TableBody>
                     </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>
-
       </div>
     </div>
   );
