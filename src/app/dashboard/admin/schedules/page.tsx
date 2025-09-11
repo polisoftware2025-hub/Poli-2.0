@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -683,7 +684,7 @@ function AssignClassDialog({
                     {modalidad === 'Presencial' && (
                         <div className="space-y-2">
                             <Label>Salón</Label>
-                            <Select value={selectedSalon} onValueChange={setSelectedSalon} disabled={!selectedDia || !selectedHoraFin}>
+                            <Select value={selectedSalon} onValueChange={setSelectedSalon} disabled={modalidad === 'Virtual'}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecciona un salón..." />
                                 </SelectTrigger>
@@ -721,4 +722,6 @@ function AssignClassDialog({
         </Dialog>
     );
 }
+    
+
     
