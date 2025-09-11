@@ -2,10 +2,8 @@
 "use client";
 
 import { PageHeader } from "@/components/page-header";
-import { BarChart3, Users, TrendingUp, CheckCircle, Download, BookCopy } from "lucide-react";
+import { BarChart3, Users, TrendingUp, CheckCircle, BookCopy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Bar,
   BarChart,
@@ -18,7 +16,7 @@ import {
 } from "recharts";
 import { useEffect, useState }from "react";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, DocumentData } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatCardProps {
@@ -129,7 +127,7 @@ export default function AnalyticsPage() {
             
             const perfData = Object.entries(gradesByCareer).map(([careerId, grades]) => ({
                 name: careersMap.get(careerId) || "Desconocida",
-                Promedio: grades.reduce((a, b) => a + b, 0) / grades.length,
+                Promedio: parseFloat((grades.reduce((a, b) => a + b, 0) / grades.length).toFixed(2)),
             }));
             setPerformanceData(perfData);
 
@@ -176,8 +174,8 @@ export default function AnalyticsPage() {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-        <Card className="lg:col-span-3">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card>
           <CardHeader>
             <CardTitle>Rendimiento por Carrera</CardTitle>
             <CardDescription>Promedio de notas de los estudiantes por programa académico.</CardDescription>
@@ -188,7 +186,7 @@ export default function AnalyticsPage() {
                 <BarChart data={performanceData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={80}/>
-                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} domain={[0, 5]} tickFormatter={(value) => `${value}`} />
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} domain={[0, 5]} tickFormatter={(value) => `${value.toFixed(1)}`} />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend iconType="circle" />
                     <Bar dataKey="Promedio" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
@@ -198,71 +196,33 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-           <CardHeader>
-            <CardTitle>Generador de Reportes</CardTitle>
-            <CardDescription>Selecciona un tipo de reporte para exportar los datos.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Tipo de Reporte</label>
-                 <Select>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Seleccionar..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="usage">Uso de Salones</SelectItem>
-                        <SelectItem value="teacher-eval">Evaluación Docente</SelectItem>
-                        <SelectItem value="student-grades">Notas por Estudiante</SelectItem>
-                        <SelectItem value="dropout-rate">Tasa de Deserción por Carrera</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-             <div className="space-y-2">
-                <label className="text-sm font-medium">Formato</label>
-                 <Select defaultValue="pdf">
-                    <SelectTrigger>
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="pdf">PDF</SelectItem>
-                        <SelectItem value="csv">CSV (Excel)</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-            <Button className="w-full">
-                <Download className="mr-2 h-4 w-4"/>
-                Generar Reporte
-            </Button>
-          </CardContent>
+         <Card>
+            <CardHeader>
+            <CardTitle>Distribución de Estudiantes por Carrera</CardTitle>
+            <CardDescription>
+                Visualización del número de estudiantes inscritos en cada programa.
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+            {isLoading ? (
+                <Skeleton className="w-full h-[350px]" />
+            ) : (
+                <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={distributionData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={80}/>
+                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend iconType="circle" />
+                    <Bar dataKey="Estudiantes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+                </ResponsiveContainer>
+            )}
+            </CardContent>
         </Card>
       </div>
 
-       <Card>
-        <CardHeader>
-          <CardTitle>Distribución de Estudiantes por Carrera</CardTitle>
-          <CardDescription>
-            Visualización del número de estudiantes inscritos en cada programa académico.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-             <Skeleton className="w-full h-[350px]" />
-          ) : (
-            <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={distributionData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={80}/>
-                  <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Legend iconType="circle" />
-                  <Bar dataKey="Estudiantes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
+}
 
-    

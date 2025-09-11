@@ -1,5 +1,4 @@
 
-
       
 "use client";
 
@@ -195,6 +194,7 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/payments", label: "Gestión Pagos", icon: CreditCard },
     { href: "/dashboard/admin/media", label: "Gestión de Media", icon: ImageIcon },
     { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3 },
+    { href: "/dashboard/admin/reports", label: "Reportes", icon: FileText },
     { href: "/dashboard/admin/notifications", label: "Notificaciones", icon: Bell },
   ];
 
