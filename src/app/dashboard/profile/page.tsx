@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -61,6 +60,7 @@ interface UserInfo {
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [academicInfo, setAcademicInfo] = useState<AcademicInfo | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoadingAcademic, setIsLoadingAcademic] = useState(true);
@@ -76,16 +76,38 @@ export default function ProfilePage() {
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
     const storedUserId = localStorage.getItem('userId');
-    if (storedEmail && storedUserId) {
+    const storedRole = localStorage.getItem('userRole');
+
+    if (storedEmail && storedUserId && storedRole) {
       setUserEmail(storedEmail);
       setUserId(storedUserId);
+      setUserRole(storedRole);
     } else {
       router.push('/login');
     }
   }, [router]);
   
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !userRole) return;
+
+    const fetchUserInfo = async () => {
+        setIsLoadingUser(true);
+        try {
+            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists()) {
+                setUserInfo(userSnap.data() as UserInfo);
+            } else {
+                toast({ variant: "destructive", title: "Error", description: "No se encontró tu información de usuario." });
+            }
+        } catch (error) {
+            console.error("Error fetching user info:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo cargar tu información personal." });
+        } finally {
+            setIsLoadingUser(false);
+        }
+    };
 
     const fetchAcademicInfo = async () => {
         setIsLoadingAcademic(true);
@@ -109,7 +131,7 @@ export default function ProfilePage() {
                     periodo: "2024-2" // Placeholder, can be dynamic later
                 });
             } else {
-                 setAcademicInfo({ carrera: "N/A", sede: "N/A", grupo: "N/A", periodo: "N/A" });
+                 setAcademicInfo(null); // No academic info if not found
             }
         } catch (error) {
             console.error("Error fetching academic info: ", error);
@@ -118,29 +140,14 @@ export default function ProfilePage() {
             setIsLoadingAcademic(false);
         }
     };
-    
-    const fetchUserInfo = async () => {
-        setIsLoadingUser(true);
-        try {
-            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
-            const userSnap = await getDoc(userRef);
 
-            if (userSnap.exists()) {
-                setUserInfo(userSnap.data() as UserInfo);
-            } else {
-                toast({ variant: "destructive", title: "Error", description: "No se encontró tu información de usuario." });
-            }
-        } catch (error) {
-            console.error("Error fetching user info:", error);
-            toast({ variant: "destructive", title: "Error", description: "No se pudo cargar tu información personal." });
-        } finally {
-            setIsLoadingUser(false);
-        }
-    };
-
-    fetchAcademicInfo();
     fetchUserInfo();
-  }, [userId, toast]);
+    if (userRole === 'estudiante') {
+        fetchAcademicInfo();
+    } else {
+        setIsLoadingAcademic(false);
+    }
+  }, [userId, userRole, toast]);
   
   const form = useForm<ChangePasswordFormValues>({
     mode: "onTouched",
@@ -214,7 +221,7 @@ export default function ProfilePage() {
       <Card>
         <CardContent>
           <Tabs defaultValue="personal" className="pt-6">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className={`grid w-full ${userRole === 'estudiante' ? 'grid-cols-3' : 'grid-cols-2'}`}>
               <TabsTrigger value="personal">
                 <User className="mr-2 h-4 w-4" />
                 Personal
@@ -223,10 +230,12 @@ export default function ProfilePage() {
                 <Shield className="mr-2 h-4 w-4" />
                 Seguridad
               </TabsTrigger>
-              <TabsTrigger value="academic">
-                <Briefcase className="mr-2 h-4 w-4" />
-                Académico
-              </TabsTrigger>
+              {userRole === 'estudiante' && (
+                  <TabsTrigger value="academic">
+                    <Briefcase className="mr-2 h-4 w-4" />
+                    Académico
+                  </TabsTrigger>
+              )}
             </TabsList>
             <TabsContent value="personal" className="mt-6">
               {isLoadingUser ? (
@@ -353,34 +362,38 @@ export default function ProfilePage() {
               </form>
               </Form>
             </TabsContent>
-            <TabsContent value="academic" className="mt-6">
-              {isLoadingAcademic ? (
-                 <div className="space-y-4">
-                    <Skeleton className="h-8 w-1/3" />
-                    <Skeleton className="h-8 w-1/2" />
-                    <Skeleton className="h-8 w-1/4" />
-                 </div>
-              ) : (
-                <div className="space-y-4">
-                    <div>
-                        <Label>Carrera</Label>
-                        <p className="text-sm font-medium text-gray-800">{academicInfo?.carrera}</p>
+            {userRole === 'estudiante' && (
+                <TabsContent value="academic" className="mt-6">
+                {isLoadingAcademic ? (
+                    <div className="space-y-4">
+                        <Skeleton className="h-8 w-1/3" />
+                        <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-8 w-1/4" />
                     </div>
-                    <div>
-                        <Label>Sede</Label>
-                        <p className="text-sm font-medium text-gray-800">{academicInfo?.sede}</p>
+                ) : academicInfo ? (
+                    <div className="space-y-4">
+                        <div>
+                            <Label>Carrera</Label>
+                            <p className="text-sm font-medium text-gray-800">{academicInfo.carrera}</p>
+                        </div>
+                        <div>
+                            <Label>Sede</Label>
+                            <p className="text-sm font-medium text-gray-800">{academicInfo.sede}</p>
+                        </div>
+                        <div>
+                            <Label>Grupo</Label>
+                            <p className="text-sm font-medium text-gray-800">{academicInfo.grupo}</p>
+                        </div>
+                        <div>
+                            <Label>Periodo Académico Actual</Label>
+                            <p className="text-sm font-medium text-gray-800">{academicInfo.periodo}</p>
+                        </div>
                     </div>
-                     <div>
-                        <Label>Grupo</Label>
-                        <p className="text-sm font-medium text-gray-800">{academicInfo?.grupo}</p>
-                    </div>
-                     <div>
-                        <Label>Periodo Académico Actual</Label>
-                        <p className="text-sm font-medium text-gray-800">{academicInfo?.periodo}</p>
-                    </div>
-                </div>
-              )}
-            </TabsContent>
+                ) : (
+                    <p className="text-sm text-muted-foreground">No se encontró información académica.</p>
+                )}
+                </TabsContent>
+            )}
           </Tabs>
         </CardContent>
       </Card>
