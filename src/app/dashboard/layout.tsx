@@ -79,6 +79,7 @@ interface Notification {
     description: string;
     time: string;
     read: boolean;
+    timestamp: Date;
 }
 
 export default function DashboardLayout({
@@ -117,45 +118,48 @@ export default function DashboardLayout({
         try {
             if (userRole === 'admin' || userRole === 'gestor') {
                 const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
-                // Simplified query to avoid composite index. Filter client-side.
-                const q = query(studentsRef, orderBy("fechaRegistro", "desc"), limit(20));
+                const q = query(studentsRef, where("estado", "==", "pendiente"), limit(5));
                 const querySnapshot = await getDocs(q);
                 
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
-                    if(data.estado === "pendiente") {
-                      const fechaRegistro = data.fechaRegistro?.toDate ? data.fechaRegistro.toDate() : null;
-                      fetchedNotifications.push({
-                          id: doc.id,
-                          title: "Nueva solicitud de preinscripción",
-                          description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
-                          time: fechaRegistro ? formatDistanceToNow(fechaRegistro, { addSuffix: true, locale: es }) : "Hace un momento",
-                          read: false
-                      });
-                    }
+                    const fechaRegistro = data.fechaRegistro?.toDate ? data.fechaRegistro.toDate() : new Date();
+                    fetchedNotifications.push({
+                        id: doc.id,
+                        title: "Nueva solicitud de preinscripción",
+                        description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
+                        time: formatDistanceToNow(fechaRegistro, { addSuffix: true, locale: es }),
+                        read: false,
+                        timestamp: fechaRegistro
+                    });
                 });
             } else if (userRole === 'estudiante') {
                  const notesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/notas");
-                 const q = query(notesRef, where("estudianteId", "==", userId), orderBy("fecha", "desc"), limit(5));
+                 const q = query(notesRef, where("estudianteId", "==", userId), limit(5));
                  const querySnapshot = await getDocs(q);
+                 
                  for (const noteDoc of querySnapshot.docs) {
                      const noteData = noteDoc.data();
                      const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", noteData.grupoId);
                      const groupSnap = await getDoc(groupRef);
                      const subjectName = groupSnap.exists() ? groupSnap.data().materia.nombre : 'una materia';
-                     const fechaNota = noteData.fecha?.toDate ? noteData.fecha.toDate() : null;
+                     const fechaNota = noteData.fecha?.toDate ? noteData.fecha.toDate() : new Date();
                      
                      fetchedNotifications.push({
                          id: noteDoc.id,
                          title: "Nueva Calificación Disponible",
                          description: `Se ha publicado tu nota para ${subjectName}.`,
-                         time: fechaNota ? formatDistanceToNow(fechaNota, { addSuffix: true, locale: es }) : "Hace un momento",
-                         read: false
+                         time: formatDistanceToNow(fechaNota, { addSuffix: true, locale: es }),
+                         read: false,
+                         timestamp: fechaNota
                      });
                  }
             }
-            // In a real app, we might want to cap the number of notifications after client-side filtering.
-            setNotifications(fetchedNotifications.slice(0, 5));
+            
+            // Sort notifications on the client side to avoid composite index
+            fetchedNotifications.sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
+            
+            setNotifications(fetchedNotifications);
         } catch (error) {
             console.error("Error fetching notifications:", error);
         } finally {
