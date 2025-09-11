@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -526,18 +525,15 @@ function AssignClassDialog({
       setSelectedHoraFin("");
     }, [selectedHoraInicio]);
     
-    const availableSalones = useMemo(() => {
-        if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return salones;
+    const occupiedSalonIds = useMemo(() => {
+        if (modalidad === 'Virtual' || !selectedDia || !selectedHoraInicio || !selectedHoraFin) return new Set();
 
         const start = parseInt(selectedHoraInicio.split(':')[0]) + parseInt(selectedHoraInicio.split(':')[1]) / 60;
         const end = parseInt(selectedHoraFin.split(':')[0]) + parseInt(selectedHoraFin.split(':')[1]) / 60;
-
-        const occupiedSalons = allSchedules
+        
+        return new Set(allSchedules
             .filter(entry => {
-                // Excluir la clase actual que se está editando de la comprobación de conflictos.
-                if (existingSchedule && entry.id === existingSchedule.id) return false;
-                // No comprobar conflictos con otras clases del mismo grupo.
-                if (entry.grupoId === grupo.id) return false;
+                if (existingSchedule && entry.id === existingSchedule.id) return false; // Exclude self
                 return entry.dia === selectedDia && entry.modalidad === 'Presencial';
             })
             .filter(entry => {
@@ -547,14 +543,11 @@ function AssignClassDialog({
                 const [entryEndHour, entryEndMinute] = entry.hora.split(' - ')[1].split(':').map(Number);
                 const entryEnd = entryEndHour + entryEndMinute / 60;
 
-                // Comprueba si hay superposición de tiempo.
                 return Math.max(start, entryStart) < Math.min(end, entryEnd);
             })
-            .map(entry => entry.salonId);
+            .map(entry => entry.salonId));
             
-        return salones.filter(salon => !occupiedSalons.includes(salon.id));
-
-    }, [salones, allSchedules, selectedDia, selectedHoraInicio, selectedHoraFin, modalidad, existingSchedule, grupo.id]);
+    }, [allSchedules, selectedDia, selectedHoraInicio, selectedHoraFin, modalidad, existingSchedule]);
 
 
     const handleSubmit = async () => {
@@ -681,28 +674,26 @@ function AssignClassDialog({
                         <Label>Modalidad</Label>
                         <Select value={modalidad} onValueChange={(v) => setModalidad(v as any)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Virtual">Virtual</SelectItem></SelectContent></Select>
                     </div>
-                    {modalidad === 'Presencial' && (
-                        <div className="space-y-2">
-                            <Label>Salón</Label>
-                            <Select value={selectedSalon} onValueChange={setSelectedSalon} disabled={modalidad === 'Virtual'}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecciona un salón..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {availableSalones.map(s => (
-                                        <SelectItem key={s.id} value={s.id}>
-                                            {s.nombre}
+                    <div className="space-y-2">
+                        <Label>Salón</Label>
+                        <Select value={selectedSalon} onValueChange={setSelectedSalon} disabled={modalidad === 'Virtual'}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecciona un salón..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {salones.map(s => {
+                                    const isOccupied = occupiedSalonIds.has(s.id);
+                                    // The salon is selectable if it's NOT occupied, OR if it's the one currently being edited.
+                                    const isSelectable = !isOccupied || s.id === existingSchedule?.salonId;
+                                    return (
+                                        <SelectItem key={s.id} value={s.id} disabled={!isSelectable}>
+                                            {s.nombre} {!isSelectable && "(Ocupado)"}
                                         </SelectItem>
-                                    ))}
-                                    {salones.filter(s => !availableSalones.some(as => as.id === s.id)).map(s => (
-                                        <SelectItem key={s.id} value={s.id} disabled>
-                                            {s.nombre} (Ocupado)
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    )}
+                                    );
+                                })}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
                 <DialogFooter className="flex justify-between w-full">
                      <div>
