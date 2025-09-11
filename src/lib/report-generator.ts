@@ -67,51 +67,75 @@ const addFooter = (doc: jsPDFWithAutoTable) => {
 const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportConfig) => {
     const head = [['#', 'Nombre Completo', 'Correo Institucional', 'Carrera', 'Grupo', 'Estado']];
     const body = [];
-    const studentIdsToFetch: string[] = [];
+    let studentIdsToFetch: string[] = [];
 
-    // If a specific group is selected, fetch students directly from that group's document
+    const groupsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos");
+    let groupsQuery = query(groupsRef);
+    
     if (config.groupId !== 'all') {
-        const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", config.groupId);
-        const groupSnap = await getDoc(groupRef);
-        if (groupSnap.exists() && groupSnap.data().estudiantes?.length > 0) {
-            studentIdsToFetch.push(...groupSnap.data().estudiantes.map((s: any) => s.id));
-        }
-    } else { // Otherwise, fetch all students for the selected career
-        const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
-        let q = query(studentsRef);
-        if(config.careerId !== 'all') {
-            q = query(q, where("carreraId", "==", config.careerId));
-        }
-        const studentsSnap = await getDocs(q);
-        studentIdsToFetch.push(...studentsSnap.docs.map(s => s.id));
+        groupsQuery = query(groupsQuery, where("__name__", "==", config.groupId));
+    } else if (config.careerId !== 'all') {
+        groupsQuery = query(groupsQuery, where("idCarrera", "==", config.careerId));
     }
+
+    const groupsSnapshot = await getDocs(groupsQuery);
+    
+    const studentsByGroup: { [key: string]: string[] } = {};
+    const groupCodeMap = new Map<string, string>();
+    groupsSnapshot.forEach(doc => {
+        const groupData = doc.data();
+        if (groupData.estudiantes && groupData.estudiantes.length > 0) {
+            const ids = groupData.estudiantes.map((s: any) => s.id);
+            studentIdsToFetch.push(...ids);
+            studentsByGroup[doc.id] = ids;
+            groupCodeMap.set(doc.id, groupData.codigoGrupo);
+        }
+    });
+
+    studentIdsToFetch = [...new Set(studentIdsToFetch)]; // Remove duplicates
 
     if (studentIdsToFetch.length === 0) {
         body.push([{ content: 'No se encontraron estudiantes matriculados para los filtros seleccionados.', colSpan: 6, styles: { halign: 'center' } }]);
     } else {
+        const studentDetailsMap = new Map();
+        const studentChunks: string[][] = [];
+        for (let i = 0; i < studentIdsToFetch.length; i += 30) {
+            studentChunks.push(studentIdsToFetch.slice(i, i + 30));
+        }
+        
+        for (const chunk of studentChunks) {
+            const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+            const q = query(usersRef, where("__name__", "in", chunk));
+            const usersSnap = await getDocs(q);
+            usersSnap.forEach(userDoc => {
+                const data = userDoc.data();
+                studentDetailsMap.set(userDoc.id, {
+                    nombreCompleto: data.nombreCompleto || 'N/A',
+                    correoInstitucional: data.correoInstitucional || data.correo || 'N/A',
+                    estado: data.estado || 'N/A',
+                });
+            });
+        }
+        
         let i = 1;
-        // Fetch details for the collected student IDs
         for (const studentId of studentIdsToFetch) {
-            const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
-            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", studentId);
+            const studentDetails = studentDetailsMap.get(studentId);
+            if (!studentDetails) continue;
 
-            const [studentSnap, userSnap] = await Promise.all([getDoc(studentRef), getDoc(userRef)]);
-            
-            if (!studentSnap.exists() || !userSnap.exists()) continue;
+            const studentDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId));
+            if (!studentDoc.exists()) continue;
 
-            const studentData = studentSnap.data();
-            const userData = userSnap.data();
-
+            const studentData = studentDoc.data();
             const careerName = config.careers.find(c => c.id === studentData.carreraId)?.nombre || 'N/A';
-            const groupCode = config.groups.find(g => g.id === studentData.grupo)?.codigoGrupo || 'N/A';
+            const groupCode = groupCodeMap.get(studentData.grupo) || 'N/A';
             
             body.push([
                 i++,
-                userData.nombreCompleto || 'N/A',
-                userData.correoInstitucional || userData.correo || 'N/A',
+                studentDetails.nombreCompleto,
+                studentDetails.correoInstitucional,
                 careerName,
                 groupCode,
-                studentData.estado || 'N/A'
+                studentDetails.estado
             ]);
         }
     }
