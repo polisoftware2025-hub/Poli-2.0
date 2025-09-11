@@ -117,13 +117,14 @@ const generateEnrollmentList = async (doc: jsPDFWithAutoTable, config: ReportCon
             });
         }
         
+        const estudiantesRef = collection(db, "Politecnico", "mzIX7rzezDezczAV6pQ7", "estudiantes");
         let i = 1;
         for (const studentId of studentIdsToFetch) {
             const studentDetails = studentDetailsMap.get(studentId);
             if (!studentDetails) continue;
             
             try {
-                const studentDocRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
+                const studentDocRef = doc(estudiantesRef, studentId);
                 const studentDoc = await getDoc(studentDocRef);
 
                 if (!studentDoc.exists()) continue;
