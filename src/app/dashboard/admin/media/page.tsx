@@ -26,6 +26,18 @@ interface SiteImage {
     imageUrl: string;
 }
 
+// Simple hash function to get a numeric seed from a string
+const getSeedFromString = (str: string): number => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        const char = str.charCodeAt(i);
+        hash = (hash << 5) - hash + char;
+        hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
+};
+
+
 export default function MediaManagementPage() {
   const [careers, setCareers] = useState<Career[]>([]);
   const [subjects, setSubjects] = useState<Materia[]>([]);
@@ -193,38 +205,35 @@ export default function MediaManagementPage() {
         <TabsContent value="subjects">
            <Card>
             <CardHeader>
-              <CardTitle>Imágenes de Materias</CardTitle>
-              <CardDescription>Define una imagen representativa para cada materia.</CardDescription>
+              <CardTitle>Imágenes de Materias (Generadas Automáticamente)</CardTitle>
+              <CardDescription>Imágenes de placeholder abstractas y únicas para cada materia.</CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-64" />)
+                Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-56" />)
               ) : (
-                subjects.map(item => (
-                  <Card key={item.id}>
-                    <CardHeader className="p-4">
-                      <CardTitle className="text-base truncate">{item.nombre}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden mb-4">
-                        {item.imagenURL && (item.imagenURL.startsWith("http") || item.imagenURL.startsWith("data:image"))? (
-                          <Image src={item.imagenURL} alt={item.nombre} fill style={{ objectFit: 'cover' }} />
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-muted-foreground">
-                            <ImageIcon className="h-10 w-10" />
-                          </div>
-                        )}
-                      </div>
-                      <MediaManagementDialog
-                        documentId={item.id as string}
-                        documentName={item.nombre}
-                        collectionName="materias"
-                        currentImageUrl={item.imagenURL}
-                        onUpdate={fetchMediaData}
-                      />
-                    </CardContent>
-                  </Card>
-                ))
+                subjects.map(item => {
+                    const seed = getSeedFromString(item.id || item.nombre);
+                    const imageUrl = `https://picsum.photos/seed/${seed}/600/400`;
+                    return (
+                        <Card key={item.id}>
+                            <CardHeader className="p-4">
+                                <CardTitle className="text-base truncate">{item.nombre}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                <div className="relative w-full h-40 bg-muted rounded-md overflow-hidden">
+                                    <Image 
+                                        src={imageUrl} 
+                                        alt={`Imagen abstracta para ${item.nombre}`} 
+                                        fill 
+                                        style={{ objectFit: 'cover' }}
+                                        data-ai-hint="abstract"
+                                    />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    );
+                })
               )}
             </CardContent>
           </Card>
@@ -233,3 +242,4 @@ export default function MediaManagementPage() {
     </div>
   );
 }
+
