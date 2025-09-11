@@ -92,7 +92,7 @@ export default function ManagerDashboardPage() {
             const [usersSnap, careersSnap, groupsSnap] = await Promise.all([
                 getDocs(usersRef),
                 getDocs(careersRef),
-                getDocs(groupsSnap),
+                getDocs(groupsRef),
             ]);
 
             const studentCount = usersSnap.docs.filter(doc => doc.data().rol.id === 'estudiante' && doc.data().estado === 'activo').length;
