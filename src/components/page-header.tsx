@@ -104,6 +104,8 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     }
     return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
+  
+  const leafSegments = ['add-user', 'edit-user', 'details', 'new-career', 'edit'];
 
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
@@ -111,18 +113,20 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
         <Home className="h-4 w-4" />
       </Link>
       {breadcrumbParts.map((segment, index) => {
-        if (isDynamicSegment(segment)) return null; // Don't render dynamic segments (IDs)
+        if (isDynamicSegment(segment)) return null; 
 
         const isLast = index === breadcrumbParts.length - 1 || isDynamicSegment(breadcrumbParts[index + 1]);
+        const isLeafNode = leafSegments.includes(segment);
         
-        // Build the path by joining only non-dynamic segments up to the current one.
-        const pathArray = [userRole, ...breadcrumbParts.slice(0, index + 1).filter(p => !isDynamicSegment(p))];
-        const path = `/dashboard/${pathArray.join('/')}`;
+        let path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index + 1)].filter(p => !isDynamicSegment(p) && !leafSegments.includes(p)).join('/')}`;
+        if(isLeafNode){
+           path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index)].filter(p => !isDynamicSegment(p)).join('/')}`;
+        }
         
         return (
-          <React.Fragment key={path}>
+          <React.Fragment key={segment + index}>
             <ChevronRight className="h-4 w-4 mx-1" />
-            {isLast ? (
+            {isLast || isLeafNode ? (
               <span className="font-medium text-foreground">{getBreadcrumbName(segment)}</span>
             ) : (
               <Link href={path} className="hover:text-primary transition-colors">
