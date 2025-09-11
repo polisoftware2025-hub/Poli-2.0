@@ -18,6 +18,7 @@ import { es } from "date-fns/locale";
 import { sanitizeForFirestore } from "@/lib/firestore-utils";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 
 interface Sede { id: string; nombre: string; }
@@ -84,6 +85,7 @@ export default function SchedulesAdminPage() {
     const [isLoading, setIsLoading] = useState({ sedes: true, carreras: true, grupos: false, docentes: true });
     const { toast } = useToast();
     const [currentDate, setCurrentDate] = useState(new Date());
+    const isMobile = useIsMobile();
 
     const week = useMemo(() => {
         const start = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -263,6 +265,7 @@ export default function SchedulesAdminPage() {
                     week={week}
                     changeWeek={changeWeek}
                     onOpenAssignDialog={handleOpenDialog}
+                    isMobile={isMobile}
                 />
             ) : (
                 <Alert>
@@ -293,7 +296,7 @@ export default function SchedulesAdminPage() {
     );
 }
 
-function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
+function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, isMobile }: any) {
     
     const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -317,6 +320,11 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
     const currentTimePosition = timeToPosition(currentTime);
     const currentDayOfWeek = getDay(currentTime); // Sunday is 0, Monday is 1
     const isCurrentWeek = isSameDay(week.start, startOfWeek(new Date(), { weekStartsOn: 1 }));
+    
+     if (isMobile) {
+        return <MobileScheduleView schedule={schedule} week={week} changeWeek={changeWeek} onOpenAssignDialog={onOpenAssignDialog} />
+    }
+
 
     return (
         <Card className="overflow-hidden">
@@ -353,7 +361,7 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
                 </div>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-                <div className="grid grid-cols-[4rem_repeat(6,minmax(140px,1fr))]">
+                <div className="grid grid-cols-[4rem_repeat(6,minmax(0,1fr))]">
                     {/* Placeholder for top-left corner */}
                     <div className="row-start-1 col-start-1 sticky left-0 z-10 bg-card border-b border-r"></div>
                     
@@ -455,6 +463,60 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
                         })}
                     </div>
                 </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function MobileScheduleView({ schedule, week, changeWeek, onOpenAssignDialog }: any) {
+    const groupedSchedule = useMemo(() => {
+        const groups: { [key: string]: any[] } = {};
+        daysOfWeek.forEach(day => groups[day] = []);
+        schedule.forEach((entry: any) => {
+            if (groups[entry.dia]) {
+                groups[entry.dia].push(entry);
+            }
+        });
+        Object.values(groups).forEach(dayEntries => {
+            dayEntries.sort((a,b) => parseInt(a.hora.split(':')[0]) - parseInt(b.hora.split(':')[0]));
+        });
+        return groups;
+    }, [schedule]);
+
+    return (
+        <Card>
+             <CardHeader className="border-b p-4">
+                <div className="flex flex-col gap-4">
+                     <div className="flex items-center justify-between">
+                        <p className="text-lg font-medium text-gray-700">
+                            {format(week.start, "MMMM yyyy", { locale: es })}
+                        </p>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
+                        </div>
+                    </div>
+                     <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Volver a la semana actual</Button>
+                </div>
+             </CardHeader>
+             <CardContent className="p-4 space-y-4">
+                {daysOfWeek.map((day, index) => (
+                    <div key={day}>
+                        <h3 className="font-bold mb-2">{day} <span className="text-muted-foreground font-normal">{format(week.days[index], 'd')}</span></h3>
+                        <div className="space-y-2">
+                        {groupedSchedule[day].length > 0 ? groupedSchedule[day].map((entry: any) => (
+                            <button key={entry.id} className="w-full text-left p-3 rounded-md border" onClick={() => onOpenAssignDialog(entry)}>
+                                <p className="font-semibold">{entry.materiaNombre}</p>
+                                <p className="text-sm text-muted-foreground">{entry.hora}</p>
+                                <p className="text-sm text-muted-foreground">{entry.docenteNombre}</p>
+                                <p className="text-sm text-muted-foreground">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                            </button>
+                        )) : (
+                            <p className="text-sm text-muted-foreground pl-3">No hay clases programadas.</p>
+                        )}
+                        </div>
+                    </div>
+                ))}
             </CardContent>
         </Card>
     );
@@ -715,6 +777,4 @@ function AssignClassDialog({
         </Dialog>
     );
 }
-  
-
     
