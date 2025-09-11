@@ -262,7 +262,7 @@ export default function SchedulesAdminPage() {
                 <ScheduleView
                     schedule={filteredSchedule}
                     week={week}
-                    changeWeek={(dir) => setCurrentDate(current => dir === 'next' ? addDays(current, 7) : addDays(current, -7))}
+                    setCurrentDate={setCurrentDate}
                     onOpenAssignDialog={handleOpenDialog}
                     viewMode={viewMode}
                     setViewMode={setViewMode}
@@ -300,17 +300,26 @@ export default function SchedulesAdminPage() {
     );
 }
 
-function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, viewMode, setViewMode, isFullScreen, setIsFullScreen, handleDownloadPdf, docentes, selectedDocenteFilter, setSelectedDocenteFilter }: any) {
+function ScheduleView({ schedule, week, setCurrentDate, onOpenAssignDialog, viewMode, setViewMode, isFullScreen, setIsFullScreen, handleDownloadPdf, docentes, selectedDocenteFilter, setSelectedDocenteFilter }: any) {
     const isMobile = useIsMobile();
     
-    const CurrentView = (isMobile || viewMode === 'day') ? DayView : WeekView;
+    const changeWeek = (direction: 'next' | 'prev' | 'today') => {
+        if (direction === 'today') {
+            setCurrentDate(new Date());
+        } else {
+            setCurrentDate((current: Date) => addDays(current, direction === 'next' ? 7 : -7));
+        }
+    };
+    
+    const CurrentView = (isMobile && viewMode !== 'day') ? DayView : (viewMode === 'day' ? DayView : WeekView);
+    
 
     return (
         <Card className={cn("overflow-hidden flex flex-col", isFullScreen && "h-full")}>
             <CardHeader className="border-b p-4">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>Hoy</Button>
+                        <Button variant="outline" size="sm" onClick={() => changeWeek('today')}>Hoy</Button>
                         <div className="flex items-center">
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('prev')}><ChevronLeft className="h-5 w-5"/></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => changeWeek('next')}><ChevronRight className="h-5 w-5"/></Button>
@@ -324,7 +333,7 @@ function ScheduleView({ schedule, week, changeWeek, onOpenAssignDialog, viewMode
                             <SelectTrigger className="w-48 h-9 text-sm"><Filter className="mr-2 h-4 w-4" /><SelectValue placeholder="Filtrar por docente"/></SelectTrigger>
                             <SelectContent><SelectItem value="all">Todos los Docentes</SelectItem>{docentes.map((d: any) => <SelectItem key={d.id} value={d.id}>{d.nombreCompleto}</SelectItem>)}</SelectContent>
                         </Select>
-                        <Button variant="outline" size="icon" onClick={() => setIsFullScreen(!isFullScreen)} className="h-9 w-9">{isFullScreen ? <Minimize className="h-4 w-4"/> : <Maximize className="h-4 w-4"/>}</Button>
+                        <Button variant="outline" size="icon" onClick={() => setIsFullScreen(!isFullScreen)} className="h-9 w-9 hidden sm:flex">{isFullScreen ? <Minimize className="h-4 w-4"/> : <Maximize className="h-4 w-4"/>}</Button>
                         {!isMobile && (
                             <Select defaultValue="week" value={viewMode} onValueChange={(v) => setViewMode(v)}>
                                 <SelectTrigger className="w-32 h-9 text-sm"><SelectValue /></SelectTrigger>
@@ -363,7 +372,7 @@ function WeekView({ schedule, week, isCurrentWeek, onOpenAssignDialog }: any) {
     const currentDayOfWeek = getDay(currentTime);
 
     return (
-        <div className="grid grid-cols-[4rem_repeat(6,minmax(140px,1fr))]">
+        <div className="grid grid-cols-[4rem_repeat(6,minmax(0,1fr))]">
             <div className="row-start-1 col-start-1 sticky left-0 z-10 bg-card border-b border-r"></div>
             {daysOfWeek.map((day, index) => (
                 <div key={day} className="col-start-auto text-center py-2 border-b border-r">
@@ -411,30 +420,47 @@ function WeekView({ schedule, week, isCurrentWeek, onOpenAssignDialog }: any) {
 
 function DayView({ schedule, week, onOpenAssignDialog }: any) {
     const today = new Date();
-    const [selectedDay, setSelectedDay] = useState(isToday(today) && getDay(today) >= 1 && getDay(today) <= 6 ? today : week.start);
+    const todayIndex = getDay(today) === 0 ? 6 : getDay(today) -1; // Handle Sunday
+    const [selectedDayIndex, setSelectedDayIndex] = useState(isToday(today) && getDay(today) >= 1 && getDay(today) <= 6 ? todayIndex : 0);
+    const selectedDate = week.days[selectedDayIndex];
+    const [currentTime, setCurrentTime] = useState(new Date());
 
-    const daySchedule = schedule.filter((entry:any) => {
-        const dayIndex = daysOfWeek.indexOf(entry.dia);
-        return dayIndex + 1 === getDay(selectedDay);
-    });
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const timeToPosition = (date: Date) => {
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        if (hours < 7) return 0;
+        if (hours >= 23) return 100;
+        const totalMinutes = (hours - 7) * 60 + minutes;
+        const totalDayMinutes = (23-7) * 60;
+        return (totalMinutes / totalDayMinutes) * 100;
+    };
+    
+    const currentTimePosition = timeToPosition(currentTime);
+
+    const daySchedule = schedule.filter((entry:any) => entry.dia === daysOfWeek[selectedDayIndex]);
 
     return (
-        <div className="flex flex-col">
-             <div className="flex justify-around p-2 border-b">
-                {week.days.map((day: Date) => (
-                    <Button key={day.toString()} variant={isSameDay(day, selectedDay) ? "secondary" : "ghost"} onClick={() => setSelectedDay(day)} className="flex-col h-auto">
+        <div className="flex flex-col h-full">
+            <div className="flex justify-around p-2 border-b">
+                {week.days.map((day: Date, index: number) => (
+                    <Button key={day.toString()} variant={isSameDay(day, selectedDate) ? "secondary" : "ghost"} onClick={() => setSelectedDayIndex(index)} className="flex-col h-auto">
                         <span className="text-xs">{format(day, 'E', { locale: es })}</span>
-                        <span className="text-lg font-bold">{format(day, 'd')}</span>
+                        <span className={cn("text-lg font-bold", isToday(day) && "text-primary")}>{format(day, 'd')}</span>
                     </Button>
                 ))}
             </div>
-             <div className="grid grid-cols-[4rem_1fr]">
-                <div className="row-start-2 col-start-1 sticky left-0 z-10 bg-card border-r">
+             <div className="grid grid-cols-[4rem_1fr] flex-1 overflow-y-auto">
+                <div className="row-start-1 col-start-1 sticky top-0 z-10 bg-card border-r">
                     {timeSlots.map((time, index) => index % 2 === 0 && <div key={time} className="h-16 relative flex justify-end pr-2"><span className="text-xs text-muted-foreground -translate-y-1/2">{time}</span></div>)}
                 </div>
-                 <div className="row-start-2 col-start-2 grid grid-cols-1 relative">
-                    {timeSlots.map((time) => <div key={`day-${time}`} className="h-8 border-b border-r"></div>)}
-                    {isToday(selectedDay) && <div className="absolute w-full h-px bg-red-500 z-20" style={{ top: `${(new Date().getHours() - 7 + new Date().getMinutes()/60) / 16 * 100}%` }}><div className="absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full bg-red-500"></div></div>}
+                 <div className="row-start-1 col-start-2 grid grid-cols-1 relative">
+                    {timeSlots.map((time) => <div key={`day-${time}`} className="h-8 border-b"></div>)}
+                    {isToday(selectedDate) && <div className="absolute w-full h-px bg-red-500 z-20" style={{ top: `${currentTimePosition}%` }}><div className="absolute -left-1.5 -top-1.5 h-3 w-3 rounded-full bg-red-500"></div></div>}
                     {daySchedule.map((entry: any, index: number) => {
                         const [startHourStr, startMinuteStr] = entry.hora.split(' - ')[0].split(':');
                         const startRowIndex = (parseInt(startHourStr) - 7) * 2 + (parseInt(startMinuteStr) / 30);
