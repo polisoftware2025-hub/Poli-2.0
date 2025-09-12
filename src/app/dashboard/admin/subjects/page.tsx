@@ -181,7 +181,7 @@ export default function SubjectsAdminPage() {
                 Array.from({length: 6}).map((_, i) => <Skeleton key={i} className="h-48" />)
             ) : (
                 filteredSubjects.map((subject) => (
-                    <Card key={subject.id} className="flex flex-col">
+                    <Card key={`${subject.id}-${subject.careerId}-${subject.cycleNumber}`} className="flex flex-col">
                         <CardHeader>
                             <div className="flex justify-between items-start">
                                 <CardTitle className="text-lg">{subject.nombre}</CardTitle>
