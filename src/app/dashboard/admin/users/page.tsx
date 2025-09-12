@@ -54,6 +54,12 @@ export default function UsersPage() {
   const { toast } = useToast();
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+
+  useEffect(() => {
+      const adminId = localStorage.getItem('userId');
+      setCurrentAdminId(adminId);
+  }, []);
 
   const fetchUsers = async () => {
       setIsLoading(true);
@@ -177,7 +183,9 @@ export default function UsersPage() {
                     </TableRow>
                   ))
                 ) : (
-                  filteredUsers.map((user) => (
+                  filteredUsers.map((user) => {
+                    const isProtectedAdmin = user.rol.id === 'admin';
+                    return (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -209,18 +217,18 @@ export default function UsersPage() {
                       <TableCell className="text-right">
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" disabled={isProtectedAdmin}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                           <DropdownMenuItem asChild>
+                           <DropdownMenuItem asChild disabled={isProtectedAdmin}>
                                 <Link href={`/dashboard/admin/edit-user/${user.id}`}>
                                     <FilePenLine className="mr-2 h-4 w-4" />
                                     Editar
                                 </Link>
                             </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDisableUser(user.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={user.estado === 'inactivo'}>
+                          <DropdownMenuItem onClick={() => handleDisableUser(user.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={isProtectedAdmin || user.estado === 'inactivo'}>
                             <UserX className="mr-2 h-4 w-4" />
                             Deshabilitar
                           </DropdownMenuItem>
@@ -228,7 +236,8 @@ export default function UsersPage() {
                       </DropdownMenu>
                       </TableCell>
                     </TableRow>
-                  ))
+                    )
+                })
                 )}
                  {filteredUsers.length === 0 && !isLoading && (
                     <TableRow>
@@ -243,5 +252,3 @@ export default function UsersPage() {
     </div>
   );
 }
-
-    

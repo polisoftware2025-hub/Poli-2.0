@@ -44,15 +44,25 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         if (!userId) {
             return NextResponse.json({ message: "ID de usuario no proporcionado." }, { status: 400 });
         }
+        
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+            return NextResponse.json({ message: "Usuario no encontrado para actualizar." }, { status: 404 });
+        }
+
+        const existingUserData = userSnap.data();
+        if (existingUserData.rol.id === 'admin') {
+            return NextResponse.json({ message: "No está permitido modificar a otro administrador." }, { status: 403 });
+        }
+        
 
         const body = await req.json();
-        // The password field is intentionally ignored here to prevent it from being updated.
         const { contrasena, rol, sedeId, carreraId, grupo, ...userData } = body;
         
         const batch = writeBatch(db);
         
-        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
-
         const dataToUpdate: any = {
             ...userData,
             nombreCompleto: `${body.nombre1} ${body.nombre2 || ''} ${body.apellido1} ${body.apellido2}`.replace(/\s+/g, ' ').trim(),

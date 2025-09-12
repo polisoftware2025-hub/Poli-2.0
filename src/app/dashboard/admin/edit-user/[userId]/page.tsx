@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useForm, FormProvider, useWatch, useFormContext } from "react-hook-form";
 import { PageHeader } from "@/components/page-header";
-import { User, Phone, KeyRound, BookOpen } from "lucide-react";
+import { User, Phone, KeyRound, BookOpen, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -21,6 +21,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { Label } from "@/components/ui/label";
 import { validateEmail, validateName, validatePassword, validatePhoneNumber, validateRequired, validateSelection } from "@/lib/validators";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type EditUserFormValues = {
   nombre1: string;
@@ -32,7 +33,6 @@ type EditUserFormValues = {
   direccion: string;
   correo: string;
   rol: string;
-  contrasena?: string;
   sedeId?: string;
   carreraId?: string;
   grupo?: string;
@@ -83,6 +83,8 @@ export default function EditUserPage() {
     }
     return "No disponible";
   }, [userData]);
+  
+  const isEditingAdmin = userData?.rol.id === 'admin';
 
 
   useEffect(() => {
@@ -128,16 +130,10 @@ export default function EditUserPage() {
     if (!userId) return;
     setIsLoading(true);
     try {
-        // Exclude the password field if it's empty, so it's not sent to the API
-        const dataToSend: Partial<EditUserFormValues> = { ...values };
-        if (!values.contrasena) {
-            delete dataToSend.contrasena;
-        }
-
         const response = await fetch(`/api/admin/users/${userId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataToSend),
+            body: JSON.stringify(values),
         });
 
         const data = await response.json();
@@ -179,13 +175,22 @@ export default function EditUserPage() {
           <Card>
             <CardContent className="p-6">
                 <div className="space-y-8">
+                 {isEditingAdmin && (
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertTitle>Acción no permitida</AlertTitle>
+                        <AlertDescription>
+                           No es posible modificar la información de un usuario con rol de Administrador desde este panel.
+                        </AlertDescription>
+                    </Alert>
+                 )}
                 {/* Sección de Información Personal */}
                 <section>
                     <div className="flex items-center gap-3 mb-4">
                         <User className="h-6 w-6 text-primary" />
                         <h3 className="text-xl font-semibold">Información Personal</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <fieldset disabled={isEditingAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField name="nombre1" rules={{validate: validateName}} render={({ field }) => (
                             <FormItem><FormLabel>Primer Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -224,7 +229,7 @@ export default function EditUserPage() {
                                 <FormMessage />
                             </FormItem>
                         )} />
-                    </div>
+                    </fieldset>
                 </section>
                 
                 <Separator/>
@@ -235,7 +240,7 @@ export default function EditUserPage() {
                         <Phone className="h-6 w-6 text-primary" />
                         <h3 className="text-xl font-semibold">Datos de Contacto</h3>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <fieldset disabled={isEditingAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField name="telefono" rules={{validate: validatePhoneNumber}} render={({ field }) => (
                             <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -245,7 +250,7 @@ export default function EditUserPage() {
                         <FormField name="direccion" rules={{validate: validateRequired}} render={({ field }) => (
                             <FormItem className="md:col-span-2"><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
-                    </div>
+                    </fieldset>
                 </section>
 
                 <Separator/>
@@ -256,7 +261,7 @@ export default function EditUserPage() {
                         <KeyRound className="h-6 w-6 text-primary" />
                         <h3 className="text-xl font-semibold">Rol del Usuario</h3>
                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <fieldset disabled={isEditingAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField name="rol" rules={{validate: validateSelection}} render={({ field }) => (
                              <FormItem>
                                 <FormLabel>Rol del Usuario</FormLabel>
@@ -272,13 +277,15 @@ export default function EditUserPage() {
                                 <FormMessage />
                             </FormItem>
                         )} />
-                    </div>
+                    </fieldset>
                 </section>
                 
                  {selectedRole === 'estudiante' && (
                     <>
                         <Separator />
-                        <AcademicInfoSection />
+                        <fieldset disabled={isEditingAdmin}>
+                            <AcademicInfoSection />
+                        </fieldset>
                     </>
                  )}
 
@@ -290,7 +297,7 @@ export default function EditUserPage() {
                     <Button type="button" variant="outline" asChild>
                       <Link href="/dashboard/admin/users">Cancelar</Link>
                     </Button>
-                    <Button type="submit" disabled={isLoading}>
+                    <Button type="submit" disabled={isLoading || isEditingAdmin}>
                         {isLoading ? "Guardando..." : "Guardar Cambios"}
                     </Button>
                 </div>
