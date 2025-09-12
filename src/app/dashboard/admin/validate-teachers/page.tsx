@@ -12,9 +12,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, arrayRemove } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useRouter } from "next/navigation";
+
 
 interface Career {
   id: string;
@@ -33,14 +46,13 @@ interface TeacherAssignment {
   grupoId: string;
   ciclo: number;
   estadoGrupo: string;
+  horarioId: string; // The unique ID of the schedule entry
 }
 
 interface GroupedAssignments {
-    [docenteId: string]: {
-        docenteId: string;
-        docenteNombre: string;
-        assignments: TeacherAssignment[];
-    }
+    docenteId: string;
+    docenteNombre: string;
+    assignments: TeacherAssignment[];
 }
 
 const StatCard = ({ title, value, icon: Icon }: { title: string; value: string | number; icon: React.ElementType }) => (
@@ -67,7 +79,9 @@ export default function ValidateTeachersPage() {
   const [groupBy, setGroupBy] = useState("docente");
   
   const [isLoading, setIsLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
   const fetchAssignmentData = useCallback(async () => {
     setIsLoading(true);
@@ -100,6 +114,7 @@ export default function ValidateTeachersPage() {
                 grupoId: groupDoc.id,
                 ciclo: groupData.ciclo,
                 estadoGrupo: groupData.estado,
+                horarioId: slot.id,
               });
             }
           });
@@ -121,6 +136,33 @@ export default function ValidateTeachersPage() {
     fetchAssignmentData();
   }, [fetchAssignmentData]);
   
+  const handleRemove = async (assignment: TeacherAssignment) => {
+    setIsActionLoading(true);
+    try {
+      const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", assignment.grupoId);
+      const groupSnap = await getDoc(groupRef);
+      if (groupSnap.exists()) {
+        const groupData = groupSnap.data();
+        const scheduleEntryToRemove = groupData.horario?.find((h: any) => h.id === assignment.horarioId);
+        if (scheduleEntryToRemove) {
+          await updateDoc(groupRef, {
+            horario: arrayRemove(scheduleEntryToRemove)
+          });
+          toast({ title: "Éxito", description: "La asignación ha sido eliminada del horario." });
+          fetchAssignmentData(); // Refresh all data
+        } else {
+          throw new Error("No se encontró la clase específica en el horario del grupo.");
+        }
+      } else {
+        throw new Error("El grupo asociado a esta asignación no fue encontrado.");
+      }
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo remover la asignación." });
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   const filteredAssignments = useMemo(() => {
     return allAssignments.filter(a => 
       (careerFilter === 'all' || a.carreraId === careerFilter) &&
@@ -263,23 +305,45 @@ export default function ValidateTeachersPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {assignments.map((a, index) => (
-                                        <TableRow key={index}>
+                                        <TableRow key={`${a.grupoId}-${a.horarioId}`}>
                                             <TableCell>{a.carreraNombre}</TableCell>
                                             <TableCell className="font-medium">{a.materiaNombre}</TableCell>
                                             <TableCell>{a.grupoCodigo}</TableCell>
                                             <TableCell>{a.ciclo}</TableCell>
                                             <TableCell><Badge variant={a.estadoGrupo === 'activo' ? 'secondary' : 'destructive'}>{a.estadoGrupo}</Badge></TableCell>
                                             <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4"/></Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem><Edit className="mr-2 h-4 w-4"/> Editar</DropdownMenuItem>
-                                                        <DropdownMenuItem><ShieldCheck className="mr-2 h-4 w-4"/> Validar</DropdownMenuItem>
-                                                        <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Remover</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                <AlertDialog>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isActionLoading}><MoreVertical className="h-4 w-4"/></Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => router.push('/dashboard/admin/schedules')}>
+                                                                <Edit className="mr-2 h-4 w-4"/> Editar
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-green-600 focus:text-green-600">
+                                                                <ShieldCheck className="mr-2 h-4 w-4"/> Validar
+                                                            </DropdownMenuItem>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
+                                                                    <Trash2 className="mr-2 h-4 w-4"/> Remover
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>¿Confirmar eliminación?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                Esta acción removerá la asignación de la materia <strong>{a.materiaNombre}</strong> al docente <strong>{a.docenteNombre}</strong> en el grupo <strong>{a.grupoCodigo}</strong>. No se puede deshacer.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => handleRemove(a)} className="bg-destructive hover:bg-destructive/90">Remover Asignación</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
                                             </TableCell>
                                         </TableRow>
                                     ))}
