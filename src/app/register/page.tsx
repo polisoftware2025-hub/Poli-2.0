@@ -87,7 +87,10 @@ const step3Schema = z.object({
 });
 
 const step4Schema = z.object({
-    password: z.string().min(8, "Mínimo 8 caracteres."),
+    password: z.string()
+      .min(8, "Mínimo 8 caracteres.")
+      .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
+      .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
     confirmPassword: z.string(),
 });
 
@@ -759,3 +762,5 @@ const Step5_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
+
+    
