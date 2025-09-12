@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
-import { ShieldCheck, Filter, Users, BookCopy, ChevronsRight, MoreVertical, Edit, Trash2 } from "lucide-react";
+import { ShieldCheck, Filter, Users, BookCopy, ChevronsRight, MoreVertical, Edit, Trash2, Info } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where, doc, updateDoc, arrayRemove } from "firebase/firestore";
+import { collection, getDocs, query, where, doc, updateDoc, arrayRemove, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
@@ -27,6 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from "next/navigation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 interface Career {
@@ -79,7 +80,7 @@ export default function ValidateTeachersPage() {
   const [groupBy, setGroupBy] = useState("docente");
   
   const [isLoading, setIsLoading] = useState(true);
-  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isActionLoading, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -137,30 +138,29 @@ export default function ValidateTeachersPage() {
   }, [fetchAssignmentData]);
   
   const handleRemove = async (assignment: TeacherAssignment) => {
-    setIsActionLoading(true);
-    try {
-      const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", assignment.grupoId);
-      const groupSnap = await getDoc(groupRef);
-      if (groupSnap.exists()) {
-        const groupData = groupSnap.data();
-        const scheduleEntryToRemove = groupData.horario?.find((h: any) => h.id === assignment.horarioId);
-        if (scheduleEntryToRemove) {
-          await updateDoc(groupRef, {
-            horario: arrayRemove(scheduleEntryToRemove)
-          });
-          toast({ title: "Éxito", description: "La asignación ha sido eliminada del horario." });
-          fetchAssignmentData(); // Refresh all data
+    startTransition(async () => {
+        try {
+        const groupRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", assignment.grupoId);
+        const groupSnap = await getDoc(groupRef);
+        if (groupSnap.exists()) {
+            const groupData = groupSnap.data();
+            const scheduleEntryToRemove = groupData.horario?.find((h: any) => h.id === assignment.horarioId);
+            if (scheduleEntryToRemove) {
+            await updateDoc(groupRef, {
+                horario: arrayRemove(scheduleEntryToRemove)
+            });
+            toast({ title: "Éxito", description: "La asignación ha sido eliminada del horario." });
+            fetchAssignmentData(); // Refresh all data
+            } else {
+            throw new Error("No se encontró la clase específica en el horario del grupo.");
+            }
         } else {
-          throw new Error("No se encontró la clase específica en el horario del grupo.");
+            throw new Error("El grupo asociado a esta asignación no fue encontrado.");
         }
-      } else {
-        throw new Error("El grupo asociado a esta asignación no fue encontrado.");
-      }
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo remover la asignación." });
-    } finally {
-      setIsActionLoading(false);
-    }
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo remover la asignación." });
+        }
+    });
   };
 
   const filteredAssignments = useMemo(() => {
@@ -172,7 +172,7 @@ export default function ValidateTeachersPage() {
   }, [allAssignments, careerFilter, cycleFilter, statusFilter]);
 
   const groupedByTeacher = useMemo(() => {
-      const grouped: GroupedAssignments = {};
+      const grouped: { [key: string]: GroupedAssignments } = {};
       filteredAssignments.forEach(assignment => {
           if (!grouped[assignment.docenteId]) {
               grouped[assignment.docenteId] = {
@@ -208,6 +208,18 @@ export default function ValidateTeachersPage() {
         description="Verifica los docentes asignados a las materias por carrera, ciclo y estado del grupo."
         icon={<ShieldCheck className="h-8 w-8 text-primary" />}
       />
+
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertTitle>¿Cómo usar esta página?</AlertTitle>
+        <AlertDescription>
+          <ul className="list-disc pl-5 space-y-2 mt-2">
+            <li><strong>Vista Agrupada:</strong> La información se presenta en acordeones, uno por cada docente. Expande un docente para ver todas sus asignaturas.</li>
+            <li><strong>Acción "Editar":</strong> Te redirige al panel principal de gestión de horarios, donde puedes realizar modificaciones complejas a la programación.</li>
+            <li><strong>Acción "Remover":</strong> Elimina permanentemente la asignación de una materia a un docente para un grupo específico. Esta acción pedirá confirmación.</li>
+          </ul>
+        </AlertDescription>
+      </Alert>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {isLoading ? (
@@ -304,7 +316,7 @@ export default function ValidateTeachersPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {assignments.map((a, index) => (
+                                    {assignments.map((a) => (
                                         <TableRow key={`${a.grupoId}-${a.horarioId}`}>
                                             <TableCell>{a.carreraNombre}</TableCell>
                                             <TableCell className="font-medium">{a.materiaNombre}</TableCell>
