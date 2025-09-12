@@ -46,6 +46,7 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         }
 
         const body = await req.json();
+        // The password field is intentionally ignored here to prevent it from being updated.
         const { contrasena, rol, sedeId, carreraId, grupo, ...userData } = body;
         
         const batch = writeBatch(db);
@@ -58,11 +59,6 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
             rol: { id: rol, descripcion: rol.charAt(0).toUpperCase() + rol.slice(1) },
             fechaActualizacion: serverTimestamp(),
         };
-
-        if (contrasena) {
-            const saltRounds = 10;
-            dataToUpdate.contrasena = await bcrypt.hash(contrasena, saltRounds);
-        }
 
         batch.update(userRef, dataToUpdate);
         

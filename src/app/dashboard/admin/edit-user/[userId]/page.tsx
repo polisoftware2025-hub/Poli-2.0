@@ -128,10 +128,16 @@ export default function EditUserPage() {
     if (!userId) return;
     setIsLoading(true);
     try {
+        // Exclude the password field if it's empty, so it's not sent to the API
+        const dataToSend: Partial<EditUserFormValues> = { ...values };
+        if (!values.contrasena) {
+            delete dataToSend.contrasena;
+        }
+
         const response = await fetch(`/api/admin/users/${userId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(values),
+            body: JSON.stringify(dataToSend),
         });
 
         const data = await response.json();
@@ -234,7 +240,7 @@ export default function EditUserPage() {
                             <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
                          <FormField name="correo" rules={{validate: validateEmail}} render={({ field }) => (
-                            <FormItem><FormLabel>Correo Personal</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
+                            <FormItem><FormLabel>Correo Personal</FormLabel><FormControl><Input type="email" {...field} disabled /></FormControl><FormMessage /></FormItem>
                         )} />
                         <FormField name="direccion" rules={{validate: validateRequired}} render={({ field }) => (
                             <FormItem className="md:col-span-2"><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
@@ -248,7 +254,7 @@ export default function EditUserPage() {
                 <section>
                     <div className="flex items-center gap-3 mb-4">
                         <KeyRound className="h-6 w-6 text-primary" />
-                        <h3 className="text-xl font-semibold">Credenciales y Rol</h3>
+                        <h3 className="text-xl font-semibold">Rol del Usuario</h3>
                     </div>
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField name="rol" rules={{validate: validateSelection}} render={({ field }) => (
@@ -265,9 +271,6 @@ export default function EditUserPage() {
                                 </Select>
                                 <FormMessage />
                             </FormItem>
-                        )} />
-                        <FormField name="contrasena" render={({ field }) => (
-                            <FormItem><FormLabel>Nueva Contraseña (Opcional)</FormLabel><FormControl><Input type="password" {...field} placeholder="Dejar en blanco para no cambiar" /></FormControl><FormMessage /></FormItem>
                         )} />
                     </div>
                 </section>
