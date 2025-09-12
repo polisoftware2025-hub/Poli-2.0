@@ -37,6 +37,7 @@ interface TeacherAssignment {
 
 interface GroupedAssignments {
     [docenteId: string]: {
+        docenteId: string;
         docenteNombre: string;
         assignments: TeacherAssignment[];
     }
@@ -133,6 +134,7 @@ export default function ValidateTeachersPage() {
       filteredAssignments.forEach(assignment => {
           if (!grouped[assignment.docenteId]) {
               grouped[assignment.docenteId] = {
+                  docenteId: assignment.docenteId,
                   docenteNombre: assignment.docenteNombre,
                   assignments: []
               };
@@ -299,4 +301,3 @@ export default function ValidateTeachersPage() {
     </div>
   );
 }
-
