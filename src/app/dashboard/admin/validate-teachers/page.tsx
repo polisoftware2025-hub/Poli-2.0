@@ -79,6 +79,7 @@ export default function ValidateTeachersPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [groupBy, setGroupBy] = useState("docente");
   
+  const [validatedAssignments, setValidatedAssignments] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, startTransition] = useTransition();
   const { toast } = useToast();
@@ -164,6 +165,7 @@ export default function ValidateTeachersPage() {
   };
   
   const handleValidate = (assignment: TeacherAssignment) => {
+      setValidatedAssignments(prev => new Set(prev).add(assignment.horarioId));
       toast({
           title: "Asignación Validada",
           description: `Se ha marcado la asignación de ${assignment.materiaNombre} como revisada.`,
@@ -222,7 +224,7 @@ export default function ValidateTeachersPage() {
         <AlertDescription>
           <ul className="list-disc pl-5 space-y-2 mt-2">
             <li><strong>Vista Agrupada:</strong> La información se presenta en acordeones, uno por cada docente. Expande un docente para ver todas sus asignaturas.</li>
-            <li><strong>Acción "Validar":</strong> Permite marcar una asignación como revisada y correcta, mostrando una notificación de confirmación para llevar un control visual.</li>
+            <li><strong>Acción "Validar":</strong> Permite marcar una asignación como revisada. Aparecerá un ícono de verificación verde en la fila para indicar que ya fue validada durante esta sesión.</li>
             <li><strong>Acción "Editar":</strong> Te redirige al panel principal de gestión de horarios, donde puedes realizar modificaciones complejas a la programación.</li>
             <li><strong>Acción "Remover":</strong> Elimina permanentemente la asignación de una materia a un docente para un grupo específico. Esta acción pedirá confirmación.</li>
           </ul>
@@ -327,7 +329,12 @@ export default function ValidateTeachersPage() {
                                     {assignments.map((a) => (
                                         <TableRow key={`${a.grupoId}-${a.horarioId}`}>
                                             <TableCell>{a.carreraNombre}</TableCell>
-                                            <TableCell className="font-medium">{a.materiaNombre}</TableCell>
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-2">
+                                                    {validatedAssignments.has(a.horarioId) && <ShieldCheck className="h-4 w-4 text-green-500"/>}
+                                                    {a.materiaNombre}
+                                                </div>
+                                            </TableCell>
                                             <TableCell>{a.grupoCodigo}</TableCell>
                                             <TableCell>{a.ciclo}</TableCell>
                                             <TableCell><Badge variant={a.estadoGrupo === 'activo' ? 'secondary' : 'destructive'}>{a.estadoGrupo}</Badge></TableCell>
