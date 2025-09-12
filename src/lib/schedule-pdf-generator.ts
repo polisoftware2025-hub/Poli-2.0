@@ -54,8 +54,12 @@ export function generateSchedulePdf(
     doc.setTextColor(poliBlue[0], poliBlue[1], poliBlue[2]);
     
     let roleText = "Estudiante:";
-    if (userRole === 'docente') roleText = "Docente:";
-    if (userRole === 'admin') roleText = "Grupo:";
+    if (userRole === 'docente') {
+      roleText = "Docente:";
+    } else if (userRole === 'admin') {
+      roleText = "Grupo:";
+    }
+
 
     doc.text(roleText, leftMargin, startY);
     if(userInfo.carreraNombre) doc.text("Carrera:", leftMargin, startY + 7);
@@ -66,7 +70,7 @@ export function generateSchedulePdf(
     doc.setFont("helvetica", "normal");
     doc.setTextColor(50, 50, 50);
 
-    doc.text(userInfo.nombreCompleto, leftMargin + (roleText.length * 2), startY);
+    doc.text(userInfo.nombreCompleto, leftMargin + (roleText.length * 2) + 2, startY);
     
     if (userInfo.carreraNombre) {
         const careerLines = doc.splitTextToSize(userInfo.carreraNombre, 70);
@@ -116,7 +120,7 @@ export function generateSchedulePdf(
                 
                 if (userRole === 'docente' && entry.grupoCodigo) {
                     cellContent.splice(1, 0, { content: `Grupo: ${entry.grupoCodigo}`, styles: { fontSize: 8, textColor: 80 } });
-                } else if (userRole === 'estudiante' || userRole === 'admin') {
+                } else {
                     cellContent.splice(1, 0, { content: entry.docenteNombre, styles: { fontSize: 7, textColor: 80 } });
                 }
 
@@ -210,5 +214,3 @@ export function generateSchedulePdf(
     const fileName = `Horario_${userInfo.nombreCompleto.replace(/\s/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
     doc.save(fileName);
 }
-
-    
