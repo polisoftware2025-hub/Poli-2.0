@@ -162,6 +162,13 @@ export default function ValidateTeachersPage() {
         }
     });
   };
+  
+  const handleValidate = (assignment: TeacherAssignment) => {
+      toast({
+          title: "Asignación Validada",
+          description: `Se ha marcado la asignación de ${assignment.materiaNombre} como revisada.`,
+      });
+  };
 
   const filteredAssignments = useMemo(() => {
     return allAssignments.filter(a => 
@@ -215,6 +222,7 @@ export default function ValidateTeachersPage() {
         <AlertDescription>
           <ul className="list-disc pl-5 space-y-2 mt-2">
             <li><strong>Vista Agrupada:</strong> La información se presenta en acordeones, uno por cada docente. Expande un docente para ver todas sus asignaturas.</li>
+            <li><strong>Acción "Validar":</strong> Permite marcar una asignación como revisada y correcta, mostrando una notificación de confirmación para llevar un control visual.</li>
             <li><strong>Acción "Editar":</strong> Te redirige al panel principal de gestión de horarios, donde puedes realizar modificaciones complejas a la programación.</li>
             <li><strong>Acción "Remover":</strong> Elimina permanentemente la asignación de una materia a un docente para un grupo específico. Esta acción pedirá confirmación.</li>
           </ul>
@@ -330,11 +338,11 @@ export default function ValidateTeachersPage() {
                                                             <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isActionLoading}><MoreVertical className="h-4 w-4"/></Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onClick={() => handleValidate(a)} className="text-green-600 focus:text-green-600">
+                                                                <ShieldCheck className="mr-2 h-4 w-4"/> Validar
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuItem onClick={() => router.push('/dashboard/admin/schedules')}>
                                                                 <Edit className="mr-2 h-4 w-4"/> Editar
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-green-600 focus:text-green-600">
-                                                                <ShieldCheck className="mr-2 h-4 w-4"/> Validar
                                                             </DropdownMenuItem>
                                                             <AlertDialogTrigger asChild>
                                                                 <DropdownMenuItem className="text-destructive focus:text-destructive focus:bg-destructive/10" onSelect={(e) => e.preventDefault()}>
