@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,7 @@ import { db } from "@/lib/firebase";
 import { doc, getDoc, DocumentData, collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Materia } from "@/types";
+import { createHash } from 'crypto';
 
 interface Course {
     id: string;
@@ -38,12 +40,10 @@ const calendarEvents = [
     { date: new Date("2024-09-02"), title: "Presentación Final", course: "Lógica de Programación" },
 ];
 
-const placeholderImages = [
-    { image: "https://placehold.co/600x400/002147/FFFFFF?text=P", imageHint: "abstract pattern" },
-    { image: "https://placehold.co/600x400/00346e/FFFFFF?text=L", imageHint: "abstract waves" },
-    { image: "https://placehold.co/600x400/004aad/FFFFFF?text=I", imageHint: "abstract circles" },
-    { image: "https://placehold.co/600x400/1b5fa5/FFFFFF?text=C", imageHint: "abstract geometric" },
-];
+// Simple hash function to get a numeric seed from a string
+const getSeedFromString = (str: string): string => {
+    return createHash('md5').update(str).digest('hex');
+};
 
 export default function StudentDashboardPage() {
   const router = useRouter();
@@ -102,12 +102,13 @@ export default function StudentDashboardPage() {
                 const studentData = studentSnap.data();
                 const studentSubjectsInfo = studentData.materiasInscritas || [];
 
-                const fetchedCourses = studentSubjectsInfo.map((enrolledSubject: any, index: number) => {
+                const fetchedCourses = studentSubjectsInfo.map((enrolledSubject: any) => {
                     const subjectDetails = allSubjectsMap.get(enrolledSubject.id);
-                    const placeholder = placeholderImages[index % placeholderImages.length];
+                    const seed = getSeedFromString(enrolledSubject.id || enrolledSubject.nombre);
+                    const placeholderImage = `https://picsum.photos/seed/${seed}/600/400`;
                     
-                    const imageUrl = subjectDetails?.imagenURL || placeholder.image;
-                    const imageHint = subjectDetails?.imagenURL ? "subject image" : placeholder.imageHint;
+                    const imageUrl = subjectDetails?.imagenURL || placeholderImage;
+                    const imageHint = subjectDetails?.imagenURL ? "subject image" : "abstract texture";
 
                     return {
                         id: enrolledSubject.id,
