@@ -48,32 +48,6 @@ export default function LoginPage() {
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
 
-    const testUsers: { [key: string]: { role: string; id: string } } = {
-        "admin@example.com": { role: "admin", id: "admin01" },
-        "gestor@example.com": { role: "gestor", id: "gestor01" },
-        "docente@example.com": { role: "docente", id: "docente01" },
-        "estudiante@example.com": { role: "estudiante", id: "est001" },
-    };
-    
-    const userEmail = values.email;
-    const testUser = testUsers[userEmail];
-
-
-    if (testUser) {
-      // Simulated login
-      toast({
-        title: "Inicio de sesión de prueba exitoso",
-        description: `Has ingresado como ${testUser.role}.`,
-      });
-      localStorage.setItem('userEmail', userEmail);
-      localStorage.setItem('userRole', testUser.role);
-      localStorage.setItem('userId', testUser.id);
-      router.push('/dashboard');
-      setIsLoading(false);
-      return;
-    }
-
-
     try {
       const response = await fetch('/api/login', {
         method: 'POST',
@@ -207,9 +181,6 @@ export default function LoginPage() {
               </Button>
             </form>
           </Form>
-           <CardDescription className="mt-6 text-center text-xs text-gray-500">
-            **Para pruebas:** Usa `admin@example.com`, `gestor@example.com`, `docente@example.com` o `estudiante@example.com` con cualquier contraseña para acceder a los diferentes roles.
-          </CardDescription>
         </CardContent>
       </Card>
     </div>
