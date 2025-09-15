@@ -1,0 +1,38 @@
+# Requerimientos para Casos de Prueba - Módulo de Horarios
+
+## 1. Rol: Estudiante
+
+### 1.1. Requerimientos Funcionales (RF)
+
+- **RF-014:** El estudiante debe poder visualizar su horario de clases semanal en un formato de calendario claro.
+  - **Criterio de Aceptación 1.1:** Al ingresar a la sección "Mis Horarios", se debe mostrar una vista de calendario (semanal o diaria).
+  - **Criterio de Aceptación 1.2:** Cada bloque de clase en el horario debe mostrar claramente el nombre de la materia, la hora de inicio y fin, el nombre del docente y la ubicación (salón o "Virtual").
+  - **Criterio de Aceptación 1.3:** El horario debe reflejar únicamente las clases correspondientes a las materias y grupo en el que el estudiante está inscrito.
+  - **Criterio de Aceptación 1.4:** El estudiante debe poder navegar entre diferentes semanas (semana anterior/siguiente) para consultar horarios pasados o futuros.
+
+### 1.2. Requerimientos No Funcionales (RNF)
+
+- **RNF-Rendimiento-1.1 (Tiempos de Carga):** La carga del horario del estudiante no debe superar los 2 segundos en una conexión de banda ancha estándar.
+- **RNF-Usabilidad-3.1 (Diseño Responsivo):** La vista del horario debe ser completamente funcional y legible en dispositivos móviles, tabletas y ordenadores de escritorio. Los bloques de clase no deben desbordarse ni solaparse.
+- **RNF-Usabilidad-3.3 (Navegación Intuitiva):** Los controles para cambiar de semana o día deben ser claros y fáciles de usar.
+- **RNF-Confiabilidad-4.3 (Integridad de Datos):** La información mostrada en el horario (materias, docentes, salones) debe coincidir exactamente con la información maestra gestionada por el administrador. No debe haber inconsistencias.
+
+---
+
+## 2. Rol: Docente
+
+### 2.1. Requerimientos Funcionales (RF)
+
+- **RF-D-Horario-01 (Derivado de RF-020):** El docente debe poder visualizar su horario de clases semanal, mostrando todas las materias y grupos que tiene asignados.
+  - **Criterio de Aceptación 2.1:** Al acceder a la sección de "Horario", se debe mostrar una vista de calendario con todas las clases asignadas al docente para la semana actual.
+  - **Criterio de Aceptación 2.2:** Cada bloque de clase en el horario debe mostrar el nombre de la materia, el código del grupo, la hora de inicio y fin, y la ubicación (salón o "Virtual").
+  - **Criterio de Aceptación 2.3:** El horario debe incluir clases de todos los grupos y materias que el docente tiene a su cargo.
+  - **Criterio de Aceptación 2.4:** Debe existir una opción para filtrar el horario visualizado por un grupo específico.
+  - **Criterio de Aceptación 2.5:** El docente debe poder exportar su horario en formato PDF.
+
+### 2.2. Requerimientos No Funcionales (RNF)
+
+- **RNF-Rendimiento-1.1 (Tiempos de Carga):** La carga del horario del docente, incluso con múltiples asignaciones, no debe superar los 3 segundos.
+- **RNF-Usabilidad-3.1 (Diseño Responsivo):** La vista de calendario y los detalles de las clases deben ser claros y manejables en dispositivos móviles, sin generar scroll horizontal.
+- **RNF-Usabilidad-3.5 (Feedback al Usuario):** Al exportar el PDF, el sistema debe mostrar una notificación o indicador de que el proceso de generación ha comenzado.
+- **RNF-Confiabilidad-4.3 (Integridad de Datos):** El horario mostrado al docente debe ser un reflejo fiel y en tiempo real de las asignaciones realizadas por el administrador en el panel de "Gestión de Horarios".
