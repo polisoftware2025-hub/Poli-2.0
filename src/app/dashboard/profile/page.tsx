@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,11 @@ type ChangePasswordFormValues = {
   confirmPassword: string;
 };
 
+type ProfileInfoFormValues = {
+    telefono: string;
+    direccion: string;
+};
+
 interface AcademicInfo {
     carrera: string;
     sede: string;
@@ -69,9 +75,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [profileForm, setProfileForm] = useState<ProfileInfoFormValues>({ telefono: '', direccion: '' });
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -97,7 +106,9 @@ export default function ProfilePage() {
             const userSnap = await getDoc(userRef);
 
             if (userSnap.exists()) {
-                setUserInfo(userSnap.data() as UserInfo);
+                const data = userSnap.data() as UserInfo;
+                setUserInfo(data);
+                setProfileForm({ telefono: data.telefono, direccion: data.direccion });
             } else {
                 toast({ variant: "destructive", title: "Error", description: "No se encontró tu información de usuario." });
             }
@@ -158,58 +169,55 @@ export default function ProfilePage() {
     },
   });
 
-  const onSubmit = async (values: ChangePasswordFormValues) => {
+  const onSubmitPassword = async (values: ChangePasswordFormValues) => {
     setIsLoading(true);
-
     if (!userEmail) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "No se pudo encontrar tu sesión. Por favor, inicia sesión de nuevo.",
-      });
+      toast({ variant: "destructive", title: "Error", description: "No se pudo encontrar tu sesión. Por favor, inicia sesión de nuevo." });
       setIsLoading(false);
       return;
     }
-
     try {
       const response = await fetch('/api/change-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: userEmail,
-          currentPassword: values.currentPassword,
-          newPassword: values.newPassword,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, currentPassword: values.currentPassword, newPassword: values.newPassword }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
-        toast({
-          title: "Éxito",
-          description: data.message,
-        });
+        toast({ title: "Éxito", description: data.message });
         form.reset();
       } else {
-        toast({
-          variant: "destructive",
-          title: "Error al cambiar la contraseña",
-          description: data.message || "Ocurrió un error inesperado.",
-        });
+        toast({ variant: "destructive", title: "Error al cambiar la contraseña", description: data.message || "Ocurrió un error inesperado." });
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Error de red",
-        description: "No se pudo conectar con el servidor. Inténtalo de nuevo más tarde.",
-      });
+      toast({ variant: "destructive", title: "Error de red", description: "No se pudo conectar con el servidor." });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userId) return;
+    setIsUpdatingProfile(true);
+    try {
+        const response = await fetch('/api/profile/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId, ...profileForm })
+        });
+        const data = await response.json();
+        if (response.ok) {
+            toast({ title: "Éxito", description: "Tu perfil ha sido actualizado." });
+        } else {
+            throw new Error(data.message || "No se pudo actualizar el perfil.");
+        }
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: error.message });
+    } finally {
+        setIsUpdatingProfile(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-8">
@@ -241,66 +249,34 @@ export default function ProfilePage() {
               {isLoadingUser ? (
                  <div className="space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
-                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" /> <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" /> <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" /> <Skeleton className="h-10 w-full" />
                     </div>
                  </div>
               ) : (
-                <form className="space-y-6">
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                    <div>
-                        <Label htmlFor="firstName">Primer Nombre</Label>
-                        <Input id="firstName" value={userInfo?.nombre1 || ''} readOnly />
-                    </div>
-                    <div>
-                        <Label htmlFor="secondName">Segundo Nombre</Label>
-                        <Input id="secondName" value={userInfo?.nombre2 || ''} readOnly />
-                    </div>
-                    <div>
-                        <Label htmlFor="lastName">Primer Apellido</Label>
-                        <Input id="lastName" value={userInfo?.apellido1 || ''} readOnly />
-                    </div>
-                    <div>
-                        <Label htmlFor="secondLastName">Segundo Apellido</Label>
-                        <Input id="secondLastName" value={userInfo?.apellido2 || ''} readOnly />
-                    </div>
-                    <div>
-                        <Label htmlFor="email">Correo Electrónico Personal</Label>
-                        <Input id="email" type="email" value={userInfo?.correo || ''} readOnly />
-                    </div>
-                    <div>
-                        <Label htmlFor="phone">Teléfono</Label>
-                        <Input id="phone" type="tel" value={userInfo?.telefono || ''} readOnly />
-                    </div>
-                    <div>
-                        <Label htmlFor="idType">Tipo de Identificación</Label>
-                        <Input id="idType" value={userInfo?.tipoIdentificacion || ''} readOnly />
-                    </div>
-                    <div>
-                        <Label htmlFor="idNumber">Número de Identificación</Label>
-                        <Input id="idNumber" value={userInfo?.identificacion || ''} readOnly />
-                    </div>
-                    <div className="md:col-span-2">
-                        <Label htmlFor="address">Dirección</Label>
-                        <Input id="address" value={userInfo?.direccion || ''} readOnly />
-                    </div>
+                        <div><Label>Primer Nombre</Label><Input value={userInfo?.nombre1 || ''} disabled /></div>
+                        <div><Label>Segundo Nombre</Label><Input value={userInfo?.nombre2 || ''} disabled /></div>
+                        <div><Label>Primer Apellido</Label><Input value={userInfo?.apellido1 || ''} disabled /></div>
+                        <div><Label>Segundo Apellido</Label><Input value={userInfo?.apellido2 || ''} disabled /></div>
+                        <div><Label>Correo Electrónico Personal</Label><Input type="email" value={userInfo?.correo || ''} disabled /></div>
+                        <div><Label htmlFor="phone">Teléfono</Label><Input id="phone" type="tel" value={profileForm.telefono} onChange={e => setProfileForm({...profileForm, telefono: e.target.value})} /></div>
+                        <div><Label>Tipo de Identificación</Label><Input value={userInfo?.tipoIdentificacion || ''} disabled /></div>
+                        <div><Label>Número de Identificación</Label><Input value={userInfo?.identificacion || ''} disabled /></div>
+                        <div className="md:col-span-2"><Label htmlFor="address">Dirección</Label><Input id="address" value={profileForm.direccion} onChange={e => setProfileForm({...profileForm, direccion: e.target.value})} /></div>
                     </div>
                     <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" disabled>Actualizar Datos (Próximamente)</Button>
+                        <Button type="submit" disabled={isUpdatingProfile}>{isUpdatingProfile ? "Actualizando..." : "Actualizar Datos"}</Button>
                     </div>
                 </form>
               )}
             </TabsContent>
             <TabsContent value="security" className="mt-6">
               <Form {...form}>
-               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                 <FormField
-                    control={form.control}
-                    name="currentPassword"
-                    rules={{ required: "La contraseña actual es obligatoria." }}
-                    render={({ field }) => (
+               <form onSubmit={form.handleSubmit(onSubmitPassword)} className="space-y-6">
+                 <FormField control={form.control} name="currentPassword" rules={{ required: "La contraseña actual es obligatoria." }} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Contraseña Actual</FormLabel>
                         <FormControl>
@@ -315,11 +291,7 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                 <FormField
-                    control={form.control}
-                    name="newPassword"
-                    rules={{ validate: validatePassword }}
-                    render={({ field }) => (
+                 <FormField control={form.control} name="newPassword" rules={{ validate: validatePassword }} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nueva Contraseña</FormLabel>
                         <FormControl>
@@ -334,13 +306,7 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="confirmPassword"
-                    rules={{
-                        validate: (value) => value === form.getValues("newPassword") || "Las contraseñas no coinciden."
-                    }}
-                    render={({ field }) => (
+                  <FormField control={form.control} name="confirmPassword" rules={{ validate: (value) => value === form.getValues("newPassword") || "Las contraseñas no coinciden."}} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Confirmar Nueva Contraseña</FormLabel>
                         <FormControl>
@@ -366,28 +332,14 @@ export default function ProfilePage() {
                 <TabsContent value="academic" className="mt-6">
                 {isLoadingAcademic ? (
                     <div className="space-y-4">
-                        <Skeleton className="h-8 w-1/3" />
-                        <Skeleton className="h-8 w-1/2" />
-                        <Skeleton className="h-8 w-1/4" />
+                        <Skeleton className="h-8 w-1/3" /> <Skeleton className="h-8 w-1/2" /> <Skeleton className="h-8 w-1/4" />
                     </div>
                 ) : academicInfo ? (
                     <div className="space-y-4">
-                        <div>
-                            <Label>Carrera</Label>
-                            <p className="text-sm font-medium text-gray-800">{academicInfo.carrera}</p>
-                        </div>
-                        <div>
-                            <Label>Sede</Label>
-                            <p className="text-sm font-medium text-gray-800">{academicInfo.sede}</p>
-                        </div>
-                        <div>
-                            <Label>Grupo</Label>
-                            <p className="text-sm font-medium text-gray-800">{academicInfo.grupo}</p>
-                        </div>
-                        <div>
-                            <Label>Periodo Académico Actual</Label>
-                            <p className="text-sm font-medium text-gray-800">{academicInfo.periodo}</p>
-                        </div>
+                        <div><Label>Carrera</Label><p className="text-sm font-medium text-gray-800">{academicInfo.carrera}</p></div>
+                        <div><Label>Sede</Label><p className="text-sm font-medium text-gray-800">{academicInfo.sede}</p></div>
+                        <div><Label>Grupo</Label><p className="text-sm font-medium text-gray-800">{academicInfo.grupo}</p></div>
+                        <div><Label>Periodo Académico Actual</Label><p className="text-sm font-medium text-gray-800">{academicInfo.periodo}</p></div>
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground">No se encontró información académica.</p>
