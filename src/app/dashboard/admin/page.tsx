@@ -168,7 +168,7 @@ export default function AdminDashboardPage() {
                 <CardTitle>Gestión de Datos Iniciales</CardTitle>
             </div>
           <CardDescription>
-            Usa estos botones para poblar la base de datos con datos de prueba. Se recomienda ejecutar estas acciones una sola vez.
+            Usa este botón para poblar la base de datos con datos de prueba como sedes, carreras y usuarios de ejemplo. Se recomienda ejecutar esta acción una sola vez.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4">
@@ -176,20 +176,8 @@ export default function AdminDashboardPage() {
                 <Sparkles className="mr-2 h-4 w-4" />
                 {isSeeding['initial-data'] ? 'Poblando...' : 'Poblar Datos Iniciales'}
             </Button>
-            <Alert variant="destructive" className="flex items-center justify-between">
-                <div>
-                  <AlertTitle className="font-bold flex items-center gap-2"><ShieldCheck/> Acción de Alto Nivel</AlertTitle>
-                  <AlertDescription>
-                    Crea las cuentas de Rector con privilegios de superadministrador.
-                  </AlertDescription>
-                </div>
-                 <Button onClick={() => handleSeed('rectors')} disabled={isSeeding['rectors'] || rectorSeeded}>
-                    {isSeeding['rectors'] ? 'Creando...' : 'Crear Cuentas Rector'}
-                 </Button>
-            </Alert>
         </CardContent>
       </Card>
     </div>
   );
 }
-
