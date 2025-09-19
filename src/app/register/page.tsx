@@ -38,8 +38,6 @@ import {
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
 import { useForm, FormProvider, useFormContext, useWatch, FieldValues, Path } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import {
   FormField,
   FormItem,
@@ -56,63 +54,38 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { validateName } from "@/lib/validators";
+import { validateEmail, validateIdNumber, validateName, validatePassword, validatePhoneNumber, validateRequired, validateSelection, validateConfirmPassword } from "@/lib/validators";
 
-const step1Schema = z.object({
-    firstName: z.string().min(1, "El primer nombre es requerido.").refine(val => validateName(val) === true, { message: "Nombre no válido." }),
-    segundoNombre: z.string().optional().refine(val => !val || validateName(val) === true, { message: "Nombre no válido." }),
-    lastName: z.string().min(1, "El primer apellido es requerido.").refine(val => validateName(val) === true, { message: "Apellido no válido." }),
-    segundoApellido: z.string().min(1, "El segundo apellido es requerido.").refine(val => validateName(val) === true, { message: "Apellido no válido." }),
-    tipoIdentificacion: z.string({ required_error: "Selecciona un tipo." }).min(1, "Selecciona un tipo."),
-    numeroIdentificacion: z.string().min(1, "El número es requerido.").regex(/^\d+$/, "Este campo solo puede contener números."),
-    gender: z.string({ required_error: "Selecciona un género." }).min(1, "Selecciona un género."),
-    birthDate: z.date({ required_error: "La fecha es requerida." }),
-});
-
-const step2Schema = z.object({
-    phone: z.string().min(1, "Teléfono requerido.").regex(/^\d+$/, "Este campo solo puede contener números."),
-    address: z.string().min(1, "Dirección requerida."),
-    country: z.string().min(1, "País requerido."),
-    city: z.string().min(1, "Ciudad requerida."),
-    correoPersonal: z.string().email("Correo inválido."),
-});
-
-const step3Schema = z.object({
-    sedeId: z.string().min(1, "Selecciona una sede."),
-    carreraId: z.string().min(1, "Selecciona una carrera."),
-    modalidad: z.string().min(1, "Selecciona una modalidad."),
-    jornada: z.string().min(1, "Selecciona una jornada."),
-    grupo: z.string().min(1, "Selecciona un grupo."),
-});
-
-const step4Schema = z.object({
-    password: z.string()
-      .min(8, "Mínimo 8 caracteres.")
-      .regex(/[A-Z]/, "Debe contener al menos una mayúscula.")
-      .regex(/[^A-Za-z0-9]/, "Debe contener al menos un carácter especial."),
-    confirmPassword: z.string(),
-});
-
-const allStepsSchema = z.object({
-  ...step1Schema.shape,
-  ...step2Schema.shape,
-  ...step3Schema.shape,
-  ...step4Schema.shape,
-}).refine((data) => data.password === data.confirmPassword, {
-    message: "Las contraseñas no coinciden.",
-    path: ["confirmPassword"],
-});
-
-
-type AllStepsData = z.infer<typeof allStepsSchema>;
+type AllStepsData = {
+    firstName: string;
+    segundoNombre?: string;
+    lastName: string;
+    segundoApellido: string;
+    tipoIdentificacion: string;
+    numeroIdentificacion: string;
+    gender: string;
+    birthDate: Date;
+    phone: string;
+    address: string;
+    country: string;
+    city: string;
+    correoPersonal: string;
+    sedeId: string;
+    carreraId: string;
+    modalidad: string;
+    jornada: string;
+    grupo: string;
+    password: string;
+    confirmPassword: string;
+};
 
 
 const steps = [
-    { number: 1, title: "Datos Personales", icon: User, schema: step1Schema, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
-    { number: 2, title: "Datos de Contacto", icon: Phone, schema: step2Schema, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
-    { number: 3, title: "Inscripción Académica", icon: BookOpen, schema: step3Schema, fields: ["sedeId", "carreraId", "modalidad", "jornada", "grupo"] as Path<AllStepsData>[] },
-    { number: 4, title: "Datos de Acceso", icon: KeyRound, schema: step4Schema, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
-    { number: 5, title: "Confirmación", icon: CheckCircle, schema: z.object({}), fields: [] },
+    { number: 1, title: "Datos Personales", icon: User, fields: ["firstName", "segundoNombre", "lastName", "segundoApellido", "tipoIdentificacion", "numeroIdentificacion", "gender", "birthDate"] as Path<AllStepsData>[]},
+    { number: 2, title: "Datos de Contacto", icon: Phone, fields: ["phone", "address", "country", "city", "correoPersonal"] as Path<AllStepsData>[] },
+    { number: 3, title: "Inscripción Académica", icon: BookOpen, fields: ["sedeId", "carreraId", "modalidad", "jornada", "grupo"] as Path<AllStepsData>[] },
+    { number: 4, title: "Datos de Acceso", icon: KeyRound, fields: ["password", "confirmPassword"] as Path<AllStepsData>[] },
+    { number: 5, title: "Confirmación", icon: CheckCircle, fields: [] },
 ];
 
 const LOCAL_STORAGE_KEY = 'registrationFormData';
@@ -148,7 +121,6 @@ export default function RegisterPage() {
   const router = useRouter();
   
   const methods = useForm<AllStepsData>({
-    resolver: zodResolver(allStepsSchema),
     mode: "onTouched",
     defaultValues: defaultFormValues,
   });
@@ -329,7 +301,7 @@ const Step1 = () => {
   
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <FormField control={control} name="firstName" render={({ field }) => (
+      <FormField control={control} name="firstName" rules={{ validate: validateName }} render={({ field }) => (
           <FormItem>
             <FormLabel>Primer Nombre <span className="text-destructive">*</span></FormLabel>
             <FormControl>
@@ -339,7 +311,7 @@ const Step1 = () => {
           </FormItem>
         )}
       />
-       <FormField control={control} name="segundoNombre" render={({ field }) => (
+       <FormField control={control} name="segundoNombre" rules={{ validate: (v) => !v || validateName(v) }} render={({ field }) => (
           <FormItem>
             <FormLabel>Segundo Nombre (Opcional)</FormLabel>
             <FormControl>
@@ -349,7 +321,7 @@ const Step1 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="lastName" render={({ field }) => (
+      <FormField control={control} name="lastName" rules={{ validate: validateName }} render={({ field }) => (
           <FormItem>
             <FormLabel>Primer Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
@@ -359,7 +331,7 @@ const Step1 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="segundoApellido" render={({ field }) => (
+      <FormField control={control} name="segundoApellido" rules={{ validate: validateName }} render={({ field }) => (
           <FormItem>
             <FormLabel>Segundo Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
@@ -369,7 +341,7 @@ const Step1 = () => {
           </FormItem>
         )}
       />
-       <FormField control={control} name="tipoIdentificacion" render={({ field }) => (
+       <FormField control={control} name="tipoIdentificacion" rules={{ validate: validateSelection }} render={({ field }) => (
           <FormItem>
             <FormLabel>Tipo de Identificación <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -389,11 +361,11 @@ const Step1 = () => {
           </FormItem>
         )}
       />
-       <FormField control={control} name="numeroIdentificacion" render={({ field }) => (
+       <FormField control={control} name="numeroIdentificacion" rules={{ validate: validateIdNumber }} render={({ field }) => (
           <FormItem>
             <FormLabel>Número de Identificación <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="123456789" {...field} onChange={e => field.onChange(e.target.value.replace(/[^0-9]/g, ''))} />
+              <Input placeholder="123456789" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -402,6 +374,7 @@ const Step1 = () => {
       <FormField
         control={control}
         name="birthDate"
+        rules={{ validate: (v) => validateRequired(v) }}
         render={({ field }) => (
           <FormItem className="flex flex-col justify-end">
             <FormLabel>Fecha de Nacimiento <span className="text-destructive">*</span></FormLabel>
@@ -441,7 +414,7 @@ const Step1 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="gender" render={({ field }) => (
+      <FormField control={control} name="gender" rules={{ validate: validateSelection }} render={({ field }) => (
           <FormItem className="flex flex-col justify-end">
             <FormLabel>Género <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -479,17 +452,17 @@ const Step2 = () => {
   
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <FormField control={control} name="phone" render={({ field }) => (
+      <FormField control={control} name="phone" rules={{ validate: validatePhoneNumber }} render={({ field }) => (
           <FormItem>
             <FormLabel>Teléfono / Celular <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="3001234567" {...field} onChange={e => field.onChange(e.target.value.replace(/[^0-9]/g, ''))} />
+              <Input placeholder="3001234567" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
         )}
       />
-      <FormField control={control} name="address" render={({ field }) => (
+      <FormField control={control} name="address" rules={{ validate: validateRequired }} render={({ field }) => (
           <FormItem>
             <FormLabel>Dirección de Residencia <span className="text-destructive">*</span></FormLabel>
             <FormControl>
@@ -499,7 +472,7 @@ const Step2 = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="country" render={({ field }) => (
+      <FormField control={control} name="country" rules={{ validate: validateSelection }} render={({ field }) => (
         <FormItem>
           <FormLabel>País <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={(value) => {
@@ -520,7 +493,7 @@ const Step2 = () => {
           <FormMessage />
         </FormItem>
       )} />
-      <FormField control={control} name="city" render={({ field }) => (
+      <FormField control={control} name="city" rules={{ validate: validateSelection }} render={({ field }) => (
         <FormItem>
           <FormLabel>Ciudad <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCountry}>
@@ -538,7 +511,7 @@ const Step2 = () => {
           <FormMessage />
         </FormItem>
       )} />
-      <FormField control={control} name="correoPersonal" render={({ field }) => (
+      <FormField control={control} name="correoPersonal" rules={{ validate: validateEmail }} render={({ field }) => (
           <FormItem className="md:col-span-2">
             <FormLabel>Correo Personal <span className="text-destructive">*</span></FormLabel>
             <FormControl>
@@ -622,7 +595,7 @@ const Step3 = () => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField control={control} name="sedeId" render={({ field }) => (
+        <FormField control={control} name="sedeId" rules={{ validate: validateSelection }} render={({ field }) => (
             <FormItem>
                 <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", "", { shouldValidate: true }); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.sedes}>
@@ -635,7 +608,7 @@ const Step3 = () => {
             </FormItem>
             )}
         />
-        <FormField control={control} name="carreraId" render={({ field }) => (
+        <FormField control={control} name="carreraId" rules={{ validate: validateSelection }} render={({ field }) => (
             <FormItem>
                 <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
@@ -648,7 +621,7 @@ const Step3 = () => {
             </FormItem>
             )}
         />
-        <FormField control={control} name="modalidad" render={({ field }) => (
+        <FormField control={control} name="modalidad" rules={{ validate: validateSelection }} render={({ field }) => (
             <FormItem>
                 <FormLabel>Modalidad <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -664,7 +637,7 @@ const Step3 = () => {
             </FormItem>
             )}
         />
-        <FormField control={control} name="jornada" render={({ field }) => (
+        <FormField control={control} name="jornada" rules={{ validate: validateSelection }} render={({ field }) => (
             <FormItem>
                 <FormLabel>Jornada <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -681,7 +654,7 @@ const Step3 = () => {
             </FormItem>
             )}
         />
-         <FormField control={control} name="grupo" render={({ field }) => (
+         <FormField control={control} name="grupo" rules={{ validate: validateSelection }} render={({ field }) => (
             <FormItem className="md:col-span-2">
                 <FormLabel>Grupo <span className="text-destructive">*</span></FormLabel>
                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
@@ -705,13 +678,13 @@ const Step3 = () => {
 };
 
 const Step4_Access = () => {
-  const { control } = useFormContext();
+  const { control, getValues } = useFormContext();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <FormField control={control} name="password" render={({ field }) => (
+      <FormField control={control} name="password" rules={{ validate: validatePassword }} render={({ field }) => (
           <FormItem>
             <FormLabel>Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
@@ -730,7 +703,7 @@ const Step4_Access = () => {
           </FormItem>
         )}
       />
-      <FormField control={control} name="confirmPassword" render={({ field }) => (
+      <FormField control={control} name="confirmPassword" rules={{ validate: (value) => validateConfirmPassword(getValues('password'), value) }} render={({ field }) => (
           <FormItem>
             <FormLabel>Confirmar Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
