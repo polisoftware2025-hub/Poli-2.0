@@ -65,6 +65,7 @@ export default function EditUserPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   const router = useRouter();
   const params = useParams();
@@ -77,6 +78,11 @@ export default function EditUserPage() {
   
   const selectedRole = useWatch({ control: form.control, name: "rol" });
   
+  useEffect(() => {
+    const role = localStorage.getItem('userRole');
+    setCurrentUserRole(role);
+  }, []);
+  
   const birthDateValue = useMemo(() => {
     if (userData?.fechaNacimiento && userData.fechaNacimiento.toDate) {
       return format(userData.fechaNacimiento.toDate(), "PPP", { locale: es });
@@ -84,7 +90,7 @@ export default function EditUserPage() {
     return "No disponible";
   }, [userData]);
   
-  const isEditingAdmin = userData?.rol.id === 'admin';
+  const isProtectedAdmin = userData?.rol.id === 'admin' && currentUserRole !== 'rector';
 
 
   useEffect(() => {
@@ -175,12 +181,12 @@ export default function EditUserPage() {
           <Card>
             <CardContent className="p-6">
                 <div className="space-y-8">
-                 {isEditingAdmin && (
+                 {isProtectedAdmin && (
                     <Alert variant="destructive">
                         <AlertTriangle className="h-4 w-4" />
                         <AlertTitle>Acción no permitida</AlertTitle>
                         <AlertDescription>
-                           No es posible modificar la información de un usuario con rol de Administrador desde este panel.
+                           No es posible modificar la información de un usuario con rol de Administrador desde este panel. Solo un Rector puede hacerlo.
                         </AlertDescription>
                     </Alert>
                  )}
@@ -190,7 +196,7 @@ export default function EditUserPage() {
                         <User className="h-6 w-6 text-primary" />
                         <h3 className="text-xl font-semibold">Información Personal</h3>
                     </div>
-                    <fieldset disabled={isEditingAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <fieldset disabled={isProtectedAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField name="nombre1" rules={{validate: validateName}} render={({ field }) => (
                             <FormItem><FormLabel>Primer Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -240,7 +246,7 @@ export default function EditUserPage() {
                         <Phone className="h-6 w-6 text-primary" />
                         <h3 className="text-xl font-semibold">Datos de Contacto</h3>
                     </div>
-                    <fieldset disabled={isEditingAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <fieldset disabled={isProtectedAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <FormField name="telefono" rules={{validate: validatePhoneNumber}} render={({ field }) => (
                             <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
                         )} />
@@ -261,7 +267,7 @@ export default function EditUserPage() {
                         <KeyRound className="h-6 w-6 text-primary" />
                         <h3 className="text-xl font-semibold">Rol del Usuario</h3>
                     </div>
-                     <fieldset disabled={isEditingAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <fieldset disabled={isProtectedAdmin} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <FormField name="rol" rules={{validate: validateSelection}} render={({ field }) => (
                              <FormItem>
                                 <FormLabel>Rol del Usuario</FormLabel>
@@ -283,7 +289,7 @@ export default function EditUserPage() {
                  {selectedRole === 'estudiante' && (
                     <>
                         <Separator />
-                        <fieldset disabled={isEditingAdmin}>
+                        <fieldset disabled={isProtectedAdmin}>
                             <AcademicInfoSection />
                         </fieldset>
                     </>
@@ -297,7 +303,7 @@ export default function EditUserPage() {
                     <Button type="button" variant="outline" asChild>
                       <Link href="/dashboard/admin/users">Cancelar</Link>
                     </Button>
-                    <Button type="submit" disabled={isLoading || isEditingAdmin}>
+                    <Button type="submit" disabled={isLoading || isProtectedAdmin}>
                         {isLoading ? "Guardando..." : "Guardar Cambios"}
                     </Button>
                 </div>
@@ -402,3 +408,5 @@ function AcademicInfoSection() {
         </section>
     );
 }
+
+    
