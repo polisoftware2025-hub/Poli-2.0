@@ -1,8 +1,9 @@
+
 "use client"
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { ShieldCheck, ShieldAlert, SlidersHorizontal, BarChart3, ArrowRight } from "lucide-react";
+import { ShieldCheck, ShieldAlert, SlidersHorizontal, BarChart3, ArrowRight, Users, BookCopy, School } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -30,7 +31,7 @@ interface Stats {
 }
 
 const tools = [
-    { title: "Gestión de Administradores", icon: ShieldCheck, href: "/dashboard/admin/users", description: "Crear, editar y supervisar cuentas de administrador." },
+    { title: "Gestión de Admins y Usuarios", icon: ShieldCheck, href: "/dashboard/admin/users", description: "Crear, editar y supervisar todas las cuentas de usuario." },
     { title: "Auditoría de Cambios", icon: ShieldAlert, href: "/dashboard/rector/audit", description: "Rastrear acciones importantes realizadas en el sistema." },
     { title: "Configuración Global", icon: SlidersHorizontal, href: "/dashboard/rector/settings", description: "Modificar parámetros que afectan a toda la institución." },
     { title: "Analíticas Globales", icon: BarChart3, href: "/dashboard/admin/analytics", description: "Ver estadísticas y reportes consolidados." },
@@ -110,31 +111,38 @@ export default function RectorDashboardPage() {
 
     return (
         <div className="flex flex-col gap-8">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="font-poppins text-2xl font-bold text-gray-800">
-                        Panel de Rectoría
-                    </CardTitle>
-                    <CardDescription className="font-poppins text-gray-600">
-                        Supervisión y control total del sistema académico y administrativo.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
+             <div className="flex flex-col gap-2">
+                <h1 className="font-poppins text-3xl font-bold text-gray-800">
+                    Panel de Rectoría
+                </h1>
+                <p className="font-poppins text-gray-600">
+                    Supervisión y control total del sistema académico y administrativo.
+                </p>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {isLoading ? Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-28"/>) : (
                     <>
-                        <Card>
-                            <CardHeader><CardTitle>Administradores</CardTitle></CardHeader>
-                            <CardContent><p className="text-3xl font-bold">{stats.adminCount}</p></CardContent>
+                        <Card className="flex items-center p-6 gap-6 hover:shadow-lg transition-shadow">
+                           <div className="p-4 bg-blue-100 rounded-lg"><Users className="h-8 w-8 text-blue-600"/></div>
+                           <div>
+                                <CardTitle className="text-3xl font-bold">{stats.adminCount}</CardTitle>
+                                <CardDescription>Admins y Rectores</CardDescription>
+                           </div>
                         </Card>
-                         <Card>
-                            <CardHeader><CardTitle>Estudiantes Totales</CardTitle></CardHeader>
-                            <CardContent><p className="text-3xl font-bold">{stats.studentCount}</p></CardContent>
+                         <Card className="flex items-center p-6 gap-6 hover:shadow-lg transition-shadow">
+                           <div className="p-4 bg-green-100 rounded-lg"><School className="h-8 w-8 text-green-600"/></div>
+                           <div>
+                                <CardTitle className="text-3xl font-bold">{stats.studentCount}</CardTitle>
+                                <CardDescription>Estudiantes Totales</CardDescription>
+                           </div>
                         </Card>
-                         <Card>
-                            <CardHeader><CardTitle>Carreras Totales</CardTitle></CardHeader>
-                            <CardContent><p className="text-3xl font-bold">{stats.careerCount}</p></CardContent>
+                         <Card className="flex items-center p-6 gap-6 hover:shadow-lg transition-shadow">
+                           <div className="p-4 bg-purple-100 rounded-lg"><BookCopy className="h-8 w-8 text-purple-600"/></div>
+                           <div>
+                                <CardTitle className="text-3xl font-bold">{stats.careerCount}</CardTitle>
+                                <CardDescription>Carreras Totales</CardDescription>
+                           </div>
                         </Card>
                     </>
                 )}
@@ -145,36 +153,35 @@ export default function RectorDashboardPage() {
                     <CardTitle>Herramientas de Rectoría</CardTitle>
                     <CardDescription>Accesos directos a las funciones de más alto nivel.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <CardContent className="space-y-4">
                     {tools.map(tool => (
-                        <Card key={tool.title} className="hover:shadow-md transition-shadow">
-                           <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-lg font-semibold">{tool.title}</CardTitle>
+                        <div key={tool.title} className="p-4 rounded-lg border flex items-center justify-between hover:bg-muted/50 transition-colors">
+                           <div className="flex items-center gap-4">
                                 <tool.icon className="h-6 w-6 text-primary"/>
-                           </CardHeader>
-                           <CardContent>
-                               <p className="text-sm text-muted-foreground">{tool.description}</p>
-                           </CardContent>
-                           <CardFooter>
-                               <Button variant="outline" asChild>
-                                   <Link href={tool.href}>Acceder <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                               </Button>
-                           </CardFooter>
-                        </Card>
+                               <div>
+                                   <h4 className="font-semibold">{tool.title}</h4>
+                                   <p className="text-sm text-muted-foreground">{tool.description}</p>
+                               </div>
+                           </div>
+                           <Button variant="ghost" asChild size="icon">
+                               <Link href={tool.href}><ArrowRight className="h-5 w-5"/></Link>
+                           </Button>
+                        </div>
                     ))}
                 </CardContent>
             </Card>
+
              <Card className="border-orange-500 bg-orange-50">
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <ShieldAlert className="h-6 w-6 text-orange-600"/>
+                <CardHeader className="flex flex-row items-center gap-4">
+                    <ShieldAlert className="h-8 w-8 text-orange-600 shrink-0"/>
+                    <div>
                         <CardTitle className="text-orange-800">Acciones de Super-Administrador</CardTitle>
+                        <CardDescription className="text-orange-700 mt-1">
+                            Esta acción reactivará el botón de creación de cuentas de Rector en el panel de Administrador. Úsalo solo si es estrictamente necesario.
+                        </CardDescription>
                     </div>
                 </CardHeader>
-                <CardContent>
-                     <p className="text-sm text-orange-700 mb-4">
-                        Esta acción reactivará el botón de creación de cuentas de Rector en el panel de Administrador. Úsalo solo si es estrictamente necesario.
-                    </p>
+                <CardFooter>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
                            <Button variant="outline" className="border-orange-300 text-orange-800 hover:bg-orange-100 hover:text-orange-900">
@@ -194,7 +201,7 @@ export default function RectorDashboardPage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </CardContent>
+                </CardFooter>
             </Card>
         </div>
     );
