@@ -258,7 +258,7 @@ export default function AnalyticsPage() {
                             <BarChart data={careerChartData} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
-                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} />
+                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} width={80} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={40} />
                             </BarChart>
@@ -277,7 +277,7 @@ export default function AnalyticsPage() {
                             <BarChart data={subjectChartData} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
-                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} />
+                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} width={80} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={40} />
                             </BarChart>

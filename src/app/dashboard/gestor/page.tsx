@@ -58,6 +58,34 @@ interface AlertData {
     pendingRegistrations: number;
 }
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-background p-2 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col space-y-1">
+            <span className="text-[0.70rem] uppercase text-muted-foreground">
+              {label}
+            </span>
+            <span className="font-bold text-muted-foreground">
+              {payload[0].name}
+            </span>
+          </div>
+          <div className="flex flex-col space-y-1">
+            <span className="text-[0.70rem] uppercase text-muted-foreground">
+              Valor
+            </span>
+            <span className="font-bold">
+              {payload[0].value}
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function ManagerDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -231,8 +259,10 @@ export default function ManagerDashboardPage() {
                  <CardContent>
                     <ResponsiveContainer width="100%" height={250}>
                         <LineChart data={enrollmentData}>
+                            <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" stroke="#888888" fontSize={12} /><YAxis stroke="#888888" fontSize={12}/>
-                            <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))" }} /><Legend />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Legend />
                             <Line type="monotone" dataKey="value" name="Estudiantes" stroke="hsl(var(--primary))" strokeWidth={2} />
                         </LineChart>
                     </ResponsiveContainer>
@@ -245,8 +275,10 @@ export default function ManagerDashboardPage() {
                     {isLoading ? <Skeleton className="h-[250px] w-full" /> : (
                      <ResponsiveContainer width="100%" height={250}>
                         <BarChart data={topCareersData}>
+                            <CartesianGrid strokeDasharray="3 3" />
                             <XAxis dataKey="name" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} interval={0} angle={-45} textAnchor="end" height={60} />
-                            <YAxis stroke="#888888" fontSize={12} allowDecimals={false} /><Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))" }} />
+                            <YAxis stroke="#888888" fontSize={12} allowDecimals={false} /><Tooltip content={<CustomTooltip />} />
+                            <Legend />
                              <Bar dataKey="students" name="Estudiantes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
