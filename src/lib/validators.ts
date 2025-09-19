@@ -55,7 +55,7 @@ export const validatePassword = (value: string): string | true => {
     if (!/[A-Z]/.test(value)) return 'Debe contener al menos una letra mayúscula.';
     if (!/[a-z]/.test(value)) return 'Debe contener al menos una letra minúscula.';
     if (!/[0-9]/.test(value)) return 'Debe contener al menos un número.';
-    if (!/[@#$%^&*]/.test(value)) return 'Debe contener al menos un carácter especial (@, #, $, %, &, *).';
+    if (!/[^A-Za-z0-9]/.test(value)) return 'Debe contener al menos un carácter especial.';
     
     return true;
 };
