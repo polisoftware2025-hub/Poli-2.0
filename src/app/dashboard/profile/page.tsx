@@ -31,7 +31,9 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { validatePassword, validateName } from "@/lib/validators";
+import { validatePassword, validateName, validateEmail, validateIdNumber, validateSelection } from "@/lib/validators";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+
 
 type ChangePasswordFormValues = {
   currentPassword: string;
@@ -46,6 +48,10 @@ type ProfileInfoFormValues = {
     apellido2: string;
     telefono: string;
     direccion: string;
+    correo: string;
+    correoInstitucional?: string;
+    tipoIdentificacion: string;
+    identificacion: string;
 };
 
 interface AcademicInfo {
@@ -55,17 +61,7 @@ interface AcademicInfo {
     periodo: string;
 }
 
-interface UserInfo {
-    nombre1: string;
-    nombre2?: string;
-    apellido1: string;
-    apellido2: string;
-    tipoIdentificacion: string;
-    identificacion: string;
-    telefono: string;
-    direccion: string;
-    correo: string;
-}
+interface UserInfo extends ProfileInfoFormValues {}
 
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -91,7 +87,10 @@ export default function ProfilePage() {
   
   const profileForm = useForm<ProfileInfoFormValues>({
       mode: "onTouched",
-      defaultValues: { nombre1: '', nombre2: '', apellido1: '', apellido2: '', telefono: '', direccion: ''}
+      defaultValues: { 
+          nombre1: '', nombre2: '', apellido1: '', apellido2: '', telefono: '', direccion: '',
+          correo: '', correoInstitucional: '', tipoIdentificacion: '', identificacion: ''
+      }
   });
 
   useEffect(() => {
@@ -121,12 +120,16 @@ export default function ProfilePage() {
                 const data = userSnap.data() as UserInfo;
                 setUserInfo(data);
                 profileForm.reset({
-                    nombre1: data.nombre1,
+                    nombre1: data.nombre1 || '',
                     nombre2: data.nombre2 || '',
-                    apellido1: data.apellido1,
+                    apellido1: data.apellido1 || '',
                     apellido2: data.apellido2 || '',
                     telefono: data.telefono || '',
                     direccion: data.direccion || '',
+                    correo: data.correo || '',
+                    correoInstitucional: data.correoInstitucional || '',
+                    tipoIdentificacion: data.tipoIdentificacion || '',
+                    identificacion: data.identificacion || ''
                 })
             } else {
                 toast({ variant: "destructive", title: "Error", description: "No se encontró tu información de usuario." });
@@ -219,6 +222,9 @@ export default function ProfilePage() {
         const data = await response.json();
         if (response.ok) {
             toast({ title: "Éxito", description: "Tu perfil ha sido actualizado." });
+             if (userEmail !== values.correoInstitucional) {
+                localStorage.setItem('userEmail', values.correoInstitucional || '');
+             }
         } else {
             throw new Error(data.message || "No se pudo actualizar el perfil.");
         }
@@ -287,9 +293,28 @@ export default function ProfilePage() {
                                 <FormItem><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                             
-                            <div><Label>Correo Electrónico Personal</Label><Input type="email" value={userInfo?.correo || ''} disabled /></div>
-                            <div><Label>Tipo de Identificación</Label><Input value={userInfo?.tipoIdentificacion || ''} disabled /></div>
-                            <div className="md:col-span-2"><Label>Número de Identificación</Label><Input value={userInfo?.identificacion || ''} disabled /></div>
+                             <FormField control={profileForm.control} name="correo" rules={{validate: validateEmail}} render={({ field }) => (
+                                <FormItem><FormLabel>Correo Electrónico Personal</FormLabel><FormControl><Input type="email" {...field} disabled={userRole !== 'rector'} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                             <FormField control={profileForm.control} name="correoInstitucional" rules={{validate: validateEmail}} render={({ field }) => (
+                                <FormItem><FormLabel>Correo Institucional</FormLabel><FormControl><Input type="email" {...field} disabled={userRole !== 'rector'} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                             <FormField control={profileForm.control} name="tipoIdentificacion" rules={{validate: validateSelection}} render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Tipo de Identificación</FormLabel>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={userRole !== 'rector'}>
+                                        <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                        <SelectContent>
+                                            <SelectItem value="cc">Cédula de Ciudadanía</SelectItem>
+                                            <SelectItem value="ti">Tarjeta de Identidad</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )} />
+                             <FormField control={profileForm.control} name="identificacion" rules={{validate: validateIdNumber}} render={({ field }) => (
+                                <FormItem><FormLabel>Número de Identificación</FormLabel><FormControl><Input {...field} disabled={userRole !== 'rector'} /></FormControl><FormMessage /></FormItem>
+                            )} />
                         </div>
                         <div className="flex justify-end gap-2 pt-4">
                             <Button type="submit" disabled={isUpdatingProfile}>{isUpdatingProfile ? "Actualizando..." : "Actualizar Datos"}</Button>
@@ -378,4 +403,3 @@ export default function ProfilePage() {
   );
 }
 
-    
