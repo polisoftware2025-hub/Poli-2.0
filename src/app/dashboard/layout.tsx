@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -186,14 +187,6 @@ export default function DashboardLayout({
     return email.substring(0, 2).toUpperCase();
   };
   
-  const rectorMenuItems = [
-    { href: "/dashboard/rector", label: "Panel Principal", icon: LayoutDashboard },
-    { href: "/dashboard/admin/users", label: "Gestión de Admins", icon: ShieldCheck },
-    { href: "/dashboard/rector/audit", label: "Auditoría de Cambios", icon: ShieldAlert },
-    { href: "/dashboard/rector/settings", label: "Configuración Global", icon: SlidersHorizontal },
-    { href: "/dashboard/admin/analytics", label: "Analíticas Globales", icon: BarChart3 },
-  ];
-
   const adminMenuItems = [
     { href: "/dashboard/admin", label: "Panel", icon: LayoutDashboard },
     { href: "/dashboard/admin/users", label: "Usuarios", icon: Users },
@@ -209,6 +202,18 @@ export default function DashboardLayout({
     { href: "/dashboard/admin/analytics", label: "Analíticas", icon: BarChart3 },
     { href: "/dashboard/admin/reports", label: "Reportes", icon: FileText },
     { href: "/dashboard/admin/notifications", label: "Notificaciones", icon: Bell },
+  ];
+
+  const rectorMenuItems = [
+    { href: "/dashboard/rector", label: "Panel Rectoría", icon: LayoutDashboard },
+    ...adminMenuItems.filter(item => item.href !== '/dashboard/admin').map(item => {
+        if (item.href === '/dashboard/admin/users') {
+            return { ...item, label: "Gestión Admins y Usuarios" };
+        }
+        return item;
+    }),
+    { href: "/dashboard/rector/audit", label: "Auditoría de Cambios", icon: ShieldAlert },
+    { href: "/dashboard/rector/settings", label: "Configuración Global", icon: SlidersHorizontal },
   ];
 
   const studentMenuItems = [
