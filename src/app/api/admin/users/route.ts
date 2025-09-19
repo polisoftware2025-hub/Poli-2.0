@@ -37,6 +37,11 @@ export async function POST(req: Request) {
         
         const { identificacion, contrasena, rol, sedeId, carreraId, grupo, ...rest } = body;
 
+        // Security Rule: Prevent creating admin/rector from generic user creation panel
+        if (rol === 'admin' || rol === 'rector') {
+            return NextResponse.json({ message: "No está permitido crear usuarios de alto nivel desde este panel." }, { status: 403 });
+        }
+
         const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
         const q = query(usuariosRef, where("identificacion", "==", identificacion));
         const existingUserSnapshot = await getDocs(q);

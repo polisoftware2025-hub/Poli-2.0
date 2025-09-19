@@ -51,15 +51,18 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         if (!userSnap.exists()) {
             return NextResponse.json({ message: "Usuario no encontrado para actualizar." }, { status: 404 });
         }
-
-        const existingUserData = userSnap.data();
-        if (existingUserData.rol.id === 'admin' || existingUserData.rol.id === 'rector') {
-            return NextResponse.json({ message: "No está permitido modificar a otro administrador o rector desde este panel." }, { status: 403 });
-        }
         
-
         const body = await req.json();
         const { contrasena, rol, sedeId, carreraId, grupo, ...userData } = body;
+
+        // Security Rule: Prevent non-superadmin panels from assigning 'admin' or 'rector' roles.
+        if (rol === 'admin' || rol === 'rector') {
+            // In a real scenario, we'd check the requestor's role. Here, we block it from this generic endpoint.
+            const existingData = userSnap.data();
+            if (existingData.rol.id !== 'admin' && existingData.rol.id !== 'rector') {
+                 return NextResponse.json({ message: "No está permitido asignar roles de alto nivel desde este panel." }, { status: 403 });
+            }
+        }
         
         const batch = writeBatch(db);
         
@@ -92,5 +95,3 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         return NextResponse.json({ message: "Error interno del servidor." }, { status: 500 });
     }
 }
-
-    
