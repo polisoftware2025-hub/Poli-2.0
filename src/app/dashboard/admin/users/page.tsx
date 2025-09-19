@@ -46,6 +46,7 @@ const roleBadgeVariant: { [key: string]: "default" | "secondary" | "destructive"
   "estudiante": "default",
   "gestor": "outline",
   "aspirante": "default",
+  "rector": "destructive",
 };
 
 export default function UsersPage() {
@@ -54,11 +55,11 @@ export default function UsersPage() {
   const { toast } = useToast();
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentAdminId, setCurrentAdminId] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-      const adminId = localStorage.getItem('userId');
-      setCurrentAdminId(adminId);
+      const role = localStorage.getItem('userRole');
+      setCurrentUserRole(role);
   }, []);
 
   const fetchUsers = async () => {
@@ -88,7 +89,7 @@ export default function UsersPage() {
   
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [toast]);
 
   const handleDisableUser = async (userId: string) => {
     try {
@@ -149,6 +150,7 @@ export default function UsersPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos los roles</SelectItem>
+                <SelectItem value="rector">Rector</SelectItem>
                 <SelectItem value="admin">Admin</SelectItem>
                 <SelectItem value="gestor">Gestor</SelectItem>
                 <SelectItem value="docente">Docente</SelectItem>
@@ -184,7 +186,7 @@ export default function UsersPage() {
                   ))
                 ) : (
                   filteredUsers.map((user) => {
-                    const isProtectedAdmin = user.rol.id === 'admin';
+                    const isProtected = (user.rol.id === 'admin' || user.rol.id === 'rector') && currentUserRole !== 'rector';
                     return (
                     <TableRow key={user.id}>
                       <TableCell>
@@ -217,18 +219,18 @@ export default function UsersPage() {
                       <TableCell className="text-right">
                        <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" disabled={isProtectedAdmin}>
+                          <Button variant="ghost" size="icon" disabled={isProtected}>
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                           <DropdownMenuItem asChild disabled={isProtectedAdmin}>
+                           <DropdownMenuItem asChild>
                                 <Link href={`/dashboard/admin/edit-user/${user.id}`}>
                                     <FilePenLine className="mr-2 h-4 w-4" />
                                     Editar
                                 </Link>
                             </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleDisableUser(user.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={isProtectedAdmin || user.estado === 'inactivo'}>
+                          <DropdownMenuItem onClick={() => handleDisableUser(user.id)} className="text-destructive focus:text-destructive focus:bg-destructive/10" disabled={isProtected || user.estado === 'inactivo'}>
                             <UserX className="mr-2 h-4 w-4" />
                             Deshabilitar
                           </DropdownMenuItem>

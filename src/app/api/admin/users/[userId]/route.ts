@@ -54,24 +54,20 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         
         const body = await req.json();
         const { contrasena, rol, sedeId, carreraId, grupo, ...userData } = body;
-
-        // Security Rule: Prevent non-superadmin panels from assigning 'admin' or 'rector' roles.
-        if (rol === 'admin' || rol === 'rector') {
-            // In a real scenario, we'd check the requestor's role. Here, we block it from this generic endpoint.
-            const existingData = userSnap.data();
-            if (existingData.rol.id !== 'admin' && existingData.rol.id !== 'rector') {
-                 return NextResponse.json({ message: "No está permitido asignar roles de alto nivel desde este panel." }, { status: 403 });
-            }
-        }
         
         const batch = writeBatch(db);
         
         const dataToUpdate: any = {
             ...userData,
             nombreCompleto: `${body.nombre1} ${body.nombre2 || ''} ${body.apellido1} ${body.apellido2}`.replace(/\s+/g, ' ').trim(),
-            rol: { id: rol, descripcion: rol.charAt(0).toUpperCase() + rol.slice(1) },
             fechaActualizacion: serverTimestamp(),
         };
+
+        // Only update role if it's provided and different
+        const existingData = userSnap.data();
+        if (rol && existingData.rol.id !== rol) {
+            dataToUpdate.rol = { id: rol, descripcion: rol.charAt(0).toUpperCase() + rol.slice(1) };
+        }
 
         batch.update(userRef, dataToUpdate);
         
