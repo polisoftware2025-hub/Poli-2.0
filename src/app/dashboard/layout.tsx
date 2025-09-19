@@ -1,6 +1,4 @@
 
-
-      
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -62,6 +60,8 @@ import {
   ImageIcon,
   BookUp,
   ShieldCheck,
+  ShieldAlert,
+  SlidersHorizontal,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -73,7 +73,7 @@ import { collection, query, where, getDocs, limit, orderBy, doc, getDoc, Timesta
 import { formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 
-type UserRole = "admin" | "gestor" | "docente" | "estudiante";
+type UserRole = "admin" | "gestor" | "docente" | "estudiante" | "rector";
 
 interface Notification {
     id: string;
@@ -118,7 +118,7 @@ export default function DashboardLayout({
         setIsLoadingNotifications(true);
         const fetchedNotifications: Notification[] = [];
         try {
-            if (userRole === 'admin' || userRole === 'gestor') {
+            if (userRole === 'admin' || userRole === 'gestor' || userRole === 'rector') {
                 const studentsRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes");
                 const q = query(studentsRef, where("estado", "==", "pendiente"), limit(5));
                 const querySnapshot = await getDocs(q);
@@ -158,7 +158,6 @@ export default function DashboardLayout({
                  }
             }
             
-            // Sort notifications on the client side to avoid composite index
             fetchedNotifications.sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
             
             setNotifications(fetchedNotifications);
@@ -188,6 +187,14 @@ export default function DashboardLayout({
     return email.substring(0, 2).toUpperCase();
   };
   
+  const rectorMenuItems = [
+    { href: "/dashboard/admin", label: "Panel Principal", icon: LayoutDashboard },
+    { href: "/dashboard/admin/users", label: "Gestión de Admins", icon: ShieldCheck },
+    { href: "/dashboard/rector/audit", label: "Auditoría de Cambios", icon: ShieldAlert },
+    { href: "/dashboard/rector/settings", label: "Configuración Global", icon: SlidersHorizontal },
+    { href: "/dashboard/admin/analytics", label: "Analíticas Globales", icon: BarChart3 },
+  ];
+
   const adminMenuItems = [
     { href: "/dashboard/admin", label: "Panel", icon: LayoutDashboard },
     { href: "/dashboard/admin/users", label: "Usuarios", icon: Users },
@@ -241,6 +248,8 @@ export default function DashboardLayout({
 
   const getMenuItems = (role: UserRole) => {
     switch (role) {
+      case 'rector':
+        return rectorMenuItems;
       case 'admin':
         return adminMenuItems;
       case 'docente':
@@ -265,6 +274,7 @@ export default function DashboardLayout({
   }
 
   const roleNames: Record<UserRole, string> = {
+    rector: "Rector",
     admin: "Administrador",
     gestor: "Gestor",
     docente: "Docente",
@@ -442,3 +452,5 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    

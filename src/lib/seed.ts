@@ -156,6 +156,30 @@ export async function seedInitialUsers() {
   const saltRounds = 10;
   const testUsers = [
     {
+      id: "rector01",
+      nombre1: "Rector",
+      apellido1: "General",
+      correoInstitucional: "rector.general@example.com",
+      rol: { id: "rector", descripcion: "Rector" },
+      contrasena: "Rector123.",
+    },
+    {
+      id: "rector02",
+      nombre1: "Rector",
+      apellido1: "Académico",
+      correoInstitucional: "rector.academico@example.com",
+      rol: { id: "rector", descripcion: "Rector" },
+      contrasena: "Rector123.",
+    },
+    {
+      id: "rector03",
+      nombre1: "Rector",
+      apellido1: "Financiero",
+      correoInstitucional: "rector.financiero@example.com",
+      rol: { id: "rector", descripcion: "Rector" },
+      contrasena: "Rector123.",
+    },
+    {
       id: "admin01",
       nombre1: "Admin",
       apellido1: "User",
@@ -178,11 +202,10 @@ export async function seedInitialUsers() {
       correoInstitucional: "docente@example.com",
       rol: { id: "docente", descripcion: "Docente" },
       contrasena: "Docente123.",
-      // Asignar grupo al docente
       asignaciones: [
         {
           carreraId: "comercio_exterior",
-          grupoId: "C1-MB-001", // This ID is not the document ID, it's the codigoGrupo
+          grupoId: "C1-MB-001",
           sedeId: "sede-norte",
         }
       ]
@@ -209,7 +232,6 @@ export async function seedInitialUsers() {
       existingUsersSnapshot.docs.map((doc) => doc.data().correoInstitucional)
     );
 
-    // Find the actual document ID of the group C1-MB-001
     const groupQuery = query(gruposRef, where("codigoGrupo", "==", "C1-MB-001"));
     const groupSnapshot = await getDocs(groupQuery);
     const groupDocId = groupSnapshot.empty ? null : groupSnapshot.docs[0].id;
@@ -248,10 +270,10 @@ export async function seedInitialUsers() {
                 usuarioId: userData.id,
                 nombreCompleto: finalUserData.nombreCompleto,
                 documento: finalUserData.identificacion,
-                carreraId: "comercio_exterior", // Use the consistent ID
+                carreraId: "comercio_exterior",
                 sedeId: "sede-norte",
                 modalidad: "Virtual",
-                grupo: groupDocId, // Assign to the correct group doc ID
+                grupo: groupDocId,
                 correoInstitucional: userData.correoInstitucional,
                 cicloActual: 1,
                 materiasInscritas: assignedSubjects,
@@ -337,3 +359,5 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
+
+    

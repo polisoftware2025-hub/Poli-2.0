@@ -19,7 +19,9 @@ export default function DashboardRedirectPage() {
 
     let targetDashboard = '/dashboard/estudiante'; // Default dashboard
 
-    if (userRole === 'admin') {
+    if (userRole === 'rector') {
+        targetDashboard = '/dashboard/admin'; // Rector can use admin dashboard as main panel
+    } else if (userRole === 'admin') {
       targetDashboard = '/dashboard/admin';
     } else if (userRole === 'gestor') {
       targetDashboard = '/dashboard/gestor';
@@ -50,3 +52,5 @@ export default function DashboardRedirectPage() {
 
   return null;
 }
+
+    

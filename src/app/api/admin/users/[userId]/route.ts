@@ -53,8 +53,8 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         }
 
         const existingUserData = userSnap.data();
-        if (existingUserData.rol.id === 'admin') {
-            return NextResponse.json({ message: "No está permitido modificar a otro administrador." }, { status: 403 });
+        if (existingUserData.rol.id === 'admin' || existingUserData.rol.id === 'rector') {
+            return NextResponse.json({ message: "No está permitido modificar a otro administrador o rector desde este panel." }, { status: 403 });
         }
         
 
@@ -92,3 +92,5 @@ export async function PUT(req: Request, { params }: { params: { userId: string }
         return NextResponse.json({ message: "Error interno del servidor." }, { status: 500 });
     }
 }
+
+    
