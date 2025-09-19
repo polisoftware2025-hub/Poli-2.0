@@ -19,6 +19,7 @@ import {
   Legend,
   Line,
   LineChart,
+  CartesianGrid,
 } from "recharts";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where, limit, orderBy, Timestamp } from "firebase/firestore";
