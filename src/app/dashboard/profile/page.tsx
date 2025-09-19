@@ -122,7 +122,7 @@ export default function ProfilePage() {
                 setUserInfo(data);
                 profileForm.reset({
                     nombre1: data.nombre1,
-                    nombre2: data.nombre2,
+                    nombre2: data.nombre2 || '',
                     apellido1: data.apellido1,
                     apellido2: data.apellido2,
                     telefono: data.telefono,
@@ -377,4 +377,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
