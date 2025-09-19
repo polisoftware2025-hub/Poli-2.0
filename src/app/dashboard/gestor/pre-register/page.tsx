@@ -141,12 +141,12 @@ export default function PreRegisterGestorPage() {
             const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", studentId);
             const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", studentId);
             
-            batch.update(studentRef, { estado: 'rechazado' });
-            batch.update(userRef, { estado: 'rechazado' });
+            batch.delete(studentRef);
+            batch.delete(userRef);
             
             await batch.commit();
 
-            toast({ title: "Solicitud Rechazada", description: "El aspirante ha sido marcado como rechazado." });
+            toast({ title: "Solicitud Rechazada", description: "La solicitud ha sido rechazada y los datos del aspirante eliminados." });
             setUsers(prev => prev.filter(u => u.id !== studentId));
         } catch (error: any) {
              toast({ variant: "destructive", title: "Error al Rechazar", description: error.message });

@@ -162,12 +162,12 @@ export default function PreRegisterDetailPage() {
             const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
             const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
             
-            batch.update(studentRef, { estado: 'rechazado' });
-            batch.update(userRef, { estado: 'rechazado' });
+            batch.delete(studentRef);
+            batch.delete(userRef);
             
             await batch.commit();
 
-            toast({ title: "Solicitud Rechazada", description: "El aspirante ha sido marcado como rechazado." });
+            toast({ title: "Solicitud Rechazada", description: "La solicitud ha sido rechazada y los datos del aspirante eliminados." });
             router.push("/dashboard/gestor/pre-register");
         } catch (error: any) {
              toast({ variant: "destructive", title: "Error al Rechazar", description: error.message });
