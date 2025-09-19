@@ -6,25 +6,20 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { userId, telefono, direccion } = body;
+        const { userId, ...updateData } = body;
 
         if (!userId) {
             return NextResponse.json({ message: "ID de usuario no proporcionado." }, { status: 400 });
         }
         
-        if (!telefono && !direccion) {
-             return NextResponse.json({ message: "No hay datos para actualizar." }, { status: 400 });
-        }
-
-        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
-        
         const dataToUpdate: { [key: string]: any } = {
+            ...updateData,
+            nombreCompleto: `${updateData.nombre1 || ''} ${updateData.nombre2 || ''} ${updateData.apellido1 || ''} ${updateData.apellido2 || ''}`.replace(/\s+/g, ' ').trim(),
             fechaActualizacion: serverTimestamp(),
         };
 
-        if (telefono) dataToUpdate.telefono = telefono;
-        if (direccion) dataToUpdate.direccion = direccion;
-
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+        
         await updateDoc(userRef, dataToUpdate);
 
         return NextResponse.json({ message: "Perfil actualizado correctamente." }, { status: 200 });

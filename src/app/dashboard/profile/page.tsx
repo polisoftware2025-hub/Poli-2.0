@@ -29,9 +29,9 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { validatePassword } from "@/lib/validators";
+import { validatePassword, validateName } from "@/lib/validators";
 
 type ChangePasswordFormValues = {
   currentPassword: string;
@@ -40,6 +40,10 @@ type ChangePasswordFormValues = {
 };
 
 type ProfileInfoFormValues = {
+    nombre1: string;
+    nombre2?: string;
+    apellido1: string;
+    apellido2: string;
     telefono: string;
     direccion: string;
 };
@@ -74,13 +78,21 @@ export default function ProfilePage() {
   
   const router = useRouter();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [profileForm, setProfileForm] = useState<ProfileInfoFormValues>({ telefono: '', direccion: '' });
+  const passwordForm = useForm<ChangePasswordFormValues>({
+    mode: "onTouched",
+    defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+  });
+  
+  const profileForm = useForm<ProfileInfoFormValues>({
+      mode: "onTouched",
+      defaultValues: { nombre1: '', nombre2: '', apellido1: '', apellido2: '', telefono: '', direccion: ''}
+  });
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -108,7 +120,14 @@ export default function ProfilePage() {
             if (userSnap.exists()) {
                 const data = userSnap.data() as UserInfo;
                 setUserInfo(data);
-                setProfileForm({ telefono: data.telefono, direccion: data.direccion });
+                profileForm.reset({
+                    nombre1: data.nombre1,
+                    nombre2: data.nombre2,
+                    apellido1: data.apellido1,
+                    apellido2: data.apellido2,
+                    telefono: data.telefono,
+                    direccion: data.direccion,
+                })
             } else {
                 toast({ variant: "destructive", title: "Error", description: "No se encontró tu información de usuario." });
             }
@@ -158,22 +177,14 @@ export default function ProfilePage() {
     } else {
         setIsLoadingAcademic(false);
     }
-  }, [userId, userRole, toast]);
+  }, [userId, userRole, toast, profileForm]);
   
-  const form = useForm<ChangePasswordFormValues>({
-    mode: "onTouched",
-    defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    },
-  });
 
   const onSubmitPassword = async (values: ChangePasswordFormValues) => {
-    setIsLoading(true);
+    setIsUpdatingPassword(true);
     if (!userEmail) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo encontrar tu sesión. Por favor, inicia sesión de nuevo." });
-      setIsLoading(false);
+      setIsUpdatingPassword(false);
       return;
     }
     try {
@@ -185,26 +196,25 @@ export default function ProfilePage() {
       const data = await response.json();
       if (response.ok) {
         toast({ title: "Éxito", description: data.message });
-        form.reset();
+        passwordForm.reset();
       } else {
         toast({ variant: "destructive", title: "Error al cambiar la contraseña", description: data.message || "Ocurrió un error inesperado." });
       }
     } catch (error) {
       toast({ variant: "destructive", title: "Error de red", description: "No se pudo conectar con el servidor." });
     } finally {
-      setIsLoading(false);
+      setIsUpdatingPassword(false);
     }
   };
 
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleUpdateProfile = async (values: ProfileInfoFormValues) => {
     if (!userId) return;
     setIsUpdatingProfile(true);
     try {
         const response = await fetch('/api/profile/update', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, ...profileForm })
+            body: JSON.stringify({ userId, ...values })
         });
         const data = await response.json();
         if (response.ok) {
@@ -255,28 +265,43 @@ export default function ProfilePage() {
                     </div>
                  </div>
               ) : (
-                <form onSubmit={handleUpdateProfile} className="space-y-6">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                        <div><Label>Primer Nombre</Label><Input value={userInfo?.nombre1 || ''} disabled /></div>
-                        <div><Label>Segundo Nombre</Label><Input value={userInfo?.nombre2 || ''} disabled /></div>
-                        <div><Label>Primer Apellido</Label><Input value={userInfo?.apellido1 || ''} disabled /></div>
-                        <div><Label>Segundo Apellido</Label><Input value={userInfo?.apellido2 || ''} disabled /></div>
-                        <div><Label>Correo Electrónico Personal</Label><Input type="email" value={userInfo?.correo || ''} disabled /></div>
-                        <div><Label htmlFor="phone">Teléfono</Label><Input id="phone" type="tel" value={profileForm.telefono} onChange={e => setProfileForm({...profileForm, telefono: e.target.value})} /></div>
-                        <div><Label>Tipo de Identificación</Label><Input value={userInfo?.tipoIdentificacion || ''} disabled /></div>
-                        <div><Label>Número de Identificación</Label><Input value={userInfo?.identificacion || ''} disabled /></div>
-                        <div className="md:col-span-2"><Label htmlFor="address">Dirección</Label><Input id="address" value={profileForm.direccion} onChange={e => setProfileForm({...profileForm, direccion: e.target.value})} /></div>
-                    </div>
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button type="submit" disabled={isUpdatingProfile}>{isUpdatingProfile ? "Actualizando..." : "Actualizar Datos"}</Button>
-                    </div>
-                </form>
+                <Form {...profileForm}>
+                    <form onSubmit={profileForm.handleSubmit(handleUpdateProfile)} className="space-y-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                             <FormField control={profileForm.control} name="nombre1" rules={{ validate: validateName }} render={({ field }) => (
+                                <FormItem><FormLabel>Primer Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={profileForm.control} name="nombre2" render={({ field }) => (
+                                <FormItem><FormLabel>Segundo Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={profileForm.control} name="apellido1" rules={{ validate: validateName }} render={({ field }) => (
+                                <FormItem><FormLabel>Primer Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={profileForm.control} name="apellido2" rules={{ validate: validateName }} render={({ field }) => (
+                                <FormItem><FormLabel>Segundo Apellido</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={profileForm.control} name="telefono" render={({ field }) => (
+                                <FormItem><FormLabel>Teléfono</FormLabel><FormControl><Input type="tel" {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            <FormField control={profileForm.control} name="direccion" render={({ field }) => (
+                                <FormItem><FormLabel>Dirección</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
+                            )} />
+                            
+                            <div><Label>Correo Electrónico Personal</Label><Input type="email" value={userInfo?.correo || ''} disabled /></div>
+                            <div><Label>Tipo de Identificación</Label><Input value={userInfo?.tipoIdentificacion || ''} disabled /></div>
+                            <div className="md:col-span-2"><Label>Número de Identificación</Label><Input value={userInfo?.identificacion || ''} disabled /></div>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-4">
+                            <Button type="submit" disabled={isUpdatingProfile}>{isUpdatingProfile ? "Actualizando..." : "Actualizar Datos"}</Button>
+                        </div>
+                    </form>
+                </Form>
               )}
             </TabsContent>
             <TabsContent value="security" className="mt-6">
-              <Form {...form}>
-               <form onSubmit={form.handleSubmit(onSubmitPassword)} className="space-y-6">
-                 <FormField control={form.control} name="currentPassword" rules={{ required: "La contraseña actual es obligatoria." }} render={({ field }) => (
+              <Form {...passwordForm}>
+               <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-6">
+                 <FormField control={passwordForm.control} name="currentPassword" rules={{ required: "La contraseña actual es obligatoria." }} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Contraseña Actual</FormLabel>
                         <FormControl>
@@ -291,7 +316,7 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                 <FormField control={form.control} name="newPassword" rules={{ validate: validatePassword }} render={({ field }) => (
+                 <FormField control={passwordForm.control} name="newPassword" rules={{ validate: validatePassword }} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Nueva Contraseña</FormLabel>
                         <FormControl>
@@ -306,7 +331,7 @@ export default function ProfilePage() {
                       </FormItem>
                     )}
                   />
-                  <FormField control={form.control} name="confirmPassword" rules={{ validate: (value) => value === form.getValues("newPassword") || "Las contraseñas no coinciden."}} render={({ field }) => (
+                  <FormField control={passwordForm.control} name="confirmPassword" rules={{ validate: (value) => value === passwordForm.getValues("newPassword") || "Las contraseñas no coinciden."}} render={({ field }) => (
                       <FormItem>
                         <FormLabel>Confirmar Nueva Contraseña</FormLabel>
                         <FormControl>
@@ -322,8 +347,8 @@ export default function ProfilePage() {
                     )}
                   />
                 <div className="flex justify-end gap-2">
-                    <Button type="button" variant="outline" onClick={() => form.reset()}>Cancelar</Button>
-                    <Button type="submit" disabled={isLoading}>{isLoading ? "Cambiando..." : "Cambiar Contraseña"}</Button>
+                    <Button type="button" variant="outline" onClick={() => passwordForm.reset()}>Cancelar</Button>
+                    <Button type="submit" disabled={isUpdatingPassword}>{isUpdatingPassword ? "Cambiando..." : "Cambiar Contraseña"}</Button>
                 </div>
               </form>
               </Form>
@@ -352,3 +377,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
