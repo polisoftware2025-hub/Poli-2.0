@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -188,7 +187,7 @@ export default function DashboardLayout({
   };
   
   const rectorMenuItems = [
-    { href: "/dashboard/admin", label: "Panel Principal", icon: LayoutDashboard },
+    { href: "/dashboard/rector", label: "Panel Principal", icon: LayoutDashboard },
     { href: "/dashboard/admin/users", label: "Gestión de Admins", icon: ShieldCheck },
     { href: "/dashboard/rector/audit", label: "Auditoría de Cambios", icon: ShieldAlert },
     { href: "/dashboard/rector/settings", label: "Configuración Global", icon: SlidersHorizontal },
@@ -452,5 +451,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    

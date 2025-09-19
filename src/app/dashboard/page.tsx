@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -20,7 +19,7 @@ export default function DashboardRedirectPage() {
     let targetDashboard = '/dashboard/estudiante'; // Default dashboard
 
     if (userRole === 'rector') {
-        targetDashboard = '/dashboard/admin'; // Rector can use admin dashboard as main panel
+        targetDashboard = '/dashboard/rector'; 
     } else if (userRole === 'admin') {
       targetDashboard = '/dashboard/admin';
     } else if (userRole === 'gestor') {
@@ -52,5 +51,3 @@ export default function DashboardRedirectPage() {
 
   return null;
 }
-
-    
