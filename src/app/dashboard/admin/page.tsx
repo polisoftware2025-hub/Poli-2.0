@@ -18,7 +18,7 @@ export default function AdminDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState<{[key in SeedType]?: boolean}>({});
-  const [rectorSeeded, setRectorSeeded] = useState(false);
+  const [rectorSeeded, setRectorSeeded] = useState(true); // Default to true, assume seeded
   const { toast } = useToast();
   const [stats, setStats] = useState({ userCount: 0, careerCount: 0 });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
@@ -34,9 +34,9 @@ export default function AdminDashboardPage() {
       router.push('/login');
     }
     
-    // Check if rector accounts have been seeded in this session
-    if (localStorage.getItem('rector_seeded') === 'true') {
-        setRectorSeeded(true);
+    // Check if rector accounts have been seeded. If the flag is not 'true', it means they haven't or it was reactivated.
+    if (localStorage.getItem('rector_seeded') !== 'true') {
+        setRectorSeeded(false);
     }
 
   }, [router]);
@@ -178,6 +178,23 @@ export default function AdminDashboardPage() {
             </Button>
         </CardContent>
       </Card>
+      
+       {!rectorSeeded && (
+        <Alert variant="destructive">
+            <ShieldCheck className="h-4 w-4" />
+            <AlertTitle>Acción Requerida: Crear Cuentas de Rectoría</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+               <span>
+                  Crea las cuentas de super-administrador (Rector). Esta es una acción única y de alta seguridad.
+               </span>
+               <Button onClick={() => handleSeed('rectors')} disabled={isSeeding['rectors']} className="mt-2 sm:mt-0 bg-white text-destructive hover:bg-white/90">
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  {isSeeding['rectors'] ? 'Creando...' : 'Crear Cuentas Rector'}
+               </Button>
+            </AlertDescription>
+        </Alert>
+      )}
+
     </div>
   );
 }

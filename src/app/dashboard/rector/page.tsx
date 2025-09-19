@@ -9,6 +9,19 @@ import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 interface Stats {
     adminCount: number;
@@ -25,6 +38,7 @@ const tools = [
 
 export default function RectorDashboardPage() {
     const router = useRouter();
+    const { toast } = useToast();
     const [userEmail, setUserEmail] = useState<string | null>(null);
     const [stats, setStats] = useState<Stats>({ adminCount: 0, studentCount: 0, careerCount: 0 });
     const [isLoading, setIsLoading] = useState(true);
@@ -72,6 +86,23 @@ export default function RectorDashboardPage() {
 
         fetchStats();
     }, []);
+    
+    const handleReactivateSeeding = () => {
+        try {
+            localStorage.removeItem('rector_seeded');
+            toast({
+                title: "Acción completada",
+                description: "Se ha reactivado la opción para crear cuentas de Rector en el panel de Administrador.",
+            });
+        } catch (error) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "No se pudo reactivar la función. Revisa los permisos de almacenamiento del navegador.",
+            });
+        }
+    };
+
 
     if (!userEmail) {
         return <div className="flex min-h-screen items-center justify-center"><p>Cargando...</p></div>;
@@ -131,6 +162,38 @@ export default function RectorDashboardPage() {
                            </CardFooter>
                         </Card>
                     ))}
+                </CardContent>
+            </Card>
+             <Card className="border-orange-500 bg-orange-50">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <ShieldAlert className="h-6 w-6 text-orange-600"/>
+                        <CardTitle className="text-orange-800">Acciones de Super-Administrador</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                     <p className="text-sm text-orange-700 mb-4">
+                        Esta acción reactivará el botón de creación de cuentas de Rector en el panel de Administrador. Úsalo solo si es estrictamente necesario.
+                    </p>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                           <Button variant="outline" className="border-orange-300 text-orange-800 hover:bg-orange-100 hover:text-orange-900">
+                                Reactivar Creación de Rectores
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>¿Confirmar Reactivación?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Estás a punto de permitir que se puedan volver a crear las cuentas de Rector desde el panel de Administrador. Esta acción debe ser usada con precaución.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleReactivateSeeding} className="bg-orange-600 hover:bg-orange-700">Sí, Reactivar</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardContent>
             </Card>
         </div>
