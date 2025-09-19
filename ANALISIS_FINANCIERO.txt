@@ -1,0 +1,113 @@
+# Análisis Financiero Estimado del Proyecto "Poli 2.0"
+
+## Advertencia
+Este documento proporciona estimaciones basadas en estándares de la industria del software en Colombia y en la información del proyecto. Las cifras no constituyen una valoración financiera formal y deben ser utilizadas únicamente como una guía de referencia.
+
+---
+
+## 1. Valoración Estimada del Proyecto (Activo de Software)
+
+Esta valoración se basa en el esfuerzo de desarrollo estimado (horas) y tarifas promedio del mercado colombiano para un equipo de desarrollo calificado.
+
+### 1.1. Desglose de Horas de Desarrollo Estimadas
+
+| Área de Desarrollo                                    | Horas Estimadas | Descripción                                                                                   |
+| ----------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------- |
+| **Frontend (UI/UX y Lógica de Cliente)**              | **450 horas**   | Diseño de interfaces, implementación de componentes, vistas para cada rol, responsividad.       |
+| **Backend (APIs, Lógica de Negocio, Base de Datos)** | **400 horas**   | Creación de APIs, lógica de registro/login, gestión de usuarios, horarios, notas, etc.        |
+| **Integración de IA (Genkit)**                        | **80 horas**    | Desarrollo de flujos para correos, sugerencias y otras funcionalidades de IA.                 |
+| **Gestión, Pruebas y Despliegue (QA & DevOps)**       | **150 horas**   | Planificación, pruebas funcionales, configuración de despliegue en Firebase.                  |
+| **Total Estimado**                                    | **1,080 horas** |                                                                                               |
+
+### 1.2. Tarifa por Hora (Promedio en Colombia)
+
+*   **Tarifa Junior-Mid:** COP $60,000 - $90,000 / hora
+*   **Tarifa Senior/Especialista:** COP $100,000 - $150,000 / hora
+*   **Tarifa Promedio de Equipo Mixto:** **COP $80,000 - $120,000 / hora**
+
+### 1.3. Cálculo de la Valoración
+
+*   **Escenario Conservador:** 1,080 horas * $80,000/hora = **$86,400,000 COP**
+*   **Escenario Optimista:** 1,080 horas * $120,000/hora = **$129,600,000 COP**
+
+> **Conclusión de Valoración:** El valor intrínseco del software, basado en su construcción, se estima entre **ochenta y seis y ciento treinta millones de pesos colombianos**. Este valor no incluye potencial de mercado, marca o ingresos futuros, que podrían aumentarlo significativamente.
+
+---
+
+## 2. Costos Estimados de Mantenimiento y Operación
+
+Estos costos son recurrentes y necesarios para mantener el sistema funcionando de manera óptima.
+
+### 2.1. Costos de Infraestructura (Cloud - Firebase/Google Cloud)
+
+| Servicio              | Uso Bajo (Inicial)         | Uso Moderado (Crecimiento)  |
+| --------------------- | -------------------------- | --------------------------- |
+| **Firestore**         | $10 - $30 USD/mes          | $50 - $150 USD/mes          |
+| **App Hosting/Functions** | $15 - $50 USD/mes          | $70 - $200 USD/mes          |
+| **APIs de IA (Genkit)**   | $5 - $20 USD/mes           | $30 - $100 USD/mes          |
+| **Storage (Imágenes)**  | $5 USD/mes                 | $10 - $50 USD/mes           |
+| **Total USD**           | **~$35 - $105 USD/mes**    | **~$160 - $500 USD/mes**    |
+| **Total COP (Aprox.)**  | **~$140,000 - $420,000** | **~$640,000 - $2,000,000** |
+
+### 2.2. Costos de Soporte y Evolución (Recurso Humano)
+
+| Actividad                      | Horas Estimadas/mes | Costo Estimado Mensual (COP)      |
+| ------------------------------ | ------------------- | --------------------------------- |
+| **Soporte Técnico y Bugs**     | 20 - 30 horas       | $1,600,000 - $3,600,000           |
+| **Pequeñas Mejoras/Updates**   | 10 - 20 horas       | $800,000 - $2,400,000              |
+
+> **Conclusión de Mantenimiento:** Un costo mensual recurrente realista para mantener y dar soporte básico al sistema estaría en el rango de **$1,800,000 a $4,500,000 COP**.
+
+---
+
+## 3. Modelo de Ganancias y Reparto de Utilidades
+
+Este modelo se basa en la estructura de porcentajes proporcionada en la imagen.
+
+### 3.1. Estructura de Participación
+
+| Socio      | Porcentaje |
+| ---------- | ---------- |
+| Luis       | 9.0%       |
+| Alejandro  | 8.0%       |
+| Maira      | 8.0%       |
+| Faber      | 8.56%      |
+| Donald     | 6.25%      |
+| Michel     | 5.5%       |
+| Reny       | 10.3%      |
+| Sebas      | 7.36%      |
+| Veronica   | 5.66%      |
+| Jorman     | 6.36%      |
+| Andres     | 25%        |
+| **Total**  | **99.99%**   |
+*(Nota: El 0.01% restante podría quedar como fondo de reserva o redondearse).*
+
+### 3.2. Escenario de Ganancias Hipotético
+
+**Supuestos:**
+*   El software se licencia a una institución educativa.
+*   **Ingreso Bruto Anual (Licencia):** **COP $150,000,000**
+*   **Costo de Mantenimiento Anual (Rango Medio):** $3,000,000/mes * 12 = **COP $36,000,000**
+
+**Cálculo de Ganancia Neta:**
+*   Ganancia Neta Anual = Ingresos Brutos - Costos de Mantenimiento
+*   Ganancia Neta Anual = $150,000,000 - $36,000,000 = **$114,000,000 COP**
+
+### 3.3. Reparto de Ganancia Neta Anual
+
+| Socio      | Porcentaje | Ganancia Anual (COP) |
+| ---------- | ---------- | -------------------- |
+| Luis       | 9.0%       | $10,260,000          |
+| Alejandro  | 8.0%       | $9,120,000           |
+| Maira      | 8.0%       | $9,120,000           |
+| Faber      | 8.56%      | $9,758,400          |
+| Donald     | 6.25%      | $7,125,000           |
+| Michel     | 5.5%       | $6,270,000           |
+| Reny       | 10.3%      | $11,742,000          |
+| Sebas      | 7.36%      | $8,390,400          |
+| Veronica   | 5.66%      | $6,452,400          |
+| Jorman     | 6.36%      | $7,249,400          |
+| Andres     | 25%        | $28,500,000          |
+| **Total Repartido** | **99.99%** | **$113,987,600**     |
+
+Este análisis proporciona una base sólida para discusiones de negocio y planificación estratégica del proyecto "Poli 2.0".
