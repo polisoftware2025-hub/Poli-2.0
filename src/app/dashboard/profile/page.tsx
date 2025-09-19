@@ -124,9 +124,9 @@ export default function ProfilePage() {
                     nombre1: data.nombre1,
                     nombre2: data.nombre2 || '',
                     apellido1: data.apellido1,
-                    apellido2: data.apellido2,
-                    telefono: data.telefono,
-                    direccion: data.direccion,
+                    apellido2: data.apellido2 || '',
+                    telefono: data.telefono || '',
+                    direccion: data.direccion || '',
                 })
             } else {
                 toast({ variant: "destructive", title: "Error", description: "No se encontró tu información de usuario." });
@@ -377,3 +377,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
