@@ -152,9 +152,9 @@ export async function seedGrupos() {
     }
 }
 
-export async function seedInitialUsers() {
+export async function seedRectorUsers() {
   const saltRounds = 10;
-  const testUsers = [
+  const rectorUsers = [
     {
       id: "rector01",
       nombre1: "Rector",
@@ -179,6 +179,47 @@ export async function seedInitialUsers() {
       rol: { id: "rector", descripcion: "Rector" },
       contrasena: "Rector123.",
     },
+  ];
+
+   try {
+    const batch = writeBatch(db);
+    const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+
+    const existingUsersSnapshot = await getDocs(query(usersRef, where("rol.id", "==", "rector")));
+    const existingEmails = new Set(existingUsersSnapshot.docs.map((doc) => doc.data().correoInstitucional));
+    
+    if (existingEmails.size > 0) {
+        return { success: false, message: "Las cuentas de Rector ya existen. No se realizó ninguna acción." };
+    }
+
+    for (const userData of rectorUsers) {
+        const hashedPassword = await bcrypt.hash(userData.contrasena, saltRounds);
+        const userDocRef = doc(usersRef, userData.id);
+        const { contrasena, ...userDataToSave } = userData;
+        
+        batch.set(userDocRef, {
+          ...userDataToSave,
+          nombreCompleto: `${userData.nombre1} ${userData.apellido1}`,
+          identificacion: `ID-${userData.id}`,
+          contrasena: hashedPassword,
+          estado: "activo",
+          fechaRegistro: Timestamp.fromDate(new Date()),
+        });
+    }
+
+    await batch.commit();
+    return { success: true, message: "Cuentas de Rector creadas exitosamente." };
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió.";
+    console.error("Error en seedRectorUsers:", error);
+    return { success: false, message: errorMessage };
+  }
+}
+
+export async function seedInitialUsers() {
+  const saltRounds = 10;
+  const testUsers = [
     {
       id: "admin01",
       nombre1: "Admin",
@@ -303,6 +344,19 @@ export async function seedInitialUsers() {
   }
 }
 
+export async function seedInitialData() {
+    try {
+        await seedSedesYSalones();
+        await seedCarrera();
+        await seedInitialUsers();
+        await seedGrupos(); // Grupos depende de usuarios y carreras
+        return { success: true, message: "Todos los datos iniciales han sido poblados exitosamente." };
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Un error desconocido ocurrió.";
+        return { success: false, message: `Fallo el seeding: ${errorMessage}` };
+    }
+}
+
 
 export async function seedSedesYSalones() {
     const sedes = [
@@ -359,5 +413,3 @@ export async function seedSedesYSalones() {
         return { success: false, message: errorMessage };
     }
 }
-
-    

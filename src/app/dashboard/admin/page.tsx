@@ -1,7 +1,8 @@
+
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Users, BookOpen, Database, Sparkles, School } from "lucide-react";
+import { Shield, Users, BookOpen, Database, Sparkles, School, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,17 +10,18 @@ import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-type SeedType = 'carrera' | 'grupos' | 'initial-data' | 'users' | 'sedes';
+type SeedType = 'initial-data' | 'rectors';
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [isSeeding, setIsSeeding] = useState<{[key in SeedType]?: boolean}>({});
+  const [rectorSeeded, setRectorSeeded] = useState(false);
   const { toast } = useToast();
   const [stats, setStats] = useState({ userCount: 0, careerCount: 0 });
   const [isLoadingStats, setIsLoadingStats] = useState(true);
-
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('userEmail');
@@ -31,6 +33,12 @@ export default function AdminDashboardPage() {
     } else {
       router.push('/login');
     }
+    
+    // Check if rector accounts have been seeded in this session
+    if (localStorage.getItem('rector_seeded') === 'true') {
+        setRectorSeeded(true);
+    }
+
   }, [router]);
   
   useEffect(() => {
@@ -74,6 +82,10 @@ export default function AdminDashboardPage() {
           title: "Éxito",
           description: data.message,
         });
+        if (type === 'rectors') {
+            localStorage.setItem('rector_seeded', 'true');
+            setRectorSeeded(true);
+        }
       } else {
         throw new Error(data.message || 'Error al poblar la base de datos');
       }
@@ -156,26 +168,28 @@ export default function AdminDashboardPage() {
                 <CardTitle>Gestión de Datos Iniciales</CardTitle>
             </div>
           <CardDescription>
-            Usa estos botones para poblar la base de datos con los datos iniciales. Esta acción solo debe realizarse una vez.
+            Usa estos botones para poblar la base de datos con datos de prueba. Se recomienda ejecutar estas acciones una sola vez.
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4">
-           <Button onClick={() => handleSeed('carrera')} disabled={isSeeding['carrera']}>
-                {isSeeding['carrera'] ? 'Poblando...' : 'Poblar Carreras'}
-            </Button>
-            <Button onClick={() => handleSeed('grupos')} disabled={isSeeding['grupos']}>
-                {isSeeding['grupos'] ? 'Poblando...' : 'Poblar Grupos'}
-            </Button>
-             <Button onClick={() => handleSeed('users')} disabled={isSeeding['users']}>
+           <Button onClick={() => handleSeed('initial-data')} disabled={isSeeding['initial-data']}>
                 <Sparkles className="mr-2 h-4 w-4" />
-                {isSeeding['users'] ? 'Poblando...' : 'Poblar Usuarios de Prueba'}
+                {isSeeding['initial-data'] ? 'Poblando...' : 'Poblar Datos Iniciales'}
             </Button>
-             <Button onClick={() => handleSeed('sedes')} disabled={isSeeding['sedes']}>
-                <School className="mr-2 h-4 w-4" />
-                {isSeeding['sedes'] ? 'Poblando...' : 'Poblar Sedes y Salones'}
-            </Button>
+            <Alert variant="destructive" className="flex items-center justify-between">
+                <div>
+                  <AlertTitle className="font-bold flex items-center gap-2"><ShieldCheck/> Acción de Alto Nivel</AlertTitle>
+                  <AlertDescription>
+                    Crea las cuentas de Rector con privilegios de superadministrador.
+                  </AlertDescription>
+                </div>
+                 <Button onClick={() => handleSeed('rectors')} disabled={isSeeding['rectors'] || rectorSeeded}>
+                    {isSeeding['rectors'] ? 'Creando...' : 'Crear Cuentas Rector'}
+                 </Button>
+            </Alert>
         </CardContent>
       </Card>
     </div>
   );
 }
+
