@@ -24,9 +24,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Todos los campos son obligatorios." }, { status: 400 });
     }
 
-    // No validamos aquí con Zod porque la confirmación de contraseña es solo del lado del cliente
-    // y el schema completo no coincide. Se podría hacer un schema de backend si se quisiera.
-
     const usuariosRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
     const q = query(usuariosRef, where("correoInstitucional", "==", email));
     const querySnapshot = await getDocs(q);
@@ -38,26 +35,19 @@ export async function POST(req: Request) {
     const userDoc = querySnapshot.docs[0];
     const userData = userDoc.data();
     const storedPassword = userData.contrasena;
-
-    let isMatch = false;
     
-    // El sistema debe manejar tanto contraseñas en texto plano como cifradas.
-    // 1. Intentar comparar con bcrypt (para contraseñas ya cifradas).
-    if (storedPassword && typeof storedPassword === 'string' && storedPassword.startsWith('$2b$')) {
-        isMatch = await bcrypt.compare(currentPassword, storedPassword);
-    } 
-    // 2. Si no es un hash o la comparación falla, intentar como texto plano (para contraseñas antiguas).
-    else if (currentPassword === storedPassword) {
-        isMatch = true;
+    if (!storedPassword) {
+      return NextResponse.json({ message: "Esta cuenta no tiene una contraseña configurada para cambiar." }, { status: 400 });
     }
 
+    // La comparación SIEMPRE debe ser con bcrypt, ya que todas las contraseñas nuevas y de seed se cifran.
+    const isMatch = await bcrypt.compare(currentPassword, storedPassword);
 
     if (!isMatch) {
       return NextResponse.json({ message: "La contraseña actual es incorrecta." }, { status: 400 });
     }
     
     // Si la contraseña actual es correcta, procedemos a actualizar.
-    // La nueva contraseña SIEMPRE se guarda cifrada.
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
