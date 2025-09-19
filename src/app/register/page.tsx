@@ -56,14 +56,13 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { validateName } from "@/lib/validators";
 
 const step1Schema = z.object({
-    firstName: z.string().min(1, "El primer nombre es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
-    segundoNombre: z.string().optional().refine(val => !val || /^\S+$/.test(val), {
-        message: "Este campo solo puede contener una palabra."
-    }),
-    lastName: z.string().min(1, "El primer apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
-    segundoApellido: z.string().min(1, "El segundo apellido es requerido.").regex(/^\S+$/, "Este campo solo puede contener una palabra."),
+    firstName: z.string().min(1, "El primer nombre es requerido.").refine(val => validateName(val) === true, { message: "Nombre no válido." }),
+    segundoNombre: z.string().optional().refine(val => !val || validateName(val) === true, { message: "Nombre no válido." }),
+    lastName: z.string().min(1, "El primer apellido es requerido.").refine(val => validateName(val) === true, { message: "Apellido no válido." }),
+    segundoApellido: z.string().min(1, "El segundo apellido es requerido.").refine(val => validateName(val) === true, { message: "Apellido no válido." }),
     tipoIdentificacion: z.string({ required_error: "Selecciona un tipo." }).min(1, "Selecciona un tipo."),
     numeroIdentificacion: z.string().min(1, "El número es requerido.").regex(/^\d+$/, "Este campo solo puede contener números."),
     gender: z.string({ required_error: "Selecciona un género." }).min(1, "Selecciona un género."),
@@ -334,7 +333,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Nombre <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="John" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
+              <Input placeholder="John" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -344,7 +343,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Nombre (Opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Fitzgerald" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
+              <Input placeholder="Fitzgerald" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -354,7 +353,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Doe" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
+              <Input placeholder="Doe" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -364,7 +363,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Smith" {...field} onChange={e => field.onChange(e.target.value.replace(/\s/g, ''))} />
+              <Input placeholder="Smith" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -762,5 +761,3 @@ const Step5_Confirm = () => (
         <p className="text-sm text-muted-foreground">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );
-
-    

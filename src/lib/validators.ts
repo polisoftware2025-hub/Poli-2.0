@@ -24,7 +24,10 @@ export const validateName = (value: string): string | true => {
 
     if (value.length < 2) return 'Debe tener al menos 2 caracteres.';
     if (value.length > 50) return 'No puede exceder los 50 caracteres.';
-    if (!/^[a-zA-Z\s]+$/.test(value)) return 'Solo se permiten letras y espacios.';
+    // Allows letters (including accents), spaces, apostrophes, and hyphens.
+    if (!/^[\p{L}\p{M}\s'-]+$/u.test(value)) {
+        return 'Contiene caracteres no válidos para un nombre.';
+    }
     
     return true;
 };

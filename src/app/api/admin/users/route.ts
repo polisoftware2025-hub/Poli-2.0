@@ -13,11 +13,14 @@ async function emailExists(email: string): Promise<boolean> {
 
 async function generateUniqueInstitutionalEmail(firstName: string, lastName1: string, lastName2?: string): Promise<string> {
     const domain = "@pi.edu.co";
-    const namePart = firstName.toLowerCase().split(' ')[0].replace(/[^a-z0-9]/g, '');
-    const lastName1Part = lastName1.toLowerCase().split(' ')[0].replace(/[^a-z0-9]/g, '');
-    const lastName2Part = lastName2 ? lastName2.toLowerCase().split(' ')[0].replace(/[^a-z0-9]/g, '') : '';
+    const namePart = firstName.toLowerCase().split(' ')[0];
+    const lastName1Part = lastName1.toLowerCase().split(' ')[0];
+    const lastName2Part = lastName2 ? lastName2.toLowerCase().split(' ')[0] : '';
     
-    let baseEmail = [namePart, lastName1Part, lastName2Part].filter(Boolean).join('.').normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    // Normalize email by removing accents and special characters
+    const normalize = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
+
+    let baseEmail = [normalize(namePart), normalize(lastName1Part), normalize(lastName2Part)].filter(Boolean).join('.');
     
     let finalEmail = `${baseEmail}${domain}`;
     let counter = 1;
