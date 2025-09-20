@@ -261,11 +261,11 @@ export default function HomePage() {
                             data-ai-hint={program.imageHint}
                           />
                           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <div className="w-full max-w-2xl rounded-lg bg-black/50 p-8 text-center text-white backdrop-blur-sm">
-                              <h3 className="font-poppins text-4xl font-bold">
+                            <div className="w-full max-w-2xl rounded-lg bg-black/50 p-4 sm:p-8 text-center text-white backdrop-blur-sm">
+                              <h3 className="font-poppins text-2xl sm:text-4xl font-bold">
                                 {program.title}
                               </h3>
-                              <p className="mt-4 text-lg">
+                              <p className="mt-2 sm:mt-4 text-base sm:text-lg">
                                 {program.description}
                               </p>
                               <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
