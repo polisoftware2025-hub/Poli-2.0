@@ -265,7 +265,7 @@ export default function HomePage() {
                               <h3 className="font-poppins text-2xl sm:text-4xl font-bold">
                                 {program.title}
                               </h3>
-                              <p className="mt-2 sm:mt-4 text-base sm:text-lg">
+                              <p className="mt-2 sm:mt-4 text-base sm:text-lg line-clamp-3">
                                 {program.description}
                               </p>
                               <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
