@@ -242,7 +242,7 @@ export default function HomePage() {
                 <Carousel 
                     setApi={setCarouselApi} 
                     className="w-full"
-                    plugins={programs.length > 1 ? [Autoplay({ delay: 4000, stopOnInteraction: true })] : []}
+                    plugins={programs.length > 1 ? [Autoplay({ delay: 8000, stopOnInteraction: true })] : []}
                     opts={{
                         loop: programs.length > 1,
                         align: "start",
