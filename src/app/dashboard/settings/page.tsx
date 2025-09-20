@@ -30,27 +30,7 @@ export default function SettingsPage() {
         icon={<SettingsIcon className="h-8 w-8 text-primary" />}
       />
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <User className="h-6 w-6 text-primary" />
-              <CardTitle className="text-xl font-semibold">Cuenta</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="email">Correo Electrónico</Label>
-              <Input id="email" type="email" defaultValue="john.doe@example.com" disabled />
-            </div>
-            <div>
-              <Label htmlFor="username">Nombre de Usuario</Label>
-              <Input id="username" defaultValue="johndoe" />
-            </div>
-            <Button className="w-full">Actualizar Cuenta</Button>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-2">
         <Card>
           <CardHeader>
              <div className="flex items-center gap-3">
