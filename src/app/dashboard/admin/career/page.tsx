@@ -201,7 +201,6 @@ export default function CareerAdminPage() {
                                                 <TableCell>{finding.currentCredits}/10</TableCell>
                                                 <TableCell>
                                                     <Badge variant={finding.status === 'Excede' ? 'destructive' : 'outline'} className={finding.status === 'Incompleto' ? 'border-yellow-600 text-yellow-800' : ''}>
-                                                        {finding.status === 'Excede' ? <X className="mr-1 h-3 w-3"/> : <AlertTriangle className="mr-1 h-3 w-3" />}
                                                         {finding.status}
                                                     </Badge>
                                                 </TableCell>
@@ -251,9 +250,9 @@ export default function CareerAdminPage() {
             </Button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {isLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
+                Array.from({ length: 4 }).map((_, i) => (
                     <Card key={i} className="h-56">
                         <CardHeader>
                             <Skeleton className="h-5 w-3/4"/>
