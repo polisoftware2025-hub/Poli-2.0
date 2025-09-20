@@ -124,10 +124,12 @@ export default function UsersPage() {
 
   // Pagination logic
   const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredUsers.length);
+
   const paginatedUsers = useMemo(() => {
-      const startIndex = (currentPage - 1) * rowsPerPage;
-      return filteredUsers.slice(startIndex, startIndex + rowsPerPage);
-  }, [filteredUsers, currentPage, rowsPerPage]);
+      return filteredUsers.slice(startIndex, endIndex);
+  }, [filteredUsers, startIndex, endIndex]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -268,26 +270,29 @@ export default function UsersPage() {
             </Table>
           </div>
             <div className="flex items-center justify-between mt-6">
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Filas por página:</span>
-                    <Select value={String(rowsPerPage)} onValueChange={(value) => setRowsPerPage(Number(value))}>
-                        <SelectTrigger className="w-20">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="10">10</SelectItem>
-                            <SelectItem value="20">20</SelectItem>
-                            <SelectItem value="50">50</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <div className="text-sm text-muted-foreground">
+                    Mostrando {startIndex + 1}-{endIndex} de {filteredUsers.length} usuarios.
                 </div>
                  <div className="flex items-center gap-4">
-                    <span className="text-sm text-muted-foreground">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
                     <div className="flex items-center gap-2">
-                         <Button variant="outline" size="icon" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                        <span className="text-sm text-muted-foreground">Filas:</span>
+                        <Select value={String(rowsPerPage)} onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-20 h-8">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="20">20</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <span className="text-sm font-medium">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
                              <ChevronLeft className="h-4 w-4" />
                          </Button>
-                         <Button variant="outline" size="icon" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
                              <ChevronRight className="h-4 w-4" />
                          </Button>
                     </div>
