@@ -261,7 +261,16 @@ export default function ProgramDetailPage() {
               <Accordion type="single" collapsible className="w-full">
                 {program.ciclos.map((ciclo: any) => (
                   <AccordionItem value={`ciclo-${ciclo.numero}`} key={ciclo.numero}>
-                    <AccordionTrigger className="text-lg font-semibold hover:no-underline">Ciclo {ciclo.numero}</AccordionTrigger>
+                    <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                        <div className="flex justify-between w-full pr-4">
+                            <span>Ciclo {ciclo.numero}</span>
+                            {program.precioPorCiclo && program.precioPorCiclo[ciclo.numero] !== undefined && (
+                                <span className="text-base font-bold text-green-600">
+                                    {formatCurrency(program.precioPorCiclo[ciclo.numero])}
+                                </span>
+                            )}
+                        </div>
+                    </AccordionTrigger>
                     <AccordionContent>
                       <ul className="space-y-3 pt-2">
                         {ciclo.materias.map((materia: any) => (
