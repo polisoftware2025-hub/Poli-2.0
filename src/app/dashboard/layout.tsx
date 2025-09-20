@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -129,7 +128,7 @@ export default function DashboardLayout({
                     fetchedNotifications.push({
                         id: doc.id,
                         title: "Nueva solicitud de preinscripción",
-                        description: `${'${data.nombreCompleto || 'Un aspirante'}'} ha enviado una solicitud.`,
+                        description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
                         time: formatDistanceToNow(fechaRegistro, { addSuffix: true, locale: es }),
                         read: false,
                         timestamp: fechaRegistro
@@ -150,7 +149,7 @@ export default function DashboardLayout({
                      fetchedNotifications.push({
                          id: noteDoc.id,
                          title: "Nueva Calificación Disponible",
-                         description: `Se ha publicado tu nota para ${'${subjectName}'}.`,
+                         description: `Se ha publicado tu nota para ${subjectName}.`,
                          time: formatDistanceToNow(fechaNota, { addSuffix: true, locale: es }),
                          read: false,
                          timestamp: fechaNota
@@ -343,10 +342,10 @@ export default function DashboardLayout({
                     asChild
                     isActive={pathname === item.href}
                     className="text-primary-foreground hover:bg-accent hover:text-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground"
-                    tooltip={'{'}
+                    tooltip={{
                       children: item.label,
                       className: "group-data-[collapsible=icon]:flex hidden",
-                    }
+                    }}
                   >
                     <Link href={item.href}>
                       <item.icon />
@@ -361,10 +360,10 @@ export default function DashboardLayout({
                     <SidebarMenuButton
                         onClick={handleLogout}
                         className="w-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
-                        tooltip={'{'}
+                        tooltip={{
                             children: "Cerrar Sesión",
                             className: "group-data-[collapsible=icon]:flex hidden",
-                        }
+                        }}
                     >
                         <LogOut />
                         <span>Cerrar Sesión</span>
@@ -456,4 +455,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
