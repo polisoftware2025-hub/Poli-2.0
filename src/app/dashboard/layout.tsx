@@ -450,7 +450,7 @@ export default function DashboardLayout({
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
         <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
-            © {new Date().getFullYear()} Politécnico Internacional. Todos los derechos reservados.
+            © {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
         </footer>
       </SidebarInset>
     </SidebarProvider>
