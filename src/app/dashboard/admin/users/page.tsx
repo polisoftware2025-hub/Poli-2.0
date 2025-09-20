@@ -22,6 +22,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, Timestamp, doc, updateDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface User {
     id: string;
@@ -46,7 +47,7 @@ const roleBadgeVariant: { [key: string]: "default" | "secondary" | "destructive"
   "estudiante": "default",
   "gestor": "outline",
   "aspirante": "default",
-  "rector": "destructive",
+  "rector": "outline", // Change to outline to apply custom colors
 };
 
 export default function UsersPage() {
@@ -162,8 +163,8 @@ export default function UsersPage() {
                 <Link href="/dashboard/admin/add-user">Agregar Usuario</Link>
              </Button>
           </div>
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="relative w-full overflow-auto">
+            <Table className="min-w-[600px] w-full caption-bottom text-sm">
               <TableHeader>
                 <TableRow>
                   <TableHead>Usuario</TableHead>
@@ -187,6 +188,7 @@ export default function UsersPage() {
                 ) : (
                   filteredUsers.map((user) => {
                     const isProtected = (user.rol.id === 'admin' || user.rol.id === 'rector') && currentUserRole !== 'rector';
+                    const isRector = user.rol.id === 'rector';
                     return (
                     <TableRow key={user.id}>
                       <TableCell>
@@ -201,7 +203,11 @@ export default function UsersPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={roleBadgeVariant[user.rol.id] || "default"}>
+                        <Badge variant={roleBadgeVariant[user.rol.id] || "default"}
+                           className={cn({
+                              'bg-yellow-100 text-yellow-800 border-yellow-300': isRector,
+                          })}
+                        >
                           {user.rol.descripcion}
                         </Badge>
                       </TableCell>
