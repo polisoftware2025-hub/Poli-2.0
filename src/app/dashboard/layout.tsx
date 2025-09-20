@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -355,22 +356,22 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
-            <SidebarMenu className="mt-auto px-0">
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                        onClick={handleLogout}
-                        className="w-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
-                        tooltip={{
-                            children: "Cerrar Sesión",
-                            className: "group-data-[collapsible=icon]:flex hidden",
-                        }}
-                    >
-                        <LogOut />
-                        <span>Cerrar Sesión</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarMenu>
           </SidebarContent>
+          <SidebarMenu className="mt-auto px-0">
+              <SidebarMenuItem>
+                  <SidebarMenuButton
+                      onClick={handleLogout}
+                      className="w-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+                      tooltip={{
+                          children: "Cerrar Sesión",
+                          className: "group-data-[collapsible=icon]:flex hidden",
+                      }}
+                  >
+                      <LogOut />
+                      <span>Cerrar Sesión</span>
+                  </SidebarMenuButton>
+              </SidebarMenuItem>
+          </SidebarMenu>
         </Sidebar>
       </div>
       <SidebarInset>
