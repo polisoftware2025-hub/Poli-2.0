@@ -108,7 +108,15 @@ export default function ProgramDetailPage() {
     return notFound();
   }
   
-  const firstCyclePrice = program.precioPorCiclo ? program.precioPorCiclo["1"] : undefined;
+  const calculateAveragePrice = () => {
+    if (!program.precioPorCiclo) return undefined;
+    const prices = Object.values(program.precioPorCiclo);
+    if (prices.length === 0) return undefined;
+    const sum = prices.reduce((acc, price) => acc + price, 0);
+    return sum / prices.length;
+  };
+
+  const averagePrice = calculateAveragePrice();
 
 
   return (
@@ -219,9 +227,9 @@ export default function ProgramDetailPage() {
                 <div className="flex items-center justify-between border-b pb-2">
                   <div className="flex items-center gap-2 font-semibold text-gray-700">
                     <DollarSign className="h-5 w-5 text-green-600" />
-                    <span>Inversión por ciclo:</span>
+                    <span>Inversión Promedio por Ciclo:</span>
                   </div>
-                  <span className="text-gray-800 font-bold">{formatCurrency(firstCyclePrice)}</span>
+                  <span className="text-gray-800 font-bold">{formatCurrency(averagePrice)}</span>
                 </div>
                 <div className="flex items-center justify-between border-b pb-2">
                   <div className="flex items-center gap-2 font-semibold text-gray-700">
