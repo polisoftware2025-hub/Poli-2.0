@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Users, MoreHorizontal, FilePenLine, UserX, Search } from "lucide-react";
+import { Users, MoreHorizontal, FilePenLine, UserX, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +47,7 @@ const roleBadgeVariant: { [key: string]: "default" | "secondary" | "destructive"
   "estudiante": "default",
   "gestor": "outline",
   "aspirante": "default",
-  "rector": "outline", // Change to outline to apply custom colors
+  "rector": "outline",
 };
 
 export default function UsersPage() {
@@ -57,6 +57,10 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
       const role = localStorage.getItem('userRole');
@@ -70,7 +74,6 @@ export default function UsersPage() {
           const querySnapshot = await getDocs(usersRef);
           const fetchedUsers = querySnapshot.docs.map(doc => {
               const data = doc.data();
-              // Firestore Timestamps need to be converted to JS Dates for consistent use
               if (data.fechaRegistro && typeof data.fechaRegistro.toDate === 'function') {
                   data.fechaRegistro = data.fechaRegistro.toDate();
               }
@@ -97,7 +100,7 @@ export default function UsersPage() {
       const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
       await updateDoc(userRef, { estado: "inactivo" });
       toast({ title: "Usuario Deshabilitado", description: "El estado del usuario ha sido cambiado a inactivo." });
-      fetchUsers(); // Refresh data
+      fetchUsers();
     } catch (error) {
       console.error("Error disabling user:", error);
       toast({ variant: "destructive", title: "Error", description: "No se pudo deshabilitar al usuario." });
@@ -118,6 +121,13 @@ export default function UsersPage() {
         );
       });
   }, [users, roleFilter, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredUsers.length / rowsPerPage);
+  const paginatedUsers = useMemo(() => {
+      const startIndex = (currentPage - 1) * rowsPerPage;
+      return filteredUsers.slice(startIndex, startIndex + rowsPerPage);
+  }, [filteredUsers, currentPage, rowsPerPage]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -142,10 +152,13 @@ export default function UsersPage() {
                 placeholder="Buscar por nombre o correo..." 
                 className="pl-9"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                }}
               />
             </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
               <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
@@ -164,7 +177,7 @@ export default function UsersPage() {
              </Button>
           </div>
           <div className="relative w-full overflow-auto">
-            <Table className="min-w-[600px] w-full caption-bottom text-sm">
+            <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Usuario</TableHead>
@@ -185,8 +198,8 @@ export default function UsersPage() {
                       <TableCell className="text-right"><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
                     </TableRow>
                   ))
-                ) : (
-                  filteredUsers.map((user) => {
+                ) : paginatedUsers.length > 0 ? (
+                  paginatedUsers.map((user) => {
                     const isProtected = (user.rol.id === 'admin' || user.rol.id === 'rector') && currentUserRole !== 'rector';
                     const isRector = user.rol.id === 'rector';
                     return (
@@ -246,8 +259,7 @@ export default function UsersPage() {
                     </TableRow>
                     )
                 })
-                )}
-                 {filteredUsers.length === 0 && !isLoading && (
+                ) : (
                     <TableRow>
                         <TableCell colSpan={5} className="text-center h-24">No se encontraron usuarios para los filtros seleccionados.</TableCell>
                     </TableRow>
@@ -255,6 +267,32 @@ export default function UsersPage() {
               </TableBody>
             </Table>
           </div>
+            <div className="flex items-center justify-between mt-6">
+                <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Filas por página:</span>
+                    <Select value={String(rowsPerPage)} onValueChange={(value) => setRowsPerPage(Number(value))}>
+                        <SelectTrigger className="w-20">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="flex items-center gap-4">
+                    <span className="text-sm text-muted-foreground">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" size="icon" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                             <ChevronLeft className="h-4 w-4" />
+                         </Button>
+                         <Button variant="outline" size="icon" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                             <ChevronRight className="h-4 w-4" />
+                         </Button>
+                    </div>
+                </div>
+            </div>
         </CardContent>
       </Card>
     </div>
