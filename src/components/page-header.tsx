@@ -172,8 +172,8 @@ export const PageHeader = ({ title, description, icon, backPath, breadcrumbs }: 
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 flex-wrap">
+          <div className="flex flex-col gap-4 flex-1">
             <Breadcrumbs customBreadcrumbs={breadcrumbs} />
             <div className="flex items-center gap-4">
               {icon}
@@ -189,7 +189,7 @@ export const PageHeader = ({ title, description, icon, backPath, breadcrumbs }: 
               </div>
             </div>
           </div>
-          <Button variant="outline" onClick={handleBack}>
+          <Button variant="outline" onClick={handleBack} className="shrink-0 sm:ml-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Volver
           </Button>
