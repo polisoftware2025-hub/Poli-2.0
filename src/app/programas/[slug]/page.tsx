@@ -229,28 +229,28 @@ export default function ProgramDetailPage() {
                     <DollarSign className="h-5 w-5 text-green-600" />
                     <span>Inversión Promedio por Ciclo:</span>
                   </div>
-                  <span className="text-gray-800 font-bold">{formatCurrency(averagePrice)}</span>
+                  <span className="text-gray-800">{formatCurrency(averagePrice)}</span>
                 </div>
                 <div className="flex items-center justify-between border-b pb-2">
                   <div className="flex items-center gap-2 font-semibold text-gray-700">
                     <Clock className="h-5 w-5 text-blue-600" />
                     <span>Duración:</span>
                   </div>
-                  <span className="text-gray-600">{program.duracionCiclo}</span>
+                  <span className="text-gray-800">{program.duracionCiclo}</span>
                 </div>
                 <div className="flex items-center justify-between border-b pb-2">
-                  <div className="flex items-center gap-2 font-semibold text-gray-700">
-                    <Award className="h-5 w-5 text-yellow-600" />
-                    <span>Título Otorgado:</span>
+                   <div className="flex items-center gap-2 font-semibold text-gray-700">
+                     <Award className="h-5 w-5 text-yellow-600" />
+                     <span>Título Otorgado:</span>
                   </div>
-                  <span className="text-gray-600">{program.titulo}</span>
+                  <span className="text-gray-800 text-right">{program.titulo}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 font-semibold text-gray-700">
                      <GraduationCap className="h-5 w-5 text-purple-600" />
                      <span>Créditos Totales:</span>
                   </div>
-                  <span className="text-gray-600">
+                  <span className="text-gray-800">
                     {program.ciclos.reduce((totalCreds: number, ciclo: any) => 
                         totalCreds + ciclo.materias.reduce((cycleCreds: number, materia: any) => cycleCreds + materia.creditos, 0), 0)
                     }
@@ -346,7 +346,7 @@ export default function ProgramDetailPage() {
             </div>
             <div className="border-t border-gray-700 py-6">
                 <div className="container mx-auto text-center text-sm text-gray-400">
-                    &copy; {new Date().getFullYear()} Politécnico 2.0. Todos los derechos reservados.
+                    &copy; {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
                 </div>
             </div>
         </footer>
