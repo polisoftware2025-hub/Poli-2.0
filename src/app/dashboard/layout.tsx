@@ -362,7 +362,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenuItem>
                   <SidebarMenuButton
                       onClick={handleLogout}
-                      className="w-full bg-blue-500/10 text-blue-400 hover:bg-blue-500/20"
+                      className="w-full bg-white/10 text-primary-foreground hover:bg-white/20"
                       tooltip={{
                           children: "Cerrar Sesión",
                           className: "group-data-[collapsible=icon]:flex hidden",
@@ -451,7 +451,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
           <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
         </div>
         <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
-            © {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
+            © 2025 Poli 2.0. Todos los derechos reservados.
         </footer>
       </SidebarInset>
     </>
