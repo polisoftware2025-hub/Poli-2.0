@@ -279,14 +279,16 @@ function ScheduleView({ schedule, week, setCurrentDate, viewMode, setViewMode, i
 }
 
 function WeekView({ schedule, week, userRole }: any) {
-    const [currentTime, setCurrentTime] = useState(new Date());
+    const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
     useEffect(() => {
+        setCurrentTime(new Date());
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
 
-    const timeToPosition = (date: Date) => {
+    const timeToPosition = (date: Date | null) => {
+        if (!date) return 0;
         const hours = date.getHours();
         const minutes = date.getMinutes();
         if (hours < 7) return 0;
@@ -297,7 +299,7 @@ function WeekView({ schedule, week, userRole }: any) {
     };
     
     const currentTimePosition = timeToPosition(currentTime);
-    const currentDayOfWeek = getDay(currentTime);
+    const currentDayOfWeek = currentTime ? getDay(currentTime) : -1;
     const isCurrentWeek = isSameDay(week.start, startOfWeek(new Date(), { weekStartsOn: 1 }));
 
     return (
@@ -351,14 +353,16 @@ function DayView({ schedule, week, userRole }: any) {
     const todayIndex = getDay(today) === 0 ? 6 : getDay(today) - 1; // Handle Sunday, maps Sunday to 6 (off-range), Mon to 0 etc.
     const [selectedDayIndex, setSelectedDayIndex] = useState(isToday(today) && todayIndex >= 0 && todayIndex < 6 ? todayIndex : 0);
     const selectedDate = week.days[selectedDayIndex];
-    const [currentTime, setCurrentTime] = useState(new Date());
+    const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
     useEffect(() => {
+        setCurrentTime(new Date());
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
         return () => clearInterval(timer);
     }, []);
 
-    const timeToPosition = (date: Date) => {
+    const timeToPosition = (date: Date | null) => {
+        if (!date) return 0;
         const hours = date.getHours();
         const minutes = date.getMinutes();
         if (hours < 7) return 0;
