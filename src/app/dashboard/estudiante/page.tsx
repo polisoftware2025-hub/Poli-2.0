@@ -272,8 +272,8 @@ export default function StudentDashboardPage() {
                 <h2 className="font-poppins text-2xl font-bold text-gray-800">Calendario Académico</h2>
             </div>
             <Card>
-                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="md:col-span-2">
+                <CardContent className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 flex justify-center">
                          <Calendar
                             mode="single"
                             selected={selectedDate}
@@ -282,7 +282,7 @@ export default function StudentDashboardPage() {
                             markedDays={calendarEvents.map(e => e.date)}
                         />
                     </div>
-                    <div className="border-l border-border pl-6">
+                    <div className="lg:border-l lg:pl-6 md:border-t md:pt-6 lg:border-t-0 lg:pt-0 border-border">
                         <h3 className="font-semibold text-lg mb-4">
                             Actividades para {selectedDate ? selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'el día seleccionado'}
                         </h3>
