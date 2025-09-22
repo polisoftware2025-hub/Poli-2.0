@@ -272,7 +272,6 @@ export default function GroupsAdminPage() {
           onOpenChange={setIsDialogOpen}
           sedes={sedes}
           carreras={carreras}
-          allGroups={groups}
           group={editingGroup}
           onSuccess={fetchGroups}
         />
@@ -295,12 +294,11 @@ interface GroupFormDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   sedes: Sede[];
   carreras: Carrera[];
-  allGroups: Group[];
   group: Group | null;
   onSuccess: () => void;
 }
 
-function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, allGroups, group, onSuccess }: GroupFormDialogProps) {
+function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSuccess }: GroupFormDialogProps) {
   const { toast } = useToast();
 
   const form = useForm<GroupFormValues>({
@@ -320,25 +318,7 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, allGroups, gro
     },
   });
 
-  const { formState: { isSubmitting }, handleSubmit, watch, setValue } = form;
-  const watchSede = watch("idSede");
-  const watchCarrera = watch("idCarrera");
-
-  const handleAutogenerateName = () => {
-    if (watchSede && watchCarrera) {
-        const sedeNombre = sedes.find(s => s.id === watchSede)?.nombre || '';
-        const groupsInSedeAndCarrera = allGroups.filter(
-            g => g.idSede === watchSede && g.idCarrera === watchCarrera
-        ).length;
-        const newGroupNumber = groupsInSedeAndCarrera + 1;
-        const suggestedName = `${sedeNombre} - Grupo ${newGroupNumber}`;
-        setValue("codigoGrupo", suggestedName, { shouldValidate: true });
-        toast({ title: "Nombre Autogenerado", description: `Se ha sugerido el nombre: ${suggestedName}` });
-    } else {
-        toast({ variant: "destructive", title: "Faltan datos", description: "Por favor, selecciona una sede y una carrera primero." });
-    }
-  };
-
+  const { formState: { isSubmitting }, handleSubmit } = form;
 
   const onSubmit = async (values: GroupFormValues) => {
     try {
@@ -408,15 +388,9 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, allGroups, gro
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Código del Grupo</FormLabel>
-                  <div className="flex gap-2 items-center">
-                    <FormControl>
-                        <Input placeholder="Ej: Sede Norte - Grupo 1" {...field} />
-                    </FormControl>
-                    <Button type="button" variant="outline" onClick={handleAutogenerateName} disabled={!watchSede || !watchCarrera}>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Autogenerar
-                    </Button>
-                  </div>
+                  <FormControl>
+                      <Input placeholder="Ej: Sede Norte - Grupo 1" {...field} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
