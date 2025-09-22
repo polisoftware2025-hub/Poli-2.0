@@ -264,6 +264,7 @@ export default function GroupsAdminPage() {
           onOpenChange={setIsDialogOpen}
           sedes={sedes}
           carreras={carreras}
+          allGroups={groups}
           group={editingGroup}
           onSuccess={fetchGroups}
         />
@@ -278,11 +279,12 @@ interface GroupFormDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   sedes: Sede[];
   carreras: Carrera[];
+  allGroups: Group[];
   group: Group | null;
   onSuccess: () => void;
 }
 
-function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSuccess }: GroupFormDialogProps) {
+function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, allGroups, group, onSuccess }: GroupFormDialogProps) {
   const { toast } = useToast();
 
   const form = useForm<GroupFormValues>({
@@ -302,7 +304,21 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
     },
   });
 
-  const { formState: { isSubmitting }, handleSubmit } = form;
+  const { formState: { isSubmitting }, handleSubmit, watch, setValue } = form;
+  const watchSede = watch("idSede");
+  const watchCarrera = watch("idCarrera");
+
+  useEffect(() => {
+    if (watchSede && watchCarrera && !group) { // Only auto-generate for new groups
+      const sedeNombre = sedes.find(s => s.id === watchSede)?.nombre || '';
+      const groupsInSedeAndCarrera = allGroups.filter(
+        g => g.idSede === watchSede && g.idCarrera === watchCarrera
+      ).length;
+      const newGroupNumber = groupsInSedeAndCarrera + 1;
+      const suggestedName = `${sedeNombre} - Grupo ${newGroupNumber}`;
+      setValue("codigoGrupo", suggestedName);
+    }
+  }, [watchSede, watchCarrera, sedes, allGroups, group, setValue]);
 
   const onSubmit = async (values: GroupFormValues) => {
     try {
@@ -372,7 +388,7 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, group, onSucce
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Código del Grupo</FormLabel>
-                  <FormControl><Input placeholder="Ej: G1-Matutino" {...field} /></FormControl>
+                  <FormControl><Input placeholder="Ej: Sede Norte - Grupo 1" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )}
