@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Users, Plus, Edit, Trash2, MoreVertical, Filter } from "lucide-react";
+import { Users, Plus, Edit, Trash2, MoreVertical, Filter, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -308,17 +308,21 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, allGroups, gro
   const watchSede = watch("idSede");
   const watchCarrera = watch("idCarrera");
 
-  useEffect(() => {
-    if (watchSede && watchCarrera && !group) { // Only auto-generate for new groups
-      const sedeNombre = sedes.find(s => s.id === watchSede)?.nombre || '';
-      const groupsInSedeAndCarrera = allGroups.filter(
-        g => g.idSede === watchSede && g.idCarrera === watchCarrera
-      ).length;
-      const newGroupNumber = groupsInSedeAndCarrera + 1;
-      const suggestedName = `${sedeNombre} - Grupo ${newGroupNumber}`;
-      setValue("codigoGrupo", suggestedName);
+  const handleAutogenerateName = () => {
+    if (watchSede && watchCarrera) {
+        const sedeNombre = sedes.find(s => s.id === watchSede)?.nombre || '';
+        const groupsInSedeAndCarrera = allGroups.filter(
+            g => g.idSede === watchSede && g.idCarrera === watchCarrera
+        ).length;
+        const newGroupNumber = groupsInSedeAndCarrera + 1;
+        const suggestedName = `${sedeNombre} - Grupo ${newGroupNumber}`;
+        setValue("codigoGrupo", suggestedName, { shouldValidate: true });
+        toast({ title: "Nombre Autogenerado", description: `Se ha sugerido el nombre: ${suggestedName}` });
+    } else {
+        toast({ variant: "destructive", title: "Faltan datos", description: "Por favor, selecciona una sede y una carrera primero." });
     }
-  }, [watchSede, watchCarrera, sedes, allGroups, group, setValue]);
+  };
+
 
   const onSubmit = async (values: GroupFormValues) => {
     try {
@@ -388,7 +392,15 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, allGroups, gro
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Código del Grupo</FormLabel>
-                  <FormControl><Input placeholder="Ej: Sede Norte - Grupo 1" {...field} /></FormControl>
+                  <div className="flex gap-2 items-center">
+                    <FormControl>
+                        <Input placeholder="Ej: Sede Norte - Grupo 1" {...field} />
+                    </FormControl>
+                    <Button type="button" variant="outline" onClick={handleAutogenerateName} disabled={!watchSede || !watchCarrera}>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Autogenerar
+                    </Button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -433,3 +445,4 @@ function GroupFormDialog({ isOpen, onOpenChange, sedes, carreras, allGroups, gro
     </Dialog>
   );
 }
+
