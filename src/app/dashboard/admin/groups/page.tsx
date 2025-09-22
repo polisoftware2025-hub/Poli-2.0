@@ -42,6 +42,7 @@ import {
 } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { validateRequired, validateSelection, validatePositiveInteger } from "@/lib/validators";
+import { Label } from "@/components/ui/label";
 
 type GroupFormValues = {
   codigoGrupo: string;
