@@ -255,12 +255,12 @@ export default function AnalyticsPage() {
                 <CardContent>
                     {isLoading ? <Skeleton className="h-[350px] w-full" /> : (
                         <ResponsiveContainer width="100%" height={350}>
-                            <BarChart data={careerChartData} layout="vertical">
+                            <BarChart data={careerChartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
-                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} width={80} />
+                                <XAxis dataKey="name" stroke="#888888" fontSize={12} />
+                                <YAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={40} />
+                                <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={80} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
@@ -274,12 +274,12 @@ export default function AnalyticsPage() {
                 <CardContent>
                      {isLoading ? <Skeleton className="h-[350px] w-full" /> : (
                         <ResponsiveContainer width="100%" height={350}>
-                            <BarChart data={subjectChartData} layout="vertical">
+                            <BarChart data={subjectChartData}>
                                 <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
-                                <YAxis type="category" dataKey="name" stroke="#888888" fontSize={12} width={80} />
+                                <XAxis dataKey="name" stroke="#888888" fontSize={12} />
+                                <YAxis type="number" stroke="#888888" fontSize={12} allowDecimals={false} />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} barSize={40} />
+                                <Bar dataKey="total" name="Total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} barSize={80} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
