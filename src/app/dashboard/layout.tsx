@@ -26,6 +26,7 @@ import {
   SidebarMenuButton,
   SidebarProvider,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -84,11 +85,7 @@ interface Notification {
     timestamp: Date;
 }
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -97,6 +94,9 @@ export default function DashboardLayout({
   const [userId, setUserId] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+
+  // useSidebar hook to control the mobile menu
+  const { setOpenMobile } = useSidebar();
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("userEmail");
@@ -286,7 +286,7 @@ export default function DashboardLayout({
   };
 
   return (
-    <SidebarProvider>
+    <>
       <div className="bg-primary text-primary-foreground">
         <Sidebar>
           <SidebarHeader className="flex flex-col items-start p-3 gap-2">
@@ -321,13 +321,13 @@ export default function DashboardLayout({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">
+                  <Link href="/dashboard/profile" onClick={() => setOpenMobile(false)}>
                     <User className="mr-2 h-4 w-4" />
                     <span>Perfil</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">
+                  <Link href="/dashboard/settings" onClick={() => setOpenMobile(false)}>
                     <Settings className="mr-2 h-4 w-4" />
                     <span>Configuración</span>
                   </Link>
@@ -347,6 +347,7 @@ export default function DashboardLayout({
                       children: item.label,
                       className: "group-data-[collapsible=icon]:flex hidden",
                     }}
+                    onClick={() => setOpenMobile(false)} // Close mobile menu on click
                   >
                     <Link href={item.href}>
                       <item.icon />
@@ -453,6 +454,14 @@ export default function DashboardLayout({
             © {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
         </footer>
       </SidebarInset>
-    </SidebarProvider>
+    </>
   );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    return (
+        <SidebarProvider>
+            <MainLayout>{children}</MainLayout>
+        </SidebarProvider>
+    )
 }
