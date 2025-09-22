@@ -147,9 +147,9 @@ export default function GroupsAdminPage() {
       <Card>
         <CardHeader>
           <CardTitle>Listado de Grupos</CardTitle>
-          <div className="flex justify-between items-center">
-            <CardDescription>Visualiza, crea, edita y elimina los grupos académicos.</CardDescription>
-            <div className="flex gap-2">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mt-2 flex-wrap">
+            <CardDescription className="flex-1">Visualiza, crea, edita y elimina los grupos académicos.</CardDescription>
+            <div className="flex gap-2 flex-wrap">
                 <Button variant="outline" onClick={() => setIsAutoGenerateOpen(true)}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     Generación Automática
