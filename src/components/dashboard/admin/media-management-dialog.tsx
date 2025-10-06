@@ -28,6 +28,9 @@ interface MediaManagementDialogProps {
   onUpdate: () => void;
 }
 
+const MAX_FILE_SIZE_MB = 1;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 export function MediaManagementDialog({
   documentId,
   documentName,
@@ -63,6 +66,16 @@ export function MediaManagementDialog({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
+      if (selectedFile.size > MAX_FILE_SIZE_BYTES) {
+        toast({
+          variant: "destructive",
+          title: "Archivo demasiado grande",
+          description: `La imagen no puede superar ${MAX_FILE_SIZE_MB}MB.`,
+        });
+        e.target.value = ""; // Clear the input
+        return;
+      }
+
       setFile(selectedFile);
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -85,7 +98,6 @@ export function MediaManagementDialog({
     let finalImageUrl = "";
 
     if (uploadType === "file" && file) {
-        // The data URL is already in imageUrl state from handleFileChange
         finalImageUrl = imageUrl;
     } else if (uploadType === "url") {
         finalImageUrl = urlInput;
@@ -160,7 +172,7 @@ export function MediaManagementDialog({
             </TabsContent>
             <TabsContent value="file">
                 <div className="space-y-2 py-4">
-                    <Label htmlFor="file-input" className="flex items-center gap-2"><Upload className="h-4 w-4"/> Seleccionar archivo</Label>
+                    <Label htmlFor="file-input" className="flex items-center gap-2"><Upload className="h-4 w-4"/> Seleccionar archivo (Máx. {MAX_FILE_SIZE_MB}MB)</Label>
                     <Input id="file-input" type="file" accept="image/*" onChange={handleFileChange} />
                 </div>
             </TabsContent>
