@@ -1,6 +1,6 @@
 
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, writeBatch, doc } from "firebase/firestore";
+import { collection, query, where, getDocs, writeBatch, doc, getDoc } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -188,3 +188,4 @@ function isAssignmentValid(
 
     return true;
 }
+
