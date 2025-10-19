@@ -3,7 +3,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ClipboardCheck, UserCheck, BookCopy, ArrowRight, Calendar, BarChart3, ListTodo, Users, Edit } from "lucide-react";
+import { ClipboardCheck, UserCheck, BookCopy, ArrowRight, Calendar, BarChart3, ListTodo, Users, Edit, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -112,12 +112,20 @@ export default function TeacherDashboardPage() {
         </Card>
       </div>
       
-      <Button asChild size="lg" className="w-full py-6 text-lg">
-          <Link href="/dashboard/horarios">
-              <Calendar className="mr-2 h-5 w-5"/>
-              Ver mi horario completo
-          </Link>
-      </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Button asChild size="lg" className="w-full py-6 text-lg">
+              <Link href="/dashboard/horarios">
+                  <Calendar className="mr-2 h-5 w-5"/>
+                  Ver mi horario completo
+              </Link>
+          </Button>
+          <Button asChild size="lg" className="w-full py-6 text-lg" variant="outline">
+              <Link href="/dashboard/docente/disponibilidad">
+                  <Clock className="mr-2 h-5 w-5"/>
+                  Gestionar mi Disponibilidad
+              </Link>
+          </Button>
+      </div>
       
        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Button variant="outline" size="lg" className="h-auto py-6 flex-col gap-2" asChild>

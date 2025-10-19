@@ -14,7 +14,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
-import { User, Shield, Briefcase, Eye, EyeOff } from "lucide-react";
+import { User, Shield, Briefcase, Eye, EyeOff, Clock } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from "@/components/page-header";
@@ -33,6 +33,9 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { validatePassword, validateName, validateEmail, validateIdNumber, validateSelection } from "@/lib/validators";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Calendar as CalendarSelector } from "@/components/ui/calendar";
+import { es } from "date-fns/locale";
 
 
 type ChangePasswordFormValues = {
@@ -63,6 +66,18 @@ interface AcademicInfo {
 
 interface UserInfo extends ProfileInfoFormValues {}
 
+// Availability Types
+const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+const timeSlots = Array.from({ length: 16 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`);
+
+interface AvailabilityData {
+    dias: string[];
+    franjas: { [key: string]: { inicio: string; fin: string; }; };
+    modalidad: "Presencial" | "Virtual" | "Ambas";
+    fechasBloqueadas: Date[];
+}
+
+
 export default function ProfilePage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -71,11 +86,14 @@ export default function ProfilePage() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoadingAcademic, setIsLoadingAcademic] = useState(true);
   const [isLoadingUser, setIsLoadingUser] = useState(true);
+  const [availability, setAvailability] = useState<AvailabilityData>({ dias: [], franjas: {}, modalidad: "Ambas", fechasBloqueadas: [] });
+  const [isLoadingAvailability, setIsLoadingAvailability] = useState(true);
   
   const router = useRouter();
   const { toast } = useToast();
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [isUpdatingAvailability, setIsUpdatingAvailability] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -173,12 +191,39 @@ export default function ProfilePage() {
             setIsLoadingAcademic(false);
         }
     };
+    
+    const fetchAvailability = async () => {
+        setIsLoadingAvailability(true);
+        try {
+            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+            const userSnap = await getDoc(userRef);
+
+            if (userSnap.exists() && userSnap.data().disponibilidad) {
+                const data = userSnap.data().disponibilidad;
+                setAvailability({
+                    dias: data.dias || [],
+                    franjas: data.franjas || {},
+                    modalidad: data.modalidad || "Ambas",
+                    fechasBloqueadas: (data.fechasBloqueadas || []).map((d: any) => d.toDate()),
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching availability: ", error);
+        } finally {
+            setIsLoadingAvailability(false);
+        }
+    };
 
     fetchUserInfo();
     if (userRole === 'estudiante') {
         fetchAcademicInfo();
     } else {
         setIsLoadingAcademic(false);
+    }
+    if (userRole === 'docente') {
+        fetchAvailability();
+    } else {
+        setIsLoadingAvailability(false);
     }
   }, [userId, userRole, toast, profileForm]);
   
@@ -235,6 +280,48 @@ export default function ProfilePage() {
     }
   };
 
+  const handleDayToggle = (day: string) => {
+        setAvailability(prev => {
+            const newDias = prev.dias.includes(day)
+                ? prev.dias.filter(d => d !== day)
+                : [...prev.dias, day];
+            
+            const newFranjas = { ...prev.franjas };
+            if (!newDias.includes(day)) {
+                delete newFranjas[day];
+            } else if (!newFranjas[day]) {
+                newFranjas[day] = { inicio: "08:00", fin: "12:00" };
+            }
+            
+            return { ...prev, dias: newDias, franjas: newFranjas };
+        });
+    };
+    
+    const handleTimeChange = (day: string, type: "inicio" | "fin", value: string) => {
+        setAvailability(prev => ({
+            ...prev,
+            franjas: {
+                ...prev.franjas,
+                [day]: { ...prev.franjas[day], [type]: value },
+            },
+        }));
+    };
+    
+  const handleUpdateAvailability = async () => {
+    if (!userId) return;
+    setIsUpdatingAvailability(true);
+    try {
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+        await updateDoc(userRef, { disponibilidad: availability });
+        toast({ title: "Éxito", description: "Tu disponibilidad ha sido actualizada." });
+    } catch (error) {
+         console.error("Error saving availability: ", error);
+        toast({ variant: "destructive", title: "Error", description: "No se pudo guardar la disponibilidad." });
+    } finally {
+        setIsUpdatingAvailability(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -245,7 +332,7 @@ export default function ProfilePage() {
       <Card>
         <CardContent>
           <Tabs defaultValue="personal" className="pt-6">
-            <TabsList className={`grid w-full ${userRole === 'estudiante' ? 'grid-cols-3' : 'grid-cols-2'}`}>
+            <TabsList className={`grid w-full ${userRole === 'docente' ? 'grid-cols-4' : (userRole === 'estudiante' ? 'grid-cols-3' : 'grid-cols-2')}`}>
               <TabsTrigger value="personal">
                 <User className="mr-2 h-4 w-4" />
                 Personal
@@ -258,6 +345,12 @@ export default function ProfilePage() {
                   <TabsTrigger value="academic">
                     <Briefcase className="mr-2 h-4 w-4" />
                     Académico
+                  </TabsTrigger>
+              )}
+               {userRole === 'docente' && (
+                  <TabsTrigger value="availability">
+                    <Clock className="mr-2 h-4 w-4" />
+                    Disponibilidad
                   </TabsTrigger>
               )}
             </TabsList>
@@ -393,6 +486,52 @@ export default function ProfilePage() {
                     </div>
                 ) : (
                     <p className="text-sm text-muted-foreground">No se encontró información académica.</p>
+                )}
+                </TabsContent>
+            )}
+             {userRole === 'docente' && (
+                <TabsContent value="availability" className="mt-6">
+                {isLoadingAvailability ? (<Skeleton className="h-96 w-full"/>) : (
+                    <div className="space-y-6">
+                         <div className="space-y-4">
+                            <h3 className="font-semibold">Días y Horas Disponibles</h3>
+                            {daysOfWeek.map(day => (
+                                <div key={day} className="p-3 border rounded-md space-y-3">
+                                    <div className="flex items-center space-x-2">
+                                        <Checkbox
+                                            id={`day-${day}`}
+                                            checked={availability.dias.includes(day)}
+                                            onCheckedChange={() => handleDayToggle(day)}
+                                        />
+                                        <Label htmlFor={`day-${day}`} className="text-base font-medium">{day}</Label>
+                                    </div>
+                                    {availability.dias.includes(day) && (
+                                        <div className="grid grid-cols-2 gap-4 pl-6">
+                                            <div className="space-y-2">
+                                                <Label>Desde</Label>
+                                                <Select value={availability.franjas[day]?.inicio} onValueChange={value => handleTimeChange(day, 'inicio', value)}>
+                                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                                    <SelectContent>{timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Hasta</Label>
+                                                 <Select value={availability.franjas[day]?.fin} onValueChange={value => handleTimeChange(day, 'fin', value)}>
+                                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                                    <SelectContent>{timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex justify-end pt-4">
+                            <Button onClick={handleUpdateAvailability} disabled={isUpdatingAvailability}>
+                                {isUpdatingAvailability ? "Guardando..." : "Guardar Disponibilidad"}
+                            </Button>
+                        </div>
+                    </div>
                 )}
                 </TabsContent>
             )}

@@ -63,6 +63,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   SlidersHorizontal,
+  Clock,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -233,6 +234,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/docente", label: "Panel", icon: LayoutDashboard },
     { href: "/dashboard/docente/cursos", label: "Mis Cursos", icon: BookCopy },
     { href: "/dashboard/horarios", label: "Horario", icon: Calendar },
+    { href: "/dashboard/docente/disponibilidad", label: "Mi Disponibilidad", icon: Clock },
     { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
     { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
     { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
