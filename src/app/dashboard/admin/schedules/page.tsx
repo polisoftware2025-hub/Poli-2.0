@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Calendar, Building, BookCopy, Users, Plus, Edit, Trash2, School, Filter, Download, Expand, ChevronLeft, ChevronRight, Clock, User, X as XIcon, Maximize, Minimize, Sparkles } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
