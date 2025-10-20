@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar } from "lucide-react";
+import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -14,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 
 interface Sede { id: string; nombre: string; }
@@ -54,6 +56,7 @@ export default function GenerateSchedulePage() {
     const [selectedCiclo, setSelectedCiclo] = useState("");
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
     const [subjectConfig, setSubjectConfig] = useState<any>({});
+    const [conflictingGroups, setConflictingGroups] = useState<string[]>([]);
     
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -73,6 +76,34 @@ export default function GenerateSchedulePage() {
         };
         fetchInitialData();
     }, [toast]);
+    
+    // Effect to check for existing schedules when parameters change
+    useEffect(() => {
+        if (!selectedSede || !selectedCarrera || !selectedCiclo) {
+            setConflictingGroups([]);
+            return;
+        }
+
+        const checkForConflicts = async () => {
+            try {
+                const q = query(
+                    collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
+                    where("idSede", "==", selectedSede),
+                    where("idCarrera", "==", selectedCarrera),
+                    where("ciclo", "==", parseInt(selectedCiclo))
+                );
+                const querySnapshot = await getDocs(q);
+                const conflicts = querySnapshot.docs
+                    .filter(doc => doc.data().horario && doc.data().horario.length > 0)
+                    .map(doc => doc.data().codigoGrupo);
+                setConflictingGroups(conflicts);
+            } catch (error) {
+                console.error("Error checking for schedule conflicts:", error);
+            }
+        };
+
+        checkForConflicts();
+    }, [selectedSede, selectedCarrera, selectedCiclo]);
 
     const ciclosDisponibles = useMemo(() => {
         const carrera = carreras.find(c => c.id === selectedCarrera);
@@ -148,6 +179,18 @@ export default function GenerateSchedulePage() {
                                 <Label>Ciclo</Label>
                                 <Select onValueChange={setSelectedCiclo} value={selectedCiclo} disabled={!selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona un ciclo..." /></SelectTrigger><SelectContent>{ciclosDisponibles.map(c => <SelectItem key={c} value={String(c)}>Ciclo {c}</SelectItem>)}</SelectContent></Select>
                             </div>
+                            {conflictingGroups.length > 0 && (
+                                <Alert variant="destructive">
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>¡Atención! Horarios Existentes Detectados</AlertTitle>
+                                    <AlertDescription>
+                                        Los siguientes grupos ya tienen un horario asignado. Continuar sobrescribirá sus horarios actuales:
+                                        <ul className="list-disc pl-5 mt-2">
+                                            {conflictingGroups.map(group => <li key={group}>{group}</li>)}
+                                        </ul>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                         </div>
                     </StepperItem>
                     <StepperItem index={1} title="Docentes">
@@ -225,3 +268,5 @@ export default function GenerateSchedulePage() {
         </div>
     );
 }
+
+    
