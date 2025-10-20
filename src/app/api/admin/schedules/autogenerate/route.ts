@@ -16,11 +16,12 @@ interface ScheduleEntry {
   fechaInicio?: Timestamp;
   fechaFin?: Timestamp;
 }
+interface SubjectPreferences { [key: string]: { modality: string; teacherId: string } }
 
 // --- Main Handler ---
 export async function POST(req: NextRequest) {
     try {
-        const { sedeId, carreraId, ciclo, grupoId: selectedGrupoId, docentesIds, periodo, horarioLote } = await req.json();
+        const { sedeId, carreraId, ciclo, grupoId: selectedGrupoId, docentesIds, periodo, horarioLote, subjectPreferences } = await req.json();
 
         if (!sedeId || !carreraId || !ciclo) {
             return NextResponse.json({ message: "Sede, carrera y ciclo son requeridos." }, { status: 400 });
@@ -47,7 +48,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Solve the schedule
-        const newSchedules = solve(gruposToSchedule, materias, docentesToUse, salones, periodo, horarioLote);
+        const newSchedules = solve(gruposToSchedule, materias, docentesToUse, salones, periodo, horarioLote, subjectPreferences);
 
         if (Object.keys(newSchedules).length === 0) {
              return NextResponse.json({ message: "No se pudo generar un horario sin conflictos con los recursos disponibles." }, { status: 409 });
@@ -114,15 +115,17 @@ function solve(
     docentes: Docente[], 
     salones: Salon[],
     periodo?: { from?: string, to?: string },
-    horarioLote?: { dia: string, horaInicio: string, horaFin: string }
+    horarioLote?: { dia: string, horaInicio: string, horaFin: string },
+    subjectPreferences?: SubjectPreferences
 ): Record<string, ScheduleEntry[]> {
     let clases: Clase[] = [];
     for (const grupo of grupos) {
         for (const materia of materias) {
             let horasRestantes = materia.horasSemanales;
             while (horasRestantes > 0) {
-                clases.push({ materiaId: materia.id, materiaNombre: materia.nombre, duracion: 2, grupo });
-                horasRestantes -= 2;
+                const duracionBloque = Math.min(horasRestantes, 2);
+                clases.push({ materiaId: materia.id, materiaNombre: materia.nombre, duracion: duracionBloque, grupo });
+                horasRestantes -= duracionBloque;
             }
         }
     }
@@ -139,15 +142,24 @@ function solve(
         }
 
         const clase = clases[claseIndex];
-        
+        const preference = subjectPreferences?.[clase.materiaId];
+
         const possibleDays = horarioLote?.dia ? [horarioLote.dia] : daysOfWeek;
         const possibleTimes = horarioLote?.horaInicio ? [horarioLote.horaInicio] : timeSlots;
+        
+        const preferredTeacherId = preference?.teacherId !== 'any' ? preference?.teacherId : null;
+        const teacherPool = preferredTeacherId ? docentes.filter(d => d.id === preferredTeacherId) : docentes;
 
-        for (const docente of docentes) {
+        if (preferredTeacherId && !teacherPool.length) {
+            // If preferred teacher is specified but not in the pool, try with all teachers
+            teacherPool.push(...docentes);
+        }
+
+        for (const docente of teacherPool) {
             for (const dia of possibleDays) {
                 for (const hora of possibleTimes) {
                     for (const salon of salones) {
-                        if (isAssignmentValid(clase, docente, salon, dia, hora, ocupacionDocentes, ocupacionSalones, ocupacionGrupos)) {
+                        if (isAssignmentValid(clase, docente, salon, dia, hora, ocupacionDocentes, ocupacionSalones, ocupacionGrupos, subjectPreferences)) {
                             // --- Asignar ---
                             const timeKey = `${dia}-${hora}`;
                             const startTime = parseInt(hora.split(':')[0]);
@@ -195,11 +207,16 @@ function solve(
         // Agrupar por grupo
         const scheduleByGroup: Record<string, ScheduleEntry[]> = {};
         horarioFinal.forEach(entry => {
-            const grupoId = clases.find(c => c.materiaId === entry.materiaId)!.grupo.id;
-            if (!scheduleByGroup[grupoId]) {
-                scheduleByGroup[grupoId] = [];
+            const clase = clases.find(c => c.materiaId === entry.materiaId && c.grupo.horario.length === 0);
+            if(clase){
+                const grupoId = clase.grupo.id;
+                if (!scheduleByGroup[grupoId]) {
+                    scheduleByGroup[grupoId] = [];
+                }
+                scheduleByGroup[grupoId].push(entry);
+                // Mark class as scheduled for this group to avoid re-assigning
+                 clase.grupo.horario.push(entry);
             }
-            scheduleByGroup[grupoId].push(entry);
         });
         return scheduleByGroup;
     }
@@ -216,9 +233,11 @@ function isAssignmentValid(
     hora: string,
     ocupacionDocentes: Record<string, Set<string>>,
     ocupacionSalones: Record<string, Set<string>>,
-    ocupacionGrupos: Record<string, Set<string>>
+    ocupacionGrupos: Record<string, Set<string>>,
+    subjectPreferences?: SubjectPreferences
 ): boolean {
     const timeKey = `${dia}-${hora}`;
+    const preference = subjectPreferences?.[clase.materiaId];
 
     // 1. Conflicto de Grupo
     if (ocupacionGrupos[clase.grupo.id]?.has(timeKey)) return false;
@@ -227,14 +246,14 @@ function isAssignmentValid(
     if (ocupacionDocentes[docente.id]?.has(timeKey)) return false;
 
     // 3. Conflicto de Salón
-    if (ocupacionSalones[salon.id]?.has(timeKey)) return false;
+    if (preference?.modality !== "Virtual" && ocupacionSalones[salon.id]?.has(timeKey)) return false;
 
     // 4. Aptitud de Docente
-    if (!docente.materiasAptas?.includes(clase.materiaId)) {
-        // This is a soft constraint for now, but should ideally be hard.
+    if (docente.materiasAptas && !docente.materiasAptas?.includes(clase.materiaId)) {
+        // Not a hard failure for now, could be changed
     }
     
-    // 5. Disponibilidad del Docente
+    // 5. Disponibilidad del Docente - if not set, assume available
     const disponibilidadDocente = docente.disponibilidad;
     if (disponibilidadDocente && disponibilidadDocente.dias && Array.isArray(disponibilidadDocente.dias) && disponibilidadDocente.dias.length > 0) {
         if (!disponibilidadDocente.dias.includes(dia)) return false;
@@ -252,6 +271,14 @@ function isAssignmentValid(
         }
     }
 
+    // 6. Preferencia de Modalidad
+    if (preference?.modality === 'Virtual' && salon) {
+        // This assignment is virtual, so salon conflict is irrelevant
+    } else if (preference?.modality === 'Presencial' && !salon) {
+        return false; // Needs a salon
+    }
+
     return true;
 }
+
     

@@ -50,6 +50,8 @@ const stringToHslColor = (str: string, s: number, l: number): string => {
   return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
+const LOCAL_STORAGE_KEY = 'scheduleGeneratorState';
+
 const TeacherScheduleModal = ({ docente, onAvailabilityGenerated }: { docente: Docente, onAvailabilityGenerated: () => void }) => {
     const availability = docente.disponibilidad || {};
     const schedule = docente.horarioAsignado || [];
@@ -178,19 +180,55 @@ export default function GenerateSchedulePage() {
     const [grupos, setGrupos] = useState<Grupo[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     
+    // State for the wizard
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedCiclo, setSelectedCiclo] = useState("");
     const [selectedGrupo, setSelectedGrupo] = useState("all");
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
-    
     const [subjectPreferences, setSubjectPreferences] = useState<Record<string, { modality: string; teacherId: string }>>({});
-    
     const [periodDates, setPeriodDates] = useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
     const [batchTime, setBatchTime] = useState({ dia: "", horaInicio: "", horaFin: "" });
-
     const [activeStep, setActiveStep] = useState(0);
+
     const totalSteps = 5;
+    
+    // --- STATE PERSISTENCE ---
+    useEffect(() => {
+        const savedState = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (savedState) {
+            try {
+                const state = JSON.parse(savedState);
+                if(state.selectedSede) setSelectedSede(state.selectedSede);
+                if(state.selectedCarrera) setSelectedCarrera(state.selectedCarrera);
+                if(state.selectedCiclo) setSelectedCiclo(state.selectedCiclo);
+                if(state.selectedGrupo) setSelectedGrupo(state.selectedGrupo);
+                if(state.selectedDocentes) setSelectedDocentes(state.selectedDocentes);
+                if(state.subjectPreferences) setSubjectPreferences(state.subjectPreferences);
+                if(state.periodDates) {
+                    setPeriodDates({
+                        from: state.periodDates.from ? new Date(state.periodDates.from) : undefined,
+                        to: state.periodDates.to ? new Date(state.periodDates.to) : undefined,
+                    });
+                }
+                if(state.batchTime) setBatchTime(state.batchTime);
+                if(state.activeStep) setActiveStep(state.activeStep);
+            } catch (e) {
+                console.error("Failed to parse saved state", e);
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+            }
+        }
+    }, []);
+
+    useEffect(() => {
+        const stateToSave = {
+            selectedSede, selectedCarrera, selectedCiclo, selectedGrupo,
+            selectedDocentes, subjectPreferences, periodDates, batchTime,
+            activeStep,
+        };
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(stateToSave));
+    }, [selectedSede, selectedCarrera, selectedCiclo, selectedGrupo, selectedDocentes, subjectPreferences, periodDates, batchTime, activeStep]);
+
 
     const groupWithSchedule = useMemo(() => {
         if (selectedGrupo !== 'all') {
@@ -535,3 +573,5 @@ export default function GenerateSchedulePage() {
         </div>
     );
 }
+
+    
