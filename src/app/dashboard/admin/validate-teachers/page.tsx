@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
-import { ShieldCheck, Filter, Users, BookCopy, ChevronsRight, MoreVertical, Edit, Trash2, Info } from "lucide-react";
+import { ShieldCheck, Filter, Users, BookCopy, ChevronsRight, MoreVertical, Edit, Trash2, Info, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -50,9 +50,16 @@ interface TeacherAssignment {
   horarioId: string; // The unique ID of the schedule entry
 }
 
+interface AvailabilityData {
+    dias?: string[];
+    franjas?: { [key: string]: { inicio: string; fin: string; } };
+    modalidad?: "Presencial" | "Virtual" | "Ambas";
+}
+
 interface GroupedAssignments {
     docenteId: string;
     docenteNombre: string;
+    disponibilidad?: AvailabilityData;
     assignments: TeacherAssignment[];
 }
 
@@ -84,6 +91,8 @@ export default function ValidateTeachersPage() {
   const [isActionLoading, startTransition] = useTransition();
   const { toast } = useToast();
   const router = useRouter();
+  const [docenteDataMap, setDocenteDataMap] = useState<Map<string, any>>(new Map());
+
 
   const fetchAssignmentData = useCallback(async () => {
     setIsLoading(true);
@@ -99,12 +108,14 @@ export default function ValidateTeachersPage() {
       
       const groupsSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"));
       const assignmentsList: TeacherAssignment[] = [];
+      const docenteIds = new Set<string>();
 
       groupsSnapshot.forEach(groupDoc => {
         const groupData = groupDoc.data();
         if (groupData.horario && Array.isArray(groupData.horario)) {
           groupData.horario.forEach((slot: any) => {
             if (slot.docenteId && slot.materiaId) { // Ensure essential data exists
+              docenteIds.add(slot.docenteId);
               assignmentsList.push({
                 docenteNombre: slot.docenteNombre || "Docente sin nombre",
                 docenteId: slot.docenteId,
@@ -125,6 +136,18 @@ export default function ValidateTeachersPage() {
       
       const uniqueAssignments = Array.from(new Map(assignmentsList.map(item => [`${item.docenteId}-${item.materiaId}-${item.grupoId}`, item])).values());
       setAllAssignments(uniqueAssignments);
+      
+      // Fetch full docente data
+        if(docenteIds.size > 0) {
+            const docenteUsersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+            const q = query(docenteUsersRef, where("__name__", "in", Array.from(docenteIds)));
+            const docentesSnap = await getDocs(q);
+            const newDocenteDataMap = new Map<string, any>();
+            docentesSnap.forEach(doc => {
+                newDocenteDataMap.set(doc.id, doc.data());
+            });
+            setDocenteDataMap(newDocenteDataMap);
+        }
 
     } catch (error) {
       console.error("Error fetching assignments:", error);
@@ -184,16 +207,18 @@ export default function ValidateTeachersPage() {
       const grouped: { [key: string]: GroupedAssignments } = {};
       filteredAssignments.forEach(assignment => {
           if (!grouped[assignment.docenteId]) {
+              const docenteFullData = docenteDataMap.get(assignment.docenteId);
               grouped[assignment.docenteId] = {
                   docenteId: assignment.docenteId,
                   docenteNombre: assignment.docenteNombre,
+                  disponibilidad: docenteFullData?.disponibilidad,
                   assignments: []
               };
           }
           grouped[assignment.docenteId].assignments.push(assignment);
       });
       return Object.values(grouped);
-  }, [filteredAssignments]);
+  }, [filteredAssignments, docenteDataMap]);
 
   const stats = useMemo(() => {
     const activeGroups = new Set(filteredAssignments.filter(a => a.estadoGrupo === 'activo').map(a => a.grupoId));
@@ -302,7 +327,7 @@ export default function ValidateTeachersPage() {
           {isLoading ? (
               <Card><CardContent className="p-4"><Skeleton className="h-24 w-full" /></CardContent></Card>
           ) : groupedByTeacher.length > 0 ? (
-              groupedByTeacher.map(({ docenteId, docenteNombre, assignments }) => (
+              groupedByTeacher.map(({ docenteId, docenteNombre, assignments, disponibilidad }) => (
                   <AccordionItem value={docenteId} key={docenteId} className="border-b-0">
                     <Card className="overflow-hidden">
                         <AccordionTrigger className="p-4 hover:no-underline hover:bg-muted/50">
@@ -312,7 +337,30 @@ export default function ValidateTeachersPage() {
                                 <Badge variant="secondary">{assignments.length} asignaciones</Badge>
                             </div>
                         </AccordionTrigger>
-                        <AccordionContent className="p-0">
+                        <AccordionContent className="p-4 space-y-4">
+                            <Accordion type="single" collapsible className="w-full bg-blue-50/50 rounded-lg border border-blue-200">
+                                <AccordionItem value="availability" className="border-b-0">
+                                    <AccordionTrigger className="px-4 py-2 text-blue-800 font-semibold hover:no-underline">
+                                       <div className="flex items-center gap-2"><Clock className="h-4 w-4"/> Ver Disponibilidad del Docente</div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="px-4 pb-4">
+                                        {disponibilidad && disponibilidad.dias && disponibilidad.dias.length > 0 ? (
+                                            <div className="text-sm space-y-2">
+                                                <p><strong className="text-blue-900">Modalidad Preferida:</strong> {disponibilidad.modalidad || "No especificada"}</p>
+                                                <ul className="list-disc pl-5">
+                                                    {disponibilidad.dias.map(dia => (
+                                                        <li key={dia}>
+                                                            <strong>{dia}:</strong> de {disponibilidad.franjas?.[dia]?.inicio || 'N/A'} a {disponibilidad.franjas?.[dia]?.fin || 'N/A'}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-muted-foreground">Este docente no ha configurado su disponibilidad.</p>
+                                        )}
+                                    </AccordionContent>
+                                </AccordionItem>
+                            </Accordion>
                            <div className="overflow-x-auto">
                             <Table>
                                 <TableHeader>
@@ -392,3 +440,5 @@ export default function ValidateTeachersPage() {
     </div>
   );
 }
+
+    
