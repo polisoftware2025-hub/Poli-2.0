@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -10,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { Stepper, StepperItem, useStepper, StepperActions } from "@/components/ui/stepper";
+import { Stepper, StepperItem } from "@/components/ui/stepper";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -49,13 +48,12 @@ export default function GenerateSchedulePage() {
     const [isGenerating, setIsGenerating] = useState(false);
     
     // Multi-step form state
+    const [activeStep, setActiveStep] = useState(0);
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedCiclo, setSelectedCiclo] = useState("");
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
     const [subjectConfig, setSubjectConfig] = useState<any>({});
-
-    const { activeStep, nextStep, prevStep, resetSteps } = useStepper();
     
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -104,7 +102,7 @@ export default function GenerateSchedulePage() {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message);
             toast({ title: "Éxito", description: data.message });
-            resetSteps();
+            setActiveStep(0);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Error en la Generación", description: error.message });
         } finally {
@@ -122,6 +120,10 @@ export default function GenerateSchedulePage() {
         }));
     };
 
+    const nextStep = () => setActiveStep((prev) => prev + 1);
+    const prevStep = () => setActiveStep((prev) => prev - 1);
+    const stepsCount = 3;
+
     return (
         <div className="flex flex-col gap-8 h-full">
             <PageHeader
@@ -131,7 +133,7 @@ export default function GenerateSchedulePage() {
                 backPath="/dashboard/admin/schedules"
             />
              <div className="flex-grow flex flex-col min-h-0">
-                <Stepper>
+                <Stepper activeStep={activeStep} setActiveStep={setActiveStep}>
                     <StepperItem index={0} title="Parámetros">
                         <div className="py-4 space-y-4 max-w-lg mx-auto">
                             <div className="space-y-2">
@@ -207,7 +209,18 @@ export default function GenerateSchedulePage() {
                 </Stepper>
             </div>
              <div className="p-6 border-t mt-auto bg-card">
-                <StepperActions onGenerate={handleGenerate} isGenerating={isGenerating} nextStep={nextStep} prevStep={prevStep}/>
+                 <div className="flex justify-between w-full">
+                    <Button variant="outline" onClick={prevStep} disabled={activeStep === 0}>
+                        Anterior
+                    </Button>
+                    {activeStep === stepsCount - 1 ? (
+                        <Button onClick={handleGenerate} disabled={isGenerating}>
+                            {isGenerating ? "Generando..." : "Generar Horario"}
+                        </Button>
+                    ) : (
+                        <Button onClick={nextStep}>Siguiente</Button>
+                    )}
+                </div>
             </div>
         </div>
     );
