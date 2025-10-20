@@ -74,7 +74,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
     const [activeStep, setActiveStep] = React.useState(initialStep)
 
     const nextStep = React.useCallback(() => {
-      setActiveStep((prev) => Math.min(prev + 1, steps.length - 1))
+      setActiveStep((prev) => Math.min(prev + 1, steps.length > 0 ? steps.length - 1 : 0))
     }, [steps.length])
 
     const prevStep = React.useCallback(() => {
