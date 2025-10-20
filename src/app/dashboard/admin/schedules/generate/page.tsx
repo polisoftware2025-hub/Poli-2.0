@@ -3,14 +3,15 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar, Checkbox } from "lucide-react";
+import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { Stepper, StepperItem, StepperActions, useStepper } from "@/components/ui/stepper";
+import { Stepper, StepperItem, useStepper, StepperActions } from "@/components/ui/stepper";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
