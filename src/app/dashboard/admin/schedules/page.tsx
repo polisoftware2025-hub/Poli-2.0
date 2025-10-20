@@ -24,6 +24,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Stepper, StepperItem, useStepper } from "@/components/ui/stepper";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 interface Sede { id: string; nombre: string; }
@@ -827,3 +828,5 @@ const StepperActions = ({ onGenerate, isGenerating }: { onGenerate: () => void, 
         </div>
     );
 };
+
+    
