@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
-import { Check, Loader2, X } from "lucide-react"
+import { Check } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "./button"
@@ -55,7 +55,6 @@ const stepperVariants = cva("flex w-full", {
 interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
   initialStep?: number
-  currentStep?: number // This prop is being passed down
   orientation?: "vertical" | "horizontal"
 }
 
@@ -65,7 +64,6 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
       children,
       className,
       initialStep = 0,
-      currentStep, // Destructure currentStep to avoid passing it to the div
       orientation = "horizontal",
       ...props
     },
@@ -96,9 +94,9 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
         nextStep,
         prevStep,
         resetSteps,
-        currentStep, // Pass currentStep to context if needed
+        orientation,
       }),
-      [props, steps, isVertical, initialStep, activeStep, currentStep]
+      [props, steps, isVertical, initialStep, activeStep, orientation]
     );
 
     return (
@@ -106,26 +104,30 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
         <div
           ref={ref}
           className={cn(
-            "stepper__main-container",
-            stepperVariants({ orientation }),
+            "stepper__main-container flex flex-col w-full",
             className
           )}
-          {...props} // `currentStep` is no longer in `props`
+          {...props}
         >
-          <div className="flex w-full items-center justify-center p-4 border-b">
-              {steps.map((step, index) => (
-                <Step
-                  key={step.title}
-                  index={index}
-                  label={step.title}
-                  isCurrent={index === activeStep}
-                  isCompleted={index < activeStep}
-                  isLast={index === steps.length - 1}
-                />
-              ))}
+          <div className={cn(
+            "stepper__header-container",
+            stepperVariants({ orientation }),
+          )}>
+            <div className="flex w-full items-center justify-center p-4 border-b">
+                {steps.map((step, index) => (
+                  <Step
+                    key={step.title}
+                    index={index}
+                    label={step.title}
+                    isCurrent={index === activeStep}
+                    isCompleted={index < activeStep}
+                    isLast={index === steps.length - 1}
+                  />
+                ))}
+            </div>
           </div>
-        </div>
          {React.Children.toArray(children)[activeStep]}
+        </div>
       </StepperContext.Provider>
     )
   }
