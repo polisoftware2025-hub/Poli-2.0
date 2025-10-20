@@ -64,6 +64,7 @@ import {
   ShieldAlert,
   SlidersHorizontal,
   Clock,
+  Wand2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -196,6 +197,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     { href: "/dashboard/admin/subjects", label: "Materias", icon: BookMarked },
     { href: "/dashboard/admin/groups", label: "Grupos", icon: Users },
     { href: "/dashboard/admin/schedules", label: "Horarios", icon: Calendar },
+    { href: "/dashboard/admin/schedules/generate", label: "Generar Horario", icon: Wand2 },
     { href: "/dashboard/admin/asignar-docente", label: "Asignar Docentes", icon: BookUp },
     { href: "/dashboard/admin/validate-teachers", label: "Validar Docentes", icon: ShieldCheck },
     { href: "/dashboard/admin/payments", label: "Gestión Pagos", icon: CreditCard },
