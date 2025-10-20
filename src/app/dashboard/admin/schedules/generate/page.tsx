@@ -1,10 +1,10 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
 import * as React from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar, AlertTriangle, Eye, ArrowLeft, ArrowRight } from "lucide-react";
+import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar as CalendarIcon, AlertTriangle, Eye, ArrowLeft, ArrowRight, BookMarked, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { cn } from "@/lib/utils";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarSelector } from "@/components/ui/calendar";
+import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -29,6 +29,7 @@ interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string, horasSemanales: number }[] }[]; }
 interface Docente { id: string; nombreCompleto: string; disponibilidad?: any; horarioAsignado?: ScheduleEntry[]; }
 interface Grupo { id: string; codigoGrupo: string; horario?: ScheduleEntry[] }
+interface Materia { id: string; nombre: string, horasSemanales: number }
 
 interface ScheduleEntry {
   id: string; dia: string; hora: string; duracion: number; materiaId: string; materiaNombre: string;
@@ -183,12 +184,13 @@ export default function GenerateSchedulePage() {
     const [selectedGrupo, setSelectedGrupo] = useState("all");
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
     
-    // Step 3 state
+    const [subjectPreferences, setSubjectPreferences] = useState<Record<string, { modality: string; teacherId: string }>>({});
+    
     const [periodDates, setPeriodDates] = useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
     const [batchTime, setBatchTime] = useState({ dia: "", horaInicio: "", horaFin: "" });
 
     const [activeStep, setActiveStep] = useState(0);
-    const totalSteps = 4;
+    const totalSteps = 5;
 
     const groupWithSchedule = useMemo(() => {
         if (selectedGrupo !== 'all') {
@@ -283,6 +285,13 @@ export default function GenerateSchedulePage() {
         const carrera = carreras.find(c => c.id === selectedCarrera);
         return carrera?.ciclos.map(c => c.numero) || [];
     }, [selectedCarrera, carreras]);
+
+    const materiasDelCiclo = useMemo(() => {
+        const carrera = carreras.find(c => c.id === selectedCarrera);
+        if (!carrera || !selectedCiclo) return [];
+        const ciclo = carrera.ciclos.find(c => c.numero === parseInt(selectedCiclo));
+        return ciclo?.materias || [];
+    }, [carreras, selectedCarrera, selectedCiclo]);
     
     const handleNextStep = () => {
       if (activeStep < totalSteps - 1) {
@@ -321,6 +330,7 @@ export default function GenerateSchedulePage() {
                     ciclo: parseInt(selectedCiclo),
                     grupoId: selectedGrupo,
                     docentesIds: selectedDocentes,
+                    subjectPreferences,
                     periodo: periodDates,
                     horarioLote: batchTime,
                  }),
@@ -426,17 +436,66 @@ export default function GenerateSchedulePage() {
                             </ScrollArea>
                         </div>
                     </StepperItem>
+                    <StepperItem title="Configurar Materias">
+                        <div className="p-6 space-y-4 max-w-4xl mx-auto">
+                           <Label className="text-center block">Ajusta la modalidad y asigna un docente preferido para cada materia.</Label>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Materia</TableHead>
+                                        <TableHead>Modalidad</TableHead>
+                                        <TableHead>Docente Preferido</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {materiasDelCiclo.map(materia => (
+                                        <TableRow key={materia.id}>
+                                            <TableCell className="font-medium">{materia.nombre}</TableCell>
+                                            <TableCell>
+                                                <Select
+                                                    value={subjectPreferences[materia.id]?.modality || 'Indiferente'}
+                                                    onValueChange={v => setSubjectPreferences(p => ({...p, [materia.id]: {...p[materia.id], modality: v}}))}
+                                                >
+                                                    <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Indiferente">Indiferente</SelectItem>
+                                                        <SelectItem value="Presencial">Presencial</SelectItem>
+                                                        <SelectItem value="Virtual">Virtual</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Select
+                                                    value={subjectPreferences[materia.id]?.teacherId || 'any'}
+                                                    onValueChange={v => setSubjectPreferences(p => ({...p, [materia.id]: {...p[materia.id], teacherId: v}}))}
+                                                >
+                                                    <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="any">Cualquiera</SelectItem>
+                                                        {selectedDocentes.map(docenteId => {
+                                                            const docente = docentes.find(d => d.id === docenteId);
+                                                            return <SelectItem key={docenteId} value={docenteId}>{docente?.nombreCompleto}</SelectItem>
+                                                        })}
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </StepperItem>
                     <StepperItem title="Período y Horas">
                         <div className="p-6 space-y-6 max-w-2xl mx-auto">
                             <div className="space-y-2">
                                 <h3 className="font-semibold">Definir Período Académico (Opcional)</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                      <Popover><PopoverTrigger asChild>
-                                        <div className="space-y-2"><Label>Fecha de Inicio</Label><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !periodDates.from && "text-muted-foreground")}><Calendar className="mr-2 h-4 w-4" />{periodDates.from ? format(periodDates.from, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></div>
-                                     </PopoverTrigger><PopoverContent className="w-auto p-0"><CalendarSelector mode="single" selected={periodDates.from} onSelect={(d) => setPeriodDates(p => ({...p, from: d}))} initialFocus /></PopoverContent></Popover>
+                                        <div className="space-y-2"><Label>Fecha de Inicio</Label><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !periodDates.from && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{periodDates.from ? format(periodDates.from, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></div>
+                                     </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={periodDates.from} onSelect={(d) => setPeriodDates(p => ({...p, from: d}))} initialFocus /></PopoverContent></Popover>
                                      <Popover><PopoverTrigger asChild>
-                                         <div className="space-y-2"><Label>Fecha de Fin</Label><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !periodDates.to && "text-muted-foreground")}><Calendar className="mr-2 h-4 w-4" />{periodDates.to ? format(periodDates.to, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></div>
-                                     </PopoverTrigger><PopoverContent className="w-auto p-0"><CalendarSelector mode="single" selected={periodDates.to} onSelect={(d) => setPeriodDates(p => ({...p, to: d}))} initialFocus /></PopoverContent></Popover>
+                                         <div className="space-y-2"><Label>Fecha de Fin</Label><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !periodDates.to && "text-muted-foreground")}><CalendarIcon className="mr-2 h-4 w-4" />{periodDates.to ? format(periodDates.to, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></div>
+                                     </PopoverTrigger><PopoverContent className="w-auto p-0"><Calendar mode="single" selected={periodDates.to} onSelect={(d) => setPeriodDates(p => ({...p, to: d}))} initialFocus /></PopoverContent></Popover>
                                 </div>
                             </div>
                             <div className="space-y-4 pt-4 border-t">
