@@ -254,9 +254,10 @@ function isAssignmentValid(
     
     // 5. Teacher's availability
     const disponibilidadDocente = docente.disponibilidad;
-    // If availability is set, it must be respected.
     if (disponibilidadDocente && disponibilidadDocente.dias && Array.isArray(disponibilidadDocente.dias) && disponibilidadDocente.dias.length > 0) {
-        if (!disponibilidadDocente.dias.includes(dia)) return false;
+        if (!disponibilidadDocente.dias.includes(dia)) {
+            return false;
+        }
         
         const franja = disponibilidadDocente.franjas?.[dia];
         if (franja && franja.inicio && franja.fin) {

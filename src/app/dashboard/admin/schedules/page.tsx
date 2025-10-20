@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -264,7 +265,7 @@ export default function SchedulesAdminPage() {
                         </Select>
                     </div>
                 </CardContent>
-                <CardContent>
+                 <CardContent>
                     <Button asChild>
                         <Link href="/dashboard/admin/schedules/generate">
                             <Wand2 className="mr-2 h-4 w-4"/>
@@ -436,7 +437,7 @@ function WeekView({ schedule, week, isCurrentWeek, onOpenAssignDialog }: any) {
     );
 }
 
-function DayView({ schedule, week, onOpenAssignDialog }: any) {
+function DayView({ schedule, week, isCurrentWeek, onOpenAssignDialog }: any) {
     const today = new Date();
     const todayIndex = getDay(today) === 0 ? 6 : getDay(today) -1; // Handle Sunday
     const [selectedDayIndex, setSelectedDayIndex] = useState(isToday(today) && getDay(today) >= 1 && getDay(today) <= 6 ? todayIndex : 0);
@@ -631,6 +632,9 @@ function AssignClassDialog({ open, onOpenChange, grupo, carrera, docentes, salon
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogTrigger asChild>
+                {children ? children : <Button><Plus className="mr-2 h-4 w-4" />Asignar Horario</Button>}
+            </DialogTrigger>
             <DialogContent className="sm:max-w-[480px]">
                 <DialogHeader><DialogTitle>{existingSchedule ? 'Editar' : 'Asignar'} Clase a {grupo.codigoGrupo}</DialogTitle><DialogDescription>Completa los detalles para una nueva clase.</DialogDescription></DialogHeader>
                 <div className="grid grid-cols-2 gap-4 py-4">
