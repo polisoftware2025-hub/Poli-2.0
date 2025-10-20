@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, updateDoc, doc } from "firebase/firestore";
 import { Stepper, StepperItem } from "@/components/ui/stepper";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -18,7 +18,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { Card, CardFooter } from "@/components/ui/card";
-
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarSelector } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string, horasSemanales: number }[] }[]; }
@@ -44,9 +47,38 @@ const stringToHslColor = (str: string, s: number, l: number): string => {
   return `hsl(${h}, ${s}%, ${l}%)`;
 };
 
-const TeacherScheduleModal = ({ docente }: { docente: Docente }) => {
+const TeacherScheduleModal = ({ docente, onAvailabilityGenerated }: { docente: Docente, onAvailabilityGenerated: () => void }) => {
     const availability = docente.disponibilidad || {};
     const schedule = docente.horarioAsignado || [];
+    const [isGenerating, setIsGenerating] = React.useState(false);
+    const { toast } = useToast();
+
+    const handleGenerateAvailability = async () => {
+        setIsGenerating(true);
+        try {
+            const defaultAvailability = {
+                dias: ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"],
+                franjas: {
+                    Lunes: { inicio: "18:00", fin: "22:00" },
+                    Martes: { inicio: "18:00", fin: "22:00" },
+                    Miércoles: { inicio: "18:00", fin: "22:00" },
+                    Jueves: { inicio: "18:00", fin: "22:00" },
+                    Viernes: { inicio: "18:00", fin: "22:00" },
+                },
+                modalidad: "Ambas",
+                fechasBloqueadas: []
+            };
+            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", docente.id);
+            await updateDoc(userRef, { disponibilidad: defaultAvailability });
+            toast({ title: "Disponibilidad Generada", description: `Se ha asignado un horario estándar al docente ${docente.nombreCompleto}.` });
+            onAvailabilityGenerated();
+        } catch (error) {
+            console.error("Error generating availability:", error);
+            toast({ variant: "destructive", title: "Error", description: "No se pudo generar la disponibilidad." });
+        } finally {
+            setIsGenerating(false);
+        }
+    };
     
     return (
         <Dialog>
@@ -78,7 +110,12 @@ const TeacherScheduleModal = ({ docente }: { docente: Docente }) => {
                                 </ul>
                             </div>
                         ) : (
-                            <p className="text-sm text-muted-foreground p-3 bg-muted rounded-md">Este docente no ha configurado su disponibilidad.</p>
+                             <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md text-center space-y-2">
+                                <p className="text-sm text-yellow-800">Este docente no ha configurado su disponibilidad.</p>
+                                <Button size="sm" variant="secondary" onClick={handleGenerateAvailability} disabled={isGenerating}>
+                                    {isGenerating ? "Generando..." : "Generar Disponibilidad"}
+                                </Button>
+                             </div>
                         )}
                     </div>
                     <div className="md:col-span-3">
@@ -143,9 +180,13 @@ export default function GenerateSchedulePage() {
     const [selectedCiclo, setSelectedCiclo] = useState("");
     const [selectedGrupo, setSelectedGrupo] = useState("all");
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
-    const [subjectConfig, setSubjectConfig] = useState<any>({});
+    
+    // Step 3 state
+    const [periodDates, setPeriodDates] = useState<{from: Date | undefined, to: Date | undefined}>({ from: undefined, to: undefined });
+    const [batchTime, setBatchTime] = useState({ dia: "", horaInicio: "", horaFin: "" });
+
     const [activeStep, setActiveStep] = useState(0);
-    const totalSteps = 3;
+    const totalSteps = 4;
 
     const groupWithSchedule = useMemo(() => {
         if (selectedGrupo !== 'all') {
@@ -154,55 +195,60 @@ export default function GenerateSchedulePage() {
                 return group;
             }
         }
-        return null;
+        const relevantGroups = selectedGrupo === 'all'
+            ? grupos
+            : grupos.filter(g => g.id === selectedGrupo);
+        
+        return relevantGroups.filter(g => g.horario && g.horario.length > 0);
+
     }, [selectedGrupo, grupos]);
     
-    useEffect(() => {
-        const fetchInitialData = async () => {
-            try {
-                const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
-                setSedes(sedesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sede)));
+    const fetchInitialData = useCallback(async () => {
+        try {
+            const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
+            setSedes(sedesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Sede)));
 
-                const carrerasSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
-                setCarreras(carrerasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Career)));
-            } catch (error) {
-                toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos iniciales." });
-            }
-        };
-        fetchInitialData();
+            const carrerasSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
+            setCarreras(carrerasSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Career)));
+        } catch (error) {
+            toast({ variant: "destructive", title: "Error", description: "No se pudieron cargar los datos iniciales." });
+        }
     }, [toast]);
     
     useEffect(() => {
+        fetchInitialData();
+    }, [fetchInitialData]);
+    
+    const fetchDocentesAndSchedules = useCallback(async () => {
         if (!selectedSede) return;
-
-        const fetchDocentesAndSchedules = async () => {
-            const docentesQuery = query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios"), where("rol.id", "==", "docente"));
-            const docentesSnapshot = await getDocs(docentesQuery);
-            const docentesList = docentesSnapshot.docs.map(doc => ({ id: doc.id, nombreCompleto: doc.data().nombreCompleto, disponibilidad: doc.data().disponibilidad, horarioAsignado: [] } as Docente));
-            
-            const gruposQuery = query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"), where("idSede", "==", selectedSede));
-            const gruposSnapshot = await getDocs(gruposQuery);
-            
-            docentesList.forEach(docente => {
-                const assignedSchedule: ScheduleEntry[] = [];
-                gruposSnapshot.forEach(groupDoc => {
-                    const groupData = groupDoc.data();
-                    if(groupData.horario && Array.isArray(groupData.horario)){
-                        groupData.horario.forEach((slot: any) => {
-                            if(slot.docenteId === docente.id){
-                                assignedSchedule.push({...slot, grupoCodigo: groupData.codigoGrupo});
-                            }
-                        })
-                    }
-                });
-                docente.horarioAsignado = assignedSchedule;
-            });
-            
-            setDocentes(docentesList);
-        };
+        const docentesQuery = query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios"), where("rol.id", "==", "docente"));
+        const docentesSnapshot = await getDocs(docentesQuery);
+        const docentesList = docentesSnapshot.docs.map(doc => ({ id: doc.id, nombreCompleto: doc.data().nombreCompleto, disponibilidad: doc.data().disponibilidad, horarioAsignado: [] } as Docente));
         
-        fetchDocentesAndSchedules();
+        const gruposQuery = query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"), where("idSede", "==", selectedSede));
+        const gruposSnapshot = await getDocs(gruposQuery);
+        
+        docentesList.forEach(docente => {
+            const assignedSchedule: ScheduleEntry[] = [];
+            gruposSnapshot.forEach(groupDoc => {
+                const groupData = groupDoc.data();
+                if(groupData.horario && Array.isArray(groupData.horario)){
+                    groupData.horario.forEach((slot: any) => {
+                        if(slot.docenteId === docente.id){
+                            assignedSchedule.push({...slot, grupoCodigo: groupData.codigoGrupo});
+                        }
+                    })
+                }
+            });
+            docente.horarioAsignado = assignedSchedule;
+        });
+        
+        setDocentes(docentesList);
     }, [selectedSede]);
+
+    useEffect(() => {
+        fetchDocentesAndSchedules();
+    }, [selectedSede, fetchDocentesAndSchedules]);
 
     useEffect(() => {
         if (!selectedSede || !selectedCarrera || !selectedCiclo) {
@@ -236,18 +282,14 @@ export default function GenerateSchedulePage() {
         return carrera?.ciclos.map(c => c.numero) || [];
     }, [selectedCarrera, carreras]);
     
-    const materiasDelCiclo = useMemo(() => {
-        if (!selectedCarrera || !selectedCiclo) return [];
-        const carrera = carreras.find(c => c.id === selectedCarrera);
-        const ciclo = carrera?.ciclos.find(c => c.numero === parseInt(selectedCiclo));
-        return ciclo?.materias || [];
-    }, [selectedCarrera, selectedCiclo, carreras]);
-
     const handleNextStep = () => {
       if (activeStep < totalSteps - 1) {
-          // Add validation logic here if needed for each step
           if (activeStep === 0 && (!selectedSede || !selectedCarrera || !selectedCiclo)) {
               toast({ variant: "destructive", title: "Campos requeridos", description: "Debes seleccionar sede, carrera y ciclo para continuar." });
+              return;
+          }
+           if (activeStep === 1 && selectedDocentes.length === 0) {
+              toast({ variant: "destructive", title: "Selección requerida", description: "Debes seleccionar al menos un docente." });
               return;
           }
           setActiveStep(prev => prev + 1);
@@ -256,7 +298,7 @@ export default function GenerateSchedulePage() {
 
     const handlePrevStep = () => {
         if (activeStep > 0) {
-            setActiveStep(prev => prev - 1);
+            setActiveStep(prev => prev + 1);
         }
     };
     
@@ -271,7 +313,15 @@ export default function GenerateSchedulePage() {
             const response = await fetch('/api/admin/schedules/autogenerate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sedeId: selectedSede, carreraId: selectedCarrera, ciclo: parseInt(selectedCiclo) }),
+                body: JSON.stringify({ 
+                    sedeId: selectedSede, 
+                    carreraId: selectedCarrera, 
+                    ciclo: parseInt(selectedCiclo),
+                    grupoId: selectedGrupo,
+                    docentesIds: selectedDocentes,
+                    periodo: periodDates,
+                    horarioLote: batchTime,
+                 }),
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.message);
@@ -283,17 +333,7 @@ export default function GenerateSchedulePage() {
             setIsGenerating(false);
         }
     };
-    
-    const handleSubjectConfigChange = (materiaId: string, field: string, value: any) => {
-        setSubjectConfig((prev: any) => ({
-            ...prev,
-            [materiaId]: {
-                ...(prev[materiaId] || {}),
-                [field]: value,
-            }
-        }));
-    };
-    
+
     return (
         <div className="flex flex-col gap-8 h-full">
             <PageHeader
@@ -330,20 +370,12 @@ export default function GenerateSchedulePage() {
                                     </Select>
                                 </div>
                             </div>
-                            {groupWithSchedule && (
+                            {groupWithSchedule && Array.isArray(groupWithSchedule) && groupWithSchedule.length > 0 && (
                                 <Alert>
                                     <AlertTriangle className="h-4 w-4" />
-                                    <AlertTitle>Horario Existente para {groupWithSchedule.codigoGrupo}</AlertTitle>
+                                    <AlertTitle>Horario Existente para Múltiples Grupos</AlertTitle>
                                     <AlertDescription>
-                                        Este grupo ya tiene un horario. Continuar lo sobrescribirá.
-                                        <Table className="mt-2 text-xs bg-white">
-                                            <TableHeader><TableRow><TableHead>Materia</TableHead><TableHead>Día</TableHead><TableHead>Hora</TableHead><TableHead>Docente</TableHead></TableRow></TableHeader>
-                                            <TableBody>
-                                                {groupWithSchedule.horario?.map(h => (
-                                                    <TableRow key={h.id}><TableCell>{h.materiaNombre}</TableCell><TableCell>{h.dia}</TableCell><TableCell>{h.hora}</TableCell><TableCell>{h.docenteNombre}</TableCell></TableRow>
-                                                ))}
-                                            </TableBody>
-                                        </Table>
+                                        Los siguientes grupos ya tienen un horario: {groupWithSchedule.map(g => g.codigoGrupo).join(', ')}. Continuar sobrescribirá sus horarios.
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -382,7 +414,7 @@ export default function GenerateSchedulePage() {
                                                         <Badge variant={hasConflict ? "destructive" : "secondary"}>{docente.horarioAsignado?.length || 0}</Badge>
                                                     </TableCell>
                                                     <TableCell className="text-right">
-                                                        <TeacherScheduleModal docente={docente} />
+                                                        <TeacherScheduleModal docente={docente} onAvailabilityGenerated={fetchDocentesAndSchedules}/>
                                                     </TableCell>
                                                 </TableRow>
                                             )
@@ -392,27 +424,34 @@ export default function GenerateSchedulePage() {
                             </ScrollArea>
                         </div>
                     </StepperItem>
-                    <StepperItem title="Materias">
-                        <div className="p-6 space-y-4">
-                            <Label className="text-center block">Configura cada materia (opcional). Lo que no definas, el sistema lo asignará automáticamente.</Label>
-                            <div className="border rounded-lg overflow-hidden">
-                            <Table>
-                                <TableHeader><TableRow><TableHead>Materia</TableHead><TableHead>Modalidad</TableHead><TableHead>Docente (Opcional)</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {materiasDelCiclo.map(materia => (
-                                        <TableRow key={materia.id}>
-                                            <TableCell className="font-medium">{materia.nombre}</TableCell>
-                                            <TableCell>
-                                                <Select onValueChange={(val) => handleSubjectConfigChange(materia.id, 'modalidad', val)}><SelectTrigger><SelectValue placeholder="Auto"/></SelectTrigger><SelectContent><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Virtual">Virtual</SelectItem></SelectContent></Select>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Select onValueChange={(val) => handleSubjectConfigChange(materia.id, 'docenteId', val)}><SelectTrigger><SelectValue placeholder="Automático"/></SelectTrigger><SelectContent>{docentes.filter(d => selectedDocentes.includes(d.id)).map(d => <SelectItem key={d.id} value={d.id}>{d.nombreCompleto}</SelectItem>)}</SelectContent></Select>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                    <StepperItem title="Período y Horas">
+                        <div className="p-6 space-y-6 max-w-2xl mx-auto">
+                            <div className="space-y-2">
+                                <h3 className="font-semibold">Definir Período Académico (Opcional)</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                     <Popover><PopoverTrigger asChild>
+                                        <div className="space-y-2"><Label>Fecha de Inicio</Label><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !periodDates.from && "text-muted-foreground")}><Calendar className="mr-2 h-4 w-4" />{periodDates.from ? format(periodDates.from, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></div>
+                                     </PopoverTrigger><PopoverContent className="w-auto p-0"><CalendarSelector mode="single" selected={periodDates.from} onSelect={(d) => setPeriodDates(p => ({...p, from: d}))} initialFocus /></PopoverContent></Popover>
+                                     <Popover><PopoverTrigger asChild>
+                                         <div className="space-y-2"><Label>Fecha de Fin</Label><Button variant="outline" className={cn("w-full justify-start text-left font-normal", !periodDates.to && "text-muted-foreground")}><Calendar className="mr-2 h-4 w-4" />{periodDates.to ? format(periodDates.to, "PPP", { locale: es }) : <span>Seleccionar fecha</span>}</Button></div>
+                                     </PopoverTrigger><PopoverContent className="w-auto p-0"><CalendarSelector mode="single" selected={periodDates.to} onSelect={(d) => setPeriodDates(p => ({...p, to: d}))} initialFocus /></PopoverContent></Popover>
+                                </div>
                             </div>
+                            <div className="space-y-4 pt-4 border-t">
+                                <h3 className="font-semibold">Asignación Rápida de Horario (Opcional)</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="space-y-2"><Label>Día</Label><Select value={batchTime.dia} onValueChange={v => setBatchTime(p => ({...p, dia: v}))}><SelectTrigger><SelectValue placeholder="Seleccionar día..." /></SelectTrigger><SelectContent>{daysOfWeek.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent></Select></div>
+                                    <div className="space-y-2"><Label>Hora Inicio</Label><Select value={batchTime.horaInicio} onValueChange={v => setBatchTime(p => ({...p, horaInicio: v}))}><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger><SelectContent>{timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+                                    <div className="space-y-2"><Label>Hora Fin</Label><Select value={batchTime.horaFin} onValueChange={v => setBatchTime(p => ({...p, horaFin: v}))}><SelectTrigger><SelectValue placeholder="Seleccionar..." /></SelectTrigger><SelectContent>{timeSlots.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></div>
+                                </div>
+                            </div>
+                        </div>
+                    </StepperItem>
+                    <StepperItem title="Confirmar">
+                        <div className="text-center p-8 space-y-4">
+                             <Wand2 className="h-12 w-12 mx-auto text-primary"/>
+                            <h3 className="text-2xl font-bold">Listo para Generar</h3>
+                            <p className="text-muted-foreground">El sistema intentará generar el horario con las configuraciones proporcionadas. Revisa los pasos anteriores si necesitas hacer cambios.</p>
                         </div>
                     </StepperItem>
                 </Stepper>

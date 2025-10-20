@@ -1,6 +1,5 @@
-
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, writeBatch, doc, getDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, writeBatch, doc, getDoc, Timestamp } from "firebase/firestore";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -14,12 +13,14 @@ interface ScheduleEntry {
   id: string; dia: string; hora: string; duracion: number; materiaId: string; materiaNombre: string;
   docenteId: string; docenteNombre: string; modalidad: "Presencial" | "Virtual";
   sedeId?: string; sedeNombre?: string; salonId?: string; salonNombre?: string;
+  fechaInicio?: Timestamp;
+  fechaFin?: Timestamp;
 }
 
 // --- Main Handler ---
 export async function POST(req: NextRequest) {
     try {
-        const { sedeId, carreraId, ciclo, grupoId: selectedGrupoId, docentesIds } = await req.json();
+        const { sedeId, carreraId, ciclo, grupoId: selectedGrupoId, docentesIds, periodo, horarioLote } = await req.json();
 
         if (!sedeId || !carreraId || !ciclo) {
             return NextResponse.json({ message: "Sede, carrera y ciclo son requeridos." }, { status: 400 });
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
         }
 
         // 2. Solve the schedule
-        const newSchedules = solve(gruposToSchedule, materias, docentesToUse, salones);
+        const newSchedules = solve(gruposToSchedule, materias, docentesToUse, salones, periodo, horarioLote);
 
         if (Object.keys(newSchedules).length === 0) {
              return NextResponse.json({ message: "No se pudo generar un horario sin conflictos con los recursos disponibles." }, { status: 409 });
@@ -107,7 +108,14 @@ async function fetchSalones(sedeId: string): Promise<Salon[]> {
 const timeSlots = ["18:00", "20:00"]; // Simplified
 const daysOfWeek = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 
-function solve(grupos: Grupo[], materias: Materia[], docentes: Docente[], salones: Salon[]): Record<string, ScheduleEntry[]> {
+function solve(
+    grupos: Grupo[], 
+    materias: Materia[], 
+    docentes: Docente[], 
+    salones: Salon[],
+    periodo?: { from?: string, to?: string },
+    horarioLote?: { dia: string, horaInicio: string, horaFin: string }
+): Record<string, ScheduleEntry[]> {
     let clases: Clase[] = [];
     for (const grupo of grupos) {
         for (const materia of materias) {
@@ -132,9 +140,12 @@ function solve(grupos: Grupo[], materias: Materia[], docentes: Docente[], salone
 
         const clase = clases[claseIndex];
         
+        const possibleDays = horarioLote?.dia ? [horarioLote.dia] : daysOfWeek;
+        const possibleTimes = horarioLote?.horaInicio ? [horarioLote.horaInicio] : timeSlots;
+
         for (const docente of docentes) {
-            for (const dia of daysOfWeek) {
-                for (const hora of timeSlots) {
+            for (const dia of possibleDays) {
+                for (const hora of possibleTimes) {
                     for (const salon of salones) {
                         if (isAssignmentValid(clase, docente, salon, dia, hora, ocupacionDocentes, ocupacionSalones, ocupacionGrupos)) {
                             // --- Asignar ---
@@ -149,6 +160,9 @@ function solve(grupos: Grupo[], materias: Materia[], docentes: Docente[], salone
                                 docenteId: docente.id, docenteNombre: docente.nombreCompleto,
                                 modalidad: "Presencial", salonId: salon.id, salonNombre: salon.nombre
                             };
+                            if (periodo?.from) entry.fechaInicio = Timestamp.fromDate(new Date(periodo.from));
+                            if (periodo?.to) entry.fechaFin = Timestamp.fromDate(new Date(periodo.to));
+                            
                             horarioFinal.push(entry);
 
                             if (!ocupacionDocentes[docente.id]) ocupacionDocentes[docente.id] = new Set();
@@ -217,14 +231,12 @@ function isAssignmentValid(
 
     // 4. Aptitud de Docente
     if (!docente.materiasAptas?.includes(clase.materiaId)) {
-        // En una implementación real, esto debería ser una restricción dura.
-        // Por ahora, lo permitimos pero lo ideal es que el algoritmo lo maneje.
+        // This is a soft constraint for now, but should ideally be hard.
     }
     
-    // 5. Disponibilidad del Docente - If not configured, assume available.
+    // 5. Disponibilidad del Docente
     const disponibilidadDocente = docente.disponibilidad;
     if (disponibilidadDocente && disponibilidadDocente.dias && Array.isArray(disponibilidadDocente.dias) && disponibilidadDocente.dias.length > 0) {
-        // Only check if availability is actually configured.
         if (!disponibilidadDocente.dias.includes(dia)) return false;
         
         const franja = disponibilidadDocente.franjas?.[dia];
@@ -240,7 +252,6 @@ function isAssignmentValid(
         }
     }
 
-    // N. Otras restricciones (capacidad, etc.)
     return true;
 }
     
