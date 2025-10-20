@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, updateDoc, arrayUnion, arrayRemove, query, where, DocumentData } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -512,7 +512,7 @@ function DayView({ schedule, week, isCurrentWeek, onOpenAssignDialog }: any) {
     );
 }
 
-function AssignClassDialog({ open, onOpenChange, grupo, carrera, docentes, salones, onClassAssigned, sedes, existingSchedule, allSchedules }: { open: boolean; onOpenChange: (open: boolean) => void; grupo: Group; carrera?: Career; docentes: Docente[]; salones: Salon[]; onClassAssigned: () => void; sedes: Sede[]; existingSchedule?: ScheduleEntry | null; allSchedules: (ScheduleEntry & { grupoId?: string })[]; }) {
+function AssignClassDialog({ open, onOpenChange, grupo, carrera, docentes, salones, onClassAssigned, sedes, existingSchedule, allSchedules, children }: { open: boolean; onOpenChange: (open: boolean) => void; grupo: Group; carrera?: Career; docentes: Docente[]; salones: Salon[]; onClassAssigned: () => void; sedes: Sede[]; existingSchedule?: ScheduleEntry | null; allSchedules: (ScheduleEntry & { grupoId?: string })[]; children?: React.ReactNode }) {
     const [selectedDia, setSelectedDia] = useState(existingSchedule?.dia || "");
     const [selectedHoraInicio, setSelectedHoraInicio] = useState("");
     const [selectedHoraFin, setSelectedHoraFin] = useState("");
