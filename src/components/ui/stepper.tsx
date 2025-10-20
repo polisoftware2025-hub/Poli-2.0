@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -54,6 +55,7 @@ const stepperVariants = cva("flex w-full", {
 interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
   initialStep?: number
+  currentStep?: number // This prop is being passed down
   orientation?: "vertical" | "horizontal"
 }
 
@@ -63,6 +65,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
       children,
       className,
       initialStep = 0,
+      currentStep, // Destructure currentStep to avoid passing it to the div
       orientation = "horizontal",
       ...props
     },
@@ -93,8 +96,9 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
         nextStep,
         prevStep,
         resetSteps,
+        currentStep, // Pass currentStep to context if needed
       }),
-      [props, steps, isVertical, initialStep, activeStep]
+      [props, steps, isVertical, initialStep, activeStep, currentStep]
     );
 
     return (
@@ -106,7 +110,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
             stepperVariants({ orientation }),
             className
           )}
-          {...props}
+          {...props} // `currentStep` is no longer in `props`
         >
           <div className="flex w-full items-center justify-center p-4 border-b">
               {steps.map((step, index) => (
