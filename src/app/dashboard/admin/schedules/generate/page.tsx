@@ -131,7 +131,7 @@ export default function GenerateSchedulePage() {
                 backPath="/dashboard/admin/schedules"
             />
              <div className="flex-grow flex flex-col min-h-0">
-                <Stepper currentStep={activeStep} steps={["Parámetros", "Docentes", "Materias"]}>
+                <Stepper>
                     <StepperItem index={0} title="Parámetros">
                         <div className="py-4 space-y-4 max-w-lg mx-auto">
                             <div className="space-y-2">

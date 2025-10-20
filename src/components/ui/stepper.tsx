@@ -101,8 +101,6 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
       [props, steps, isVertical, initialStep, activeStep, orientation, nextStep, prevStep, resetSteps]
     );
 
-    const {currentStep, ...restProps} = props as any; // Destructure out the problematic prop
-
     return (
       <StepperContext.Provider value={contextValue}>
         <div
@@ -111,7 +109,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
             "stepper__main-container flex flex-col w-full",
             className
           )}
-          {...restProps}
+          {...props}
         >
           <div className={cn(
             "stepper__header-container",
@@ -222,11 +220,15 @@ const useStepper = () => {
 const StepperActions = ({ 
     onGenerate, 
     isGenerating,
+    nextStep,
+    prevStep
  }: { 
     onGenerate: () => void;
     isGenerating: boolean;
+    nextStep: () => void;
+    prevStep: () => void;
  }) => {
-    const { activeStep, steps, nextStep, prevStep } = useStepper();
+    const { activeStep, steps } = useStepper();
     const isLastStep = activeStep === steps.length - 1;
 
     return (
