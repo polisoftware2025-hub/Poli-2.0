@@ -26,9 +26,15 @@ interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
-  ({ children, className, activeStep, orientation = "horizontal", ...props }, ref) => {
-
+  ({ children, className, activeStep, setActiveStep, orientation = "horizontal", ...props }, ref) => {
     const steps = React.Children.toArray(children) as React.ReactElement<StepperItemProps>[];
+
+    const childrenWithProps = React.Children.map(steps, (child, index) => {
+      if (index === activeStep) {
+        return React.cloneElement(child, { activeStep, setActiveStep });
+      }
+      return null;
+    });
 
     return (
       <div ref={ref} className={cn("stepper__main-container flex flex-col w-full", className)} {...props}>
@@ -46,7 +52,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
             ))}
           </div>
         </div>
-        {steps[activeStep]}
+        {childrenWithProps}
       </div>
     )
   }
@@ -56,7 +62,9 @@ Stepper.displayName = "Stepper"
 interface StepperItemProps {
   children: React.ReactNode
   title: string
-  index: number
+  index?: number;
+  activeStep?: number;
+  setActiveStep?: React.Dispatch<React.SetStateAction<number>>;
 }
 
 const StepperItem = React.forwardRef<HTMLDivElement, StepperItemProps>(
