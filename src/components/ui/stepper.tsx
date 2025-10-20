@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -17,15 +16,18 @@ interface StepperContextValue extends StepperProps {
   expandVerticalSteps?: boolean
   activeStep: number
   initialStep: number;
-  nextStep: () => void;
-  prevStep: () => void;
-  resetSteps: () => void;
 }
 
 const StepperContext = React.createContext<
   StepperContextValue & {
-    steps: React.ReactNode[]
-    setSteps: React.Dispatch<React.SetStateAction<React.ReactNode[]>>
+    steps: {
+      index: number
+      title: string
+    }[]
+    setSteps: React.Dispatch<React.SetStateAction<{ index: number; title: string }[]>>
+    nextStep: () => void;
+    prevStep: () => void;
+    resetSteps: () => void;
   }
 >({
   steps: [],
@@ -53,10 +55,6 @@ interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode
   initialStep?: number
   orientation?: "vertical" | "horizontal"
-  steps?: React.ReactNode[]
-  setSteps?: React.Dispatch<React.SetStateAction<React.ReactNode[]>>
-  activeStep?: number,
-  currentStep?: number
 }
 
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
@@ -66,35 +64,41 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
       className,
       initialStep = 0,
       orientation = "horizontal",
-      currentStep,
       ...props
     },
     ref
   ) => {
     const isVertical = orientation === "vertical"
-    const [steps, setSteps] = React.useState<React.ReactNode[]>([])
-    const [internalActiveStep, setInternalActiveStep] = React.useState(initialStep);
+    const [steps, setSteps] = React.useState<{ index: number; title: string }[]>([])
+    const [activeStep, setActiveStep] = React.useState(initialStep)
 
-    const activeStep = props.activeStep ?? internalActiveStep;
+    const nextStep = () => {
+      setActiveStep((prev) => Math.min(prev + 1, steps.length -1))
+    }
+    const prevStep = () => {
+      setActiveStep((prev) => Math.max(prev - 1, 0))
+    }
+    const resetSteps = () => {
+      setActiveStep(initialStep)
+    }
 
-    const nextStep = () => setInternalActiveStep(prev => Math.min(prev + 1, steps.length - 1));
-    const prevStep = () => setInternalActiveStep(prev => Math.max(prev - 1, 0));
-    const resetSteps = () => setInternalActiveStep(initialStep);
+    const contextValue = React.useMemo(
+      () => ({
+        ...props,
+        steps,
+        setSteps,
+        isVertical,
+        initialStep,
+        activeStep,
+        nextStep,
+        prevStep,
+        resetSteps,
+      }),
+      [props, steps, isVertical, initialStep, activeStep]
+    );
 
     return (
-      <StepperContext.Provider
-        value={{
-          ...props,
-          steps,
-          setSteps,
-          isVertical,
-          initialStep,
-          activeStep,
-          nextStep,
-          prevStep,
-          resetSteps,
-        }}
-      >
+      <StepperContext.Provider value={contextValue}>
         <div
           ref={ref}
           className={cn(
@@ -104,8 +108,20 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           )}
           {...props}
         >
-          {children}
+          <div className="flex w-full items-center justify-center p-4 border-b">
+              {steps.map((step, index) => (
+                <Step
+                  key={step.title}
+                  index={index}
+                  label={step.title}
+                  isCurrent={index === activeStep}
+                  isCompleted={index < activeStep}
+                  isLast={index === steps.length - 1}
+                />
+              ))}
+          </div>
         </div>
+         {React.Children.toArray(children)[activeStep]}
       </StepperContext.Provider>
     )
   }
@@ -113,18 +129,18 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
 
 Stepper.displayName = "Stepper"
 
-const StepperItem = React.forwardRef<HTMLDivElement, { children: React.ReactNode, title: string, index: number }>(
-  ({ children, index }, ref) => {
-    const { steps, setSteps, activeStep } = React.useContext(StepperContext)
+const StepperItem = React.forwardRef<HTMLDivElement, { children: React.ReactNode; title: string; index: number }>(
+  ({ title, index, children }, ref) => {
+    const { setSteps } = React.useContext(StepperContext)
 
     React.useEffect(() => {
-      setSteps((prev) => [...prev, children])
-    }, [children, setSteps])
+      setSteps((prev) => {
+        const existing = prev.find(s => s.index === index);
+        if (existing) return prev;
+        return [...prev, { index, title }].sort((a,b) => a.index - b.index);
+      })
+    }, [index, title, setSteps])
     
-    if (activeStep !== index) {
-        return null;
-    }
-
     return <div ref={ref}>{children}</div>
   }
 )
@@ -158,12 +174,11 @@ const Step = React.forwardRef<
     isLast: boolean
   } & VariantProps<typeof stepVariants>
 >(({ label, index, isCompleted, isCurrent, isLast }, ref) => {
-  const { isVertical } = React.useContext(StepperContext)
 
   return (
     <div
       ref={ref}
-      className={cn("stepper__step", stepVariants({ isLast, isVertical }))}
+      className={cn("stepper__step", stepVariants({ isLast }))}
     >
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-x-2">
@@ -183,7 +198,7 @@ const Step = React.forwardRef<
           <div className="stepper__step-label text-sm font-medium">{label}</div>
         </div>
       </div>
-      {!isLast && <div className="flex-1 w-full h-0.5 bg-border mt-4" />}
+      {!isLast && <div className="flex-1 w-full h-0.5 bg-border mx-4" />}
     </div>
   )
 })
@@ -197,15 +212,11 @@ const useStepper = () => {
 const StepperActions = ({ 
     onGenerate, 
     isGenerating,
-    nextStep,
-    prevStep,
  }: { 
     onGenerate: () => void;
     isGenerating: boolean;
-    nextStep: () => void;
-    prevStep: () => void;
  }) => {
-    const { activeStep, steps } = useStepper();
+    const { activeStep, steps, prevStep, nextStep } = useStepper();
     const isLastStep = activeStep === steps.length - 1;
 
     return (
