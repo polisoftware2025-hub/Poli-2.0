@@ -6,6 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { Check, Loader2, X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { Button } from "./button"
 
 interface StepperContextValue extends StepperProps {
   clickable?: boolean
@@ -15,7 +16,10 @@ interface StepperContextValue extends StepperProps {
   stepCount?: number
   expandVerticalSteps?: boolean
   activeStep: number
-  initialStep: number
+  initialStep: number;
+  nextStep: () => void;
+  prevStep: () => void;
+  resetSteps: () => void;
 }
 
 const StepperContext = React.createContext<
@@ -28,6 +32,9 @@ const StepperContext = React.createContext<
   setSteps: () => {},
   initialStep: 0,
   activeStep: 0,
+  nextStep: () => {},
+  prevStep: () => {},
+  resetSteps: () => {},
 })
 
 const stepperVariants = cva("flex w-full", {
@@ -64,8 +71,13 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
   ) => {
     const isVertical = orientation === "vertical"
     const [steps, setSteps] = React.useState<React.ReactNode[]>([])
+    const [internalActiveStep, setInternalActiveStep] = React.useState(initialStep);
 
-    const activeStep = props.activeStep ?? initialStep
+    const activeStep = props.activeStep ?? internalActiveStep;
+
+    const nextStep = () => setInternalActiveStep(prev => Math.min(prev + 1, steps.length - 1));
+    const prevStep = () => setInternalActiveStep(prev => Math.max(prev - 1, 0));
+    const resetSteps = () => setInternalActiveStep(initialStep);
 
     return (
       <StepperContext.Provider
@@ -76,6 +88,9 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
           isVertical,
           initialStep,
           activeStep,
+          nextStep,
+          prevStep,
+          resetSteps,
         }}
       >
         <div
@@ -98,11 +113,15 @@ Stepper.displayName = "Stepper"
 
 const StepperItem = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(
   ({ children }, ref) => {
-    const { setSteps } = React.useContext(StepperContext)
+    const { steps, setSteps, activeStep } = React.useContext(StepperContext)
 
     React.useEffect(() => {
       setSteps((prev) => [...prev, children])
     }, [children, setSteps])
+    
+    if (steps[activeStep] !== children) {
+        return null;
+    }
 
     return <div ref={ref}>{children}</div>
   }
@@ -173,4 +192,35 @@ const useStepper = () => {
   return React.useContext(StepperContext)
 }
 
-export { Stepper, StepperItem, Step, useStepper, stepVariants }
+const StepperActions = ({ 
+    onGenerate, 
+    isGenerating,
+    nextStep,
+    prevStep,
+ }: { 
+    onGenerate: () => void;
+    isGenerating: boolean;
+    nextStep: () => void;
+    prevStep: () => void;
+ }) => {
+    const { activeStep, steps } = useStepper();
+    const isLastStep = activeStep === steps.length - 1;
+
+    return (
+        <div className="flex justify-between w-full">
+            <Button variant="outline" onClick={prevStep} disabled={activeStep === 0}>
+                Anterior
+            </Button>
+             {isLastStep ? (
+                <Button onClick={onGenerate} disabled={isGenerating}>
+                    {isGenerating ? "Generando..." : "Generar Horario"}
+                </Button>
+            ) : (
+                <Button onClick={nextStep}>Siguiente</Button>
+            )}
+        </div>
+    );
+};
+
+
+export { Stepper, StepperItem, Step, useStepper, stepVariants, StepperActions }
