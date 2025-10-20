@@ -1,6 +1,8 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import * as React from "react";
 import { PageHeader } from "@/components/page-header";
 import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar, AlertTriangle, Eye, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -298,7 +300,7 @@ export default function GenerateSchedulePage() {
 
     const handlePrevStep = () => {
         if (activeStep > 0) {
-            setActiveStep(prev => prev + 1);
+            setActiveStep(prev => prev - 1);
         }
     };
     
