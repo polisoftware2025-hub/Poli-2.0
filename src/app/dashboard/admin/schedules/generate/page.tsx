@@ -22,11 +22,12 @@ import { Badge } from "@/components/ui/badge";
 interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string, horasSemanales: number }[] }[]; }
 interface Docente { id: string; nombreCompleto: string; disponibilidad?: any; }
+interface Grupo { id: string; codigoGrupo: string; horario?: ScheduleEntry[] }
 
 interface ScheduleEntry {
-  dia: string;
-  hora: string;
-  docenteId: string;
+  id: string; dia: string; hora: string; duracion: number; materiaId: string; materiaNombre: string;
+  docenteId: string; docenteNombre: string; modalidad: "Presencial" | "Virtual";
+  sedeId?: string; sedeNombre?: string; salonId?: string; salonNombre?: string;
 }
 
 const AvailabilityTooltip = ({ docente, isOccupied, occupiedSlots }: { docente: Docente; isOccupied: boolean, occupiedSlots: string[] }) => {
@@ -66,16 +67,28 @@ export default function GenerateSchedulePage() {
     const [carreras, setCarreras] = useState<Career[]>([]);
     const [sedes, setSedes] = useState<Sede[]>([]);
     const [docentes, setDocentes] = useState<Docente[]>([]);
+    const [grupos, setGrupos] = useState<Grupo[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     
     const [activeStep, setActiveStep] = useState(0);
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
     const [selectedCiclo, setSelectedCiclo] = useState("");
+    const [selectedGrupo, setSelectedGrupo] = useState("all");
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
     const [subjectConfig, setSubjectConfig] = useState<any>({});
     const [conflictingGroups, setConflictingGroups] = useState<string[]>([]);
     const [teacherOccupationMap, setTeacherOccupationMap] = useState<Map<string, Set<string>>>(new Map());
+    
+    const groupWithSchedule = useMemo(() => {
+        if (selectedGrupo !== 'all') {
+            const group = grupos.find(g => g.id === selectedGrupo);
+            if (group && group.horario && group.horario.length > 0) {
+                return group;
+            }
+        }
+        return null;
+    }, [selectedGrupo, grupos]);
     
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -100,10 +113,12 @@ export default function GenerateSchedulePage() {
         if (!selectedSede || !selectedCarrera || !selectedCiclo) {
             setConflictingGroups([]);
             setTeacherOccupationMap(new Map());
+            setGrupos([]);
+            setSelectedGrupo("all");
             return;
         }
 
-        const checkForConflicts = async () => {
+        const fetchGroupsAndCheckConflicts = async () => {
             try {
                 const q = query(
                     collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"),
@@ -113,11 +128,13 @@ export default function GenerateSchedulePage() {
                 );
                 const querySnapshot = await getDocs(q);
                 
+                const fetchedGrupos = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Grupo));
+                setGrupos(fetchedGrupos);
+
                 const conflicts: string[] = [];
                 const occupationMap = new Map<string, Set<string>>();
 
-                querySnapshot.docs.forEach(doc => {
-                    const groupData = doc.data();
+                fetchedGrupos.forEach(groupData => {
                     if (groupData.horario && groupData.horario.length > 0) {
                         conflicts.push(groupData.codigoGrupo);
                         groupData.horario.forEach((entry: ScheduleEntry) => {
@@ -135,7 +152,7 @@ export default function GenerateSchedulePage() {
             }
         };
 
-        checkForConflicts();
+        fetchGroupsAndCheckConflicts();
     }, [selectedSede, selectedCarrera, selectedCiclo]);
 
     const ciclosDisponibles = useMemo(() => {
@@ -150,6 +167,11 @@ export default function GenerateSchedulePage() {
         return ciclo?.materias || [];
     }, [selectedCarrera, selectedCiclo, carreras]);
     
+    const docentesDelGrupoActual = useMemo(() => {
+        if (!groupWithSchedule) return new Set<string>();
+        return new Set(groupWithSchedule.horario?.map(h => h.docenteId));
+    }, [groupWithSchedule]);
+
     const handleGenerate = async () => {
         if (!selectedSede || !selectedCarrera || !selectedCiclo) {
             toast({ variant: "destructive", title: "Campos requeridos", description: "Debes seleccionar sede, carrera y ciclo." });
@@ -199,28 +221,59 @@ export default function GenerateSchedulePage() {
              <div className="flex-grow flex flex-col min-h-0">
                 <Stepper activeStep={activeStep} setActiveStep={setActiveStep}>
                     <StepperItem index={0} title="Parámetros">
-                        <div className="py-4 space-y-4 max-w-lg mx-auto">
-                            <div className="space-y-2">
-                                <Label>Sede</Label>
-                                <Select onValueChange={setSelectedSede} value={selectedSede}><SelectTrigger><SelectValue placeholder="Selecciona una sede..." /></SelectTrigger><SelectContent>{sedes.map(s => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}</SelectContent></Select>
+                        <div className="py-4 space-y-4 max-w-2xl mx-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Sede</Label>
+                                    <Select onValueChange={setSelectedSede} value={selectedSede}><SelectTrigger><SelectValue placeholder="Selecciona una sede..." /></SelectTrigger><SelectContent>{sedes.map(s => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}</SelectContent></Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Carrera</Label>
+                                    <Select onValueChange={v => { setSelectedCarrera(v); setSelectedCiclo(""); setSelectedGrupo("all"); }} value={selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona una carrera..." /></SelectTrigger><SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Ciclo</Label>
+                                    <Select onValueChange={v => { setSelectedCiclo(v); setSelectedGrupo("all"); }} value={selectedCiclo} disabled={!selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona un ciclo..." /></SelectTrigger><SelectContent>{ciclosDisponibles.map(c => <SelectItem key={c} value={String(c)}>Ciclo {c}</SelectItem>)}</SelectContent></Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Grupo</Label>
+                                    <Select onValueChange={setSelectedGrupo} value={selectedGrupo} disabled={!selectedCiclo}>
+                                        <SelectTrigger><SelectValue placeholder="Selecciona un grupo..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todos los grupos de este ciclo</SelectItem>
+                                            {grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Carrera</Label>
-                                <Select onValueChange={v => { setSelectedCarrera(v); setSelectedCiclo(""); }} value={selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona una carrera..." /></SelectTrigger><SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Ciclo</Label>
-                                <Select onValueChange={setSelectedCiclo} value={selectedCiclo} disabled={!selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona un ciclo..." /></SelectTrigger><SelectContent>{ciclosDisponibles.map(c => <SelectItem key={c} value={String(c)}>Ciclo {c}</SelectItem>)}</SelectContent></Select>
-                            </div>
-                            {conflictingGroups.length > 0 && (
+                            
+                            {conflictingGroups.length > 0 && selectedGrupo === "all" && (
                                 <Alert variant="destructive">
                                     <AlertTriangle className="h-4 w-4" />
                                     <AlertTitle>¡Atención! Horarios Existentes Detectados</AlertTitle>
                                     <AlertDescription>
-                                        Los siguientes grupos ya tienen un horario asignado. Continuar sobrescribirá sus horarios actuales:
-                                        <ul className="list-disc pl-5 mt-2">
+                                        Los siguientes grupos ya tienen un horario asignado. Continuar sobrescribirá sus horarios:
+                                        <ul className="list-disc pl-5 mt-2 text-xs">
                                             {conflictingGroups.map(group => <li key={group}>{group}</li>)}
                                         </ul>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            
+                            {groupWithSchedule && (
+                                <Alert>
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>Horario Existente para {groupWithSchedule.codigoGrupo}</AlertTitle>
+                                    <AlertDescription>
+                                        Este grupo ya tiene un horario. Continuar lo sobrescribirá.
+                                        <Table className="mt-2 text-xs bg-white">
+                                            <TableHeader><TableRow><TableHead>Materia</TableHead><TableHead>Día</TableHead><TableHead>Hora</TableHead><TableHead>Docente</TableHead></TableRow></TableHeader>
+                                            <TableBody>
+                                                {groupWithSchedule.horario?.map(h => (
+                                                    <TableRow key={h.id}><TableCell>{h.materiaNombre}</TableCell><TableCell>{h.dia}</TableCell><TableCell>{h.hora}</TableCell><TableCell>{h.docenteNombre}</TableCell></TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
                                     </AlertDescription>
                                 </Alert>
                             )}
@@ -234,6 +287,7 @@ export default function GenerateSchedulePage() {
                             {docentes.map(docente => {
                                 const isOccupied = teacherOccupationMap.has(docente.id);
                                 const occupiedSlots = isOccupied ? Array.from(teacherOccupationMap.get(docente.id)!) : [];
+                                const isAlreadyAssigned = docentesDelGrupoActual.has(docente.id);
                                 
                                 return (
                                 <div key={docente.id} className="flex items-center space-x-2 mb-2">
@@ -245,12 +299,13 @@ export default function GenerateSchedulePage() {
                                                 ? setSelectedDocentes(prev => [...prev, docente.id])
                                                 : setSelectedDocentes(prev => prev.filter(id => id !== docente.id))
                                         }}
-                                        disabled={isOccupied}
+                                        disabled={isOccupied && !isAlreadyAssigned}
                                     />
                                     <label htmlFor={docente.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                         {docente.nombreCompleto}
                                     </label>
-                                    {isOccupied && <Badge variant="destructive">Ocupado</Badge>}
+                                    {isOccupied && !isAlreadyAssigned && <Badge variant="destructive">Ocupado</Badge>}
+                                    {isAlreadyAssigned && <Badge variant="outline">Ya asignado a este grupo</Badge>}
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button type="button" variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground"/></Button>
