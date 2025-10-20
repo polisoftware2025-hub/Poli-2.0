@@ -73,15 +73,17 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
     const [steps, setSteps] = React.useState<{ index: number; title: string }[]>([])
     const [activeStep, setActiveStep] = React.useState(initialStep)
 
-    const nextStep = () => {
-      setActiveStep((prev) => Math.min(prev + 1, steps.length -1))
-    }
-    const prevStep = () => {
+    const nextStep = React.useCallback(() => {
+      setActiveStep((prev) => Math.min(prev + 1, steps.length - 1))
+    }, [steps.length])
+
+    const prevStep = React.useCallback(() => {
       setActiveStep((prev) => Math.max(prev - 1, 0))
-    }
-    const resetSteps = () => {
+    }, [])
+
+    const resetSteps = React.useCallback(() => {
       setActiveStep(initialStep)
-    }
+    }, [initialStep])
 
     const contextValue = React.useMemo(
       () => ({
@@ -96,7 +98,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
         resetSteps,
         orientation,
       }),
-      [props, steps, isVertical, initialStep, activeStep, orientation]
+      [props, steps, isVertical, initialStep, activeStep, orientation, nextStep, prevStep, resetSteps]
     );
 
     return (
@@ -218,11 +220,15 @@ const useStepper = () => {
 const StepperActions = ({ 
     onGenerate, 
     isGenerating,
+    nextStep,
+    prevStep,
  }: { 
     onGenerate: () => void;
     isGenerating: boolean;
+    nextStep: () => void;
+    prevStep: () => void;
  }) => {
-    const { activeStep, steps, prevStep, nextStep } = useStepper();
+    const { activeStep, steps } = useStepper();
     const isLastStep = activeStep === steps.length - 1;
 
     return (
