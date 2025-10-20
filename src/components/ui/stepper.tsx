@@ -20,13 +20,14 @@ const stepperVariants = cva("flex w-full", {
 
 interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode[]
-  activeStep: number
-  setActiveStep: React.Dispatch<React.SetStateAction<number>>
+  initialStep?: number
   orientation?: "vertical" | "horizontal"
+  activeStep: number,
+  setActiveStep: React.Dispatch<React.SetStateAction<number>>,
 }
 
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
-  ({ children, className, activeStep, setActiveStep, orientation = "horizontal", ...props }, ref) => {
+  ({ children, className, initialStep = 0, orientation = "horizontal", activeStep, setActiveStep, ...rest }, ref) => {
     const steps = React.Children.toArray(children) as React.ReactElement<StepperItemProps>[];
 
     const childrenWithProps = React.Children.map(steps, (child, index) => {
@@ -37,7 +38,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
     });
 
     return (
-      <div ref={ref} className={cn("stepper__main-container flex flex-col w-full", className)} {...props}>
+      <div ref={ref} className={cn("stepper__main-container flex flex-col w-full", className)} {...rest}>
         <div className={cn("stepper__header-container", stepperVariants({ orientation }))}>
           <div className="flex w-full items-center justify-center p-4 border-b">
             {steps.map((step, index) => (
