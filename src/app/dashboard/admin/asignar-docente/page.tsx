@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, updateDoc, arrayUnion, arrayRemove, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -125,15 +125,15 @@ export default function AssignTeacherPage() {
 
     if (docente.asignaciones && docente.asignaciones.length > 0) {
         const enriched = await Promise.all(docente.asignaciones.map(async (asig) => {
-            const sedeDoc = await getDocs(query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"), where("__name__", "==", asig.sedeId)));
-            const carreraDoc = await getDocs(query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"), where("__name__", "==", asig.carreraId)));
-            const grupoDoc = await getDocs(query(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos"), where("__name__", "==", asig.grupoId)));
+            const sedeDoc = asig.sedeId ? await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes", asig.sedeId)) : null;
+            const carreraDoc = asig.carreraId ? await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", asig.carreraId)) : null;
+            const grupoDoc = asig.grupoId ? await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", asig.grupoId)) : null;
 
             return {
                 ...asig,
-                sedeNombre: sedeDoc.docs[0]?.data()?.nombre || 'N/A',
-                carreraNombre: carreraDoc.docs[0]?.data()?.nombre || 'N/A',
-                grupoNombre: grupoDoc.docs[0]?.data()?.codigoGrupo || 'N/A'
+                sedeNombre: sedeDoc?.exists() ? sedeDoc.data().nombre : 'N/A',
+                carreraNombre: carreraDoc?.exists() ? carreraDoc.data().nombre : 'N/A',
+                grupoNombre: grupoDoc?.exists() ? grupoDoc.data().codigoGrupo : 'N/A'
             };
         }));
         setEnrichedAssignments(enriched);
@@ -169,7 +169,8 @@ export default function AssignTeacherPage() {
         asignaciones: arrayUnion(newAssignment)
       });
       toast({ title: "Éxito", description: "El docente ha sido asignado correctamente." });
-      handleSelectDocente(selectedDocente.id); // Refresh data
+      await fetchDocentes();
+      await handleSelectDocente(selectedDocente.id);
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "No se pudo realizar la asignación." });
     } finally {
@@ -177,17 +178,31 @@ export default function AssignTeacherPage() {
     }
   };
 
-  const handleRemoveAssignment = async (assignment: Asignacion) => {
+  const handleRemoveAssignment = async (assignmentToRemove: Asignacion) => {
     if (!selectedDocente) return;
     try {
       const docenteRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", selectedDocente.id);
+      const docenteSnap = await getDoc(docenteRef);
+      if (!docenteSnap.exists()) {
+        throw new Error("No se encontró al docente para actualizar.");
+      }
+      const currentData = docenteSnap.data();
+      const currentAssignments: Asignacion[] = currentData.asignaciones || [];
+
+      // Filter out the assignment to remove. Compare all fields to be safe.
+      const newAssignments = currentAssignments.filter(a => 
+        !(a.grupoId === assignmentToRemove.grupoId && a.carreraId === assignmentToRemove.carreraId && a.sedeId === assignmentToRemove.sedeId)
+      );
+
       await updateDoc(docenteRef, {
-        asignaciones: arrayRemove(assignment)
+        asignaciones: newAssignments
       });
+
       toast({ title: "Éxito", description: "La asignación ha sido eliminada." });
-      handleSelectDocente(selectedDocente.id);
-    } catch (error) {
-       toast({ variant: "destructive", title: "Error", description: "No se pudo eliminar la asignación." });
+      await fetchDocentes(); // Re-fetch all teachers to have fresh data
+      await handleSelectDocente(selectedDocente.id); // Refresh the view for the current teacher
+    } catch (error: any) {
+       toast({ variant: "destructive", title: "Error", description: error.message || "No se pudo eliminar la asignación." });
     }
   };
 

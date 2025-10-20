@@ -221,13 +221,14 @@ function isAssignmentValid(
         // Por ahora, lo permitimos pero lo ideal es que el algoritmo lo maneje.
     }
     
-    // 5. Disponibilidad del Docente
+    // 5. Disponibilidad del Docente - If not configured, assume available.
     const disponibilidadDocente = docente.disponibilidad;
-    if (disponibilidadDocente && disponibilidadDocente.dias && Array.isArray(disponibilidadDocente.dias)) {
+    if (disponibilidadDocente && disponibilidadDocente.dias && Array.isArray(disponibilidadDocente.dias) && disponibilidadDocente.dias.length > 0) {
+        // Only check if availability is actually configured.
         if (!disponibilidadDocente.dias.includes(dia)) return false;
         
         const franja = disponibilidadDocente.franjas?.[dia];
-        if (franja) {
+        if (franja && franja.inicio && franja.fin) {
             const horaInicioClase = parseInt(hora.split(':')[0]);
             const horaFinClase = horaInicioClase + clase.duracion;
             const horaInicioDisponibilidad = parseInt(franja.inicio.split(':')[0]);
