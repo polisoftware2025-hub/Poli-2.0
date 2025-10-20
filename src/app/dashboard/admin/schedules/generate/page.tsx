@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
 import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar, AlertTriangle, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,8 +49,9 @@ const TeacherScheduleModal = ({ docente }: { docente: Docente }) => {
     return (
         <Dialog>
             <DialogTrigger asChild>
-                <Button variant={schedule.length > 0 ? "outline" : "secondary"} size="sm" className={schedule.length > 0 ? "border-amber-500 text-amber-700 hover:bg-amber-50" : ""}>
-                    <Eye className="mr-2 h-4 w-4"/> Ver Horario
+                <Button variant={schedule.length > 0 ? "outline" : "secondary"} size="sm" className={cn("flex items-center gap-2", schedule.length > 0 && "border-amber-500 text-amber-700 hover:bg-amber-50")}>
+                    <Eye className="h-4 w-4"/> Ver Horario
+                    {schedule.length > 0 && <AlertTriangle className="h-4 w-4"/>}
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-4xl">
@@ -127,7 +128,7 @@ const TeacherScheduleModal = ({ docente }: { docente: Docente }) => {
 };
 
 
-export default function GenerateSchedulePage({ setActiveStep, activeStep }: {setActiveStep: any, activeStep: any}) {
+export default function GenerateSchedulePage() {
     const { toast } = useToast();
     const [carreras, setCarreras] = useState<Career[]>([]);
     const [sedes, setSedes] = useState<Sede[]>([]);
@@ -141,7 +142,8 @@ export default function GenerateSchedulePage({ setActiveStep, activeStep }: {set
     const [selectedGrupo, setSelectedGrupo] = useState("all");
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
     const [subjectConfig, setSubjectConfig] = useState<any>({});
-    
+    const [activeStep, setActiveStep] = useState(0);
+
     const groupWithSchedule = useMemo(() => {
         if (selectedGrupo !== 'all') {
             const group = grupos.find(g => g.id === selectedGrupo);
@@ -280,7 +282,7 @@ export default function GenerateSchedulePage({ setActiveStep, activeStep }: {set
                 icon={<Wand2 className="h-8 w-8 text-primary" />}
                 backPath="/dashboard/admin/schedules"
             />
-            <Stepper initialStep={0} orientation="horizontal">
+            <Stepper initialStep={0} orientation="horizontal" activeStep={activeStep} setActiveStep={setActiveStep}>
                 <StepperItem title="Parámetros">
                     <div className="py-4 space-y-4 max-w-2xl mx-auto">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -327,7 +329,7 @@ export default function GenerateSchedulePage({ setActiveStep, activeStep }: {set
                     </div>
                 </StepperItem>
                 <StepperItem title="Docentes">
-                    <div className="py-4 space-y-4 max-w-3xl mx-auto">
+                     <div className="py-4 space-y-4 max-w-3xl mx-auto">
                         <Label className="text-center block">Selecciona los docentes a considerar para este horario. Revisa sus horarios actuales para evitar conflictos.</Label>
                         <ScrollArea className="h-96 w-full rounded-md border">
                             <Table>
