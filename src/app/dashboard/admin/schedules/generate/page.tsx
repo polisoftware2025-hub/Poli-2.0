@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar, AlertTriangle, Eye } from "lucide-react";
+import { Wand2, Building, BookCopy, Users, Info, Clock, Calendar, AlertTriangle, Eye, ArrowLeft, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { Card, CardFooter } from "@/components/ui/card";
+
 
 interface Sede { id: string; nombre: string; }
 interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string, horasSemanales: number }[] }[]; }
@@ -143,6 +145,7 @@ export default function GenerateSchedulePage() {
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
     const [subjectConfig, setSubjectConfig] = useState<any>({});
     const [activeStep, setActiveStep] = useState(0);
+    const totalSteps = 3;
 
     const groupWithSchedule = useMemo(() => {
         if (selectedGrupo !== 'all') {
@@ -239,6 +242,23 @@ export default function GenerateSchedulePage() {
         const ciclo = carrera?.ciclos.find(c => c.numero === parseInt(selectedCiclo));
         return ciclo?.materias || [];
     }, [selectedCarrera, selectedCiclo, carreras]);
+
+    const handleNextStep = () => {
+      if (activeStep < totalSteps - 1) {
+          // Add validation logic here if needed for each step
+          if (activeStep === 0 && (!selectedSede || !selectedCarrera || !selectedCiclo)) {
+              toast({ variant: "destructive", title: "Campos requeridos", description: "Debes seleccionar sede, carrera y ciclo para continuar." });
+              return;
+          }
+          setActiveStep(prev => prev + 1);
+      }
+    };
+
+    const handlePrevStep = () => {
+        if (activeStep > 0) {
+            setActiveStep(prev => prev - 1);
+        }
+    };
     
     const handleGenerate = async () => {
         if (!selectedSede || !selectedCarrera || !selectedCiclo) {
@@ -282,119 +302,136 @@ export default function GenerateSchedulePage() {
                 icon={<Wand2 className="h-8 w-8 text-primary" />}
                 backPath="/dashboard/admin/schedules"
             />
-            <Stepper initialStep={0} orientation="horizontal" activeStep={activeStep} setActiveStep={setActiveStep}>
-                <StepperItem title="Parámetros">
-                    <div className="py-4 space-y-4 max-w-2xl mx-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label>Sede</Label>
-                                <Select onValueChange={setSelectedSede} value={selectedSede}><SelectTrigger><SelectValue placeholder="Selecciona una sede..." /></SelectTrigger><SelectContent>{sedes.map(s => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}</SelectContent></Select>
+            <Card>
+                <Stepper initialStep={0} orientation="horizontal" activeStep={activeStep} setActiveStep={setActiveStep}>
+                    <StepperItem title="Parámetros">
+                        <div className="p-6 space-y-4 max-w-2xl mx-auto">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Sede</Label>
+                                    <Select onValueChange={setSelectedSede} value={selectedSede}><SelectTrigger><SelectValue placeholder="Selecciona una sede..." /></SelectTrigger><SelectContent>{sedes.map(s => <SelectItem key={s.id} value={s.id}>{s.nombre}</SelectItem>)}</SelectContent></Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Carrera</Label>
+                                    <Select onValueChange={v => { setSelectedCarrera(v); setSelectedCiclo(""); setSelectedGrupo("all"); }} value={selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona una carrera..." /></SelectTrigger><SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Ciclo</Label>
+                                    <Select onValueChange={v => { setSelectedCiclo(v); setSelectedGrupo("all"); }} value={selectedCiclo} disabled={!selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona un ciclo..." /></SelectTrigger><SelectContent>{ciclosDisponibles.map(c => <SelectItem key={c} value={String(c)}>Ciclo {c}</SelectItem>)}</SelectContent></Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Grupo</Label>
+                                    <Select onValueChange={setSelectedGrupo} value={selectedGrupo} disabled={!selectedCiclo}>
+                                        <SelectTrigger><SelectValue placeholder="Selecciona un grupo..." /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todos los grupos de este ciclo</SelectItem>
+                                            {grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Carrera</Label>
-                                <Select onValueChange={v => { setSelectedCarrera(v); setSelectedCiclo(""); setSelectedGrupo("all"); }} value={selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona una carrera..." /></SelectTrigger><SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent></Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Ciclo</Label>
-                                <Select onValueChange={v => { setSelectedCiclo(v); setSelectedGrupo("all"); }} value={selectedCiclo} disabled={!selectedCarrera}><SelectTrigger><SelectValue placeholder="Selecciona un ciclo..." /></SelectTrigger><SelectContent>{ciclosDisponibles.map(c => <SelectItem key={c} value={String(c)}>Ciclo {c}</SelectItem>)}</SelectContent></Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Grupo</Label>
-                                <Select onValueChange={setSelectedGrupo} value={selectedGrupo} disabled={!selectedCiclo}>
-                                    <SelectTrigger><SelectValue placeholder="Selecciona un grupo..." /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todos los grupos de este ciclo</SelectItem>
-                                        {grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            {groupWithSchedule && (
+                                <Alert>
+                                    <AlertTriangle className="h-4 w-4" />
+                                    <AlertTitle>Horario Existente para {groupWithSchedule.codigoGrupo}</AlertTitle>
+                                    <AlertDescription>
+                                        Este grupo ya tiene un horario. Continuar lo sobrescribirá.
+                                        <Table className="mt-2 text-xs bg-white">
+                                            <TableHeader><TableRow><TableHead>Materia</TableHead><TableHead>Día</TableHead><TableHead>Hora</TableHead><TableHead>Docente</TableHead></TableRow></TableHeader>
+                                            <TableBody>
+                                                {groupWithSchedule.horario?.map(h => (
+                                                    <TableRow key={h.id}><TableCell>{h.materiaNombre}</TableCell><TableCell>{h.dia}</TableCell><TableCell>{h.hora}</TableCell><TableCell>{h.docenteNombre}</TableCell></TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    </AlertDescription>
+                                </Alert>
+                            )}
                         </div>
-                        {groupWithSchedule && (
-                            <Alert>
-                                <AlertTriangle className="h-4 w-4" />
-                                <AlertTitle>Horario Existente para {groupWithSchedule.codigoGrupo}</AlertTitle>
-                                <AlertDescription>
-                                    Este grupo ya tiene un horario. Continuar lo sobrescribirá.
-                                    <Table className="mt-2 text-xs bg-white">
-                                        <TableHeader><TableRow><TableHead>Materia</TableHead><TableHead>Día</TableHead><TableHead>Hora</TableHead><TableHead>Docente</TableHead></TableRow></TableHeader>
-                                        <TableBody>
-                                            {groupWithSchedule.horario?.map(h => (
-                                                <TableRow key={h.id}><TableCell>{h.materiaNombre}</TableCell><TableCell>{h.dia}</TableCell><TableCell>{h.hora}</TableCell><TableCell>{h.docenteNombre}</TableCell></TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </AlertDescription>
-                            </Alert>
-                        )}
-                    </div>
-                </StepperItem>
-                <StepperItem title="Docentes">
-                     <div className="py-4 space-y-4 max-w-3xl mx-auto">
-                        <Label className="text-center block">Selecciona los docentes a considerar para este horario. Revisa sus horarios actuales para evitar conflictos.</Label>
-                        <ScrollArea className="h-96 w-full rounded-md border">
+                    </StepperItem>
+                    <StepperItem title="Docentes">
+                         <div className="p-6 space-y-4 max-w-3xl mx-auto">
+                            <Label className="text-center block">Selecciona los docentes a considerar para este horario. Revisa sus horarios actuales para evitar conflictos.</Label>
+                            <ScrollArea className="h-96 w-full rounded-md border">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead className="w-12"></TableHead>
+                                            <TableHead>Docente</TableHead>
+                                            <TableHead className="text-center">Clases Asignadas</TableHead>
+                                            <TableHead className="text-right">Acciones</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {docentes.map(docente => {
+                                            const hasConflict = docente.horarioAsignado && docente.horarioAsignado.length > 0;
+                                            return (
+                                                <TableRow key={docente.id}>
+                                                    <TableCell>
+                                                        <Checkbox
+                                                            checked={selectedDocentes.includes(docente.id)}
+                                                            onCheckedChange={(checked) => {
+                                                                return checked
+                                                                    ? setSelectedDocentes(prev => [...prev, docente.id])
+                                                                    : setSelectedDocentes(prev => prev.filter(id => id !== docente.id))
+                                                            }}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell className="font-medium">{docente.nombreCompleto}</TableCell>
+                                                    <TableCell className="text-center">
+                                                        <Badge variant={hasConflict ? "destructive" : "secondary"}>{docente.horarioAsignado?.length || 0}</Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <TeacherScheduleModal docente={docente} />
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        })}
+                                    </TableBody>
+                                </Table>
+                            </ScrollArea>
+                        </div>
+                    </StepperItem>
+                    <StepperItem title="Materias">
+                        <div className="p-6 space-y-4">
+                            <Label className="text-center block">Configura cada materia (opcional). Lo que no definas, el sistema lo asignará automáticamente.</Label>
+                            <div className="border rounded-lg overflow-hidden">
                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead className="w-12"></TableHead>
-                                        <TableHead>Docente</TableHead>
-                                        <TableHead className="text-center">Clases Asignadas</TableHead>
-                                        <TableHead className="text-right">Acciones</TableHead>
-                                    </TableRow>
-                                </TableHeader>
+                                <TableHeader><TableRow><TableHead>Materia</TableHead><TableHead>Modalidad</TableHead><TableHead>Docente (Opcional)</TableHead></TableRow></TableHeader>
                                 <TableBody>
-                                    {docentes.map(docente => {
-                                        const hasConflict = docente.horarioAsignado && docente.horarioAsignado.length > 0;
-                                        return (
-                                            <TableRow key={docente.id}>
-                                                <TableCell>
-                                                    <Checkbox
-                                                        checked={selectedDocentes.includes(docente.id)}
-                                                        onCheckedChange={(checked) => {
-                                                            return checked
-                                                                ? setSelectedDocentes(prev => [...prev, docente.id])
-                                                                : setSelectedDocentes(prev => prev.filter(id => id !== docente.id))
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell className="font-medium">{docente.nombreCompleto}</TableCell>
-                                                <TableCell className="text-center">
-                                                    <Badge variant={hasConflict ? "destructive" : "secondary"}>{docente.horarioAsignado?.length || 0}</Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <TeacherScheduleModal docente={docente} />
-                                                </TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
+                                    {materiasDelCiclo.map(materia => (
+                                        <TableRow key={materia.id}>
+                                            <TableCell className="font-medium">{materia.nombre}</TableCell>
+                                            <TableCell>
+                                                <Select onValueChange={(val) => handleSubjectConfigChange(materia.id, 'modalidad', val)}><SelectTrigger><SelectValue placeholder="Auto"/></SelectTrigger><SelectContent><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Virtual">Virtual</SelectItem></SelectContent></Select>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Select onValueChange={(val) => handleSubjectConfigChange(materia.id, 'docenteId', val)}><SelectTrigger><SelectValue placeholder="Automático"/></SelectTrigger><SelectContent>{docentes.filter(d => selectedDocentes.includes(d.id)).map(d => <SelectItem key={d.id} value={d.id}>{d.nombreCompleto}</SelectItem>)}</SelectContent></Select>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
                                 </TableBody>
                             </Table>
-                        </ScrollArea>
-                    </div>
-                </StepperItem>
-                <StepperItem title="Materias">
-                    <div className="py-4 space-y-4">
-                        <Label className="text-center block">Configura cada materia (opcional). Lo que no definas, el sistema lo asignará automáticamente.</Label>
-                        <div className="border rounded-lg overflow-hidden">
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Materia</TableHead><TableHead>Modalidad</TableHead><TableHead>Docente (Opcional)</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {materiasDelCiclo.map(materia => (
-                                    <TableRow key={materia.id}>
-                                        <TableCell className="font-medium">{materia.nombre}</TableCell>
-                                        <TableCell>
-                                            <Select onValueChange={(val) => handleSubjectConfigChange(materia.id, 'modalidad', val)}><SelectTrigger><SelectValue placeholder="Auto"/></SelectTrigger><SelectContent><SelectItem value="Presencial">Presencial</SelectItem><SelectItem value="Virtual">Virtual</SelectItem></SelectContent></Select>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Select onValueChange={(val) => handleSubjectConfigChange(materia.id, 'docenteId', val)}><SelectTrigger><SelectValue placeholder="Automático"/></SelectTrigger><SelectContent>{docentes.filter(d => selectedDocentes.includes(d.id)).map(d => <SelectItem key={d.id} value={d.id}>{d.nombreCompleto}</SelectItem>)}</SelectContent></Select>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                            </div>
                         </div>
-                    </div>
-                </StepperItem>
-            </Stepper>
+                    </StepperItem>
+                </Stepper>
+                 <CardFooter className="flex justify-between p-6 bg-gray-50 border-t">
+                    <Button variant="outline" onClick={handlePrevStep} disabled={activeStep === 0}>
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Anterior
+                    </Button>
+                    {activeStep < totalSteps - 1 ? (
+                        <Button onClick={handleNextStep}>
+                            Siguiente <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button onClick={handleGenerate} disabled={isGenerating}>
+                            {isGenerating ? "Generando..." : "Finalizar y Generar"}
+                        </Button>
+                    )}
+                </CardFooter>
+            </Card>
         </div>
     );
 }
