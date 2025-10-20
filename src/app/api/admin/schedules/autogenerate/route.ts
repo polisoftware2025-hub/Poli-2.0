@@ -238,23 +238,23 @@ function isAssignmentValid(
 ): boolean {
     const timeKey = `${dia}-${hora}`;
 
-    // 1. Group conflict
+    // 1. Teacher's subject aptitude
+    if (docente.materiasAptas && !docente.materiasAptas.includes(clase.materiaId)) {
+       return false;
+    }
+
+    // 2. Group conflict
     if (ocupacionGrupos[clase.grupo.id]?.has(timeKey)) return false;
 
-    // 2. Teacher conflict
+    // 3. Teacher conflict
     if (ocupacionDocentes[docente.id]?.has(timeKey)) return false;
 
-    // 3. Room conflict
+    // 4. Room conflict
     if (ocupacionSalones[salon.id]?.has(timeKey)) return false;
-
-    // 4. Teacher's subject aptitude (soft constraint for now, could be hard)
-    // if (docente.materiasAptas && !docente.materiasAptas.includes(clase.materiaId)) {
-    //    return false;
-    // }
     
     // 5. Teacher's availability
     const disponibilidadDocente = docente.disponibilidad;
-    // If availability is NOT set, assume they are available.
+    // If availability is set, it must be respected.
     if (disponibilidadDocente && disponibilidadDocente.dias && Array.isArray(disponibilidadDocente.dias) && disponibilidadDocente.dias.length > 0) {
         if (!disponibilidadDocente.dias.includes(dia)) return false;
         
