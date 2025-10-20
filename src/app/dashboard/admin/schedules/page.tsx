@@ -161,6 +161,7 @@ export default function SchedulesAdminPage() {
         setSelectedGrupo(null);
         setGrupos([]);
         setAllSedeSchedules([]);
+        fetchAllSchedulesForSede(sedeId);
     };
 
     const handleCarreraChange = async (carreraId: string) => {
@@ -190,17 +191,22 @@ export default function SchedulesAdminPage() {
         setSelectedDocenteFilter("all");
     };
     
-    const onClassAssigned = useCallback(async () => {
+    const onScheduleUpdated = useCallback(async () => {
         if (!selectedGrupo) return;
+        
+        // Refetch the specific group to update its details in the main view
         const grupoRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", selectedGrupo.id);
         const grupoSnap = await getDoc(grupoRef);
         if (grupoSnap.exists()) {
             const updatedGroupData = { id: grupoSnap.id, ...grupoSnap.data() } as Group;
             setSelectedGrupo(updatedGroupData);
             setGrupos(prev => prev.map(g => g.id === updatedGroupData.id ? updatedGroupData : g));
-            await fetchAllSchedulesForSede(selectedSede);
         }
+
+        // Refetch all schedules for conflict detection
+        await fetchAllSchedulesForSede(selectedSede);
     }, [selectedGrupo, selectedSede, fetchAllSchedulesForSede]);
+
 
     const handleOpenDialog = (entry: ScheduleEntry | null) => {
         setSelectedScheduleEntry(entry);
@@ -300,7 +306,7 @@ export default function SchedulesAdminPage() {
                     carrera={carreras.find(c => c.id === selectedGrupo.idCarrera)}
                     docentes={docentes}
                     salones={salonesBySede[selectedSede] || []}
-                    onClassAssigned={onClassAssigned}
+                    onClassAssigned={onScheduleUpdated}
                     sedes={sedes}
                     existingSchedule={selectedScheduleEntry}
                     allSchedules={allSedeSchedules}
@@ -492,7 +498,8 @@ function DayView({ schedule, week, onOpenAssignDialog }: any) {
                                         <p className="font-bold text-gray-800" style={{ color: stringToHslColor(entry.materiaNombre, 80, 20) }}>{entry.materiaNombre}</p>
                                         <p className="text-gray-600 text-xs">{entry.hora}</p>
                                         <p className="text-gray-600 text-xs">{entry.docenteNombre}</p>
-                                        <p className="text-gray-600 font-semibold text-xs mt-auto">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
+                                        <div className="flex-grow"></div>
+                                        <p className="text-gray-600 font-semibold text-xs">{entry.modalidad === 'Presencial' ? entry.salonNombre : 'Virtual'}</p>
                                     </div>
                                 </button>
                             </div>
