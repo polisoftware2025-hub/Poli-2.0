@@ -16,13 +16,32 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 
 
 interface Sede { id: string; nombre: string; }
-interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string }[] }[]; }
+interface Career { id: string; nombre: string; ciclos: { numero: number; materias: { id: string; nombre: string, horasSemanales: number }[] }[]; }
 interface Docente { id: string; nombreCompleto: string; disponibilidad?: any; }
 
-const AvailabilityTooltip = ({ docente }: { docente: Docente }) => {
+interface ScheduleEntry {
+  dia: string;
+  hora: string;
+  docenteId: string;
+}
+
+const AvailabilityTooltip = ({ docente, isOccupied, occupiedSlots }: { docente: Docente; isOccupied: boolean, occupiedSlots: string[] }) => {
+    if (isOccupied) {
+         return (
+            <div className="text-left max-w-xs">
+                <p className="font-bold mb-2 text-destructive">Docente Ocupado</p>
+                <p className="text-sm">Este docente ya tiene clases asignadas que entran en conflicto con las franjas horarias de este ciclo. Horarios ocupados detectados:</p>
+                <ul className="list-disc pl-4 mt-2 text-xs">
+                   {occupiedSlots.map(slot => <li key={slot}>{slot}</li>)}
+                </ul>
+            </div>
+        );
+    }
+    
     if (!docente.disponibilidad) {
         return <p>Este docente no ha configurado su disponibilidad.</p>;
     }
@@ -49,7 +68,6 @@ export default function GenerateSchedulePage() {
     const [docentes, setDocentes] = useState<Docente[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     
-    // Multi-step form state
     const [activeStep, setActiveStep] = useState(0);
     const [selectedSede, setSelectedSede] = useState("");
     const [selectedCarrera, setSelectedCarrera] = useState("");
@@ -57,6 +75,7 @@ export default function GenerateSchedulePage() {
     const [selectedDocentes, setSelectedDocentes] = useState<string[]>([]);
     const [subjectConfig, setSubjectConfig] = useState<any>({});
     const [conflictingGroups, setConflictingGroups] = useState<string[]>([]);
+    const [teacherOccupationMap, setTeacherOccupationMap] = useState<Map<string, Set<string>>>(new Map());
     
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -77,10 +96,10 @@ export default function GenerateSchedulePage() {
         fetchInitialData();
     }, [toast]);
     
-    // Effect to check for existing schedules when parameters change
     useEffect(() => {
         if (!selectedSede || !selectedCarrera || !selectedCiclo) {
             setConflictingGroups([]);
+            setTeacherOccupationMap(new Map());
             return;
         }
 
@@ -93,10 +112,24 @@ export default function GenerateSchedulePage() {
                     where("ciclo", "==", parseInt(selectedCiclo))
                 );
                 const querySnapshot = await getDocs(q);
-                const conflicts = querySnapshot.docs
-                    .filter(doc => doc.data().horario && doc.data().horario.length > 0)
-                    .map(doc => doc.data().codigoGrupo);
+                
+                const conflicts: string[] = [];
+                const occupationMap = new Map<string, Set<string>>();
+
+                querySnapshot.docs.forEach(doc => {
+                    const groupData = doc.data();
+                    if (groupData.horario && groupData.horario.length > 0) {
+                        conflicts.push(groupData.codigoGrupo);
+                        groupData.horario.forEach((entry: ScheduleEntry) => {
+                            if (!occupationMap.has(entry.docenteId)) {
+                                occupationMap.set(entry.docenteId, new Set());
+                            }
+                            occupationMap.get(entry.docenteId)!.add(`${entry.dia} ${entry.hora}`);
+                        });
+                    }
+                });
                 setConflictingGroups(conflicts);
+                setTeacherOccupationMap(occupationMap);
             } catch (error) {
                 console.error("Error checking for schedule conflicts:", error);
             }
@@ -198,7 +231,11 @@ export default function GenerateSchedulePage() {
                             <Label className="text-center block">Selecciona los docentes a considerar para este horario</Label>
                             <ScrollArea className="h-96 w-full rounded-md border p-4">
                             <TooltipProvider>
-                            {docentes.map(docente => (
+                            {docentes.map(docente => {
+                                const isOccupied = teacherOccupationMap.has(docente.id);
+                                const occupiedSlots = isOccupied ? Array.from(teacherOccupationMap.get(docente.id)!) : [];
+                                
+                                return (
                                 <div key={docente.id} className="flex items-center space-x-2 mb-2">
                                     <Checkbox 
                                         id={docente.id}
@@ -208,20 +245,22 @@ export default function GenerateSchedulePage() {
                                                 ? setSelectedDocentes(prev => [...prev, docente.id])
                                                 : setSelectedDocentes(prev => prev.filter(id => id !== docente.id))
                                         }}
+                                        disabled={isOccupied}
                                     />
                                     <label htmlFor={docente.id} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                         {docente.nombreCompleto}
                                     </label>
+                                    {isOccupied && <Badge variant="destructive">Ocupado</Badge>}
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button type="button" variant="ghost" size="icon" className="h-6 w-6"><Info className="h-4 w-4 text-muted-foreground"/></Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <AvailabilityTooltip docente={docente} />
+                                            <AvailabilityTooltip docente={docente} isOccupied={isOccupied} occupiedSlots={occupiedSlots} />
                                         </TooltipContent>
                                     </Tooltip>
                                 </div>
-                            ))}
+                            )})}
                             </TooltipProvider>
                             </ScrollArea>
                         </div>
@@ -268,5 +307,3 @@ export default function GenerateSchedulePage() {
         </div>
     );
 }
-
-    
