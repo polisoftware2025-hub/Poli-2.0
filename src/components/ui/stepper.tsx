@@ -55,7 +55,8 @@ interface StepperProps extends React.HTMLAttributes<HTMLDivElement> {
   orientation?: "vertical" | "horizontal"
   steps?: React.ReactNode[]
   setSteps?: React.Dispatch<React.SetStateAction<React.ReactNode[]>>
-  activeStep?: number
+  activeStep?: number,
+  currentStep?: number
 }
 
 const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
@@ -65,6 +66,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
       className,
       initialStep = 0,
       orientation = "horizontal",
+      currentStep,
       ...props
     },
     ref
@@ -111,15 +113,15 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
 
 Stepper.displayName = "Stepper"
 
-const StepperItem = React.forwardRef<HTMLDivElement, { children: React.ReactNode }>(
-  ({ children }, ref) => {
+const StepperItem = React.forwardRef<HTMLDivElement, { children: React.ReactNode, title: string, index: number }>(
+  ({ children, index }, ref) => {
     const { steps, setSteps, activeStep } = React.useContext(StepperContext)
 
     React.useEffect(() => {
       setSteps((prev) => [...prev, children])
     }, [children, setSteps])
     
-    if (steps[activeStep] !== children) {
+    if (activeStep !== index) {
         return null;
     }
 
