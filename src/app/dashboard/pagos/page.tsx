@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { PageHeader } from "@/components/page-header";
 import { CreditCard, DollarSign, CalendarClock, Download } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,17 +12,7 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, Timestamp, doc, updateDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import Link from "next/link";
 
 interface Invoice {
     id: string;
@@ -82,21 +72,6 @@ export default function PaymentsPage() {
     }
   }, [userId]);
 
-  const handlePayment = async (invoiceId: string) => {
-    try {
-        const invoiceRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos", invoiceId);
-        // Change state to 'pending-validation' instead of 'pagado'
-        await updateDoc(invoiceRef, {
-            estado: "pendiente-validacion", 
-            fechaIntentoPago: Timestamp.now()
-        });
-        toast({ title: "Procesando Pago", description: "Tu pago ha sido enviado para validación." });
-        fetchInvoices(); // Refresh the list
-    } catch (error) {
-        console.error("Error processing payment:", error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudo procesar tu pago." });
-    }
-  };
 
   const totalPaid = invoices
     .filter(p => p.estado === "pagado")
@@ -204,44 +179,9 @@ export default function PaymentsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                         {invoice.estado === 'pendiente' ? (
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button size="sm">Pagar</Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>Simulador de Pasarela de Pagos</DialogTitle>
-                                        <DialogDescription>
-                                            Estás a punto de pagar {formatCurrency(invoice.monto)} para la matrícula del ciclo {invoice.ciclo}.
-                                            Ingresa los datos de una tarjeta de crédito de prueba.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="card-number">Número de Tarjeta</Label>
-                                            <Input id="card-number" placeholder="4242 4242 4242 4242" />
-                                        </div>
-                                        <div className="grid grid-cols-3 gap-4">
-                                             <div className="space-y-2 col-span-2">
-                                                <Label htmlFor="expiry-date">Fecha de Expiración</Label>
-                                                <Input id="expiry-date" placeholder="MM/AA" />
-                                            </div>
-                                             <div className="space-y-2">
-                                                <Label htmlFor="cvc">CVC</Label>
-                                                <Input id="cvc" placeholder="123" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <DialogTrigger asChild>
-                                           <Button variant="outline">Cancelar</Button>
-                                        </DialogTrigger>
-                                        <DialogTrigger asChild>
-                                            <Button onClick={() => handlePayment(invoice.id)}>Pagar ahora</Button>
-                                        </DialogTrigger>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
+                           <Button asChild size="sm">
+                               <Link href={`/dashboard/pagos/${invoice.id}/checkout`}>Pagar</Link>
+                           </Button>
                         ) : invoice.estado === 'pagado' ? (
                             <Button variant="ghost" size="icon">
                                 <Download className="h-4 w-4"/>
