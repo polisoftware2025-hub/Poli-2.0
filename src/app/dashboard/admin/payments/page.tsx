@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { DollarSign, Search, Filter, TrendingUp, AlertCircle, Bell, FileText } from "lucide-react";
+import { DollarSign, Search, Filter, TrendingUp, AlertCircle, Bell, FileText, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -11,18 +11,30 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, DocumentData, Timestamp } from "firebase/firestore";
+import { collection, query, where, getDocs, DocumentData, Timestamp, doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { generateInvoicePdf } from "@/lib/invoice-generator";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
 
 interface Invoice {
   id: string;
   idEstudiante: string;
   nombreEstudiante?: string;
+  carreraId?: string;
+  carreraNombre?: string;
   ciclo: number;
   monto: number;
-  estado: "pendiente" | "pagado" | "vencido" | "incompleta";
+  estado: "pendiente" | "pagado" | "vencido" | "incompleta" | "pendiente-validacion";
   fechaGeneracion: Timestamp;
   fechaMaximaPago: Timestamp;
+  fechaPago?: Timestamp;
+}
+
+interface StudentInfo {
+    nombreCompleto: string;
+    identificacion: string;
+    carreraNombre: string;
 }
 
 const getInitials = (name: string = "") => {
@@ -38,6 +50,7 @@ const statusBadgeVariant: { [key: string]: "default" | "secondary" | "destructiv
   "pagado": "secondary",
   "vencido": "destructive",
   "incompleta": "default",
+  "pendiente-validacion": "default",
 };
 
 const statusColors: { [key: string]: string } = {
@@ -45,6 +58,7 @@ const statusColors: { [key: string]: string } = {
     "pagado": "bg-green-100 text-green-800",
     "vencido": "bg-red-100 text-red-800",
     "incompleta": "bg-gray-100 text-gray-800",
+    "pendiente-validacion": "bg-blue-100 text-blue-800",
 };
 
 
@@ -62,6 +76,8 @@ export default function PaymentsAdminPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -73,6 +89,11 @@ export default function PaymentsAdminPage() {
             usersSnapshot.forEach(doc => {
                 userMap.set(doc.id, doc.data().nombreCompleto || 'Nombre no disponible');
             });
+            
+            const careersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras");
+            const careersSnapshot = await getDocs(careersRef);
+            const careerMap = new Map<string, string>();
+            careersSnapshot.forEach(doc => careerMap.set(doc.id, doc.data().nombre || 'N/A'));
 
             const invoicesRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos");
             let q = query(invoicesRef);
@@ -87,6 +108,7 @@ export default function PaymentsAdminPage() {
                     id: doc.id,
                     ...data,
                     nombreEstudiante: userMap.get(data.idEstudiante) || 'Estudiante Desconocido',
+                    carreraNombre: careerMap.get(data.carreraId) || 'Carrera no asignada'
                 } as Invoice;
             });
             
@@ -100,6 +122,36 @@ export default function PaymentsAdminPage() {
     fetchInvoices();
   }, [filter]);
   
+  const handleDownload = async (invoice: Invoice) => {
+    setIsDownloading(invoice.id);
+    try {
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", invoice.idEstudiante);
+        const studentSnap = await getDoc(userRef);
+        
+        let studentInfo: StudentInfo = { nombreCompleto: "N/A", identificacion: "N/A", carreraNombre: "N/A" };
+
+        if (studentSnap.exists()) {
+            const userData = studentSnap.data();
+            studentInfo.nombreCompleto = userData.nombreCompleto;
+            studentInfo.identificacion = userData.identificacion;
+        }
+        studentInfo.carreraNombre = invoice.carreraNombre || 'N/A';
+        
+        const invoiceToPdf = {
+            ...invoice,
+            fechaPago: invoice.fechaPago || invoice.fechaGeneracion, 
+        };
+
+        generateInvoicePdf(invoiceToPdf, studentInfo);
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ variant: "destructive", title: "Error de descarga", description: "No se pudo generar la factura." });
+    } finally {
+        setIsDownloading(null);
+    }
+  };
+
+
   const filteredInvoices = useMemo(() => {
     return invoices.filter(invoice => {
         const term = searchTerm.toLowerCase();
@@ -182,6 +234,7 @@ export default function PaymentsAdminPage() {
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="pagado">Pagado</SelectItem>
                 <SelectItem value="pendiente">Pendiente</SelectItem>
+                <SelectItem value="pendiente-validacion">En Validación</SelectItem>
                 <SelectItem value="vencido">Vencido</SelectItem>
                 <SelectItem value="incompleta">Incompleta</SelectItem>
               </SelectContent>
@@ -195,20 +248,17 @@ export default function PaymentsAdminPage() {
                   <TableHead>Factura ID</TableHead>
                   <TableHead>Ciclo</TableHead>
                   <TableHead>Fecha Máx. Pago</TableHead>
+                  <TableHead>Fecha de Pago</TableHead>
                   <TableHead className="text-right">Monto</TableHead>
                   <TableHead className="text-center">Estado</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                     Array.from({length: 4}).map((_, i) => (
                         <TableRow key={i}>
-                            <TableCell><Skeleton className="h-10 w-48" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-8" /></TableCell>
-                            <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                            <TableCell className="text-right"><Skeleton className="h-5 w-20" /></TableCell>
-                            <TableCell className="text-center"><Skeleton className="h-6 w-24" /></TableCell>
+                            <TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell>
                         </TableRow>
                     ))
                 ) : filteredInvoices.length > 0 ? (
@@ -232,17 +282,27 @@ export default function PaymentsAdminPage() {
                             year: 'numeric', month: 'long', day: 'numeric'
                         })}
                         </TableCell>
+                        <TableCell>
+                            {invoice.fechaPago ? invoice.fechaPago.toDate().toLocaleDateString('es-ES') : 'N/A'}
+                        </TableCell>
                         <TableCell className="text-right font-medium">{formatCurrency(invoice.monto)}</TableCell>
                         <TableCell className="text-center">
                         <Badge variant={statusBadgeVariant[invoice.estado]} className={statusColors[invoice.estado]}>
                             {invoice.estado.charAt(0).toUpperCase() + invoice.estado.slice(1)}
                         </Badge>
                         </TableCell>
+                        <TableCell className="text-right">
+                          {invoice.estado === 'pagado' && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(invoice)} disabled={isDownloading === invoice.id}>
+                                    <Download className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </TableCell>
                     </TableRow>
                     ))
                 ) : (
                     <TableRow>
-                        <TableCell colSpan={6} className="text-center h-24">No se encontraron facturas con los filtros actuales.</TableCell>
+                        <TableCell colSpan={8} className="text-center h-24">No se encontraron facturas con los filtros actuales.</TableCell>
                     </TableRow>
                 )}
               </TableBody>
@@ -253,5 +313,3 @@ export default function PaymentsAdminPage() {
     </div>
   );
 }
-
-    
