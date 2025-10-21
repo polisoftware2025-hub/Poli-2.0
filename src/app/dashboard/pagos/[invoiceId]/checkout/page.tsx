@@ -25,10 +25,9 @@ import * as z from "zod";
 
 // --- Card SVG Logos ---
 const VisaLogo = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20 12c0-2.2-1.8-4-4-4H8c-2.2 0-4 1.8-4 4v2c0 2.2 1.8 4 4 4h8c2.2 0 4-1.8 4-4v-2z" fill="#fff" />
-    <path d="M4 12V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v4" stroke="#4B5563" />
-    <path d="M11 15L9 9h-1.5L10.5 15h.5zM12 15V9h1.5l1.5 6h-1.5l-1-4.5L12 15z" fill="#1A202C" />
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 38 24" fill="none">
+    <path d="M35.19 3.522H2.81C1.26 3.522 0 4.782 0 6.333V17.67c0 1.55 1.26 2.81 2.81 2.81h32.38c1.55 0 2.81-1.26 2.81-2.81V6.333c0-1.55-1.26-2.811-2.81-2.811z" fill="#fff"/>
+    <path d="M12.933 16.33H9.402L7.332 7.67h3.42l1.23 5.42.15.75h.075l.766-3.75 2.22-6.42H18.6L14.7 16.33h-1.767zM24.717 7.67h-2.58l-2.07 8.66h3.42l.345-1.5H26.3l.24 1.5h3.405l-2.22-8.66zm-1.26 5.82l.765-3.885.105.51.615 3.375h-1.485zM35.19 11.235c0-.585-.24-1.02-.87-1.275l.9-3.285H31.8l-.84 3.285h-1.62V7.67h-3.42v8.66h5.31c1.515 0 2.4-1.095 2.4-2.505v-.585zm-3.51-.555h-1.785v-1.77h1.785a.862.862 0 0 1 .93.9c0 .54-.42.945-.93.945v-.075z" fill="#1A1F71"/>
   </svg>
 );
 
@@ -41,9 +40,8 @@ const MasterCardLogo = () => (
 
 const AmexLogo = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="7" width="20" height="10" rx="2" ry="2" />
-      <line x1="6" y1="12" x2="8" y2="12" />
-      <line x1="12" y1="12" x2="16" y2="12" />
+      <rect x="2" y="7" width="20" height="10" rx="2" ry="2" fill="#006FCF"/>
+      <rect x="9" y="10" width="6" height="4" fill="#fff"/>
     </svg>
 );
 
@@ -53,7 +51,6 @@ const GenericCardLogo = () => (
     <line x1="1" y1="10" x2="23" y2="10"/>
   </svg>
 );
-
 
 interface Invoice {
     id: string;
@@ -74,8 +71,8 @@ const formatCurrency = (value: number) => {
 
 const cardSchema = z.object({
   cardName: z.string().min(3, "Nombre inválido").refine(val => val.trim().split(' ').length >= 2, "Debe incluir nombre y apellido."),
-  cardNumber: z.string().min(15, "Número de tarjeta inválido").max(19, "Número de tarjeta inválido"),
-  cardExpiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, "Formato debe ser MM/AA").refine(val => {
+  cardNumber: z.string().min(15, "Número de tarjeta inválido").max(19, "Número de tarjeta inválido").regex(/^[\d\s]+$/, "Solo números y espacios permitidos"),
+  cardExpiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, "Formato debe ser MM/YY").refine(val => {
     const [month, year] = val.split('/');
     const expiryDate = new Date(Number(`20${year}`), Number(month));
     const now = new Date();
@@ -86,17 +83,15 @@ const cardSchema = z.object({
 });
 type CardFormValues = z.infer<typeof cardSchema>;
 
+const formatCardNumber = (num: string) => {
+    if(!num) return "";
+    return (num.replace(/\s/g, '').match(/.{1,4}/g) || []).join(' ');
+};
 
-// --- Dynamic Credit Card Component ---
 const DynamicCreditCard = ({ values }: { values: Partial<CardFormValues> & { isFlipped?: boolean } }) => {
     const { cardName, cardNumber, cardExpiry, cardCvc, isFlipped } = values;
 
-    const formatCardNumber = (num: string) => {
-        return (num.replace(/\s/g, '').match(/.{1,4}/g) || []).join(' ');
-    };
-
-    const getCardType = (num: string) => {
-      if (!num) return <GenericCardLogo />;
+    const getCardType = (num: string = '') => {
       if (num.startsWith('4')) return <VisaLogo />;
       if (num.startsWith('5')) return <MasterCardLogo />;
       if (num.startsWith('3')) return <AmexLogo />;
@@ -109,7 +104,7 @@ const DynamicCreditCard = ({ values }: { values: Partial<CardFormValues> & { isF
                 {/* Card Front */}
                 <div className="absolute w-full h-full backface-hidden rounded-xl bg-gradient-to-br from-primary via-blue-800 to-blue-900 shadow-xl p-6 flex flex-col justify-between text-white">
                     <div className="flex justify-between items-start">
-                        {getCardType(cardNumber || '')}
+                        {getCardType(cardNumber)}
                         <Wifi className="h-6 w-6" />
                     </div>
                     <div className="text-2xl font-mono tracking-widest text-center">
@@ -154,6 +149,7 @@ export default function CheckoutPage() {
     const [invoice, setInvoice] = useState<Invoice | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isProcessing, startTransition] = useTransition();
+    const [isCardFlipped, setIsCardFlipped] = useState(false);
 
     const methods = useForm<CardFormValues>({
         resolver: zodResolver(cardSchema),
@@ -213,7 +209,7 @@ export default function CheckoutPage() {
     };
     
     const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      let value = e.target.value.replace(/\D/g, ''); // Remove all non-digit characters
+      let value = e.target.value.replace(/\D/g, ''); 
       if (value.length > 16) value = value.slice(0, 16);
       methods.setValue('cardNumber', value, { shouldValidate: true });
     };
@@ -281,14 +277,14 @@ export default function CheckoutPage() {
                         <CardTitle>Método de Pago</CardTitle>
                     </CardHeader>
                     <CardContent>
+                         <FormProvider {...methods}>
                             <Tabs defaultValue="tarjeta" className="w-full">
                                 <TabsList className="grid w-full grid-cols-2">
                                     <TabsTrigger value="tarjeta"><CreditCard className="mr-2 h-4 w-4"/>Tarjeta</TabsTrigger>
                                     <TabsTrigger value="pse"><Landmark className="mr-2 h-4 w-4"/>PSE</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="tarjeta" className="mt-6 space-y-6">
-                                    <DynamicCreditCard values={watchedValues} />
-                                    <FormProvider {...methods}>
+                                    <DynamicCreditCard values={{ ...watchedValues, isFlipped: isCardFlipped }} />
                                       <form onSubmit={methods.handleSubmit(handlePayment)} className="space-y-4">
                                         <FormField control={methods.control} name="cardName" render={({ field }) => (
                                             <FormItem><Label>Nombre en la tarjeta</Label><FormControl><Input placeholder="John Doe" {...field} /></FormControl><FormMessage /></FormItem>
@@ -304,7 +300,7 @@ export default function CheckoutPage() {
                                             </div>
                                             <div className="space-y-2">
                                                 <FormField control={methods.control} name="cardCvc" render={({ field }) => (
-                                                    <FormItem><Label>CVC</Label><FormControl><Input placeholder="123" {...field} onChange={handleCvcChange} /></FormControl><FormMessage /></FormItem>
+                                                    <FormItem><Label>CVC</Label><FormControl><Input placeholder="123" {...field} onChange={handleCvcChange} onFocus={() => setIsCardFlipped(true)} onBlur={() => setIsCardFlipped(false)} /></FormControl><FormMessage /></FormItem>
                                                 )}/>
                                             </div>
                                         </div>
@@ -313,7 +309,6 @@ export default function CheckoutPage() {
                                             {isProcessing ? "Procesando..." : `Pagar ${formatCurrency(invoice.monto)}`}
                                         </Button>
                                       </form>
-                                    </FormProvider>
                                 </TabsContent>
                                 <TabsContent value="pse" className="mt-6">
                                     <div className="space-y-4">
@@ -350,6 +345,7 @@ export default function CheckoutPage() {
                                     </div>
                                 </TabsContent>
                             </Tabs>
+                        </FormProvider>
                     </CardContent>
                 </Card>
             </div>
