@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,34 +81,18 @@ export default function CheckoutPage() {
     const watchedValues = form.watch();
 
     const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
+        let value = e.target.value.replace(/[^\d]/g, '');
         let maxLength = 16;
         let formattedValue = value;
 
-        // Detect card type for dynamic formatting and length
-        if (value.startsWith('4')) { // Visa
-            maxLength = 16;
-        } else if (/^5[1-5]/.test(value)) { // Mastercard
-            maxLength = 16;
-        } else if (/^3[47]/.test(value)) { // American Express
+        if (/^3[47]/.test(value)) { // American Express
             maxLength = 15;
-            // Amex format: 4-6-5
-             if (value.length > 4) {
-                formattedValue = value.substring(0, 4) + ' ' + value.substring(4);
-            }
-            if (value.length > 10) {
-                 formattedValue = value.substring(0, 4) + ' ' + value.substring(4, 10) + ' ' + value.substring(10, 15);
-            }
-        }
-
-        if (value.length > maxLength) {
-            value = value.slice(0, maxLength);
+            formattedValue = value.slice(0, 15).replace(/(\d{4})(\d{6})(\d{5})/, '$1 $2 $3').trim();
+        } else { // Other cards (Visa, Mastercard etc.)
+            maxLength = 16;
+            formattedValue = value.slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
         }
         
-        if (!/^3[47]/.test(value)) { // Apply standard formatting for non-Amex
-            formattedValue = value.replace(/(.{4})/g, '$1 ').trim();
-        }
-
         form.setValue('number', formattedValue, { shouldValidate: true });
     };
 
@@ -116,7 +101,7 @@ export default function CheckoutPage() {
         let formattedValue = value;
 
         if (name === 'expiry') {
-            formattedValue = value.replace(/[^\d]/g, '');
+            formattedValue = value.replace(/[^\d]/g, '').slice(0, 4);
             if (formattedValue.length > 2) {
                 formattedValue = `${formattedValue.slice(0, 2)}/${formattedValue.slice(2, 4)}`;
             }
@@ -158,17 +143,15 @@ export default function CheckoutPage() {
             try {
                 const invoiceRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos", invoice.id);
                 await updateDoc(invoiceRef, {
-                    estado: "pendiente-validacion", 
-                    fechaIntentoPago: Timestamp.now()
+                    estado: "pagado", 
+                    fechaPago: Timestamp.now()
                 });
                 toast({ 
-                    title: "Procesando Pago", 
-                    description: "Tu pago ha sido enviado para validación. Serás redirigido en breve."
+                    title: "¡Pago Exitoso!", 
+                    description: "Tu pago ha sido procesado correctamente. Serás redirigido."
                 });
 
-                setTimeout(() => {
-                    router.push('/dashboard/pagos');
-                }, 3000);
+                router.push(`/dashboard/pagos/success/${invoice.id}`);
 
             } catch (error) {
                  toast({ variant: "destructive", title: "Error", description: "No se pudo procesar tu pago." });
