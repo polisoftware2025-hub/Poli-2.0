@@ -8,11 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, DollarSign, CalendarClock, Lock, CheckCircle, AlertTriangle } from "lucide-react";
+import { CreditCard, DollarSign, CalendarClock, Lock, CheckCircle, AlertTriangle, Landmark, Banknote } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Invoice {
     id: string;
@@ -138,31 +140,75 @@ export default function CheckoutPage() {
                 </Card>
                 <Card className="md:col-span-1">
                     <CardHeader>
-                        <CardTitle>Información de la Tarjeta</CardTitle>
+                        <CardTitle>Método de Pago</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="card-name">Nombre en la tarjeta</Label>
-                            <Input id="card-name" placeholder="John Doe" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="card-number">Número de la tarjeta</Label>
-                            <Input id="card-number" placeholder="4242 4242 4242 4242" />
-                        </div>
-                        <div className="grid grid-cols-3 gap-4">
-                             <div className="space-y-2 col-span-2">
-                                <Label htmlFor="expiry-date">Fecha de Expiración</Label>
-                                <Input id="expiry-date" placeholder="MM/AA" />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="cvc">CVC</Label>
-                                <Input id="cvc" placeholder="123" />
-                            </div>
-                        </div>
-                         <Button onClick={handlePayment} disabled={isProcessing} className="w-full mt-4" size="lg">
-                           <Lock className="mr-2 h-4 w-4" />
-                           {isProcessing ? "Procesando..." : `Pagar ${formatCurrency(invoice.monto)}`}
-                         </Button>
+                    <CardContent>
+                        <Tabs defaultValue="tarjeta" className="w-full">
+                            <TabsList className="grid w-full grid-cols-2">
+                                <TabsTrigger value="tarjeta"><CreditCard className="mr-2 h-4 w-4"/>Tarjeta</TabsTrigger>
+                                <TabsTrigger value="pse"><Landmark className="mr-2 h-4 w-4"/>PSE</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="tarjeta" className="mt-6">
+                                 <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="card-name">Nombre en la tarjeta</Label>
+                                        <Input id="card-name" placeholder="John Doe" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="card-number">Número de la tarjeta</Label>
+                                        <Input id="card-number" placeholder="4242 4242 4242 4242" />
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        <div className="space-y-2 col-span-2">
+                                            <Label htmlFor="expiry-date">Fecha de Expiración</Label>
+                                            <Input id="expiry-date" placeholder="MM/AA" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="cvc">CVC</Label>
+                                            <Input id="cvc" placeholder="123" />
+                                        </div>
+                                    </div>
+                                    <Button onClick={handlePayment} disabled={isProcessing} className="w-full mt-4" size="lg">
+                                    <Lock className="mr-2 h-4 w-4" />
+                                    {isProcessing ? "Procesando..." : `Pagar ${formatCurrency(invoice.monto)}`}
+                                    </Button>
+                                 </div>
+                            </TabsContent>
+                            <TabsContent value="pse" className="mt-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="person-type">Tipo de persona</Label>
+                                        <Select>
+                                            <SelectTrigger id="person-type"><SelectValue placeholder="Selecciona..."/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="natural">Persona Natural</SelectItem>
+                                                <SelectItem value="juridica">Persona Jurídica</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label htmlFor="bank">Banco</Label>
+                                        <Select>
+                                            <SelectTrigger id="bank"><SelectValue placeholder="Selecciona tu banco..."/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="bancolombia">Bancolombia</SelectItem>
+                                                <SelectItem value="davivienda">Davivienda</SelectItem>
+                                                <SelectItem value="bbva">BBVA</SelectItem>
+                                                <SelectItem value="nequi">Nequi</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="pse-email">Correo electrónico</Label>
+                                        <Input id="pse-email" type="email" placeholder="tu.correo@example.com"/>
+                                    </div>
+                                     <Button onClick={handlePayment} disabled={isProcessing} className="w-full mt-4" size="lg">
+                                        <Landmark className="mr-2 h-4 w-4" />
+                                        {isProcessing ? "Redirigiendo..." : "Pagar con PSE"}
+                                     </Button>
+                                </div>
+                            </TabsContent>
+                        </Tabs>
                     </CardContent>
                 </Card>
             </div>
