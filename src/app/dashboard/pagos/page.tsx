@@ -9,18 +9,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, Timestamp, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, Timestamp, doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import Link from "next/link";
+import { generateInvoicePdf } from "@/lib/invoice-generator";
 
 interface Invoice {
     id: string;
+    idEstudiante: string;
     ciclo: number;
     monto: number;
     estado: "pendiente" | "pagado" | "vencido" | "incompleta" | "pendiente-validacion";
     fechaGeneracion: Timestamp;
     fechaMaximaPago: Timestamp;
+    fechaPago?: Timestamp;
+}
+
+interface StudentInfo {
+    nombreCompleto: string;
+    identificacion: string;
+    carreraNombre: string;
 }
 
 const formatCurrency = (value: number) => {
@@ -34,6 +43,7 @@ const formatCurrency = (value: number) => {
 export default function PaymentsPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -72,6 +82,47 @@ export default function PaymentsPage() {
     }
   }, [userId]);
 
+  const handleDownload = async (invoice: Invoice) => {
+    if (!userId) return;
+    setIsDownloading(invoice.id);
+    try {
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+        const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
+        const [userSnap, studentSnap] = await Promise.all([getDoc(userRef), getDoc(studentRef)]);
+        
+        let studentInfo: StudentInfo = { nombreCompleto: "N/A", identificacion: "N/A", carreraNombre: "N/A" };
+
+        if (userSnap.exists()) {
+            const userData = userSnap.data();
+            studentInfo.nombreCompleto = userData.nombreCompleto;
+            studentInfo.identificacion = userData.identificacion;
+        }
+
+        if (studentSnap.exists()) {
+            const studentData = studentSnap.data();
+            if (studentData.carreraId) {
+                const careerRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras", studentData.carreraId);
+                const careerSnap = await getDoc(careerRef);
+                if (careerSnap.exists()) {
+                    studentInfo.carreraNombre = careerSnap.data().nombre;
+                }
+            }
+        }
+        
+        // Ensure fechaPago is present
+        const invoiceToPdf = {
+            ...invoice,
+            fechaPago: invoice.fechaPago || invoice.fechaGeneracion, 
+        };
+
+        generateInvoicePdf(invoiceToPdf, studentInfo);
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ variant: "destructive", title: "Error de descarga", description: "No se pudo generar la factura." });
+    } finally {
+        setIsDownloading(null);
+    }
+  };
 
   const totalPaid = invoices
     .filter(p => p.estado === "pagado")
@@ -183,7 +234,7 @@ export default function PaymentsPage() {
                                <Link href={`/dashboard/pagos/${invoice.id}/checkout`}>Pagar</Link>
                            </Button>
                         ) : invoice.estado === 'pagado' ? (
-                            <Button variant="ghost" size="icon">
+                           <Button variant="ghost" size="icon" onClick={() => handleDownload(invoice)} disabled={isDownloading === invoice.id}>
                                 <Download className="h-4 w-4"/>
                                 <span className="sr-only">Descargar Comprobante</span>
                             </Button>
