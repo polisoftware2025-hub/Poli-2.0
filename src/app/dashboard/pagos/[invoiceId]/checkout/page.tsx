@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
-import { useForm, useFormContext, useWatch } from "react-hook-form";
+import { useForm, FormProvider, useFormContext, useWatch } from "react-hook-form";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
