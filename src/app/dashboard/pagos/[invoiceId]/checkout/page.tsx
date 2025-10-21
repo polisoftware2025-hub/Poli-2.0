@@ -3,13 +3,13 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, FormProvider } from "react-hook-form";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, DollarSign, Lock, Landmark, Wifi, Shield, AlertTriangle } from "lucide-react";
+import { CreditCard, DollarSign, Lock, Landmark, Shield, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
@@ -43,12 +43,13 @@ const formatCurrency = (value: number) => {
 const cardSchema = z.object({
   name: z.string().min(3, "Nombre inválido").refine(val => val.trim().split(' ').length >= 2, "Debe incluir nombre y apellido."),
   number: z.string().min(15, "Número de tarjeta inválido").max(19, "Número de tarjeta inválido"),
-  expiry: z.string().regex(/^(0[1-9]|1[0-2])\d{2}$/, "Formato debe ser MMYY").refine(val => {
-    const month = parseInt(val.slice(0, 2), 10);
-    const year = parseInt(val.slice(2, 4), 10);
-    const expiryDate = new Date(Number(`20${year}`), month);
+  expiry: z.string().regex(/^(0[1-9]|1[0-2])\/?\d{2}$/, "Formato debe ser MM/YY").refine(val => {
+    const [monthStr, yearStr] = val.split('/');
+    const month = parseInt(monthStr, 10);
+    const year = parseInt(`20${yearStr}`, 10);
+    const expiryDate = new Date(year, month);
     const now = new Date();
-    now.setMonth(now.getMonth() - 1);
+    now.setMonth(now.getMonth());
     return expiryDate > now;
   }, "La tarjeta ha expirado."),
   cvc: z.string().min(3, "CVC inválido").max(4, "CVC inválido"),
@@ -76,6 +77,25 @@ export default function CheckoutPage() {
     });
     
     const watchedValues = form.watch();
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        let formattedValue = value;
+
+        if (name === 'number') {
+            formattedValue = value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
+            if(formattedValue.length > 19) formattedValue = formattedValue.slice(0, 19);
+        } else if (name === 'expiry') {
+            formattedValue = value.replace(/[^\d]/g, '');
+            if (formattedValue.length > 2) {
+                formattedValue = `${formattedValue.slice(0, 2)}/${formattedValue.slice(2, 4)}`;
+            }
+        } else if (name === 'cvc') {
+            formattedValue = value.replace(/[^\d]/g, '');
+        }
+
+        form.setValue(name as keyof CardFormValues, formattedValue, { shouldValidate: true });
+    };
 
     useEffect(() => {
         if (!invoiceId) return;
@@ -175,7 +195,7 @@ export default function CheckoutPage() {
                         <CardTitle>Método de Pago</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <Tabs defaultValue="tarjeta" className="w-full">
+                         <Tabs defaultValue="tarjeta" className="w-full">
                             <TabsList className="grid w-full grid-cols-2">
                                 <TabsTrigger value="tarjeta"><CreditCard className="mr-2 h-4 w-4"/>Tarjeta</TabsTrigger>
                                 <TabsTrigger value="pse"><Landmark className="mr-2 h-4 w-4"/>PSE</TabsTrigger>
@@ -191,17 +211,63 @@ export default function CheckoutPage() {
                                 <Form {...form}>
                                   <form onSubmit={form.handleSubmit(handlePayment)} className="space-y-4">
                                     <FormField control={form.control} name="number" render={({ field }) => (
-                                        <FormItem><Label>Número de la tarjeta</Label><FormControl><Input placeholder="4242 4242 4242 4242" {...field} onFocus={(e) => setFocus(e.target.name as Focused)} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem>
+                                            <Label>Número de la tarjeta</Label>
+                                            <FormControl>
+                                                <Input 
+                                                    placeholder="4242 4242 4242 4242" 
+                                                    {...field}
+                                                    onChange={handleInputChange} 
+                                                    onFocus={(e) => setFocus(e.target.name as Focused)}
+                                                    maxLength={19}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
                                     )}/>
                                      <FormField control={form.control} name="name" render={({ field }) => (
-                                        <FormItem><Label>Nombre en la tarjeta</Label><FormControl><Input placeholder="John Doe" {...field} onFocus={(e) => setFocus(e.target.name as Focused)} /></FormControl><FormMessage /></FormItem>
+                                        <FormItem>
+                                            <Label>Nombre en la tarjeta</Label>
+                                            <FormControl>
+                                                <Input 
+                                                    placeholder="John Doe" 
+                                                    {...field}
+                                                    onFocus={(e) => setFocus(e.target.name as Focused)} 
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
                                     )}/>
                                     <div className="grid grid-cols-2 gap-4">
                                         <FormField control={form.control} name="expiry" render={({ field }) => (
-                                            <FormItem><Label>Vencimiento</Label><FormControl><Input placeholder="MMYY" {...field} onFocus={(e) => setFocus(e.target.name as Focused)} /></FormControl><FormMessage /></FormItem>
+                                            <FormItem>
+                                                <Label>Vencimiento</Label>
+                                                <FormControl>
+                                                    <Input 
+                                                        placeholder="MM/YY" 
+                                                        {...field}
+                                                        onChange={handleInputChange}
+                                                        onFocus={(e) => setFocus(e.target.name as Focused)}
+                                                        maxLength={5}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
                                         )}/>
                                         <FormField control={form.control} name="cvc" render={({ field }) => (
-                                            <FormItem><Label>CVC</Label><FormControl><Input placeholder="123" {...field} onFocus={(e) => setFocus(e.target.name as Focused)} /></FormControl><FormMessage /></FormItem>
+                                            <FormItem>
+                                                <Label>CVC</Label>
+                                                <FormControl>
+                                                    <Input 
+                                                        placeholder="123" 
+                                                        {...field}
+                                                        onChange={handleInputChange}
+                                                        onFocus={(e) => setFocus(e.target.name as Focused)}
+                                                        maxLength={4}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
                                         )}/>
                                     </div>
                                     <Button type="submit" disabled={isProcessing || !form.formState.isValid} className="w-full mt-4" size="lg">
