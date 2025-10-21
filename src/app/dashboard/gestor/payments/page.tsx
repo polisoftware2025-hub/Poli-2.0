@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -12,14 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { db } from "@/lib/firebase";
-import { collection, query, where, getDocs, DocumentData, Timestamp, doc, updateDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, DocumentData, Timestamp, doc, updateDoc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { generateInvoicePdf } from "@/lib/invoice-generator";
 
 interface Invoice {
   id: string;
   idEstudiante: string;
   nombreEstudiante?: string;
+  carreraId?: string;
   carreraNombre?: string;
   ciclo: number;
   monto: number;
@@ -27,8 +28,14 @@ interface Invoice {
   fechaGeneracion: Timestamp;
   fechaMaximaPago: Timestamp;
   comprobanteURL?: string;
+  fechaPago?: Timestamp;
 }
 
+interface StudentInfo {
+    nombreCompleto: string;
+    identificacion: string;
+    carreraNombre: string;
+}
 
 const getInitials = (name: string = "") => {
   const names = name.split(' ');
@@ -75,7 +82,7 @@ export default function PaymentsReviewPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState<string | null>(null);
   const [filter, setFilter] = useState("pendiente-validacion");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
@@ -106,6 +113,7 @@ export default function PaymentsReviewPage() {
                   id: doc.id,
                   ...data,
                   nombreEstudiante: userMap.get(data.idEstudiante) || 'Estudiante Desconocido',
+                  carreraId: data.carreraId,
                   carreraNombre: careerMap.get(data.carreraId) || 'Carrera no asignada'
               } as Invoice;
           });
@@ -128,9 +136,9 @@ export default function PaymentsReviewPage() {
   useEffect(() => {
     fetchInvoices();
   }, [filter]);
-  
+
   const handleUpdateStatus = async (invoiceId: string, newStatus: "pagado" | "rechazado") => {
-      setIsActionLoading(true);
+      setIsActionLoading(invoiceId);
       try {
           const invoiceRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos", invoiceId);
           await updateDoc(invoiceRef, { 
@@ -143,10 +151,39 @@ export default function PaymentsReviewPage() {
           console.error("Error updating invoice status:", error);
           toast({ variant: "destructive", title: "Error", description: "No se pudo actualizar la factura." });
       } finally {
-          setIsActionLoading(false);
+          setIsActionLoading(null);
       }
   };
   
+   const handleDownload = async (invoice: Invoice) => {
+    setIsActionLoading(invoice.id);
+    try {
+        const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", invoice.idEstudiante);
+        const studentSnap = await getDoc(userRef);
+        
+        let studentInfo: StudentInfo = { nombreCompleto: "N/A", identificacion: "N/A", carreraNombre: "N/A" };
+
+        if (studentSnap.exists()) {
+            const userData = studentSnap.data();
+            studentInfo.nombreCompleto = userData.nombreCompleto;
+            studentInfo.identificacion = userData.identificacion;
+        }
+        studentInfo.carreraNombre = invoice.carreraNombre || 'N/A';
+        
+        const invoiceToPdf = {
+            ...invoice,
+            fechaPago: invoice.fechaPago || invoice.fechaGeneracion, 
+        };
+
+        generateInvoicePdf(invoiceToPdf, studentInfo);
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ variant: "destructive", title: "Error de descarga", description: "No se pudo generar la factura." });
+    } finally {
+        setIsActionLoading(null);
+    }
+  };
+
   const filteredInvoices = useMemo(() => {
     return invoices.filter(invoice => {
         const term = searchTerm.toLowerCase();
@@ -167,10 +204,10 @@ export default function PaymentsReviewPage() {
       />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-3">
             <Card>
             <CardHeader>
-            <CardTitle>Listado de Estudiantes y Estado Financiero</CardTitle>
+            <CardTitle>Listado de Facturas</CardTitle>
             <CardDescription>
                 Filtra y busca estudiantes para revisar el estado de sus facturas.
             </CardDescription>
@@ -206,7 +243,7 @@ export default function PaymentsReviewPage() {
                     <TableRow>
                     <TableHead>Estudiante</TableHead>
                     <TableHead>Factura ID</TableHead>
-                    <TableHead>Vencimiento</TableHead>
+                    <TableHead>Fecha de Pago</TableHead>
                     <TableHead className="text-center">Estado</TableHead>
                     <TableHead className="text-right">Acciones</TableHead>
                     </TableRow>
@@ -219,7 +256,7 @@ export default function PaymentsReviewPage() {
                            </TableRow>
                         ))
                     ) : filteredInvoices.map((invoice) => (
-                    <TableRow key={invoice.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelectedInvoice(invoice)}>
+                    <TableRow key={invoice.id}>
                         <TableCell>
                         <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -233,9 +270,7 @@ export default function PaymentsReviewPage() {
                         </TableCell>
                         <TableCell className="font-mono text-xs">{invoice.id}</TableCell>
                         <TableCell>
-                        {invoice.fechaMaximaPago.toDate().toLocaleDateString('es-ES', {
-                            year: 'numeric', month: 'long', day: 'numeric'
-                        })}
+                        {invoice.fechaPago ? invoice.fechaPago.toDate().toLocaleDateString('es-ES') : 'N/A'}
                         </TableCell>
                         <TableCell className="text-center">
                         <Badge variant={statusBadgeVariant[invoice.estado]} className={statusColors[invoice.estado]}>
@@ -243,9 +278,23 @@ export default function PaymentsReviewPage() {
                         </Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                            <Button variant="ghost" size="icon">
-                                <Eye className="h-4 w-4" />
-                            </Button>
+                          <div className="flex gap-2 justify-end">
+                            {invoice.estado === 'pendiente-validacion' && (
+                                <>
+                                   <Button size="icon" variant="ghost" className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8" onClick={() => handleUpdateStatus(invoice.id, 'rechazado')} disabled={!!isActionLoading}>
+                                       <X className="h-4 w-4"/>
+                                   </Button>
+                                   <Button size="icon" variant="ghost" className="text-green-600 hover:text-green-700 hover:bg-green-50 h-8 w-8" onClick={() => handleUpdateStatus(invoice.id, 'pagado')} disabled={!!isActionLoading}>
+                                       <Check className="h-4 w-4"/>
+                                   </Button>
+                                </>
+                            )}
+                            {invoice.estado === 'pagado' && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDownload(invoice)} disabled={isActionLoading === invoice.id}>
+                                    <Download className="h-4 w-4" />
+                                </Button>
+                            )}
+                          </div>
                         </TableCell>
                     </TableRow>
                     ))}
@@ -258,64 +307,7 @@ export default function PaymentsReviewPage() {
             </CardContent>
         </Card>
         </div>
-
-        <div className="lg:col-span-1 flex flex-col gap-6 sticky top-20">
-             {selectedInvoice ? (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Detalle de Factura</CardTitle>
-                        <CardDescription>{selectedInvoice.id}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Estudiante:</span>
-                            <span className="font-semibold text-right">{selectedInvoice.nombreEstudiante}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Monto:</span>
-                            <span className="font-semibold">{formatCurrency(selectedInvoice.monto)}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Fecha Venc.:</span>
-                            <span className="font-semibold">{selectedInvoice.fechaMaximaPago.toDate().toLocaleDateString('es-ES')}</span>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span className="text-muted-foreground">Estado:</span>
-                            <Badge variant={statusBadgeVariant[selectedInvoice.estado]} className={statusColors[selectedInvoice.estado]}>{statusText[selectedInvoice.estado]}</Badge>
-                        </div>
-
-                        {selectedInvoice.comprobanteURL ? (
-                             <Button asChild variant="outline" className="w-full">
-                                <a href={selectedInvoice.comprobanteURL} target="_blank" rel="noopener noreferrer">
-                                    <Download className="mr-2 h-4 w-4"/>
-                                    Descargar Recibo
-                                </a>
-                             </Button>
-                        ) : <p className="text-xs text-center text-muted-foreground pt-2">No se ha adjuntado un comprobante de pago.</p>}
-
-                        {selectedInvoice.estado === 'pendiente-validacion' && (
-                            <div className="flex gap-2 pt-2">
-                               <Button variant="destructive" className="w-full" onClick={() => handleUpdateStatus(selectedInvoice!.id, 'rechazado')} disabled={isActionLoading}>
-                                   <X className="mr-2 h-4 w-4"/> {isActionLoading ? "Rechazando..." : "Rechazar"}
-                               </Button>
-                               <Button className="w-full bg-green-600 hover:bg-green-700" onClick={() => handleUpdateStatus(selectedInvoice!.id, 'pagado')} disabled={isActionLoading}>
-                                   <Check className="mr-2 h-4 w-4"/> {isActionLoading ? "Aprobando..." : "Aprobar"}
-                               </Button>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
-             ) : (
-                <Card>
-                    <CardContent className="p-8 flex flex-col items-center justify-center text-center text-muted-foreground">
-                        <DollarSign className="h-12 w-12 mb-4"/>
-                        <p>Selecciona una factura de la lista para ver sus detalles y realizar acciones.</p>
-                    </CardContent>
-                </Card>
-             )}
-        </div>
       </div>
-
     </div>
   );
 }
