@@ -76,7 +76,7 @@ export default function PaymentsReviewPage() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isActionLoading, setIsActionLoading] = useState(false);
-  const [filter, setFilter] = useState("all");
+  const [filter, setFilter] = useState("pendiente-validacion");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
@@ -114,6 +114,8 @@ export default function PaymentsReviewPage() {
           setInvoices(fetchedInvoices);
           if (fetchedInvoices.length > 0) {
               setSelectedInvoice(fetchedInvoices[0]);
+          } else {
+              setSelectedInvoice(null);
           }
 
       } catch (error) {

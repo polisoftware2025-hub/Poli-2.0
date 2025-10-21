@@ -13,22 +13,22 @@ import { collection, query, where, getDocs, Timestamp, doc, updateDoc } from "fi
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Invoice {
     id: string;
     ciclo: number;
     monto: number;
-    estado: "pendiente" | "pagado" | "vencido" | "incompleta";
+    estado: "pendiente" | "pagado" | "vencido" | "incompleta" | "pendiente-validacion";
     fechaGeneracion: Timestamp;
     fechaMaximaPago: Timestamp;
 }
@@ -77,21 +77,24 @@ export default function PaymentsPage() {
   };
 
   useEffect(() => {
-    fetchInvoices();
+    if (userId) {
+        fetchInvoices();
+    }
   }, [userId]);
 
   const handlePayment = async (invoiceId: string) => {
     try {
         const invoiceRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/pagos", invoiceId);
+        // Change state to 'pending-validation' instead of 'pagado'
         await updateDoc(invoiceRef, {
-            estado: "pagado",
-            fechaPago: Timestamp.now()
+            estado: "pendiente-validacion", 
+            fechaIntentoPago: Timestamp.now()
         });
-        toast({ title: "Pago Exitoso", description: "Tu pago ha sido registrado." });
+        toast({ title: "Procesando Pago", description: "Tu pago ha sido enviado para validación." });
         fetchInvoices(); // Refresh the list
     } catch (error) {
         console.error("Error processing payment:", error);
-        toast({ variant: "destructive", title: "Error", description: "No se pudo registrar tu pago." });
+        toast({ variant: "destructive", title: "Error", description: "No se pudo procesar tu pago." });
     }
   };
 
@@ -100,7 +103,7 @@ export default function PaymentsPage() {
     .reduce((acc, p) => acc + p.monto, 0);
   
   const totalPending = invoices
-    .filter(p => p.estado === "pendiente" || p.estado === "incompleta" || p.estado === "vencido")
+    .filter(p => ["pendiente", "incompleta", "vencido", "pendiente-validacion"].includes(p.estado))
     .reduce((acc, p) => acc + p.monto, 0);
   
   const nextDueDate = invoices
@@ -192,32 +195,53 @@ export default function PaymentsPage() {
                                 invoice.estado === "pagado" ? "bg-green-100 text-green-800" : 
                                 invoice.estado === "pendiente" ? "bg-yellow-100 text-yellow-800" :
                                 invoice.estado === "vencido" ? "bg-red-100 text-red-800" :
+                                invoice.estado === "pendiente-validacion" ? "bg-blue-100 text-blue-800" :
                                 "bg-gray-100 text-gray-800"
                             }
                         >
-                            {invoice.estado.charAt(0).toUpperCase() + invoice.estado.slice(1)}
+                            {invoice.estado === 'pendiente-validacion' ? 'En Validación' : (invoice.estado.charAt(0).toUpperCase() + invoice.estado.slice(1))}
                         </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                         {invoice.estado === 'pendiente' ? (
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
+                            <Dialog>
+                                <DialogTrigger asChild>
                                     <Button size="sm">Pagar</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Confirmar Pago</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Estás a punto de registrar el pago de {formatCurrency(invoice.monto)} para la matrícula del ciclo {invoice.ciclo}. 
-                                            Esta es una simulación y marcará la factura como pagada.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handlePayment(invoice.id)}>Confirmar Pago</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Simulador de Pasarela de Pagos</DialogTitle>
+                                        <DialogDescription>
+                                            Estás a punto de pagar {formatCurrency(invoice.monto)} para la matrícula del ciclo {invoice.ciclo}.
+                                            Ingresa los datos de una tarjeta de crédito de prueba.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="card-number">Número de Tarjeta</Label>
+                                            <Input id="card-number" placeholder="4242 4242 4242 4242" />
+                                        </div>
+                                        <div className="grid grid-cols-3 gap-4">
+                                             <div className="space-y-2 col-span-2">
+                                                <Label htmlFor="expiry-date">Fecha de Expiración</Label>
+                                                <Input id="expiry-date" placeholder="MM/AA" />
+                                            </div>
+                                             <div className="space-y-2">
+                                                <Label htmlFor="cvc">CVC</Label>
+                                                <Input id="cvc" placeholder="123" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogTrigger asChild>
+                                           <Button variant="outline">Cancelar</Button>
+                                        </DialogTrigger>
+                                        <DialogTrigger asChild>
+                                            <Button onClick={() => handlePayment(invoice.id)}>Pagar ahora</Button>
+                                        </DialogTrigger>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         ) : invoice.estado === 'pagado' ? (
                             <Button variant="ghost" size="icon">
                                 <Download className="h-4 w-4"/>
