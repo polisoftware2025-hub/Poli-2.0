@@ -3,13 +3,13 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { useParams, useRouter, notFound } from "next/navigation";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, DollarSign, Lock, Landmark, Shield, AlertTriangle } from "lucide-react";
+import { CreditCard, DollarSign, Lock, Landmark, Shield, AlertTriangle, HelpCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, updateDoc, Timestamp } from "firebase/firestore";
@@ -45,11 +45,12 @@ const cardSchema = z.object({
   number: z.string().min(15, "Número de tarjeta inválido").max(19, "Número de tarjeta inválido"),
   expiry: z.string().regex(/^(0[1-9]|1[0-2])\/?\d{2}$/, "Formato debe ser MM/YY").refine(val => {
     const [monthStr, yearStr] = val.split('/');
+    if (!monthStr || !yearStr) return false;
     const month = parseInt(monthStr, 10);
     const year = parseInt(`20${yearStr}`, 10);
     const expiryDate = new Date(year, month);
     const now = new Date();
-    now.setMonth(now.getMonth());
+    now.setMonth(now.getMonth() -1); // Allows payment in the current month
     return expiryDate > now;
   }, "La tarjeta ha expirado."),
   cvc: z.string().min(3, "CVC inválido").max(4, "CVC inválido"),
@@ -78,20 +79,49 @@ export default function CheckoutPage() {
     
     const watchedValues = form.watch();
 
+    const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value.replace(/[^\d]/g, ''); // Remove non-digits
+        let maxLength = 16;
+        let formattedValue = value;
+
+        // Detect card type for dynamic formatting and length
+        if (value.startsWith('4')) { // Visa
+            maxLength = 16;
+        } else if (/^5[1-5]/.test(value)) { // Mastercard
+            maxLength = 16;
+        } else if (/^3[47]/.test(value)) { // American Express
+            maxLength = 15;
+            // Amex format: 4-6-5
+             if (value.length > 4) {
+                formattedValue = value.substring(0, 4) + ' ' + value.substring(4);
+            }
+            if (value.length > 10) {
+                 formattedValue = value.substring(0, 4) + ' ' + value.substring(4, 10) + ' ' + value.substring(10, 15);
+            }
+        }
+
+        if (value.length > maxLength) {
+            value = value.slice(0, maxLength);
+        }
+        
+        if (!/^3[47]/.test(value)) { // Apply standard formatting for non-Amex
+            formattedValue = value.replace(/(.{4})/g, '$1 ').trim();
+        }
+
+        form.setValue('number', formattedValue, { shouldValidate: true });
+    };
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         let formattedValue = value;
 
-        if (name === 'number') {
-            formattedValue = value.replace(/[^\d]/g, '').replace(/(.{4})/g, '$1 ').trim();
-            if(formattedValue.length > 19) formattedValue = formattedValue.slice(0, 19);
-        } else if (name === 'expiry') {
+        if (name === 'expiry') {
             formattedValue = value.replace(/[^\d]/g, '');
             if (formattedValue.length > 2) {
                 formattedValue = `${formattedValue.slice(0, 2)}/${formattedValue.slice(2, 4)}`;
             }
         } else if (name === 'cvc') {
-            formattedValue = value.replace(/[^\d]/g, '');
+            formattedValue = value.replace(/[^\d]/g, '').slice(0, 4);
         }
 
         form.setValue(name as keyof CardFormValues, formattedValue, { shouldValidate: true });
@@ -215,11 +245,10 @@ export default function CheckoutPage() {
                                             <Label>Número de la tarjeta</Label>
                                             <FormControl>
                                                 <Input 
-                                                    placeholder="4242 4242 4242 4242" 
+                                                    placeholder="#### #### #### ####" 
                                                     {...field}
-                                                    onChange={handleInputChange} 
+                                                    onChange={handleCardNumberChange} 
                                                     onFocus={(e) => setFocus(e.target.name as Focused)}
-                                                    maxLength={19}
                                                 />
                                             </FormControl>
                                             <FormMessage />
@@ -248,7 +277,6 @@ export default function CheckoutPage() {
                                                         {...field}
                                                         onChange={handleInputChange}
                                                         onFocus={(e) => setFocus(e.target.name as Focused)}
-                                                        maxLength={5}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
@@ -263,7 +291,6 @@ export default function CheckoutPage() {
                                                         {...field}
                                                         onChange={handleInputChange}
                                                         onFocus={(e) => setFocus(e.target.name as Focused)}
-                                                        maxLength={4}
                                                     />
                                                 </FormControl>
                                                 <FormMessage />
