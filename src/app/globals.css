@@ -73,3 +73,46 @@
     transform: rotateY(180deg);
   }
 }
+
+/* Polygon/Particle Background Styles */
+@layer base {
+  .polygon-bg {
+    background-color: #0d1117;
+    background-image:
+      radial-gradient(at 27% 37%, hsla(215,98%,61%,0.1) 0px, transparent 50%),
+      radial-gradient(at 97% 21%, hsla(125,98%,72%,0.1) 0px, transparent 50%),
+      radial-gradient(at 52% 99%, hsla(355,98%,76%,0.1) 0px, transparent 50%),
+      radial-gradient(at 10% 29%, hsla(256,96%,68%,0.1) 0px, transparent 50%),
+      radial-gradient(at 97% 96%, hsla(38,60%,74%,0.1) 0px, transparent 50%),
+      radial-gradient(at 33% 50%, hsla(222,67%,73%,0.1) 0px, transparent 50%),
+      radial-gradient(at 79% 53%, hsla(343,68%,79%,0.1) 0px, transparent 50%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .polygon-bg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 200%;
+    background-image: 
+      url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="20" cy="20" r="1" fill="%2300c2ff"/></svg>'),
+      url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="80" cy="80" r="1" fill="%2300c2ff"/></svg>'),
+      url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="50" cy="50" r="1" fill="%23ffffff"/></svg>');
+    background-repeat: repeat;
+    background-size: 100px 100px, 120px 120px, 80px 80px;
+    animation: move-bg 120s linear infinite;
+    z-index: 0;
+  }
+
+  @keyframes move-bg {
+    0% {
+      transform: translate(0, 0);
+    }
+    100% {
+      transform: translate(-1000px, -1000px);
+    }
+  }
+}
