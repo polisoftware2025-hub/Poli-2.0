@@ -372,7 +372,7 @@ const Step1 = () => {
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>
-                  <Button variant={"outline"} className={cn("form-input-dark justify-start text-left font-normal", !field.value && "text-gray-400")}>
+                  <Button variant={"outline"} className={cn("justify-start text-left font-normal", !field.value && "text-gray-400")}>
                     {field.value ? format(field.value, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
