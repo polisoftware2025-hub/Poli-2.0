@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
   Carousel,
@@ -15,10 +17,10 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin, Instagram } from "lucide-react";
+import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin, Instagram, Rocket, Eye } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import Autoplay from "embla-carousel-autoplay"
@@ -40,20 +42,18 @@ interface Program {
     imageHint: string;
 }
 
-const DEFAULT_HERO_IMAGE = "https://picsum.photos/1920/1080"; 
+const DEFAULT_HERO_IMAGE = "https://picsum.photos/seed/homepage-hero/1920/1080"; 
 
 export default function HomePage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [heroImageUrl, setHeroImageUrl] = useState<string>(DEFAULT_HERO_IMAGE);
 
   const navLinks = [
     { href: "#inicio", label: "Inicio" },
-    { href: "#inscripcion", label: "Inscripción" },
-    { href: "/programas", label: "Programas" },
+    { href: "#programas", label: "Programas" },
+    { href: "#mision-vision", label: "Nosotros" },
     { href: "#contacto", label: "Contacto" },
   ];
 
@@ -70,7 +70,7 @@ export default function HomePage() {
                     slug: data.slug || doc.id,
                     title: data.nombre,
                     description: data.descripcionGeneral,
-                    image: data.imagenURL || "https://placehold.co/800x400/002147/FFFFFF?text=Poli+2.0",
+                    image: data.imagenURL || `https://picsum.photos/seed/${doc.id}/600/400`,
                     imageHint: "university campus"
                 }
             });
@@ -93,26 +93,12 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!carouselApi) {
-      return;
-    }
-    setCurrentSlide(carouselApi.selectedScrollSnap());
-    carouselApi.on("select", () => {
-      setCurrentSlide(carouselApi.selectedScrollSnap());
-    });
-  }, [carouselApi]);
-  
-  useEffect(() => {
     AOS.init({
       duration: 1000,
       once: true,
       easing: 'ease-in-out',
     });
   }, []);
-
-  const scrollToSlide = (index: number) => {
-    carouselApi?.scrollTo(index);
-  };
   
   return (
     <div className="flex min-h-screen flex-col bg-gray-50 font-roboto">
@@ -183,15 +169,22 @@ export default function HomePage() {
         <section
           id="inicio"
           className="relative flex h-screen w-full items-center justify-center text-center text-white bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImageUrl})` }}
         >
+          <Image 
+            src={heroImageUrl} 
+            alt="Campus universitario" 
+            fill 
+            style={{objectFit: 'cover'}}
+            priority
+            data-ai-hint="university campus building"
+          />
           <div className="absolute inset-0 z-0 bg-[#002147]/60" />
-          <div className="relative z-20 flex flex-col items-center p-6">
+          <div className="relative z-20 flex flex-col items-center p-6" data-aos="fade-up">
             <h1 className="font-poppins text-5xl font-bold md:text-7xl">
-              Somos Politécnico 2.0
+              Forjamos el Futuro, Hoy
             </h1>
-            <p className="mt-4 text-lg md:text-xl">
-              Tu futuro profesional comienza aquí.
+            <p className="mt-4 max-w-2xl text-lg md:text-xl">
+              Una educación de calidad que te prepara para los retos de un mundo en constante cambio.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Button
@@ -199,91 +192,65 @@ export default function HomePage() {
                 style={{ backgroundColor: "#004aad" }}
                 className="rounded-full px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
               >
-                <Link href="/login">Inicia Sesión</Link>
+                <Link href="/register">Inscríbete Ahora</Link>
               </Button>
               <Button asChild
-                style={{ backgroundColor: "#2ecc71" }}
-                className="rounded-full px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-green-600"
+                variant="outline"
+                className="rounded-full border-2 border-white px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-white/10"
               >
-                <Link href="/programas">Conoce Nuestros Programas</Link>
+                <Link href="/login">Portal de Estudiantes</Link>
               </Button>
             </div>
           </div>
         </section>
 
-        {/* Welcome Section */}
-        <section id="inscripcion" className="bg-white py-20">
-          <div className="container mx-auto max-w-4xl px-6 text-center" data-aos="fade-up">
-            <Card className="rounded-xl bg-white p-8 shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
-              <CardContent className="p-0">
-                <p className="font-poppins text-xl text-gray-700">
-                  El Politécnico Internacional forma profesionales con calidad
-                  y compromiso, preparados para los retos del mundo actual.
-                </p>
-                  <Button asChild size="lg" className="mt-6 rounded-full bg-[#004aad] px-10 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700">
-                      <Link href="/register">Inscríbete</Link>
-                  </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </section>
-
         {/* Programs Section */}
-        <section id="programas" className="bg-gray-50 py-20">
-          <div className="container mx-auto px-6" data-aos="fade-up" data-aos-delay="200">
-            <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-12">
-              Nuestros Programas Académicos
+        <section id="programas" className="bg-white py-20">
+          <div className="container mx-auto px-6" data-aos="fade-up">
+            <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-4">
+              Explora Nuestros Programas
             </h2>
+            <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-12">
+                Ofrecemos programas académicos diseñados para las industrias del futuro, combinando teoría sólida con práctica intensiva.
+            </p>
             {isLoading ? (
-                <div className="w-full h-[500px]">
-                    <Skeleton className="h-full w-full rounded-lg" />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <Skeleton className="h-80 w-full rounded-lg" />
+                    <Skeleton className="h-80 w-full rounded-lg" />
+                    <Skeleton className="h-80 w-full rounded-lg" />
                 </div>
             ) : programs.length > 0 ? (
                 <Carousel 
-                    setApi={setCarouselApi} 
                     className="w-full"
-                    plugins={programs.length > 1 ? [Autoplay({ delay: 8000, stopOnInteraction: true })] : []}
-                    opts={{
-                        loop: programs.length > 1,
-                        align: "start",
-                    }}
+                    plugins={programs.length > 3 ? [Autoplay({ delay: 5000, stopOnInteraction: true })] : []}
+                    opts={{ loop: programs.length > 3, align: "start" }}
                 >
-                  <CarouselContent>
+                  <CarouselContent className="-ml-4">
                     {programs.map((program, index) => (
-                      <CarouselItem key={index}>
-                        <div className="relative h-[500px] w-full overflow-hidden rounded-lg">
-                          <Image
-                            src={program.image}
-                            alt={`Imagen de ${program.title}`}
-                            fill
-                            style={{objectFit: 'cover'}}
-                            className="brightness-50"
-                            data-ai-hint={program.imageHint}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                            <div className="w-full max-w-2xl rounded-lg bg-black/50 p-4 sm:p-8 text-center text-white backdrop-blur-sm">
-                              <h3 className="font-poppins text-2xl sm:text-4xl font-bold">
-                                {program.title}
-                              </h3>
-                              <p className="mt-2 sm:mt-4 text-base sm:text-lg line-clamp-3 lg:line-clamp-5">
-                                {program.description}
-                              </p>
-                              <div className="mt-8 flex flex-col gap-4 sm:flex-row justify-center">
-                                <Button asChild
-                                  style={{ backgroundColor: "#004aad" }}
-                                  className="px-8 py-3 font-semibold text-white transition-transform hover:scale-105"
-                                >
-                                  <Link href="/register">Inscribirme</Link>
+                      <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                        <Card className="group flex h-full flex-col overflow-hidden rounded-xl shadow-lg transition-shadow hover:shadow-2xl">
+                           <div className="relative h-48 w-full overflow-hidden">
+                                <Image
+                                    src={program.image}
+                                    alt={`Imagen de ${program.title}`}
+                                    fill
+                                    style={{objectFit: 'cover'}}
+                                    className="transition-transform duration-500 group-hover:scale-105"
+                                    data-ai-hint={program.imageHint}
+                                />
+                           </div>
+                           <CardHeader>
+                                <CardTitle className="font-poppins text-xl">{program.title}</CardTitle>
+                           </CardHeader>
+                           <CardContent className="flex-grow">
+                                <p className="text-sm text-muted-foreground line-clamp-3">{program.description}</p>
+                           </CardContent>
+                           <CardContent>
+                                <Button asChild variant="link" className="p-0 text-primary font-semibold">
+                                    <Link href={`/programas/${program.slug}`}>Ver más detalles &rarr;</Link>
                                 </Button>
-                                <Button asChild
-                                  className="px-8 py-3 font-semibold text-white shadow-lg transition-transform hover:scale-105 bg-[#2ecc71] hover:bg-[#27ae60] active:bg-[#219150]"
-                                >
-                                   <Link href={`/programas/${program.slug}`}>Ver más</Link>
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                           </CardContent>
+                        </Card>
                       </CarouselItem>
                     ))}
                   </CarouselContent>
@@ -293,20 +260,56 @@ export default function HomePage() {
             ) : (
                 <p className="text-center text-muted-foreground">No hay programas disponibles en este momento.</p>
             )}
-             <div className="mt-4 flex justify-center gap-2">
-              {programs.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => scrollToSlide(index)}
-                  className={`h-3 w-3 rounded-full transition-colors ${
-                    currentSlide === index ? "bg-[#004aad]" : "bg-gray-300"
-                  }`}
-                  aria-label={`Ir al programa ${index + 1}`}
-                />
-              ))}
+          </div>
+        </section>
+
+         {/* Mision y Vision Section */}
+        <section id="mision-vision" className="bg-gray-50 py-20">
+          <div className="container mx-auto px-6" data-aos="fade-up">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+              <Card className="rounded-xl border-none bg-white p-8 shadow-xl">
+                <CardHeader className="flex items-center gap-4 p-0">
+                  <div className="rounded-full bg-primary/10 p-4 text-primary">
+                    <Rocket className="h-8 w-8" />
+                  </div>
+                  <CardTitle className="font-poppins text-2xl font-bold">Nuestra Misión</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 pt-4">
+                  <p className="text-muted-foreground">
+                    Formar profesionales íntegros y competentes, capaces de liderar la transformación digital y social a través de la innovación, el conocimiento aplicado y un profundo sentido ético, contribuyendo al desarrollo sostenible de la comunidad.
+                  </p>
+                </CardContent>
+              </Card>
+              <Card className="rounded-xl border-none bg-white p-8 shadow-xl">
+                <CardHeader className="flex items-center gap-4 p-0">
+                   <div className="rounded-full bg-primary/10 p-4 text-primary">
+                    <Eye className="h-8 w-8" />
+                  </div>
+                  <CardTitle className="font-poppins text-2xl font-bold">Nuestra Visión</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 pt-4">
+                  <p className="text-muted-foreground">
+                    Ser una institución de educación superior líder y referente a nivel nacional e internacional, reconocida por su excelencia académica, su capacidad de innovación y su impacto positivo en la sociedad a través de la formación de líderes con visión global.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </section>
+
+        {/* CTA Section */}
+        <section id="inscripcion" className="bg-primary py-20 text-white">
+          <div className="container mx-auto max-w-4xl px-6 text-center" data-aos="fade-up">
+              <h2 className="font-poppins text-3xl font-bold">Únete a Nuestra Comunidad</h2>
+              <p className="mt-4 text-lg text-primary-foreground/80">
+                Da el primer paso hacia una carrera exitosa. El proceso de inscripción es fácil y rápido.
+              </p>
+              <Button asChild size="lg" className="mt-8 rounded-full bg-white px-10 py-6 text-lg font-semibold text-primary shadow-lg transition-transform hover:scale-105 hover:bg-gray-100">
+                  <Link href="/register">Inscríbete Ahora</Link>
+              </Button>
+          </div>
+        </section>
+
       </main>
 
        {/* Footer */}
