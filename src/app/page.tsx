@@ -14,7 +14,6 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
-  type CarouselApi,
 } from "@/components/ui/carousel";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin, Instagram, Rocket, Eye } from "lucide-react";
@@ -196,7 +195,7 @@ export default function HomePage() {
               </Button>
               <Button asChild
                 variant="outline"
-                className="rounded-full border-2 border-white px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-white/10"
+                className="rounded-full border-2 border-white bg-transparent px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-white/10"
               >
                 <Link href="/login">Portal de Estudiantes</Link>
               </Button>
