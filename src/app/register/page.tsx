@@ -307,7 +307,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Nombre <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="John" {...field} className="form-input-dark" />
+              <Input placeholder="John" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -317,7 +317,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Nombre (Opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Fitzgerald" {...field} className="form-input-dark" />
+              <Input placeholder="Fitzgerald" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -327,7 +327,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Doe" {...field} className="form-input-dark" />
+              <Input placeholder="Doe" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -337,7 +337,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Smith" {...field} className="form-input-dark" />
+              <Input placeholder="Smith" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -348,7 +348,7 @@ const Step1 = () => {
             <FormLabel>Tipo de Identificación <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
-                <SelectTrigger className="form-input-dark"><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger>
               </FormControl>
               <SelectContent><SelectItem value="cc">Cédula de Ciudadanía</SelectItem><SelectItem value="ti">Tarjeta de Identidad</SelectItem><SelectItem value="ce">Cédula de Extranjería</SelectItem><SelectItem value="passport">Pasaporte</SelectItem></SelectContent>
             </Select>
@@ -360,7 +360,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Número de Identificación <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="123456789" {...field} className="form-input-dark" />
+              <Input placeholder="123456789" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -388,7 +388,7 @@ const Step1 = () => {
           <FormItem className="flex flex-col justify-end">
             <FormLabel>Género <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl><SelectTrigger className="form-input-dark"><SelectValue placeholder="Selecciona tu género" /></SelectTrigger></FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Selecciona tu género" /></SelectTrigger></FormControl>
               <SelectContent><SelectItem value="M">Masculino</SelectItem><SelectItem value="F">Femenino</SelectItem><SelectItem value="Otro">Otro</SelectItem></SelectContent>
             </Select>
             <FormMessage />
@@ -417,7 +417,7 @@ const Step2 = () => {
       <FormField control={control} name="phone" rules={{ validate: validatePhoneNumber }} render={({ field }) => (
           <FormItem>
             <FormLabel>Teléfono / Celular <span className="text-destructive">*</span></FormLabel>
-            <FormControl><Input placeholder="3001234567" {...field} className="form-input-dark" /></FormControl>
+            <FormControl><Input placeholder="3001234567" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -425,7 +425,7 @@ const Step2 = () => {
       <FormField control={control} name="address" rules={{ validate: validateRequired }} render={({ field }) => (
           <FormItem>
             <FormLabel>Dirección de Residencia <span className="text-destructive">*</span></FormLabel>
-            <FormControl><Input placeholder="Calle 123 #45-67, Apto 101" {...field} className="form-input-dark" /></FormControl>
+            <FormControl><Input placeholder="Calle 123 #45-67, Apto 101" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -434,7 +434,7 @@ const Step2 = () => {
         <FormItem>
           <FormLabel>País <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={(value) => { field.onChange(value); setValue("city", "", { shouldValidate: true }); }} defaultValue={field.value}>
-            <FormControl><SelectTrigger className="form-input-dark"><SelectValue placeholder="Selecciona un país" /></SelectTrigger></FormControl>
+            <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un país" /></SelectTrigger></FormControl>
             <SelectContent>{countries.map(country => <SelectItem key={country} value={country}>{country}</SelectItem>)}</SelectContent>
           </Select>
           <FormMessage />
@@ -444,7 +444,7 @@ const Step2 = () => {
         <FormItem>
           <FormLabel>Ciudad <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCountry}>
-            <FormControl><SelectTrigger className="form-input-dark"><SelectValue placeholder={selectedCountry ? "Selecciona una ciudad" : "Selecciona un país primero"} /></SelectTrigger></FormControl>
+            <FormControl><SelectTrigger><SelectValue placeholder={selectedCountry ? "Selecciona una ciudad" : "Selecciona un país primero"} /></SelectTrigger></FormControl>
             <SelectContent>{cities.map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}</SelectContent>
           </Select>
           <FormMessage />
@@ -453,7 +453,7 @@ const Step2 = () => {
       <FormField control={control} name="correoPersonal" rules={{ validate: validateEmail }} render={({ field }) => (
           <FormItem className="md:col-span-2">
             <FormLabel>Correo Personal <span className="text-destructive">*</span></FormLabel>
-            <FormControl><Input type="email" placeholder="tu.correo@example.com" {...field} className="form-input-dark" /></FormControl>
+            <FormControl><Input type="email" placeholder="tu.correo@example.com" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -512,7 +512,7 @@ const Step3 = () => {
             <FormItem>
                 <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", "", { shouldValidate: true }); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.sedes}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger></FormControl>
                 <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -522,7 +522,7 @@ const Step3 = () => {
             <FormItem>
                 <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger></FormControl>
                 <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -532,7 +532,7 @@ const Step3 = () => {
             <FormItem>
                 <FormLabel>Modalidad <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={"Selecciona modalidad"} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={"Selecciona modalidad"} /></div></SelectTrigger></FormControl>
                 <SelectContent><SelectItem value="Virtual">Virtual</SelectItem><SelectItem value="Presencial">Presencial</SelectItem></SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -542,7 +542,7 @@ const Step3 = () => {
             <FormItem>
                 <FormLabel>Jornada <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={"Selecciona jornada"} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={"Selecciona jornada"} /></div></SelectTrigger></FormControl>
                 <SelectContent><SelectItem value="Diurna">Diurna</SelectItem><SelectItem value="Nocturna">Nocturna</SelectItem><SelectItem value="Especial">Especial</SelectItem></SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -552,7 +552,7 @@ const Step3 = () => {
             <FormItem className="md:col-span-2">
                 <FormLabel>Grupo <span className="text-destructive">*</span></FormLabel>
                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
-                    <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><UsersIcon className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} /></div></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><div className="flex items-center gap-2"><UsersIcon className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} /></div></SelectTrigger></FormControl>
                     <SelectContent>{grupos.length > 0 ? (grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)) : (<SelectItem value="no-groups" disabled>No hay grupos disponibles</SelectItem>)}</SelectContent>
                  </Select><FormMessage />
             </FormItem>
@@ -573,7 +573,7 @@ const Step4_Access = () => {
           <FormItem>
             <FormLabel>Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
-              <FormControl><Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="form-input-dark pr-10" /></FormControl>
+              <FormControl><Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pr-10" /></FormControl>
               <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
             </div>
             <FormMessage />
@@ -584,7 +584,7 @@ const Step4_Access = () => {
           <FormItem>
             <FormLabel>Confirmar Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
-              <FormControl><Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} className="form-input-dark pr-10" /></FormControl>
+              <FormControl><Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pr-10" /></FormControl>
               <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
             </div>
             <FormMessage />
