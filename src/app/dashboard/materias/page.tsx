@@ -7,15 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { BookCopy, Search, MoreVertical, LayoutGrid, List } from "lucide-react";
+import { BookCopy, Search, LayoutGrid, List } from "lucide-react";
 import Image from "next/image";
 import { PageHeader } from "@/components/page-header";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, DocumentData, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Materia } from "@/types";
 import { createHash } from 'crypto';
+import Link from "next/link";
 
 interface Course {
   id: string;
@@ -167,45 +167,35 @@ export default function CoursesPage() {
           ) : courses.length > 0 ? (
             <div className={`grid gap-6 ${view === 'grid' ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
               {courses.map((course) => (
-                  <Card key={course.id} className="group flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5">
-                     <div className="relative h-48 w-full">
-                         <Image 
-                             src={course.image}
-                             alt={`Imagen de ${course.title}`}
-                             fill
-                             style={{objectFit: 'cover'}}
-                             className="transition-transform duration-500 group-hover:scale-105"
-                             data-ai-hint={course.imageHint}
-                         />
-                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                         <div className="absolute bottom-2 left-4 text-white">
-                             <span className="text-sm font-semibold">{course.progress}% completado</span>
-                         </div>
-                     </div>
-                     <CardContent className="flex flex-1 flex-col justify-between p-4">
-                         <div>
-                             <h3 className="font-semibold text-base leading-tight mb-1 truncate" title={course.title}>
-                                 {course.title}
-                             </h3>
-                             <p className="text-xs text-muted-foreground">{course.code}</p>
-                         </div>
-                         <div className="mt-4">
-                             <Progress value={course.progress} className="h-2"/>
-                         </div>
-                     </CardContent>
-                     <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-8 w-8 bg-black/20 text-white hover:bg-black/40 hover:text-white">
-                                  <MoreVertical className="h-4 w-4"/>
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                              <DropdownMenuItem>Ver detalles</DropdownMenuItem>
-                              <DropdownMenuItem>Ir al curso</DropdownMenuItem>
-                              <DropdownMenuItem>Contactar docente</DropdownMenuItem>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                  </Card>
+                  <Link href={`/dashboard/materias/${course.id}`} key={course.id}>
+                    <Card className="group flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 h-full">
+                        <div className="relative h-48 w-full">
+                            <Image 
+                                src={course.image}
+                                alt={`Imagen de ${course.title}`}
+                                fill
+                                style={{objectFit: 'cover'}}
+                                className="transition-transform duration-500 group-hover:scale-105"
+                                data-ai-hint={course.imageHint}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                            <div className="absolute bottom-2 left-4 text-white">
+                                <span className="text-sm font-semibold">{course.progress}% completado</span>
+                            </div>
+                        </div>
+                        <CardContent className="flex flex-1 flex-col justify-between p-4">
+                            <div>
+                                <h3 className="font-semibold text-base leading-tight mb-1 truncate" title={course.title}>
+                                    {course.title}
+                                </h3>
+                                <p className="text-xs text-muted-foreground">{course.code}</p>
+                            </div>
+                            <div className="mt-4">
+                                <Progress value={course.progress} className="h-2"/>
+                            </div>
+                        </CardContent>
+                    </Card>
+                  </Link>
               ))}
             </div>
            ) : (
