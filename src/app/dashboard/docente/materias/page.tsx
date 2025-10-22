@@ -1,10 +1,9 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookCopy, Users, School, Search, Briefcase, ChevronRight, Tag } from "lucide-react";
+import { BookCopy, Users, School, Search, ChevronRight, Tag, Activity, Star } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/firebase";
@@ -13,6 +12,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import Link from 'next/link';
+import { motion } from "framer-motion";
+import { Progress } from "@/components/ui/progress";
 
 interface Course {
   id: string; // Combination of groupId and subjectId for uniqueness
@@ -23,9 +24,34 @@ interface Course {
   careerName: string;
   sedeName: string;
   totalStudents: number;
-  schedule: string;
-  modalidad: string;
+  courseProgress: number; // Placeholder: 0-100
+  totalActivities: number; // Placeholder
+  groupAverage: number; // Placeholder
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const cardVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 14,
+    },
+  },
+};
+
 
 export default function MyCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([]);
@@ -73,11 +99,9 @@ export default function MyCoursesPage() {
                     carrerasCache.set(groupData.idCarrera, careerName);
                 }
                 
-                // Uniquely identify a course by the combination of group and subject
                 const courseId = `${groupDoc.id}___${slot.materiaId}`;
 
                 if (!teacherCourses.find(c => c.id === courseId)) {
-                    // Fetch the full group document again to ensure we have the latest student count
                     const currentGroupDoc = await getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/grupos", groupDoc.id));
                     const currentGroupData = currentGroupDoc.data();
 
@@ -90,8 +114,9 @@ export default function MyCoursesPage() {
                         careerName: careerName,
                         sedeName: sedeName,
                         totalStudents: currentGroupData?.estudiantes?.length || 0,
-                        schedule: `${slot.dia} ${slot.hora}`,
-                        modalidad: slot.modalidad,
+                        courseProgress: Math.floor(Math.random() * 80) + 10,
+                        totalActivities: Math.floor(Math.random() * 10) + 5,
+                        groupAverage: Math.random() * (4.5 - 3.0) + 3.0,
                     });
                 }
               }
@@ -148,45 +173,70 @@ export default function MyCoursesPage() {
         </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Skeleton className="h-56" />
-            <Skeleton className="h-56" />
-            <Skeleton className="h-56" />
-        </div>
+        <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
+            {[...Array(3)].map((_, i) => (
+                 <motion.div key={i} variants={cardVariants}>
+                    <Skeleton className="h-64 rounded-2xl" />
+                </motion.div>
+            ))}
+        </motion.div>
       ) : filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div 
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+        >
           {filteredCourses.map(course => (
-            <Card key={course.id} className="flex flex-col justify-between hover:shadow-lg transition-shadow">
-              <CardHeader>
-                <CardTitle className="text-lg">{course.subjectName}</CardTitle>
-                <CardDescription className="flex items-center gap-2 text-sm pt-1">
-                    <Briefcase className="h-4 w-4"/> {course.careerName}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                    <School className="h-4 w-4"/>
-                    <span>{course.sedeName}</span>
-                </div>
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <Tag className="h-4 w-4"/>
-                    <span>Grupo: <Badge variant="secondary">{course.groupCode}</Badge></span>
-                </div>
-                 <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="h-4 w-4"/>
-                    <span>{course.totalStudents} Estudiantes</span>
-                </div>
-              </CardContent>
-              <CardFooter>
-                 <Button asChild className="w-full">
-                    <Link href={`/dashboard/docente/cursos/${course.id}`}>
-                        Gestionar Curso <ChevronRight className="ml-2 h-4 w-4"/>
-                    </Link>
-                 </Button>
-              </CardFooter>
-            </Card>
+             <motion.div key={course.id} variants={cardVariants} whileHover={{ y: -5, scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+                <Link href={`/dashboard/docente/cursos/${course.id}`}>
+                    <Card className="rounded-2xl h-full flex flex-col shadow-lg hover:shadow-2xl transition-shadow duration-300 border-l-4 border-primary">
+                        <CardHeader>
+                            <div className="flex justify-between items-start">
+                                <Badge variant="secondary" className="bg-primary/10 text-primary">{course.groupCode}</Badge>
+                                <span className="text-xs font-semibold bg-green-100 text-green-800 px-2 py-1 rounded-full">Activo</span>
+                            </div>
+                            <CardTitle className="text-xl pt-2">{course.subjectName}</CardTitle>
+                            <CardDescription>{course.careerName}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow space-y-4">
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                                <div className="flex items-center gap-2"><School className="h-4 w-4"/><span>{course.sedeName}</span></div>
+                                <div className="flex items-center gap-2"><Users className="h-4 w-4"/><span>{course.totalStudents} Estudiantes</span></div>
+                            </div>
+                             <div className="space-y-2">
+                                <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                                    <span>Progreso del Semestre</span>
+                                    <span>{course.courseProgress}%</span>
+                                </div>
+                                <Progress value={course.courseProgress} className="h-2"/>
+                             </div>
+                             <div className="flex justify-around text-center text-sm pt-2">
+                                <div>
+                                    <p className="font-bold text-lg">{course.totalActivities}</p>
+                                    <p className="text-xs text-muted-foreground">Actividades</p>
+                                </div>
+                                <div>
+                                    <p className="font-bold text-lg text-primary">{course.groupAverage.toFixed(1)}</p>
+                                    <p className="text-xs text-muted-foreground">Promedio</p>
+                                </div>
+                             </div>
+                        </CardContent>
+                        <CardFooter className="p-4 bg-muted/50 rounded-b-2xl">
+                            <Button className="w-full bg-primary/90 hover:bg-primary">
+                                Gestionar Curso <ChevronRight className="ml-2 h-4 w-4"/>
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </Link>
+             </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
         <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
