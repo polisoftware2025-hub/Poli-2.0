@@ -1,4 +1,3 @@
-
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -235,7 +234,7 @@ export default function ProgramsListPage() {
             </div>
             <div className="border-t border-gray-700 py-6">
                 <div className="container mx-auto text-center text-sm text-gray-400">
-                    &copy; {new Date().getFullYear()} Politécnico 2.0. Todos los derechos reservados.
+                    &copy; {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
                 </div>
             </div>
         </footer>
