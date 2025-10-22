@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, GraduationCap, Calendar as CalendarIcon, User, CheckSquare, BookCopy, Star, TrendingUp } from "lucide-react";
+import { ArrowRight, GraduationCap, Calendar as CalendarIcon, User, CheckSquare, BookCopy, Star, TrendingUp, AlertTriangle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar } from "@/components/ui/calendar";
@@ -15,8 +15,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Materia } from "@/types";
 import { createHash } from 'crypto';
 import { motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
+import { Progress } from "@/components/ui/progress";
 
 interface Course {
     id: string;
@@ -34,6 +35,7 @@ const calendarEvents = [
 ];
 
 const getSeedFromString = (str: string): string => {
+    if (!str) return 'default-seed';
     return createHash('md5').update(str).digest('hex');
 };
 
@@ -73,6 +75,7 @@ const containerVariants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.1,
+      delayChildren: 0.2,
     },
   },
 };
@@ -82,6 +85,10 @@ const itemVariants = {
   visible: {
     y: 0,
     opacity: 1,
+    transition: {
+        type: "spring",
+        stiffness: 100,
+    }
   },
 };
 
@@ -168,23 +175,47 @@ export default function StudentDashboardPage() {
       )
     : [];
 
+  const nextDeadline = calendarEvents
+      .filter(e => e.date > new Date() && e.type !== 'class')
+      .sort((a,b) => a.date.getTime() - b.date.getTime())[0];
+
   return (
-    <div className="flex flex-col gap-6">
-        <div>
+    <motion.div 
+        className="flex flex-col gap-6"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+    >
+        <motion.div variants={itemVariants}>
             <h1 className="text-3xl font-bold text-gray-800 font-poppins">¡Hola de nuevo, {userName || 'estudiante'}!</h1>
             <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad académica.</p>
-        </div>
+        </motion.div>
+        
+        {nextDeadline && (
+            <motion.div variants={itemVariants}>
+                <Card className="bg-primary/5 border-primary/20">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                        <AlertTriangle className="h-8 w-8 text-primary" />
+                        <div>
+                            <CardTitle>Lo próximo para ti</CardTitle>
+                            <CardDescription>
+                                Próxima Entrega: <strong>{nextDeadline.title}</strong> en{" "}
+                                {formatDistanceToNow(nextDeadline.date, { locale: es, addSuffix: true })}
+                            </CardDescription>
+                        </div>
+                    </CardHeader>
+                </Card>
+            </motion.div>
+        )}
       
       <motion.div 
         className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start"
         variants={containerVariants}
-        initial="hidden"
-        animate="visible"
       >
         {/* Main Column */}
         <div className="lg:col-span-2 space-y-8">
-             <motion.div variants={itemVariants}>
-                <div className="flex items-center justify-between">
+            <motion.div variants={itemVariants}>
+                <div className="flex items-center justify-between mb-4">
                     <h2 className="text-2xl font-bold text-gray-800 font-poppins">Mis Materias</h2>
                     <Button variant="ghost" asChild>
                         <Link href="/dashboard/materias">
@@ -194,13 +225,13 @@ export default function StudentDashboardPage() {
                     </Button>
                 </div>
                  {isLoading.courses ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <Skeleton className="h-48 w-full rounded-2xl" />
                         <Skeleton className="h-48 w-full rounded-2xl" />
                     </div>
                 ) : courses.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                        {courses.map((course, index) => (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {courses.slice(0, 4).map((course, index) => (
                             <Link href={`/dashboard/materias/${course.id}`} key={index}>
                                 <Card className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                                 <CardContent className="p-0">
@@ -235,12 +266,28 @@ export default function StudentDashboardPage() {
         {/* Side Column */}
         <div className="lg:col-span-1 space-y-8">
             <motion.div variants={itemVariants}>
-                <h2 className="text-2xl font-bold text-gray-800 font-poppins mb-4">Tu Progreso</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
-                    <StatCard title="Promedio General" value="4.2" icon={TrendingUp} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
-                    <StatCard title="Créditos Aprobados" value="18" icon={GraduationCap} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
-                    <StatCard title="Materias Inscritas" value={courses.length.toString()} icon={BookCopy} link="/dashboard/materias" isLoading={isLoading.stats}/>
-                </div>
+                <h2 className="text-2xl font-bold text-gray-800 font-poppins mb-4">Tu Progreso Académico</h2>
+                 <Card>
+                    <CardContent className="pt-6 space-y-6">
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm font-medium"><span>Promedio General</span><span>4.2 / 5.0</span></div>
+                            <Progress value={(4.2 / 5) * 100} />
+                        </div>
+                         <div className="space-y-2">
+                            <div className="flex justify-between text-sm font-medium"><span>Créditos Aprobados</span><span>18 / 120</span></div>
+                            <Progress value={(18 / 120) * 100} />
+                        </div>
+                         <div className="space-y-2">
+                            <div className="flex justify-between text-sm font-medium"><span>Materias del Ciclo</span><span>{courses.length} / 6</span></div>
+                            <Progress value={(courses.length / 6) * 100} />
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                         <Button variant="outline" asChild className="w-full">
+                            <Link href="/dashboard/calificaciones">Ver historial completo</Link>
+                        </Button>
+                    </CardFooter>
+                </Card>
             </motion.div>
 
              <motion.div variants={itemVariants}>
@@ -281,6 +328,6 @@ export default function StudentDashboardPage() {
              </motion.div>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
