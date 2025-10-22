@@ -149,7 +149,7 @@ function ResetPasswordComponent() {
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="rounded-lg border-cyan-300/30 bg-black/40 py-6 pl-12 pr-10 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400"
+                        className="form-input-dark pr-10"
                         {...field}
                       />
                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
@@ -172,7 +172,7 @@ function ResetPasswordComponent() {
                       <Input
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="rounded-lg border-cyan-300/30 bg-black/40 py-6 pl-12 pr-10 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400"
+                        className="form-input-dark pr-10"
                         {...field}
                       />
                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
