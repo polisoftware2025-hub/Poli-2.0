@@ -66,9 +66,9 @@ export default function HomePage() {
   ];
 
   const testimonials = [
-    { name: "Laura Gómez", program: "Ingeniería de Software", quote: "La calidad de los docentes y el enfoque práctico del Politécnico 2.0 realmente prepararon mi camino para el éxito profesional.", avatar: "/avatars/01.png" },
-    { name: "David Martínez", program: "Comercio Exterior", quote: "Gracias a los convenios internacionales, tuve la oportunidad de realizar una pasantía en el extranjero que cambió mi vida.", avatar: "/avatars/02.png" },
-    { name: "Ana Pérez", program: "Diseño Gráfico", quote: "El ambiente creativo y las herramientas de última tecnología me permitieron explorar mi potencial al máximo. ¡Totalmente recomendado!", avatar: "/avatars/03.png" },
+    { name: "Laura Gómez", program: "Ingeniería de Software", quote: "La calidad de los docentes y el enfoque práctico del Politécnico 2.0 realmente prepararon mi camino para el éxito profesional.", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026704d" },
+    { name: "David Martínez", program: "Comercio Exterior", quote: "Gracias a los convenios internacionales, tuve la oportunidad de realizar una pasantía en el extranjero que cambió mi vida.", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026705d" },
+    { name: "Ana Pérez", program: "Diseño Gráfico", quote: "El ambiente creativo y las herramientas de última tecnología me permitieron explorar mi potencial al máximo. ¡Totalmente recomendado!", avatar: "https://i.pravatar.cc/150?u=a042581f4e29026706d" },
   ];
   
   const news = [
@@ -168,7 +168,7 @@ export default function HomePage() {
               <Button asChild style={{ backgroundColor: "#004aad" }} className="rounded-full px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700">
                 <Link href="/register">Inscríbete Ahora</Link>
               </Button>
-              <Button asChild variant="outline" className="rounded-full border-2 border-white bg-transparent px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-white/10">
+              <Button asChild variant="outline" className="bg-transparent rounded-full border-2 border-white px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-white/10">
                 <Link href="/login">Portal de Estudiantes</Link>
               </Button>
             </div>
@@ -181,10 +181,10 @@ export default function HomePage() {
               <Image src="https://picsum.photos/seed/welcome/600/400" alt="Estudiantes colaborando" width={600} height={400} className="rounded-xl shadow-2xl" data-ai-hint="students collaborating"/>
             </div>
             <div data-aos="fade-left">
-              <h2 className="text-3xl font-bold text-gray-800 font-poppins">Bienvenidos al Politécnico 2.0</h2>
-              <p className="mt-4 text-muted-foreground leading-relaxed">Más que una institución, somos una comunidad de aprendizaje vibrante y diversa, comprometida con la excelencia y la innovación. Creemos en una educación que trasciende el aula, que inspira la curiosidad y que dota a nuestros estudiantes con las habilidades necesarias para liderar en sus campos y hacer una diferencia real en el mundo.</p>
+              <h2 className="text-3xl font-bold text-gray-800 font-poppins">Una Comunidad de Aprendizaje para el Siglo XXI</h2>
+              <p className="mt-4 text-muted-foreground leading-relaxed">Te damos la bienvenida al Politécnico 2.0, donde la innovación y la excelencia académica se encuentran. Somos más que una institución; somos una plataforma de lanzamiento para los líderes del mañana, comprometidos con una educación que inspira, reta y transforma.</p>
               <Button asChild className="mt-6">
-                <Link href="/#nosotros">Conoce más sobre nosotros &rarr;</Link>
+                <Link href="#nosotros">Conoce más sobre nosotros &rarr;</Link>
               </Button>
             </div>
           </div>
@@ -230,19 +230,27 @@ export default function HomePage() {
         </section>
 
         <section id="nosotros" className="bg-gray-50 py-20">
-          <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div data-aos="fade-right">
-                  <Card className="rounded-xl border-none bg-white p-8 shadow-xl h-full">
-                    <CardHeader className="flex items-center gap-4 p-0"><div className="rounded-full bg-primary/10 p-4 text-primary"><Rocket className="h-8 w-8" /></div><CardTitle className="font-poppins text-2xl font-bold">Nuestra Misión</CardTitle></CardHeader>
-                    <CardContent className="p-0 pt-4"><p className="text-muted-foreground">Formar profesionales íntegros y competentes, capaces de liderar la transformación digital y social a través de la innovación, el conocimiento aplicado y un profundo sentido ético, contribuyendo al desarrollo sostenible de la comunidad.</p></CardContent>
-                  </Card>
-              </div>
-              <div data-aos="fade-left">
-                  <Card className="rounded-xl border-none bg-white p-8 shadow-xl h-full">
-                    <CardHeader className="flex items-center gap-4 p-0"><div className="rounded-full bg-primary/10 p-4 text-primary"><Eye className="h-8 w-8" /></div><CardTitle className="font-poppins text-2xl font-bold">Nuestra Visión</CardTitle></CardHeader>
-                    <CardContent className="p-0 pt-4"><p className="text-muted-foreground">Ser una institución de educación superior líder y referente a nivel nacional e internacional, reconocida por su excelencia académica, su capacidad de innovación y su impacto positivo en la sociedad a través de la formación de líderes con visión global.</p></CardContent>
-                  </Card>
-              </div>
+          <div className="container mx-auto px-6">
+            <div className="text-center mb-12" data-aos="fade-up">
+                <h2 className="font-poppins text-3xl font-bold text-gray-800">Nuestro Propósito</h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto mt-4">Estamos comprometidos con la formación de líderes que no solo se adapten al cambio, sino que lo impulsen.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+                <div data-aos="fade-right" data-aos-delay="100">
+                    <Card className="rounded-xl border-none bg-white p-8 shadow-xl h-full flex flex-col items-center text-center">
+                        <div className="rounded-full bg-primary/10 p-4 text-primary mb-4"><Rocket className="h-8 w-8" /></div>
+                        <CardHeader className="p-0"><CardTitle className="font-poppins text-2xl font-bold">Nuestra Misión</CardTitle></CardHeader>
+                        <CardContent className="p-0 pt-4"><p className="text-muted-foreground">Empoderar a nuestros estudiantes a través de una educación innovadora y práctica, equipándolos con el conocimiento y las habilidades para prosperar en un mundo digital y globalizado, y para convertirse en agentes de cambio positivo en sus comunidades.</p></CardContent>
+                    </Card>
+                </div>
+                <div data-aos="fade-left" data-aos-delay="200">
+                    <Card className="rounded-xl border-none bg-white p-8 shadow-xl h-full flex flex-col items-center text-center">
+                        <div className="rounded-full bg-primary/10 p-4 text-primary mb-4"><Eye className="h-8 w-8" /></div>
+                        <CardHeader className="p-0"><CardTitle className="font-poppins text-2xl font-bold">Nuestra Visión</CardTitle></CardHeader>
+                        <CardContent className="p-0 pt-4"><p className="text-muted-foreground">Ser un referente global de educación superior, reconocido por nuestra excelencia académica, agilidad para adaptarnos a las nuevas tecnologías y por el impacto tangible de nuestros egresados en la industria y la sociedad.</p></CardContent>
+                    </Card>
+                </div>
+            </div>
           </div>
         </section>
         
@@ -343,4 +351,3 @@ export default function HomePage() {
   );
 }
 
-    
