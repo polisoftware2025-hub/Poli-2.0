@@ -5,10 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, X, GraduationCap, Calendar as CalendarIcon, User, CheckSquare, BookCopy, Star, TrendingUp } from "lucide-react";
+import { ArrowRight, GraduationCap, Calendar as CalendarIcon, User, CheckSquare, BookCopy, Star, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, collection, getDocs } from "firebase/firestore";
@@ -16,7 +15,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Materia } from "@/types";
 import { createHash } from 'crypto';
 import { motion } from "framer-motion";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
@@ -40,7 +38,7 @@ const getSeedFromString = (str: string): string => {
 };
 
 const StatCard = ({ title, value, icon: Icon, link, isLoading }: { title: string, value: string, icon: React.ElementType, link?: string, isLoading: boolean }) => (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className="hover:shadow-md transition-shadow">
         <CardHeader className="pb-2">
             <CardDescription className="flex items-center justify-between">
                 <span>{title}</span>
@@ -69,29 +67,40 @@ const EventIcon = ({ type }: { type: string }) => {
     }
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: {
+    y: 0,
+    opacity: 1,
+  },
+};
+
 
 export default function StudentDashboardPage() {
   const router = useRouter();
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState({ courses: true, stats: true });
-  const [showWelcome, setShowWelcome] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
   useEffect(() => {
-    const storedEmail = localStorage.getItem('userEmail');
     const storedRole = localStorage.getItem('userRole');
     const storedUserId = localStorage.getItem('userId');
 
-    if (storedEmail && storedRole === 'estudiante' && storedUserId) {
-      setUserEmail(storedEmail);
+    if (storedUserId && storedRole === 'estudiante') {
       setUserId(storedUserId);
-    } else if (storedEmail) {
-       router.push('/dashboard');
-    }
-    else {
+    } else {
       router.push('/login');
     }
   }, [router]);
@@ -102,14 +111,10 @@ export default function StudentDashboardPage() {
     const fetchDashboardData = async () => {
         setIsLoading({ courses: true, stats: true });
         try {
-            // Fetch student name and subjects
-            const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
-            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
-
-            const [studentSnap, userSnap, careersSnapshot] = await Promise.all([
-                getDoc(studentRef),
-                getDoc(userRef),
-                getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"))
+            const [userSnap, careersSnapshot, studentSnap] = await Promise.all([
+                getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId)),
+                getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras")),
+                getDoc(doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId))
             ]);
             
             if (userSnap.exists()) {
@@ -157,14 +162,6 @@ export default function StudentDashboardPage() {
   }, [userId]);
 
 
-  if (!userEmail) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-100">
-        <p>Cargando...</p>
-      </div>
-    )
-  }
-
   const eventsForSelectedDay = selectedDate
     ? calendarEvents.filter(
         (event) => event.date.toDateString() === selectedDate.toDateString()
@@ -172,34 +169,23 @@ export default function StudentDashboardPage() {
     : [];
 
   return (
-    <div className="flex flex-col gap-8">
-       {showWelcome && (
-         <Card className="relative bg-primary/5 border-primary/20">
-           <CardHeader>
-               <CardTitle className="font-poppins text-2xl font-bold text-gray-800">
-                  ¡Bienvenido de vuelta, {userName || 'estudiante'}!
-               </CardTitle>
-               <CardDescription className="font-poppins text-gray-600">
-                  Este es tu panel. Revisa tus materias, tareas pendientes y accesos rápidos.
-               </CardDescription>
-           </CardHeader>
-           <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setShowWelcome(false)}>
-              <X className="h-4 w-4" />
-           </Button>
-         </Card>
-       )}
+    <div className="flex flex-col gap-6">
+        <div>
+            <h1 className="text-3xl font-bold text-gray-800 font-poppins">¡Hola de nuevo, {userName || 'estudiante'}!</h1>
+            <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad académica.</p>
+        </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <StatCard title="Promedio General" value="4.2" icon={TrendingUp} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
-          <StatCard title="Créditos Aprobados" value="18" icon={GraduationCap} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
-          <StatCard title="Materias Inscritas" value={courses.length.toString()} icon={BookCopy} link="/dashboard/materias" isLoading={isLoading.stats}/>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <motion.div 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        {/* Main Column */}
         <div className="lg:col-span-2 space-y-8">
-             <div className="space-y-4">
+             <motion.div variants={itemVariants}>
                 <div className="flex items-center justify-between">
-                    <h2 className="font-poppins text-2xl font-bold text-gray-800">Mis Materias Actuales</h2>
+                    <h2 className="text-2xl font-bold text-gray-800 font-poppins">Mis Materias</h2>
                     <Button variant="ghost" asChild>
                         <Link href="/dashboard/materias">
                             Ver todas
@@ -208,92 +194,93 @@ export default function StudentDashboardPage() {
                     </Button>
                 </div>
                  {isLoading.courses ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
                         <Skeleton className="h-48 w-full rounded-2xl" />
                         <Skeleton className="h-48 w-full rounded-2xl" />
                     </div>
                 ) : courses.length > 0 ? (
-                    <Carousel opts={{ align: "start", loop: courses.length > 2 }} className="w-full">
-                        <CarouselContent className="-ml-4">
-                            {courses.map((course, index) => (
-                                <CarouselItem key={index} className="pl-4 md:basis-1/2">
-                                     <motion.div variants={{hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 }}} initial="hidden" animate="visible" transition={{ delay: index * 0.1 }}>
-                                        <Link href={`/dashboard/materias/${course.id}`}>
-                                            <Card className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                                            <CardContent className="p-0">
-                                                <div className="relative h-40 w-full">
-                                                    <Image
-                                                    src={course.image}
-                                                    alt={`Imagen de ${course.title}`}
-                                                    fill
-                                                    style={{objectFit: 'cover'}}
-                                                    className="group-hover:scale-105 transition-transform duration-500"
-                                                    data-ai-hint={course.imageHint}
-                                                    />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                                    <div className="absolute bottom-2 left-4 text-white">
-                                                        <span className="text-sm font-semibold">{course.progress}% completado</span>
-                                                    </div>
-                                                </div>
-                                                <div className="p-4">
-                                                    <h3 className="font-semibold truncate" title={course.title}>{course.title}</h3>
-                                                </div>
-                                            </CardContent>
-                                            </Card>
-                                        </Link>
-                                    </motion.div>
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
-                        <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
-                    </Carousel>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                        {courses.map((course, index) => (
+                            <Link href={`/dashboard/materias/${course.id}`} key={index}>
+                                <Card className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                                <CardContent className="p-0">
+                                    <div className="relative h-40 w-full">
+                                        <Image
+                                        src={course.image}
+                                        alt={`Imagen de ${course.title}`}
+                                        fill
+                                        style={{objectFit: 'cover'}}
+                                        className="group-hover:scale-105 transition-transform duration-500"
+                                        data-ai-hint={course.imageHint}
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                        <div className="absolute bottom-2 left-4 text-white">
+                                            <span className="text-sm font-semibold">{course.progress}% completado</span>
+                                        </div>
+                                    </div>
+                                    <div className="p-4">
+                                        <h3 className="font-semibold truncate" title={course.title}>{course.title}</h3>
+                                    </div>
+                                </CardContent>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
                  ) : (
                     <Card><CardContent className="p-6 text-center text-muted-foreground">No estás inscrito en ninguna materia actualmente.</CardContent></Card>
                  )}
-            </div>
+            </motion.div>
         </div>
         
-        <div className="lg:col-span-1 space-y-4">
-             <div className="flex items-center gap-3">
-                <CalendarIcon className="h-6 w-6 text-primary"/>
-                <h2 className="font-poppins text-2xl font-bold text-gray-800">Agenda del Día</h2>
-            </div>
-             <Card className="shadow-lg">
-                <CardContent className="p-2">
-                    <Calendar
-                        mode="single"
-                        selected={selectedDate}
-                        onSelect={setSelectedDate}
-                        className="p-0 w-full"
-                        markedDays={calendarEvents.map(e => e.date)}
-                    />
-                    <div className="border-t p-4 mt-2">
-                        <h3 className="font-semibold mb-3">
-                            Actividades para {selectedDate ? format(selectedDate, "PPP", { locale: es }) : 'hoy'}
-                        </h3>
-                        {eventsForSelectedDay.length > 0 ? (
-                             <ul className="space-y-4">
-                                {eventsForSelectedDay.map((event, index) => (
-                                    <li key={index} className="flex items-start gap-3">
-                                        <div className="mt-1"><EventIcon type={event.type} /></div>
-                                        <div>
-                                            <p className="font-medium text-sm">{event.title}</p>
-                                            <p className="text-xs text-muted-foreground">{event.course}</p>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <div className="text-center text-sm text-muted-foreground py-4">
-                                <p>No hay actividades programadas para este día.</p>
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
+        {/* Side Column */}
+        <div className="lg:col-span-1 space-y-8">
+            <motion.div variants={itemVariants}>
+                <h2 className="text-2xl font-bold text-gray-800 font-poppins mb-4">Tu Progreso</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
+                    <StatCard title="Promedio General" value="4.2" icon={TrendingUp} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
+                    <StatCard title="Créditos Aprobados" value="18" icon={GraduationCap} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
+                    <StatCard title="Materias Inscritas" value={courses.length.toString()} icon={BookCopy} link="/dashboard/materias" isLoading={isLoading.stats}/>
+                </div>
+            </motion.div>
+
+             <motion.div variants={itemVariants}>
+                 <h2 className="text-2xl font-bold text-gray-800 font-poppins mb-4">Agenda</h2>
+                 <Card className="shadow-lg">
+                    <CardContent className="p-2">
+                        <Calendar
+                            mode="single"
+                            selected={selectedDate}
+                            onSelect={setSelectedDate}
+                            className="p-0 w-full"
+                            markedDays={calendarEvents.map(e => e.date)}
+                        />
+                        <div className="border-t p-4 mt-2">
+                            <h3 className="font-semibold mb-3">
+                                Actividades para {selectedDate ? format(selectedDate, "PPP", { locale: es }) : 'hoy'}
+                            </h3>
+                            {eventsForSelectedDay.length > 0 ? (
+                                <ul className="space-y-4">
+                                    {eventsForSelectedDay.map((event, index) => (
+                                        <li key={index} className="flex items-start gap-3">
+                                            <div className="mt-1"><EventIcon type={event.type} /></div>
+                                            <div>
+                                                <p className="font-medium text-sm">{event.title}</p>
+                                                <p className="text-xs text-muted-foreground">{event.course}</p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <div className="text-center text-sm text-muted-foreground py-4">
+                                    <p>No hay actividades programadas para este día.</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+             </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
