@@ -116,3 +116,9 @@
     }
   }
 }
+
+@layer components {
+  .form-input-dark {
+    @apply rounded-lg border-cyan-300/30 bg-black/40 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400;
+  }
+}
