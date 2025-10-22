@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -118,22 +119,28 @@ export default function VerifyCodePage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 font-roboto">
-      <div className="absolute top-4 left-4">
-        <Link href="/forgot-password" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-          <ArrowLeft className="h-5 w-5"/>
-          Volver
-        </Link>
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 polygon-bg">
+       <div className="absolute top-4 left-4 z-10">
+        <Button
+          asChild
+          variant="ghost"
+          className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 text-white shadow-sm transition-all hover:bg-black/40 hover:text-white active:scale-95 sm:px-4"
+        >
+          <Link href="/forgot-password">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
+          </Link>
+        </Button>
       </div>
-      <Card className="w-full max-w-md rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+      <Card className="z-10 w-full max-w-md rounded-2xl border-cyan-300/20 bg-black/30 text-white shadow-2xl shadow-cyan-500/10 backdrop-blur-lg">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#002147]">
-            <GraduationCap className="h-8 w-8 text-white" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-cyan-400/50 bg-black/40 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+            <GraduationCap className="h-8 w-8 text-cyan-400" />
           </div>
-          <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
+          <CardTitle className="font-poppins text-3xl font-bold text-cyan-300">
             Verificación de Código
           </CardTitle>
-          <CardDescription className="font-poppins text-gray-600">
+          <CardDescription className="font-poppins text-cyan-100/70">
             {verificationEmail 
               ? <>Revisa tu correo <span className="font-semibold">{verificationEmail}</span>, hemos enviado un código de 6 dígitos.</>
               : "Cargando..."
@@ -148,14 +155,14 @@ export default function VerifyCodePage() {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Código de Verificación</FormLabel>
+                    <FormLabel className="text-cyan-100/80">Código de Verificación</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                        <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-400/50" />
                         <Input
                           type="text"
-                          placeholder="Ingresa el código"
-                          className="rounded-lg border-gray-300 py-6 pl-10 text-center tracking-[0.5em] focus:border-[#004aad] focus:ring-[#004aad]"
+                          placeholder="000000"
+                          className="rounded-lg border-cyan-300/30 bg-black/40 py-6 pl-12 text-center text-lg tracking-[0.5em] text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400"
                           maxLength={6}
                           {...field}
                         />
@@ -168,7 +175,7 @@ export default function VerifyCodePage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full rounded-full bg-[#004aad] py-6 text-base font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
+                className="w-full rounded-full border border-cyan-400 bg-cyan-400/20 py-6 text-base font-semibold text-white shadow-lg shadow-cyan-500/10 transition-all hover:scale-105 hover:bg-cyan-400/30 hover:border-cyan-300"
               >
                 {isLoading ? "Validando..." : "Validar Código"}
               </Button>

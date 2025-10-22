@@ -101,18 +101,18 @@ function ResetPasswordComponent() {
 
   if (isSuccess) {
     return (
-       <Card className="w-full max-w-md rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] text-center">
+       <Card className="z-10 w-full max-w-md rounded-2xl border-cyan-300/20 bg-black/30 text-white shadow-2xl shadow-cyan-500/10 backdrop-blur-lg text-center">
          <CardHeader>
-           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-             <CheckCircle className="h-8 w-8 text-green-600" />
+           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-green-400/50 bg-black/40 shadow-[0_0_20px_rgba(0,255,100,0.2)]">
+             <CheckCircle className="h-8 w-8 text-green-400" />
            </div>
-           <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
+           <CardTitle className="font-poppins text-3xl font-bold text-green-300">
              Contraseña Cambiada
            </CardTitle>
          </CardHeader>
          <CardContent>
-           <p className="text-gray-600">Tu contraseña ha sido actualizada. Ahora puedes iniciar sesión con tus nuevas credenciales.</p>
-           <Button asChild className="mt-6 w-full rounded-full bg-[#004aad] py-6 text-base font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700">
+           <p className="text-cyan-100/70">Tu contraseña ha sido actualizada. Ahora puedes iniciar sesión con tus nuevas credenciales.</p>
+           <Button asChild className="mt-6 w-full rounded-full border border-cyan-400 bg-cyan-400/20 py-6 text-base font-semibold text-white shadow-lg shadow-cyan-500/10 transition-all hover:scale-105 hover:bg-cyan-400/30 hover:border-cyan-300">
              <Link href="/login">Ir a Iniciar Sesión</Link>
            </Button>
          </CardContent>
@@ -121,15 +121,15 @@ function ResetPasswordComponent() {
   }
 
   return (
-    <Card className="w-full max-w-md rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)]">
+    <Card className="z-10 w-full max-w-md rounded-2xl border-cyan-300/20 bg-black/30 text-white shadow-2xl shadow-cyan-500/10 backdrop-blur-lg">
       <CardHeader className="text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#002147]">
-          <GraduationCap className="h-8 w-8 text-white" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-cyan-400/50 bg-black/40 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
+          <GraduationCap className="h-8 w-8 text-cyan-400" />
         </div>
-        <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
+        <CardTitle className="font-poppins text-3xl font-bold text-cyan-300">
           Cambiar Contraseña
         </CardTitle>
-        <CardDescription className="font-poppins text-gray-600">
+        <CardDescription className="font-poppins text-cyan-100/70">
           Crea una contraseña segura con al menos 8 caracteres.
         </CardDescription>
       </CardHeader>
@@ -142,23 +142,17 @@ function ResetPasswordComponent() {
               rules={{ validate: validatePassword }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Nueva Contraseña</FormLabel>
+                  <FormLabel className="text-cyan-100/80">Nueva Contraseña</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-400/50" />
                       <Input
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="rounded-lg border-gray-300 py-6 pl-10 pr-10 focus:border-[#004aad] focus:ring-[#004aad]"
+                        className="rounded-lg border-cyan-300/30 bg-black/40 py-6 pl-12 pr-10 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400"
                         {...field}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-                      >
-                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -168,28 +162,20 @@ function ResetPasswordComponent() {
             <FormField
               control={form.control}
               name="confirmPassword"
-              rules={{
-                  validate: (value) => value === form.getValues("password") || "Las contraseñas no coinciden."
-              }}
+              rules={{ validate: (value) => value === form.getValues("password") || "Las contraseñas no coinciden." }}
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirmar Contraseña</FormLabel>
+                  <FormLabel className="text-cyan-100/80">Confirmar Contraseña</FormLabel>
                   <FormControl>
                      <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                      <Lock className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-400/50" />
                       <Input
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="rounded-lg border-gray-300 py-6 pl-10 pr-10 focus:border-[#004aad] focus:ring-[#004aad]"
+                        className="rounded-lg border-cyan-300/30 bg-black/40 py-6 pl-12 pr-10 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400"
                         {...field}
                       />
-                       <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
-                      >
-                        {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                      </button>
+                       <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -199,7 +185,7 @@ function ResetPasswordComponent() {
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-full bg-[#004aad] py-6 text-base font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700"
+              className="w-full rounded-full border border-cyan-400 bg-cyan-400/20 py-6 text-base font-semibold text-white shadow-lg shadow-cyan-500/10 transition-all hover:scale-105 hover:bg-cyan-400/30 hover:border-cyan-300"
             >
               {isLoading ? 'Guardando...' : 'Guardar Contraseña'}
             </Button>
@@ -212,12 +198,18 @@ function ResetPasswordComponent() {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 font-roboto">
-       <div className="absolute top-4 left-4">
-        <Link href="/login" className="flex items-center gap-2 text-gray-600 hover:text-gray-900">
-          <ArrowLeft className="h-5 w-5"/>
-           Volver al inicio de sesión
-        </Link>
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 polygon-bg">
+       <div className="absolute top-4 left-4 z-10">
+         <Button
+          asChild
+          variant="ghost"
+          className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 text-white shadow-sm transition-all hover:bg-black/40 hover:text-white active:scale-95 sm:px-4"
+        >
+          <Link href="/login">
+            <ArrowLeft className="h-4 w-4" />
+            <span className="hidden sm:inline">Volver</span>
+          </Link>
+        </Button>
       </div>
       <Suspense fallback={<div>Cargando...</div>}>
         <ResetPasswordComponent />
