@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,6 +17,8 @@ import type { Materia } from "@/types";
 import { createHash } from 'crypto';
 import { motion } from "framer-motion";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 
 interface Course {
     id: string;
@@ -295,4 +297,3 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
-
