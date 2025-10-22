@@ -5,17 +5,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, X, GraduationCap, Calendar as CalendarIcon, User, CheckSquare } from "lucide-react";
-import Image from 'next/image';
+import { ArrowRight, X, GraduationCap, Calendar as CalendarIcon, User, CheckSquare, BookCopy, Star, TrendingUp } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, DocumentData, collection, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Materia } from "@/types";
 import { createHash } from 'crypto';
+import { motion } from "framer-motion";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 interface Course {
     id: string;
@@ -25,32 +26,55 @@ interface Course {
     imageHint: string;
 }
 
-const todoItems = [
-    { id: "task1", label: "Cuestionario de Cálculo", dueDate: "2024-08-15", course: "Cálculo Diferencial", completed: false },
-    { id: "task2", label: "Entrega de Prototipo IA", dueDate: "2024-08-20", course: "Inteligencia Artificial", completed: false },
-    { id: "task3", label: "Examen Parcial de Base de Datos", dueDate: "2024-08-22", course: "Base de Datos", completed: true },
-    { id: "task4", label: "Taller de Pruebas de Software", dueDate: "2024-08-25", course: "Pruebas y Mant.", completed: false },
-]
-
 const calendarEvents = [
-    { date: new Date("2024-08-15"), title: "Cuestionario de Cálculo", course: "Cálculo Diferencial" },
-    { date: new Date("2024-08-20"), title: "Entrega de Prototipo IA", course: "Inteligencia Artificial" },
-    { date: new Date("2024-08-22"), title: "Examen Parcial de Base de Datos", course: "Base de Datos" },
-    { date: new Date("2024-08-25"), title: "Taller de Pruebas de Software", course: "Pruebas y Mant." },
-    { date: new Date("2024-09-02"), title: "Presentación Final", course: "Lógica de Programación" },
+    { date: new Date(), title: "Cuestionario de Cálculo", course: "Cálculo Diferencial", type: "task" },
+    { date: new Date(), title: "Clase de Bases de Datos", course: "Bases de Datos Avanzadas", type: "class" },
+    { date: new Date(new Date().setDate(new Date().getDate() + 2)), title: "Examen Parcial de IA", course: "Inteligencia Artificial", type: "exam" },
+    { date: new Date(new Date().setDate(new Date().getDate() + 5)), title: "Entrega Proyecto Final", course: "Lógica de Programación", type: "task" },
 ];
 
-// Simple hash function to get a numeric seed from a string
 const getSeedFromString = (str: string): string => {
     return createHash('md5').update(str).digest('hex');
 };
 
+const StatCard = ({ title, value, icon: Icon, link, isLoading }: { title: string, value: string, icon: React.ElementType, link?: string, isLoading: boolean }) => (
+    <Card className="hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
+            <CardDescription className="flex items-center justify-between">
+                <span>{title}</span>
+                <Icon className="h-5 w-5 text-muted-foreground" />
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-3xl font-bold text-primary">{value}</div>}
+        </CardContent>
+        {link && (
+            <CardFooter className="pt-0">
+                <Button variant="link" asChild className="p-0 h-auto text-xs">
+                    <Link href={link}>Ver detalle <ArrowRight className="ml-1 h-3 w-3" /></Link>
+                </Button>
+            </CardFooter>
+        )}
+    </Card>
+);
+
+const EventIcon = ({ type }: { type: string }) => {
+    switch(type) {
+        case 'task': return <CheckSquare className="h-5 w-5 text-yellow-500" />;
+        case 'class': return <BookCopy className="h-5 w-5 text-blue-500" />;
+        case 'exam': return <GraduationCap className="h-5 w-5 text-red-500" />;
+        default: return <CalendarIcon className="h-5 w-5 text-gray-500" />;
+    }
+}
+
+
 export default function StudentDashboardPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [courses, setCourses] = useState<Course[]>([]);
-  const [isLoadingCourses, setIsLoadingCourses] = useState(true);
+  const [isLoading, setIsLoading] = useState({ courses: true, stats: true });
   const [showWelcome, setShowWelcome] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   
@@ -73,30 +97,28 @@ export default function StudentDashboardPage() {
   useEffect(() => {
     if (!userId) return;
 
-    const fetchCourses = async () => {
-        setIsLoadingCourses(true);
+    const fetchDashboardData = async () => {
+        setIsLoading({ courses: true, stats: true });
         try {
-            // 1. Fetch all careers to build a map of all subjects
-            const careersSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"));
-            const allSubjectsMap = new Map<string, Materia>();
-            careersSnapshot.forEach(careerDoc => {
-                const careerData = careerDoc.data();
-                 if (careerData.ciclos && Array.isArray(careerData.ciclos)) {
-                    careerData.ciclos.forEach((ciclo: any) => {
-                        if (ciclo.materias && Array.isArray(ciclo.materias)) {
-                            ciclo.materias.forEach((materia: any) => {
-                                if(materia.id && !allSubjectsMap.has(materia.id)) {
-                                    allSubjectsMap.set(materia.id, materia as Materia);
-                                }
-                            });
-                        }
-                    });
-                }
-            });
-
-            // 2. Fetch student data to get their enrolled subjects
+            // Fetch student name and subjects
             const studentRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/estudiantes", userId);
-            const studentSnap = await getDoc(studentRef);
+            const userRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId);
+
+            const [studentSnap, userSnap, careersSnapshot] = await Promise.all([
+                getDoc(studentRef),
+                getDoc(userRef),
+                getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/carreras"))
+            ]);
+            
+            if (userSnap.exists()) {
+                setUserName(userSnap.data().nombre1 || "Estudiante");
+            }
+            
+            const allSubjectsMap = new Map<string, Materia>();
+            careersSnapshot.forEach(doc => {
+                const data = doc.data();
+                if (data.ciclos) data.ciclos.forEach((c: any) => c.materias.forEach((m: any) => { if(m.id) allSubjectsMap.set(m.id, m) }));
+            });
 
             if (studentSnap.exists()) {
                 const studentData = studentSnap.data();
@@ -112,25 +134,24 @@ export default function StudentDashboardPage() {
 
                     return {
                         id: enrolledSubject.id,
-                        title: enrolledSubject.nombre.toUpperCase(),
-                        progress: Math.floor(Math.random() * 100), // Placeholder progress
+                        title: enrolledSubject.nombre,
+                        progress: Math.floor(Math.random() * 100),
                         image: imageUrl,
                         imageHint: imageHint,
                     };
                 });
                 setCourses(fetchedCourses);
             } else {
-                console.log("No se encontró el documento del estudiante.");
                 setCourses([]);
             }
         } catch (error) {
-            console.error("Error fetching student courses: ", error);
+            console.error("Error fetching student dashboard data: ", error);
         } finally {
-            setIsLoadingCourses(false);
+            setIsLoading({ courses: false, stats: false });
         }
     };
 
-    fetchCourses();
+    fetchDashboardData();
   }, [userId]);
 
 
@@ -154,153 +175,115 @@ export default function StudentDashboardPage() {
          <Card className="relative bg-primary/5 border-primary/20">
            <CardHeader>
                <CardTitle className="font-poppins text-2xl font-bold text-gray-800">
-                  ¡Bienvenido de vuelta, estudiante!
+                  ¡Bienvenido de vuelta, {userName || 'estudiante'}!
                </CardTitle>
                <CardDescription className="font-poppins text-gray-600">
                   Este es tu panel. Revisa tus materias, tareas pendientes y accesos rápidos.
                </CardDescription>
            </CardHeader>
-           <CardContent>
-               <p className="text-gray-700">Has iniciado sesión como: <span className="font-semibold text-primary">{userEmail}</span></p>
-           </CardContent>
            <Button variant="ghost" size="icon" className="absolute top-4 right-4" onClick={() => setShowWelcome(false)}>
               <X className="h-4 w-4" />
            </Button>
          </Card>
        )}
       
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          <Button variant="outline" size="lg" className="h-auto py-6 flex flex-col gap-2" asChild>
-            <Link href="/dashboard/calificaciones">
-                <GraduationCap className="h-8 w-8 text-primary"/>
-                <span className="font-semibold text-base">Ver Calificaciones</span>
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" className="h-auto py-6 flex flex-col gap-2" asChild>
-             <Link href="/dashboard/horarios">
-                <CalendarIcon className="h-8 w-8 text-primary"/>
-                <span className="font-semibold text-base">Ver Horario</span>
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" className="h-auto py-6 flex flex-col gap-2" asChild>
-            <Link href="/dashboard/profile">
-                <User className="h-8 w-8 text-primary"/>
-                <span className="font-semibold text-base">Mi Perfil</span>
-            </Link>
-          </Button>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StatCard title="Promedio General" value="4.2" icon={TrendingUp} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
+          <StatCard title="Créditos Aprobados" value="18" icon={GraduationCap} link="/dashboard/calificaciones" isLoading={isLoading.stats}/>
+          <StatCard title="Materias Inscritas" value={courses.length.toString()} icon={BookCopy} link="/dashboard/materias" isLoading={isLoading.stats}/>
       </div>
 
-      <div className="space-y-8">
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="font-poppins text-2xl font-bold text-gray-800">Mis Materias Actuales</h2>
-                <Button variant="ghost" asChild>
-                    <Link href="/dashboard/materias">
-                        Ver todas las materias
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+             <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h2 className="font-poppins text-2xl font-bold text-gray-800">Mis Materias Actuales</h2>
+                    <Button variant="ghost" asChild>
+                        <Link href="/dashboard/materias">
+                            Ver todas
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                    </Button>
+                </div>
+                 {isLoading.courses ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <Skeleton className="h-48 w-full rounded-2xl" />
+                        <Skeleton className="h-48 w-full rounded-2xl" />
+                    </div>
+                ) : courses.length > 0 ? (
+                    <Carousel opts={{ align: "start", loop: courses.length > 2 }} className="w-full">
+                        <CarouselContent className="-ml-4">
+                            {courses.map((course, index) => (
+                                <CarouselItem key={index} className="pl-4 md:basis-1/2">
+                                     <motion.div variants={{hidden: { opacity: 0, scale: 0.95 }, visible: { opacity: 1, scale: 1 }}} initial="hidden" animate="visible" transition={{ delay: index * 0.1 }}>
+                                        <Link href={`/dashboard/materias/${course.id}`}>
+                                            <Card className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
+                                            <CardContent className="p-0">
+                                                <div className="relative h-40 w-full">
+                                                    <Image
+                                                    src={course.image}
+                                                    alt={`Imagen de ${course.title}`}
+                                                    fill
+                                                    style={{objectFit: 'cover'}}
+                                                    className="group-hover:scale-105 transition-transform duration-500"
+                                                    data-ai-hint={course.imageHint}
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                                    <div className="absolute bottom-2 left-4 text-white">
+                                                        <span className="text-sm font-semibold">{course.progress}% completado</span>
+                                                    </div>
+                                                </div>
+                                                <div className="p-4">
+                                                    <h3 className="font-semibold truncate" title={course.title}>{course.title}</h3>
+                                                </div>
+                                            </CardContent>
+                                            </Card>
+                                        </Link>
+                                    </motion.div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="absolute left-0 top-1/2 -translate-y-1/2" />
+                        <CarouselNext className="absolute right-0 top-1/2 -translate-y-1/2" />
+                    </Carousel>
+                 ) : (
+                    <Card><CardContent className="p-6 text-center text-muted-foreground">No estás inscrito en ninguna materia actualmente.</CardContent></Card>
+                 )}
             </div>
-             {isLoadingCourses ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    {[...Array(4)].map((_, index) => (
-                        <Card key={index}><CardContent className="p-4"><Skeleton className="h-48 w-full" /></CardContent></Card>
-                    ))}
-                </div>
-            ) : courses.length > 0 ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                    {courses.map((course) => (
-                        <Card key={course.id} className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                        <CardContent className="p-0">
-                            <div className="relative h-40 w-full">
-                                <Image
-                                src={course.image}
-                                alt={`Imagen de ${course.title}`}
-                                fill
-                                style={{objectFit: 'cover'}}
-                                className="group-hover:scale-105 transition-transform duration-500"
-                                data-ai-hint={course.imageHint}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                <div className="absolute bottom-2 left-4 text-white">
-                                    <span className="text-sm font-semibold">{course.progress}% completado</span>
-                                </div>
-                            </div>
-                            <div className="p-4">
-                                <h3 className="font-semibold truncate" title={course.title}>{course.title}</h3>
-                            </div>
-                        </CardContent>
-                        </Card>
-                    ))}
-                </div>
-             ) : (
-                <Card><CardContent className="p-6 text-center text-muted-foreground">No estás inscrito en ninguna materia actualmente.</CardContent></Card>
-             )}
         </div>
         
-        <div className="space-y-4">
-            <div className="flex items-center gap-3">
-                <CheckSquare className="h-6 w-6 text-primary"/>
-                <h2 className="font-poppins text-2xl font-bold text-gray-800">Lista de Tareas Pendientes</h2>
-            </div>
-            <Card>
-                <CardContent className="space-y-4 p-6">
-                    {todoItems.map((item) => (
-                        <div key={item.id} className="flex items-start gap-4">
-                            <Checkbox id={item.id} defaultChecked={item.completed} className="mt-1"/>
-                            <div className="grid gap-1.5">
-                                <label htmlFor={item.id} className={`font-medium ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
-                                    {item.label}
-                                </label>
-                                <div className="flex items-center gap-2">
-                                        <Badge variant={item.completed ? "secondary" : "outline"} className="text-xs">{item.course}</Badge>
-                                        <p className="text-xs text-muted-foreground">{new Date(item.dueDate).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                    <Button variant="outline" className="w-full mt-4">
-                        Ver todas las tareas
-                    </Button>
-                </CardContent>
-            </Card>
-        </div>
-
-        <div className="space-y-4">
-            <div className="flex items-center gap-3">
+        <div className="lg:col-span-1 space-y-4">
+             <div className="flex items-center gap-3">
                 <CalendarIcon className="h-6 w-6 text-primary"/>
-                <h2 className="font-poppins text-2xl font-bold text-gray-800">Calendario Académico</h2>
+                <h2 className="font-poppins text-2xl font-bold text-gray-800">Agenda del Día</h2>
             </div>
-            <Card>
-                <CardContent className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2 flex justify-center">
-                         <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            className="p-0"
-                            markedDays={calendarEvents.map(e => e.date)}
-                        />
-                    </div>
-                    <div className="lg:border-l lg:pl-6 md:border-t md:pt-6 lg:border-t-0 lg:pt-0 border-border">
-                        <h3 className="font-semibold text-lg mb-4">
-                            Actividades para {selectedDate ? selectedDate.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }) : 'el día seleccionado'}
+             <Card className="shadow-lg">
+                <CardContent className="p-2">
+                    <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={setSelectedDate}
+                        className="p-0 w-full"
+                        markedDays={calendarEvents.map(e => e.date)}
+                    />
+                    <div className="border-t p-4 mt-2">
+                        <h3 className="font-semibold mb-3">
+                            Actividades para {selectedDate ? format(selectedDate, "PPP", { locale: es }) : 'hoy'}
                         </h3>
                         {eventsForSelectedDay.length > 0 ? (
                              <ul className="space-y-4">
                                 {eventsForSelectedDay.map((event, index) => (
-                                    <li key={index} className="p-4 rounded-lg bg-primary/5 border border-primary/10">
-                                        <p className="font-semibold">{event.title}</p>
-                                        <p className="text-sm text-muted-foreground">{event.course}</p>
-                                        <Button variant="link" className="p-0 h-auto mt-2 text-primary">
-                                            Ir a la entrega
-                                            <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Button>
+                                    <li key={index} className="flex items-start gap-3">
+                                        <div className="mt-1"><EventIcon type={event.type} /></div>
+                                        <div>
+                                            <p className="font-medium text-sm">{event.title}</p>
+                                            <p className="text-xs text-muted-foreground">{event.course}</p>
+                                        </div>
                                     </li>
                                 ))}
                             </ul>
                         ) : (
-                            <div className="text-center text-muted-foreground py-8">
+                            <div className="text-center text-sm text-muted-foreground py-4">
                                 <p>No hay actividades programadas para este día.</p>
                             </div>
                         )}
@@ -312,3 +295,4 @@ export default function StudentDashboardPage() {
     </div>
   );
 }
+
