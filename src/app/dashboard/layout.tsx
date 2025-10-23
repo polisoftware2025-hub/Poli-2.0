@@ -185,6 +185,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/gestor/reports", label: "Reportes", icon: FileText },
             { href: "/dashboard/gestor/announcements", label: "Anuncios", icon: Send },
             { href: "/dashboard/gestor/notifications", label: "Notificaciones", icon: Bell },
+            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
         
         switch (role) {
