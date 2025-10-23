@@ -146,6 +146,12 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         if (userId) {
             saveToFirestore(userId, preferences);
         }
+
+        // Apply theme mode class to the html element
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(preferences.themeMode);
+        
     }, [state.preferences, saveToFirestore]);
     
     const updatePreference = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {

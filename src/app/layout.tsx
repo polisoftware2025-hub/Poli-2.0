@@ -7,36 +7,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import Script from 'next/script';
 
 const metadata: Metadata = {
   title: "Politécnico Internacional",
   description:
     "Formando profesionales con calidad y compromiso para los retos del mundo actual.",
 };
-
-const themeLoaderScript = `
-  (function() {
-    try {
-      // We only apply the dark class here. All other variables are scoped to the dashboard.
-      const savedPrefs = localStorage.getItem('userPreferences');
-      if (savedPrefs) {
-        const prefs = JSON.parse(savedPrefs);
-        if (prefs.themeMode === 'dark') {
-          document.documentElement.classList.add('dark');
-        }
-      } else {
-        // Fallback for first-time users
-        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-          document.documentElement.classList.add('dark');
-        }
-      }
-    } catch (e) {
-      console.error('Failed to load theme mode preference:', e);
-    }
-  })();
-`;
-
 
 export default function RootLayout({
   children,
@@ -68,9 +44,6 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat&family=Exo+2:wght@400;600;700&family=IBM+Plex+Mono&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Lobster&family=Lora&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=Orbitron:wght@400;700&family=Oswald&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;500;600;700&family=Press+Start+2P&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Source+Code+Pro:wght@400;600&family=Space+Grotesk:wght@400;500;700&family=Teko&display=swap"
           rel="stylesheet"
         />
-         <Script id="theme-loader" strategy="beforeInteractive">
-          {themeLoaderScript}
-        </Script>
       </head>
       <body suppressHydrationWarning>
         <AnimatePresence>
