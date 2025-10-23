@@ -367,26 +367,21 @@ const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
   const accent = `hsl(${accentColor.hue}, ${accentColor.saturation}%, ${accentColor.lightness}%)`;
   
   const background = themeMode === 'dark' 
-    ? `hsl(220, 90%, 4%)`
+    ? `hsl(220, 20%, 7%)`
     : `hsl(220, 20%, 97%)`;
   const card = themeMode === 'dark' 
-    ? 'hsla(224, 71%, 4%, 0.6)' 
-    : 'hsla(0, 0%, 100%, 0.9)';
-  const cardBorder = themeMode === 'dark' ? 'hsl(217 33% 25%)' : 'hsl(214 32% 91%)';
-  const textForeground = themeMode === 'dark' ? 'hsl(210 40% 98%)' : 'hsl(220 90% 4%)';
-  const textMuted = themeMode === 'dark' ? 'hsl(215 20% 65%)' : 'hsl(215 28% 44%)';
+    ? (cardStyle === 'glass' ? 'hsla(224, 71%, 4%, 0.6)' : 'hsl(224, 71%, 4%)')
+    : (cardStyle === 'glass' ? 'hsla(0, 0%, 100%, 0.8)' : 'hsl(0, 0%, 100%)');
+  const cardBorder = themeMode === 'dark' ? 'hsl(217, 33%, 25%)' : 'hsl(214, 32%, 91%)';
+  const textForeground = themeMode === 'dark' ? 'hsl(210, 40%, 98%)' : 'hsl(220, 90%, 4%)';
+  const textMuted = themeMode === 'dark' ? 'hsl(215, 20%, 65%)' : 'hsl(215, 28%, 44%)';
   
-  const cardClasses = {
-      glass: "bg-opacity-60 backdrop-blur-md",
-      flat: "bg-opacity-100",
-      bordered: "bg-opacity-90 border",
-  };
-
   const cardDynamicStyle: React.CSSProperties = {
       backgroundColor: card,
       borderRadius: `${borderRadius}rem`,
       boxShadow: showShadows ? '0 4px 15px rgba(0, 0, 0, 0.1)' : 'none',
       borderColor: cardBorder,
+      borderWidth: cardStyle === 'bordered' ? '1px' : '0',
       backdropFilter: cardStyle === 'glass' ? `blur(${blurIntensity}px)` : 'none',
       WebkitBackdropFilter: cardStyle === 'glass' ? `blur(${blurIntensity}px)` : 'none',
   };
@@ -408,10 +403,7 @@ const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
       <div className={`flex h-full ${sidebarContainerClass}`}>
         <div 
             className="w-16 h-full flex flex-col items-center py-4 space-y-4"
-            style={{
-                ...cardDynamicStyle,
-                borderWidth: cardStyle === 'bordered' ? '1px' : '0'
-            }}
+            style={cardDynamicStyle}
         >
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{backgroundColor: primary, color: 'white'}}>P</div>
           <div className="space-y-2">
@@ -427,10 +419,7 @@ const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
           </div>
           <div 
             className="p-4"
-            style={{
-                ...cardDynamicStyle,
-                borderWidth: cardStyle === 'bordered' ? '1px' : '0'
-            }}
+            style={cardDynamicStyle}
           >
             <p className="text-sm font-medium" style={{color: textForeground}}>Hola, Usuario</p>
             <p className="text-xs" style={{color: textMuted}}>Este es un ejemplo de tarjeta.</p>

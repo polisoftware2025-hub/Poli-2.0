@@ -97,7 +97,9 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         isLoading: true,
     });
     
+    // Debounced function to save to Firestore
     const saveToFirestore = useCallback(debounce(async (userId: string, prefs: UserPreferences) => {
+        if (!userId) return;
         try {
             const userPrefsRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId, "config", "preferences");
             await setDoc(userPrefsRef, prefs, { merge: true });
@@ -106,32 +108,41 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         }
     }, 1500), []);
 
+
+    // Effect for initial loading of preferences
     useEffect(() => {
         const userId = localStorage.getItem('userId');
         
-        const loadPreferences = async () => {
+        async function loadPreferences() {
             dispatch({ type: 'SET_LOADING', payload: true });
             
+            let finalPrefs = { ...defaultPreferences };
+
+            // 1. Try loading from localStorage for quick initial paint
             const localPrefsRaw = localStorage.getItem('userPreferences');
-            let loadedPrefs = defaultPreferences;
             if (localPrefsRaw) {
                 try {
-                    loadedPrefs = { ...defaultPreferences, ...JSON.parse(localPrefsRaw) };
+                    finalPrefs = { ...finalPrefs, ...JSON.parse(localPrefsRaw) };
                 } catch (e) { console.error("Could not parse local preferences:", e); }
             }
             
-            dispatch({ type: 'SET_PREFERENCES', payload: loadedPrefs });
+            // Apply immediately for responsiveness
+            dispatch({ type: 'SET_PREFERENCES', payload: finalPrefs });
 
+            // 2. Then, fetch from Firestore to get the most up-to-date version
             if (userId) {
                 try {
                     const userPrefsRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId, "config", "preferences");
                     const docSnap = await getDoc(userPrefsRef);
                     if (docSnap.exists()) {
-                        const firestorePrefs = { ...defaultPreferences, ...docSnap.data() };
-                        dispatch({ type: 'SET_PREFERENCES', payload: firestorePrefs });
-                        localStorage.setItem('userPreferences', JSON.stringify(firestorePrefs));
+                        const firestorePrefs = docSnap.data() as Partial<UserPreferences>;
+                        // Merge Firestore prefs over the initially loaded ones
+                        finalPrefs = { ...finalPrefs, ...firestorePrefs };
+                        dispatch({ type: 'SET_PREFERENCES', payload: finalPrefs });
                     }
-                } catch (error) { console.error("Failed to fetch preferences from Firestore:", error); }
+                } catch (error) { 
+                    console.error("Failed to fetch preferences from Firestore:", error); 
+                }
             }
             dispatch({ type: 'SET_LOADING', payload: false });
         };
@@ -139,15 +150,18 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         loadPreferences();
     }, []);
 
+    // Effect for saving preferences and applying theme to DOM
     useEffect(() => {
         const { preferences } = state;
         const userId = localStorage.getItem('userId');
+        
+        // Save to localStorage and (debounced) to Firestore
         localStorage.setItem('userPreferences', JSON.stringify(preferences));
         if (userId) {
             saveToFirestore(userId, preferences);
         }
 
-        // Apply theme mode class to the html element
+        // Apply theme mode class to the html element for global dark/light mode
         const root = window.document.documentElement;
         root.classList.remove('light', 'dark');
         root.classList.add(preferences.themeMode);

@@ -12,22 +12,24 @@ const Card = React.forwardRef<
 >(({ className, ...props }, ref) => {
     const { preferences } = useUserPreferences();
 
+    // Use inline styles to apply dynamic values from context
+    // This ensures reactivity when the context state changes.
+    const cardStyle: React.CSSProperties = {
+        '--card-border-radius': `${preferences.borderRadius}rem`,
+        '--card-blur': preferences.cardStyle === 'glass' ? `${preferences.blurIntensity}px` : '0px',
+        backgroundColor: preferences.cardStyle === 'glass' ? 'hsla(var(--card) / 0.6)' : 'hsl(var(--card))',
+        backdropFilter: preferences.cardStyle === 'glass' ? `blur(var(--card-blur))` : 'none',
+        WebkitBackdropFilter: preferences.cardStyle === 'glass' ? `blur(var(--card-blur))` : 'none',
+        boxShadow: preferences.showShadows ? '0 4px 15px rgba(0, 0, 0, 0.1)' : 'none',
+        borderWidth: preferences.cardStyle === 'bordered' ? '1px' : '0',
+    };
+
     return (
       <div
         ref={ref}
-        style={{
-            '--card-border-radius': `${preferences.borderRadius}rem`,
-            '--card-blur': preferences.cardStyle === 'glass' ? `${preferences.blurIntensity}px` : '0px',
-        } as React.CSSProperties}
+        style={cardStyle}
         className={cn(
           "rounded-[var(--card-border-radius)] border",
-          {
-            'bg-card/60 backdrop-blur-[var(--card-blur)]': preferences.cardStyle === 'glass',
-            'bg-card': preferences.cardStyle === 'flat',
-            'bg-card border-border': preferences.cardStyle === 'bordered',
-            'shadow-lg': preferences.showShadows,
-            'dark:bg-card/80 dark:backdrop-blur-[var(--card-blur)]': preferences.cardStyle === 'glass'
-          },
           className
         )}
         {...props}
@@ -43,7 +45,7 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col space-y-1.5 p-[var(--card-padding,1.5rem)]", className)}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
     {...props}
   />
 ))
@@ -80,7 +82,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("p-[var(--card-padding,1.5rem)] pt-0", className)} {...props} />
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
 ))
 CardContent.displayName = "CardContent"
 
@@ -90,7 +92,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center p-[var(--card-padding,1.5rem)] pt-0", className)}
+    className={cn("flex items-center p-6 pt-0", className)}
     {...props}
   />
 ))
