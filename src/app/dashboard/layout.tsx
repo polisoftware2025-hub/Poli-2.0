@@ -414,7 +414,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     return (
         <>
             <SidebarProvider>
-                <Sidebar side="left" collapsible="icon">
+                <Sidebar side="left" collapsible="offcanvas">
                     {userRole && 
                         <DynamicSidebar 
                             role={userRole} 
