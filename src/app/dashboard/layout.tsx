@@ -14,8 +14,8 @@ import {
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
+  SidebarFooter,
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
@@ -231,7 +231,10 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
                                             className={cn("absolute inset-0 rounded-lg", roleConfig[role].accentColor)} 
                                         />
                                     )}
-                                    <item.icon className="h-5 w-5 z-10 shrink-0" />
+                                    <item.icon className={cn(
+                                        "h-5 w-5 z-10 shrink-0",
+                                        pathname === item.href && "text-accent-foreground"
+                                    )} />
                                     <span className="z-10">{item.label}</span>
                                 </div>
                             </Link>
