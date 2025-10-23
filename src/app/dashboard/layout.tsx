@@ -95,7 +95,7 @@ const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
     const names = name.split(' ');
     if (names.length > 1) {
-        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+        return `${names[0][0]}${names[1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
 };
@@ -203,13 +203,13 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
     }, [role]);
 
     return (
-        <nav className="flex flex-col gap-1 px-4">
+        <nav className="flex flex-col gap-1 px-4 group-data-[collapsible=icon]:px-2">
             <AnimatePresence>
                 {menuItems.map((item, index) => 
                     item.type === 'header' ? (
                         <motion.h4 
                             key={index}
-                            className="px-2 pt-4 pb-1 text-xs font-semibold text-white/50"
+                            className="px-2 pt-4 pb-1 text-xs font-semibold text-white/50 group-data-[collapsible=icon]:hidden"
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
                         >
@@ -225,7 +225,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
                         >
                             <Link href={item.href!} onClick={onItemClick}>
                                 <div className={cn(
-                                    "relative flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white",
+                                    "relative flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2",
                                     pathname === item.href && "font-semibold text-white"
                                 )}>
                                     {hoveredItem === item.href && <HoverIndicator />}
@@ -265,54 +265,53 @@ function DynamicSidebar({
     userName: string | null,
     handleLogout: () => void
 }) {
-    const config = roleConfig[role];
     const gradientClass = role === 'rector' 
         ? "from-gray-900 to-gray-800"
-        : role === 'admin'
-        ? "from-primary to-blue-900"
-        : "from-primary/95 to-blue-900/90";
+        : "bg-primary";
     
     const nameParts = userName?.split(' ') || [];
-    const displayName = nameParts.length > 1 ? `${nameParts[0]} ${nameParts[2]}` : userName;
+    const displayName = nameParts.length > 2 ? `${nameParts[0]} ${nameParts[2]}` : (nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1]}` : userName);
 
 
     return (
-        <div className={cn("flex h-full flex-col bg-gradient-to-b backdrop-blur-md", gradientClass)}>
+        <div className={cn("flex h-full flex-col backdrop-blur-md", gradientClass)}>
             <SidebarHeader className="p-3">
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-auto w-full justify-start p-2 hover:bg-white/10">
-                            <div className="flex w-full items-center gap-3">
-                                <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Avatar className="h-10 w-10 border-2 border-white/50">
-                                            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userName}`} />
-                                            <AvatarFallback>{getInitials(userName)}</AvatarFallback>
-                                        </Avatar>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right">
-                                        <p>{userEmail}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                                </TooltipProvider>
-                                <div className="hidden flex-col items-start truncate md:flex group-data-[collapsible=icon]:hidden">
-                                    <span className="text-sm font-semibold text-white truncate">{displayName}</span>
-                                    <span className="text-xs text-white/70">{roleNames[role]}</span>
-                                </div>
-                                <ChevronDown className="ml-auto h-4 w-4 text-white/70 group-data-[collapsible=icon]:hidden"/>
-                            </div>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="start" side="bottom">
-                        <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild><Link href="/dashboard/profile"><User className="mr-2 h-4 w-4" /><span>Perfil</span></Link></DropdownMenuItem>
-                        <DropdownMenuItem asChild><Link href="/dashboard/settings"><Settings className="mr-2 h-4 w-4" /><span>Configuración</span></Link></DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" /><span>Cerrar Sesión</span></DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex w-full items-center gap-3">
+                    <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Avatar className="h-10 w-10 border-2 border-white/50">
+                                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userName}`} />
+                                <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                            </Avatar>
+                        </TooltipTrigger>
+                        <TooltipContent side="right" className="group-data-[collapsible=icon]:block hidden">
+                            <p>{userEmail}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                    </TooltipProvider>
+                    <div className="hidden flex-col items-start truncate md:flex group-data-[collapsible=icon]:hidden">
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-auto w-full justify-start p-0 text-left hover:bg-transparent">
+                                     <div className="flex flex-col">
+                                        <span className="text-sm font-semibold text-white truncate">{displayName}</span>
+                                        <span className="text-xs text-white/70">{roleNames[role]}</span>
+                                     </div>
+                                      <ChevronDown className="ml-2 h-4 w-4 text-white/70"/>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56" align="start" side="bottom">
+                                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild><Link href="/dashboard/profile"><User className="mr-2 h-4 w-4" /><span>Perfil</span></Link></DropdownMenuItem>
+                                <DropdownMenuItem asChild><Link href="/dashboard/settings"><Settings className="mr-2 h-4 w-4" /><span>Configuración</span></Link></DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" /><span>Cerrar Sesión</span></DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
             </SidebarHeader>
             <SidebarContent>
                 <SidebarItems role={role} pathname={pathname} onItemClick={onLinkClick} />
@@ -441,7 +440,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 </Sidebar>
                 <SidebarInset>
                     <div className="flex-1 bg-background">
-                        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 shadow-sm:px-6">
+                        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 sm:px-6">
                             <div className="flex items-center gap-4">
                                 <SidebarTrigger>
                                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
