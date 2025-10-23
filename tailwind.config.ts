@@ -19,7 +19,7 @@ const config = {
     },
     extend: {
       fontFamily: {
-        sans: ["var(--font-family)", "sans-serif"],
+        sans: ["Poppins", "sans-serif"],
         poppins: ["Poppins", "sans-serif"],
         roboto: ["Roboto", "sans-serif"],
       },
@@ -83,5 +83,3 @@ const config = {
 } satisfies Config;
 
 export default config;
-
-    
