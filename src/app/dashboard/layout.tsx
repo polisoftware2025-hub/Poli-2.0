@@ -71,7 +71,7 @@ import { es } from "date-fns/locale";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { useUserPreferences } from "@/context/UserPreferencesContext";
+import { UserPreferencesProvider, useUserPreferences } from "@/context/UserPreferencesContext";
 
 type UserRole = "admin" | "gestor" | "docente" | "estudiante" | "rector";
 
@@ -407,13 +407,35 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     };
 
     if (!userRole) {
-        return null; 
+        return (
+            <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
+                <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
+                    <div className="wheel"></div>
+                    <div className="hamster">
+                        <div className="hamster__body">
+                            <div className="hamster__head">
+                                <div className="hamster__ear"></div>
+                                <div className="hamster__eye"></div>
+                                <div className="hamster__nose"></div>
+                            </div>
+                            <div className="hamster__limb hamster__limb--fr"></div>
+                            <div className="hamster__limb hamster__limb--fl"></div>
+                            <div className="hamster__limb hamster__limb--br"></div>
+                            <div className="hamster__limb hamster__limb--bl"></div>
+                            <div className="hamster__tail"></div>
+                        </div>
+                    </div>
+                    <div className="spoke"></div>
+                </div>
+                <p className="font-poppins text-lg font-semibold text-foreground mt-4">Cargando sesión...</p>
+            </div>
+        );
     }
 
     return (
-        <div style={userStyle}>
+        <div style={userStyle} className="font-sans">
             <SidebarProvider>
-                <Sidebar side="left" collapsible="icon" className="font-sans bg-[hsl(220_40%_90%)] dark:bg-card">
+                <Sidebar side={preferences.sidebarPosition} collapsible="icon" className="bg-[hsl(var(--background))] dark:bg-card">
                     <DynamicSidebar 
                         role={userRole} 
                         pathname={pathname} 
@@ -474,49 +496,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  const [isLoading, setIsLoading] = useState(true);
-  const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  useEffect(() => {
-    if (isClient) {
-        const timer = setTimeout(() => setIsLoading(false), 2000); 
-        return () => clearTimeout(timer);
-    }
-  }, [isClient]);
-
-  if (isLoading && isClient) { 
-     return (
-        <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
-          <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
-            <div className="wheel"></div>
-            <div className="hamster">
-                <div className="hamster__body">
-                    <div className="hamster__head">
-                        <div className="hamster__ear"></div>
-                        <div className="hamster__eye"></div>
-                        <div className="hamster__nose"></div>
-                    </div>
-                    <div className="hamster__limb hamster__limb--fr"></div>
-                    <div className="hamster__limb hamster__limb--fl"></div>
-                    <div className="hamster__limb hamster__limb--br"></div>
-                    <div className="hamster__limb hamster__limb--bl"></div>
-                    <div className="hamster__tail"></div>
-                </div>
-            </div>
-            <div className="spoke"></div>
-          </div>
-          <p className="font-poppins text-lg font-semibold text-foreground mt-4">Redirigiendo a tu panel...</p>
-        </div>
-      );
-  }
-
   return (
-    <SidebarProvider>
-        <MainLayout>{children}</MainLayout>
-    </SidebarProvider>
+    <UserPreferencesProvider>
+      <MainLayout>{children}</MainLayout>
+    </UserPreferencesProvider>
   );
 }

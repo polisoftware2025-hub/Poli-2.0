@@ -45,7 +45,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body suppressHydrationWarning>
+      <body>
         <AnimatePresence>
             {isLoading && (
                  <motion.div
