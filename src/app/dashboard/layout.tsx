@@ -108,7 +108,7 @@ const roleNames: Record<UserRole, string> = {
 const HoverIndicator = () => (
   <motion.div
     layoutId="sidebar-hover-indicator"
-    className="absolute inset-0 rounded-lg bg-white/10"
+    className="absolute inset-0 rounded-lg bg-accent"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1, transition: { duration: 0.2 } }}
     exit={{ opacity: 0, transition: { duration: 0.1 } }}
@@ -209,7 +209,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
                     item.type === 'header' ? (
                         <motion.h4 
                             key={index}
-                            className="px-3 pt-4 pb-1 text-xs font-semibold text-white/50 group-data-[collapsible=icon]:hidden"
+                            className="px-3 pt-4 pb-1 text-xs font-semibold text-muted-foreground group-data-[collapsible=icon]:hidden"
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
                         >
@@ -225,14 +225,14 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
                         >
                             <Link href={item.href!} onClick={onItemClick}>
                                 <div className={cn(
-                                    "relative flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2",
-                                    pathname === item.href && "font-semibold text-white"
+                                    "relative flex items-center gap-3 rounded-lg px-3 py-2 text-foreground/80 transition-colors hover:text-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2",
+                                    pathname === item.href && "font-semibold text-foreground"
                                 )}>
                                     {hoveredItem === item.href && <HoverIndicator />}
                                     {pathname === item.href && (
                                         <motion.div 
                                             layoutId="sidebar-active-indicator" 
-                                            className={cn("absolute inset-0 rounded-lg", roleConfig[role].accentColor)} 
+                                            className={cn("absolute inset-0 rounded-lg bg-accent")} 
                                         />
                                     )}
                                     <item.icon className={cn("h-5 w-5 z-10 shrink-0", pathname === item.href && "text-accent-foreground")} />
@@ -278,7 +278,7 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
                      </Tooltip>
                     <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
                         <h3 className="font-semibold text-base truncate">{getDisplayName()}</h3>
-                        <p className="text-xs text-white/60 truncate">{userEmail}</p>
+                        <p className="text-xs text-foreground/60 truncate">{userEmail}</p>
                     </div>
                 </div>
             </SidebarHeader>
@@ -287,12 +287,12 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
             </SidebarContent>
             <SidebarFooter className="mt-auto">
                  <Link href="/dashboard/settings" onClick={onItemClick}>
-                    <div className={cn("relative flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2")}>
+                    <div className={cn("relative flex items-center gap-3 rounded-lg px-3 py-2 text-foreground/80 transition-colors hover:text-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2")}>
                         <Settings className={cn("h-5 w-5 z-10 shrink-0")} />
                         <span className="z-10 group-data-[collapsible=icon]:hidden">Configuración</span>
                     </div>
                 </Link>
-                <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-red-500/20 hover:text-white" onClick={handleLogout}>
+                <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
                     <LogOut />
                     <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
                 </Button>
@@ -300,7 +300,6 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
         </>
     );
 };
-
 
 function MainLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -447,8 +446,8 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                     </header>
                     <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
                 </div>
-                <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
-                    © 2025 Poli 2.0. Todos los derechos reservados.
+                <footer className="bg-card text-center text-sm p-4 border-t">
+                    © {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
                 </footer>
             </SidebarInset>
         </SidebarProvider>
@@ -457,18 +456,18 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // This effect runs once the component mounts on the client side.
+    setIsClient(true);
     const timer = setTimeout(() => {
         setIsLoading(false);
-    }, 1500); // A bit longer to ensure content is ready
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);
 
-  if (isLoading) {
-    // On the server and during initial client load, show the full-screen loader.
+  if (!isClient || isLoading) {
      return (
         <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
           <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
@@ -489,12 +488,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <div className="spoke"></div>
           </div>
-          <p className="font-poppins text-lg font-semibold text-white mt-4">Cargando tu panel...</p>
+          <p className="font-poppins text-lg font-semibold text-foreground mt-4">Cargando tu panel...</p>
         </div>
       );
   }
 
-  // Once loading is false, render the actual layout.
   return (
     <SidebarProvider>
         <MainLayout>{children}</MainLayout>
