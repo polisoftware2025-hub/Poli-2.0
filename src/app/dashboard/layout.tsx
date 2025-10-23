@@ -245,7 +245,63 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             </AnimatePresence>
         </nav>
     );
+};
+
+interface DynamicSidebarProps extends SidebarItemsProps {
+    userEmail: string | null;
+    userName: string | null;
+    handleLogout: () => void;
 }
+
+const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, handleLogout }: DynamicSidebarProps) => {
+    
+    const getDisplayName = () => {
+        if (!userName) return "";
+        const parts = userName.split(" ");
+        if (parts.length > 2) {
+            // Check if the second part is a common middle name connector
+            if (['de', 'del', 'la', 'los', 'las'].includes(parts[1].toLowerCase())) {
+                return `${parts[0]} ${parts[2]}`;
+            }
+            return `${parts[0]} ${parts[1]}`;
+        }
+        return userName;
+    };
+
+    return (
+        <>
+            <SidebarHeader>
+                <div className="flex items-center gap-3">
+                     <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Avatar className="h-10 w-10 border-2 border-primary/50 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 transition-all">
+                                <AvatarFallback>{getInitials(userName)}</AvatarFallback>
+                            </Avatar>
+                        </TooltipTrigger>
+                         <TooltipContent side="right" align="center" className="group-data-[collapsible=icon]:block hidden">
+                            {userName}
+                            <p className="text-xs text-muted-foreground">{userEmail}</p>
+                         </TooltipContent>
+                     </Tooltip>
+                    <div className="flex-1 overflow-hidden group-data-[collapsible=icon]:hidden">
+                        <h3 className="font-semibold text-base truncate">{getDisplayName()}</h3>
+                        <p className="text-xs text-white/60 truncate">{userEmail}</p>
+                    </div>
+                </div>
+            </SidebarHeader>
+            <SidebarContent>
+                 <SidebarItems role={role} pathname={pathname} onItemClick={onItemClick} />
+            </SidebarContent>
+            <SidebarFooter>
+                <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-red-500/20 hover:text-white" onClick={handleLogout}>
+                    <LogOut />
+                    <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
+                </Button>
+            </SidebarFooter>
+        </>
+    );
+};
+
 
 function MainLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -345,7 +401,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 <DynamicSidebar 
                     role={userRole} 
                     pathname={pathname} 
-                    onLinkClick={() => setMenuOpen(false)}
+                    onItemClick={() => setMenuOpen(false)}
                     userEmail={userEmail}
                     userName={userName}
                     handleLogout={handleLogout} 
@@ -404,9 +460,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This effect runs once on the client, after hydration.
+    // This effect runs once the component mounts on the client side.
     // It's a reliable way to know client-side rendering has begun.
-    setIsLoading(false);
+    const timer = setTimeout(() => {
+        setIsLoading(false);
+    }, 2000); // Simulate loading time
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (isLoading) {
