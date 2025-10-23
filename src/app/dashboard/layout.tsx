@@ -100,7 +100,7 @@ const roleNames: Record<UserRole, string> = {
 const HoverIndicator = () => (
   <motion.div
     layoutId="sidebar-hover-indicator"
-    className="absolute inset-0 rounded-lg bg-accent"
+    className="absolute inset-0 rounded-lg bg-accent/50 dark:bg-accent"
     initial={{ opacity: 0 }}
     animate={{ opacity: 1, transition: { duration: 0.2 } }}
     exit={{ opacity: 0, transition: { duration: 0.1 } }}
@@ -136,7 +136,6 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/admin/reports", label: "Reportes", icon: FileText },
             { type: 'header', label: 'Configuración' },
             { href: "/dashboard/admin/media", label: "Gestión de Media", icon: ImageIcon },
-            { href: "/dashboard/settings", label: "Configuración", icon: Settings },
         ];
 
         const rectorMenuItems = [
@@ -238,6 +237,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
         </nav>
     );
 };
+
 
 const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, handleLogout }: any) => {
     const getDisplayName = () => {
@@ -387,8 +387,8 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <SidebarProvider>
-            <Sidebar side="left" collapsible="offcanvas">
-                <DynamicSidebar 
+            <Sidebar side="left" collapsible="icon" className="bg-card">
+                 <DynamicSidebar 
                     role={userRole} 
                     pathname={pathname} 
                     onItemClick={() => setMenuOpen(false)}
@@ -397,9 +397,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                     handleLogout={handleLogout} 
                 />
             </Sidebar>
-            <SidebarInset>
-                <div className="flex-1 bg-background">
-                    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card/80 backdrop-blur-lg px-4 sm:px-6">
+            <SidebarInset className="bg-background dark:bg-[hsl(var(--background))]">
+                <div className="flex-1">
+                    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card/80 px-4 backdrop-blur-lg sm:px-6">
                         <div className="flex items-center gap-4">
                             <SidebarTrigger>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
@@ -455,13 +455,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    // This effect runs on the client after hydration
     if (isClient) {
-        setIsLoading(false);
+        const timer = setTimeout(() => setIsLoading(false), 2000); 
+        return () => clearTimeout(timer);
     }
   }, [isClient]);
 
-  if (isLoading && isClient) { // Only show loader on the client during initial load
+  if (isLoading && isClient) { 
      return (
         <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
           <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
@@ -482,13 +482,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
             <div className="spoke"></div>
           </div>
-          <p className="font-poppins text-lg font-semibold text-foreground mt-4">Cargando tu panel...</p>
+          <p className="font-poppins text-lg font-semibold text-foreground mt-4">Redirigiendo a tu panel...</p>
         </div>
       );
   }
 
-  // On the server or after client-side load, render the actual layout.
-  // The 'suppressHydrationWarning' on the body in the root layout helps manage mismatches.
   return (
     <SidebarProvider>
         <MainLayout>{children}</MainLayout>

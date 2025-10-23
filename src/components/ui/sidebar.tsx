@@ -182,7 +182,7 @@ const Sidebar = React.forwardRef<
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-card text-card-foreground",
+            "flex h-full w-[--sidebar-width] flex-col bg-[hsl(220_40%_90%)] dark:bg-card text-card-foreground",
             className
           )}
           ref={ref}
@@ -324,7 +324,7 @@ const SidebarInset = React.forwardRef<
     <main
       ref={ref}
       className={cn(
-        "relative flex min-h-svh flex-1 flex-col bg-background min-w-0",
+        "relative flex min-h-svh flex-1 flex-col bg-background dark:bg-[hsl(220_90%_4%)] min-w-0",
         "md:peer-data-[state=collapsed]:peer-data-[variant=inset]:ml-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)] md:peer-data-[variant=inset]:ml-[calc(var(--sidebar-width)_+_theme(spacing.4))]",
         className
       )}
