@@ -45,7 +45,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>
+      <body suppressHydrationWarning={true}>
         <AnimatePresence>
             {isLoading && (
                  <motion.div
@@ -76,7 +76,7 @@ export default function RootLayout({
                 </motion.div>
             )}
         </AnimatePresence>
-        {!isLoading && children}
+        {!isLoading && <UserPreferencesProvider>{children}</UserPreferencesProvider>}
         <Toaster />
       </body>
     </html>
