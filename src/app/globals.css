@@ -108,7 +108,7 @@
       --content-padding: 2rem;
       font-size: 17px;
   }
-  
+
   /* Custom futuristic scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
@@ -142,6 +142,10 @@
 
   [data-card-style="glass"] .bg-card\/60 {
       backdrop-filter: blur(var(--blur-intensity));
+  }
+  
+  .form-input-dark {
+    @apply rounded-lg border-cyan-300/30 bg-black/40 py-6 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400;
   }
 }
 

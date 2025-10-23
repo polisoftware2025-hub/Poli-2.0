@@ -123,7 +123,7 @@ export default function ForgotPasswordPage() {
                         <Input
                           type="email"
                           placeholder="Ingresa tu correo electrónico registrado"
-                          className="rounded-lg border-cyan-300/30 bg-black/40 py-6 pl-12 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400"
+                          className="form-input-dark pl-12"
                           {...field}
                         />
                       </div>
