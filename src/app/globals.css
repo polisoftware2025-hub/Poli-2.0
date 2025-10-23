@@ -76,10 +76,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: var(--font-family), sans-serif;
-    font-size: var(--global-font-size);
-    font-weight: var(--font-weight);
-    letter-spacing: var(--letter-spacing);
+    /* font-family is now applied at the specific layout level, not globally here */
   }
 
   .density-compact {
