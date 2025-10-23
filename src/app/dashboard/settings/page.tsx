@@ -21,7 +21,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Settings as SettingsIcon, Palette, Text, Layout, Monitor, Sun, Moon, Save, RefreshCw, Upload, Download, Check } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
-import { useUserPreferences } from "@/context/UserPreferencesContext";
+import { useUserPreferences, type UserPreferences } from "@/context/UserPreferencesContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Slider } from "@/components/ui/slider";
 import { HexColorPicker } from "react-colorful";
@@ -93,13 +93,13 @@ export default function SettingsPage() {
             {/* General Preferences */}
             <SettingCard icon={SettingsIcon} title="Preferencias Generales">
                 <SettingRow label="Idioma">
-                    <Select value={preferences.language} onValueChange={(value) => updatePreference('language', value)}>
+                    <Select value={preferences.language} onValueChange={(value) => updatePreference('language', value as UserPreferences['language'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="es">Español</SelectItem><SelectItem value="en">Inglés</SelectItem></SelectContent>
                     </Select>
                 </SettingRow>
                 <SettingRow label="Densidad de la Interfaz">
-                     <Select value={preferences.density} onValueChange={(value) => updatePreference('density', value)}>
+                     <Select value={preferences.density} onValueChange={(value) => updatePreference('density', value as UserPreferences['density'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="compact">Compacta</SelectItem>
@@ -139,7 +139,7 @@ export default function SettingsPage() {
             {/* Visual Appearance */}
             <SettingCard icon={Monitor} title="Apariencia Visual">
                  <SettingRow label="Estilo de Tarjetas">
-                     <Select value={preferences.cardStyle} onValueChange={(value) => updatePreference('cardStyle', value)}>
+                     <Select value={preferences.cardStyle} onValueChange={(value) => updatePreference('cardStyle', value as UserPreferences['cardStyle'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="glass">Glass UI</SelectItem>
@@ -168,7 +168,7 @@ export default function SettingsPage() {
             {/* Typography */}
             <SettingCard icon={Text} title="Fuentes y Tipografía">
                 <SettingRow label="Familia Tipográfica">
-                    <Select value={preferences.fontFamily} onValueChange={(value) => updatePreference('fontFamily', value)}>
+                    <Select value={preferences.fontFamily} onValueChange={(value) => updatePreference('fontFamily', value as UserPreferences['fontFamily'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Poppins">Poppins</SelectItem>
@@ -179,7 +179,7 @@ export default function SettingsPage() {
                     </Select>
                 </SettingRow>
                 <SettingRow label="Tamaño de Fuente Global">
-                    <Select value={preferences.fontSize} onValueChange={(value) => updatePreference('fontSize', value)}>
+                    <Select value={preferences.fontSize} onValueChange={(value) => updatePreference('fontSize', value as UserPreferences['fontSize'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="14px">Pequeño</SelectItem>
@@ -192,7 +192,7 @@ export default function SettingsPage() {
 
              <SettingCard icon={Layout} title="Diseño de Interfaz">
                 <SettingRow label="Posición del Menú Lateral">
-                    <Select value={preferences.sidebarPosition} onValueChange={(value) => updatePreference('sidebarPosition', value)}>
+                    <Select value={preferences.sidebarPosition} onValueChange={(value) => updatePreference('sidebarPosition', value as UserPreferences['sidebarPosition'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="left">Izquierda</SelectItem>
@@ -223,7 +223,7 @@ export default function SettingsPage() {
                     <CardTitle>Vista Previa Dinámica</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ThemePreview />
+                    <ThemePreview preferences={preferences} />
                 </CardContent>
             </Card>
         </div>
@@ -295,33 +295,82 @@ const ColorPicker = ({ label, settingKey }: { label: string; settingKey: 'primar
     );
 };
 
-const ThemePreview = () => (
-    <div className="w-full h-[450px] rounded-lg bg-background p-4 border overflow-hidden scale-100 origin-top">
-      <div className="flex h-full">
+const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
+  const { themeMode, primaryColor, accentColor, fontFamily, fontSize, borderRadius, cardStyle, blurIntensity, showShadows, sidebarPosition } = preferences;
+
+  const primary = `hsl(${primaryColor.hue}, ${primaryColor.saturation}%, ${primaryColor.lightness}%)`;
+  const accent = `hsl(${accentColor.hue}, ${accentColor.saturation}%, ${accentColor.lightness}%)`;
+  const background = themeMode === 'dark' ? 'hsl(224 71% 4%)' : 'hsl(220 20% 97%)';
+  const card = themeMode === 'dark' ? 'hsl(224 71% 4% / 0.6)' : 'hsl(0 0% 100% / 0.9)';
+  const cardBorder = themeMode === 'dark' ? 'hsl(217 33% 25%)' : 'hsl(214 32% 91%)';
+  const textForeground = themeMode === 'dark' ? 'hsl(210 40% 98%)' : 'hsl(220 90% 4%)';
+  const textMuted = themeMode === 'dark' ? 'hsl(215 20% 65%)' : 'hsl(215 28% 44%)';
+  
+  const cardClasses = {
+      glass: "bg-opacity-60 backdrop-blur-md",
+      flat: "bg-opacity-100",
+      bordered: "bg-opacity-90 border",
+  };
+
+  const cardDynamicStyle: React.CSSProperties = {
+      backgroundColor: card,
+      borderRadius: `${borderRadius}rem`,
+      boxShadow: showShadows ? '0 4px 15px rgba(0, 0, 0, 0.1)' : 'none',
+      borderColor: cardBorder,
+      backdropFilter: cardStyle === 'glass' ? `blur(${blurIntensity}px)` : 'none',
+      WebkitBackdropFilter: cardStyle === 'glass' ? `blur(${blurIntensity}px)` : 'none',
+  };
+  
+  const sidebarContainerClass = sidebarPosition === 'left' ? 'flex-row' : 'flex-row-reverse';
+
+  return (
+    <div 
+      className="w-full h-[450px] rounded-lg p-4 border overflow-hidden scale-100 origin-top transition-all"
+      style={{ 
+        background: background,
+        fontFamily: fontFamily,
+        fontSize: fontSize,
+        color: textForeground
+      }}
+    >
+      <div className={`flex h-full ${sidebarContainerClass}`}>
         {/* Mini Sidebar */}
-        <div className="w-16 h-full rounded-l-md bg-card flex flex-col items-center py-4 space-y-4">
-          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-xs font-bold">P</div>
+        <div 
+            className="w-16 h-full flex flex-col items-center py-4 space-y-4"
+            style={{
+                ...cardDynamicStyle,
+                borderWidth: cardStyle === 'bordered' ? '1px' : '0'
+            }}
+        >
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{backgroundColor: primary, color: 'white'}}>P</div>
           <div className="space-y-2">
-            <div className="w-6 h-6 rounded bg-accent"></div>
-            <div className="w-6 h-6 rounded bg-muted"></div>
-            <div className="w-6 h-6 rounded bg-muted"></div>
+            <div className="w-6 h-6 rounded" style={{backgroundColor: accent}}></div>
+            <div className="w-6 h-6 rounded" style={{backgroundColor: textMuted, opacity: 0.3}}></div>
+            <div className="w-6 h-6 rounded" style={{backgroundColor: textMuted, opacity: 0.3}}></div>
           </div>
         </div>
         {/* Mini Content */}
-        <div className="flex-1 h-full rounded-r-md bg-background flex flex-col p-4 space-y-4">
+        <div className={`flex-1 h-full flex flex-col p-4 space-y-4 ${sidebarPosition === 'left' ? 'rounded-r-md' : 'rounded-l-md'}`} style={{background: 'transparent'}}>
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">Panel</h3>
-            <div className="w-6 h-6 rounded-full bg-muted"></div>
+            <h3 className="text-lg font-semibold" style={{color: textForeground}}>Panel</h3>
+            <div className="w-6 h-6 rounded-full" style={{backgroundColor: textMuted, opacity: 0.3}}></div>
           </div>
-          <div className="p-4 rounded-lg bg-card border">
-            <p className="text-sm font-medium text-foreground">Hola, Usuario</p>
-            <p className="text-xs text-muted-foreground">Este es un ejemplo de tarjeta.</p>
+          <div 
+            className="p-4"
+            style={{
+                ...cardDynamicStyle,
+                borderWidth: cardStyle === 'bordered' ? '1px' : '0'
+            }}
+          >
+            <p className="text-sm font-medium" style={{color: textForeground}}>Hola, Usuario</p>
+            <p className="text-xs" style={{color: textMuted}}>Este es un ejemplo de tarjeta.</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm">Botón Primario</Button>
-            <Button size="sm" variant="secondary">Secundario</Button>
+            <button className="px-3 py-1 text-sm rounded-md" style={{backgroundColor: primary, color: 'white'}}>Primario</button>
+            <button className="px-3 py-1 text-sm rounded-md" style={{backgroundColor: accent, color: 'white'}}>Acento</button>
           </div>
         </div>
       </div>
     </div>
   );
+};
