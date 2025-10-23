@@ -22,32 +22,35 @@ const themeLoaderScript = `
       if (savedPrefs) {
         const prefs = JSON.parse(savedPrefs);
         
-        // Apply theme mode
+        const root = document.documentElement;
+
         if (prefs.themeMode === 'dark') {
-          document.documentElement.classList.add('dark');
+          root.classList.add('dark');
         } else {
-          document.documentElement.classList.remove('dark');
+          root.classList.remove('dark');
+        }
+        
+        if (prefs.density) {
+            document.body.classList.add('density-' + prefs.density);
         }
 
-        // Apply styles
-        const root = document.documentElement;
-        if(prefs.primaryColor) root.style.setProperty('--primary-hue', prefs.primaryColor.hue);
-        if(prefs.primaryColor) root.style.setProperty('--primary-saturation', prefs.primaryColor.saturation + '%');
-        if(prefs.primaryColor) root.style.setProperty('--primary-lightness', prefs.primaryColor.lightness + '%');
+        const setVar = (key, value) => root.style.setProperty(key, value);
         
-        if(prefs.accentColor) root.style.setProperty('--accent-hue', prefs.accentColor.hue);
-        if(prefs.accentColor) root.style.setProperty('--accent-saturation', prefs.accentColor.saturation + '%');
-        if(prefs.accentColor) root.style.setProperty('--accent-lightness', prefs.accentColor.lightness + '%');
-
-        if(prefs.fontFamily) root.style.setProperty('--font-family', prefs.fontFamily);
-        if(prefs.fontSize) root.style.setProperty('--global-font-size', prefs.fontSize);
-        if(prefs.borderRadius) root.style.setProperty('--radius', prefs.borderRadius + 'rem');
-        if(prefs.blurIntensity) root.style.setProperty('--blur-intensity', prefs.blurIntensity + 'px');
-        if(prefs.cardStyle) root.setAttribute('data-card-style', prefs.cardStyle);
-        if(prefs.animationsEnabled !== undefined) root.setAttribute('data-animations-enabled', prefs.animationsEnabled);
+        if (prefs.primaryColor) {
+            setVar('--primary', \`hsl(\${prefs.primaryColor.hue}, \${prefs.primaryColor.saturation}%, \${prefs.primaryColor.lightness}%)\`);
+        }
+        if (prefs.accentColor) {
+             setVar('--accent', \`hsl(\${prefs.accentColor.hue}, \${prefs.accentColor.saturation}%, \${prefs.accentColor.lightness}%)\`);
+        }
+        if(prefs.fontFamily) setVar('--font-family', prefs.fontFamily);
+        if(prefs.fontSize) setVar('--global-font-size', prefs.fontSize);
+        if(prefs.borderRadius) setVar('--radius', prefs.borderRadius + 'rem');
+        if(prefs.blurIntensity) setVar('--blur-intensity', prefs.blurIntensity + 'px');
+        
+        root.setAttribute('data-card-style', prefs.cardStyle || 'glass');
+        root.setAttribute('data-animations-enabled', String(prefs.animationsEnabled));
         
       } else {
-        // Default to system preference if no settings saved
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.documentElement.classList.add('dark');
         }

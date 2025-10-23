@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useContext, useState, useEffect, useReducer, useCallback } from "react";
+import { createContext, useContext, useReducer, useCallback, useEffect } from "react";
 import { db } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { debounce } from "@/lib/utils";
@@ -19,6 +19,8 @@ export interface UserPreferences {
     accentColor: ColorSettings;
     fontFamily: "Poppins" | "Inter" | "Roboto" | "Montserrat";
     fontSize: "14px" | "16px" | "18px";
+    fontWeight: "400" | "500" | "600";
+    letterSpacing: "normal" | "-0.05em" | "0.05em";
     sidebarPosition: "left" | "right";
     cardStyle: "glass" | "flat" | "bordered";
     blurIntensity: number;
@@ -45,6 +47,8 @@ export const defaultPreferences: UserPreferences = {
     accentColor: { hue: 262, saturation: 83, lightness: 60 },
     fontFamily: "Poppins",
     fontSize: "16px",
+    fontWeight: "400",
+    letterSpacing: "normal",
     sidebarPosition: "left",
     cardStyle: "glass",
     blurIntensity: 10,
@@ -78,7 +82,7 @@ const preferencesReducer = (state: { preferences: UserPreferences; isLoading: bo
         case 'SET_LOADING':
             return { ...state, isLoading: action.payload };
         case 'SET_PREFERENCES':
-            return { ...state, preferences: { ...state.preferences, ...action.payload } };
+            return { ...state, preferences: { ...defaultPreferences, ...action.payload } };
         case 'UPDATE_PREFERENCE':
             return { ...state, preferences: { ...state.preferences, [action.payload.key]: action.payload.value } };
         default:
@@ -97,7 +101,7 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
     const saveToFirestore = useCallback(debounce(async (userId: string, prefs: UserPreferences) => {
         try {
             const userPrefsRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId, "config", "preferences");
-            await setDoc(userPrefsRef, prefs);
+            await setDoc(userPrefsRef, prefs, { merge: true });
         } catch (error) {
             console.error("Failed to save preferences to Firestore:", error);
         }
@@ -111,29 +115,23 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         const loadPreferences = async () => {
             dispatch({ type: 'SET_LOADING', payload: true });
             
-            // First, try loading from local storage for instant UI
             const localPrefsRaw = localStorage.getItem('userPreferences');
             if (localPrefsRaw) {
                 try {
                     dispatch({ type: 'SET_PREFERENCES', payload: JSON.parse(localPrefsRaw) });
-                } catch (e) {
-                    console.error("Could not parse local preferences:", e);
-                }
+                } catch (e) { console.error("Could not parse local preferences:", e); }
             }
 
-            // Then, fetch from Firestore to get the most up-to-date version
             if (userId) {
                 try {
                     const userPrefsRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId, "config", "preferences");
                     const docSnap = await getDoc(userPrefsRef);
                     if (docSnap.exists()) {
-                        const firestorePrefs = docSnap.data() as UserPreferences;
+                        const firestorePrefs = docSnap.data() as Partial<UserPreferences>;
                         dispatch({ type: 'SET_PREFERENCES', payload: firestorePrefs });
-                        localStorage.setItem('userPreferences', JSON.stringify(firestorePrefs));
+                        localStorage.setItem('userPreferences', JSON.stringify({ ...defaultPreferences, ...firestorePrefs }));
                     }
-                } catch (error) {
-                    console.error("Failed to fetch preferences from Firestore:", error);
-                }
+                } catch (error) { console.error("Failed to fetch preferences from Firestore:", error); }
             }
             dispatch({ type: 'SET_LOADING', payload: false });
         };
@@ -146,29 +144,26 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         const { preferences } = state;
         const root = document.documentElement;
 
-        // Theme mode
         root.classList.toggle('dark', preferences.themeMode === 'dark');
-
-        // Dynamic CSS Variables
-        root.style.setProperty('--primary-hue', String(preferences.primaryColor.hue));
-        root.style.setProperty('--primary-saturation', `${preferences.primaryColor.saturation}%`);
-        root.style.setProperty('--primary-lightness', `${preferences.primaryColor.lightness}%`);
         
-        root.style.setProperty('--accent-hue', String(preferences.accentColor.hue));
-        root.style.setProperty('--accent-saturation', `${preferences.accentColor.saturation}%`);
-        root.style.setProperty('--accent-lightness', `${preferences.accentColor.lightness}%`);
+        document.body.classList.remove('density-compact', 'density-normal', 'density-spacious');
+        document.body.classList.add(`density-${preferences.density}`);
 
-        root.style.setProperty('--font-family', preferences.fontFamily);
-        root.style.setProperty('--global-font-size', preferences.fontSize);
-        root.style.setProperty('--radius', `${preferences.borderRadius}rem`);
-        root.style.setProperty('--blur-intensity', `${preferences.blurIntensity}px`);
+        const setVar = (key: string, value: string) => root.style.setProperty(key, value);
+
+        setVar('--primary', `hsl(${preferences.primaryColor.hue}, ${preferences.primaryColor.saturation}%, ${preferences.primaryColor.lightness}%)`);
+        setVar('--accent', `hsl(${preferences.accentColor.hue}, ${preferences.accentColor.saturation}%, ${preferences.accentColor.lightness}%)`);
+        setVar('--font-family', preferences.fontFamily);
+        setVar('--global-font-size', preferences.fontSize);
+        setVar('--font-weight', preferences.fontWeight);
+        setVar('--letter-spacing', preferences.letterSpacing);
+        setVar('--radius', `${preferences.borderRadius}rem`);
+        setVar('--blur-intensity', `${preferences.blurIntensity}px`);
         
-        // Data attributes for non-variable styles
         root.setAttribute('data-card-style', preferences.cardStyle);
         root.setAttribute('data-animations-enabled', String(preferences.animationsEnabled));
         root.setAttribute('data-show-shadows', String(preferences.showShadows));
 
-        // Save changes
         const userId = localStorage.getItem('userId');
         localStorage.setItem('userPreferences', JSON.stringify(preferences));
         if (userId) {
