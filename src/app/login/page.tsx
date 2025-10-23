@@ -60,7 +60,7 @@ export default function LoginPage() {
       if (response.ok) {
         toast({
           title: "Inicio de sesión exitoso",
-          description: `Bienvenido de nuevo, ${data.user.nombre1}.`,
+          description: `Bienvenido de nuevo, ${'\'\'\''}{data.user.nombre1}.`,
         });
         localStorage.setItem('userEmail', data.user.correoInstitucional);
         localStorage.setItem('userRole', data.user.rol.id);
