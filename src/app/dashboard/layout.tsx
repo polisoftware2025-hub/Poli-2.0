@@ -247,80 +247,6 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
     );
 }
 
-function DynamicSidebar({ 
-    role, 
-    pathname, 
-    onLinkClick,
-    userEmail,
-    userName,
-    handleLogout
-}: { 
-    role: UserRole, 
-    pathname: string, 
-    onLinkClick: () => void,
-    userEmail: string | null,
-    userName: string | null,
-    handleLogout: () => void
-}) {
-    const gradientClass = role === 'rector' 
-        ? "from-gray-900 to-gray-800"
-        : "bg-primary";
-    
-    const nameParts = userName?.split(' ') || [];
-    const displayName = nameParts.length > 2 ? `${nameParts[0]} ${nameParts[2]}` : (userName || "");
-
-
-    return (
-        <div className={cn("flex h-full flex-col backdrop-blur-md", gradientClass)}>
-            <SidebarHeader>
-                <div className="flex w-full items-center gap-3 group-data-[collapsible=icon]:justify-center">
-                    <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Avatar className="h-10 w-10 border-2 border-white/50">
-                                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userName}`} />
-                                <AvatarFallback>{getInitials(userName)}</AvatarFallback>
-                            </Avatar>
-                        </TooltipTrigger>
-                        <TooltipContent side="right" className="group-data-[collapsible=icon]:block hidden">
-                            <p>{userName}</p>
-                            <p className="text-xs text-muted-foreground">{userEmail}</p>
-                        </TooltipContent>
-                    </Tooltip>
-                    </TooltipProvider>
-                    <div className="hidden flex-col items-start truncate md:flex group-data-[collapsible=icon]:hidden">
-                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-auto w-full justify-start p-0 text-left hover:bg-transparent">
-                                     <div className="flex flex-col">
-                                        <span className="text-sm font-semibold text-white truncate">{displayName}</span>
-                                        <span className="text-xs text-white/70 truncate">{userEmail}</span>
-                                     </div>
-                                      <ChevronDown className="ml-2 h-4 w-4 text-white/70"/>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="start" side="bottom">
-                                <DropdownMenuLabel>{roleNames[role]}</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem asChild><Link href="/dashboard/profile"><User className="mr-2 h-4 w-4" /><span>Perfil</span></Link></DropdownMenuItem>
-                                <DropdownMenuItem asChild><Link href="/dashboard/settings"><Settings className="mr-2 h-4 w-4" /><span>Configuración</span></Link></DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" /><span>Cerrar Sesión</span></DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </div>
-                </div>
-            </SidebarHeader>
-            <SidebarContent>
-                <SidebarItems role={role} pathname={pathname} onItemClick={onLinkClick} />
-            </SidebarContent>
-            <SidebarFooter>
-               <Separator className="my-2 bg-white/20"/>
-            </SidebarFooter>
-        </div>
-    );
-}
-
 function MainLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -475,6 +401,42 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // This effect runs once on the client, after hydration.
+    // It's a reliable way to know client-side rendering has begun.
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading) {
+    // On the server and during initial client load, show the full-screen loader.
+     return (
+        <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
+          <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
+            <div className="wheel"></div>
+            <div className="hamster">
+                <div className="hamster__body">
+                    <div className="hamster__head">
+                        <div className="hamster__ear"></div>
+                        <div className="hamster__eye"></div>
+                        <div className="hamster__nose"></div>
+                    </div>
+                    <div className="hamster__limb hamster__limb--fr"></div>
+                    <div className="hamster__limb hamster__limb--fl"></div>
+                    <div className="hamster__limb hamster__limb--br"></div>
+                    <div className="hamster__limb hamster__limb--bl"></div>
+                    <div className="hamster__tail"></div>
+                </div>
+            </div>
+            <div className="spoke"></div>
+          </div>
+          <p className="font-poppins text-lg font-semibold text-white mt-4">Cargando tu panel...</p>
+        </div>
+      );
+  }
+
+  // Once loading is false, render the actual layout.
   return (
     <SidebarProvider>
         <MainLayout>{children}</MainLayout>
