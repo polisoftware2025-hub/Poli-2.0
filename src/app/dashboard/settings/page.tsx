@@ -17,13 +17,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Settings as SettingsIcon, Palette, Text, Layout, Monitor, Sun, Moon, Save, RefreshCw, Upload, Download, Check } from "lucide-react";
+import { Settings as SettingsIcon, Palette, Text, Layout, Monitor, Sun, Moon, Save, RefreshCw, Upload, Download, Check, ChevronsUpDown } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { useUserPreferences, type UserPreferences } from "@/context/UserPreferencesContext";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 const colorPresets = [
     { name: "Azul Tecnológico", primary: { hue: 221, saturation: 83, lightness: 53 }, accent: { hue: 262, saturation: 83, lightness: 60 } },
@@ -32,6 +35,66 @@ const colorPresets = [
     { name: "Naranja Profesional", primary: { hue: 25, saturation: 95, lightness: 53 }, accent: { hue: 220, saturation: 13, lightness: 45 } },
     { name: "Gris Minimalista", primary: { hue: 215, saturation: 28, lightness: 44 }, accent: { hue: 215, saturation: 20, lightness: 65 } },
 ];
+
+const availableFonts = [
+  "Poppins", "Inter", "Roboto", "Montserrat", "Lato", "Nunito", "Open Sans", "Raleway", 
+  "Merriweather", "Playfair Display", "Lora",
+  "Exo 2", "Orbitron", "Space Grotesk", "Teko", "Bebas Neue",
+  "Lobster", "Pacifico", "Caveat", 
+  "Source Code Pro", "IBM Plex Mono",
+];
+
+const FontSelector = () => {
+    const { preferences, updatePreference } = useUserPreferences();
+    const [open, setOpen] = useState(false);
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-48 justify-between"
+                >
+                    <span className="truncate">{preferences.fontFamily}</span>
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-0">
+                <Command>
+                    <CommandInput placeholder="Buscar fuente..." />
+                    <CommandList>
+                        <CommandEmpty>No se encontró la fuente.</CommandEmpty>
+                        <CommandGroup>
+                            {availableFonts.map((font) => (
+                                <CommandItem
+                                    key={font}
+                                    value={font}
+                                    onSelect={(currentValue) => {
+                                        const newFont = currentValue === preferences.fontFamily ? preferences.fontFamily : currentValue;
+                                        updatePreference('fontFamily', newFont as UserPreferences['fontFamily']);
+                                        setOpen(false);
+                                    }}
+                                    style={{ fontFamily: font }}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            preferences.fontFamily === font ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                    {font}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+};
+
 
 export default function SettingsPage() {
   const { preferences, updatePreference, resetPreferences, isLoading, setPreferences } = useUserPreferences();
@@ -160,27 +223,7 @@ export default function SettingsPage() {
 
             <SettingCard icon={Text} title="Fuentes y Tipografía">
                 <SettingRow label="Familia Tipográfica">
-                    <Select value={preferences.fontFamily} onValueChange={(value) => updatePreference('fontFamily', value as UserPreferences['fontFamily'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="Poppins">Poppins (Sans-serif)</SelectItem>
-                            <SelectItem value="Inter">Inter (Sans-serif)</SelectItem>
-                            <SelectItem value="Roboto">Roboto (Sans-serif)</SelectItem>
-                            <SelectItem value="Montserrat">Montserrat (Sans-serif)</SelectItem>
-                            <SelectItem value="Lato">Lato (Sans-serif)</SelectItem>
-                            <SelectItem value="Nunito">Nunito (Sans-serif)</SelectItem>
-                            <SelectItem value="Open Sans">Open Sans (Sans-serif)</SelectItem>
-                            <SelectItem value="Raleway">Raleway (Sans-serif)</SelectItem>
-                            <SelectItem value="Exo 2">Exo 2 (Sci-fi)</SelectItem>
-                            <SelectItem value="Orbitron">Orbitron (Sci-fi)</SelectItem>
-                            <SelectItem value="Space Grotesk">Space Grotesk (Modern)</SelectItem>
-                            <SelectItem value="Merriweather">Merriweather (Serif)</SelectItem>
-                            <SelectItem value="Playfair Display">Playfair Display (Serif)</SelectItem>
-                            <SelectItem value="Lobster">Lobster (Display)</SelectItem>
-                            <SelectItem value="Source Code Pro">Source Code Pro (Monospace)</SelectItem>
-                            <SelectItem value="Press Start 2P">Press Start 2P (Retro)</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <FontSelector />
                 </SettingRow>
                 <SettingRow label="Tamaño de Fuente Global">
                     <Select value={preferences.fontSize} onValueChange={(value) => updatePreference('fontSize', value as UserPreferences['fontSize'])}>
