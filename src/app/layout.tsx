@@ -4,9 +4,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import Script from "next/script";
+import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
+import { useEffect } from 'react';
+import Script from 'next/script';
 
 const metadata: Metadata = {
   title: "Politécnico Internacional",
@@ -14,18 +14,56 @@ const metadata: Metadata = {
     "Formando profesionales con calidad y compromiso para los retos del mundo actual.",
 };
 
+// This function string will be stringified and injected into the Script tag.
+const themeLoaderScript = `
+  (function() {
+    try {
+      const savedPrefs = localStorage.getItem('userPreferences');
+      if (savedPrefs) {
+        const prefs = JSON.parse(savedPrefs);
+        
+        // Apply theme mode
+        if (prefs.themeMode === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+
+        // Apply styles
+        const root = document.documentElement;
+        if(prefs.primaryColor) root.style.setProperty('--primary-hue', prefs.primaryColor.hue);
+        if(prefs.primaryColor) root.style.setProperty('--primary-saturation', prefs.primaryColor.saturation + '%');
+        if(prefs.primaryColor) root.style.setProperty('--primary-lightness', prefs.primaryColor.lightness + '%');
+        
+        if(prefs.accentColor) root.style.setProperty('--accent-hue', prefs.accentColor.hue);
+        if(prefs.accentColor) root.style.setProperty('--accent-saturation', prefs.accentColor.saturation + '%');
+        if(prefs.accentColor) root.style.setProperty('--accent-lightness', prefs.accentColor.lightness + '%');
+
+        if(prefs.fontFamily) root.style.setProperty('--font-family', prefs.fontFamily);
+        if(prefs.fontSize) root.style.setProperty('--global-font-size', prefs.fontSize);
+        if(prefs.borderRadius) root.style.setProperty('--radius', prefs.borderRadius + 'rem');
+        if(prefs.blurIntensity) root.style.setProperty('--blur-intensity', prefs.blurIntensity + 'px');
+        if(prefs.cardStyle) root.setAttribute('data-card-style', prefs.cardStyle);
+        if(prefs.animationsEnabled !== undefined) root.setAttribute('data-animations-enabled', prefs.animationsEnabled);
+        
+      } else {
+        // Default to system preference if no settings saved
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          document.documentElement.classList.add('dark');
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load user preferences:', e);
+    }
+  })();
+`;
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    // This will run once the component mounts on the client side.
-    // It indicates that the initial client-side rendering and hydration is complete.
-    setIsLoading(false);
-  }, []);
 
   return (
     <html lang="es" className="!scroll-smooth" suppressHydrationWarning>
@@ -39,57 +77,17 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Inter:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&display=swap"
           rel="stylesheet"
         />
-        <Script id="theme-switcher" strategy="beforeInteractive">
-          {`
-            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-              document.documentElement.classList.add('dark')
-            } else {
-              document.documentElement.classList.remove('dark')
-            }
-          `}
+        <Script id="theme-loader" strategy="beforeInteractive">
+          {themeLoaderScript}
         </Script>
       </head>
       <body className="font-roboto antialiased" suppressHydrationWarning>
-        <AnimatePresence>
-          {isLoading && (
-            <motion.div
-              key="loader"
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden"
-            >
-              <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
-                <div className="wheel"></div>
-                <div className="hamster">
-                    <div className="hamster__body">
-                        <div className="hamster__head">
-                            <div className="hamster__ear"></div>
-                            <div className="hamster__eye"></div>
-                            <div className="hamster__nose"></div>
-                        </div>
-                        <div className="hamster__limb hamster__limb--fr"></div>
-                        <div className="hamster__limb hamster__limb--fl"></div>
-                        <div className="hamster__limb hamster__limb--br"></div>
-                        <div className="hamster__limb hamster__limb--bl"></div>
-                        <div className="hamster__tail"></div>
-                    </div>
-                </div>
-                <div className="spoke"></div>
-              </div>
-              <p className="font-poppins text-lg font-semibold text-white mt-4">Cargando aplicación...</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-        
-        {/* We render the children behind the loader, and they will be revealed once the loader fades out */}
-        <div style={{ visibility: isLoading ? 'hidden' : 'visible' }}>
+        <UserPreferencesProvider>
             {children}
-        </div>
-
+        </UserPreferencesProvider>
         <Toaster />
       </body>
     </html>
