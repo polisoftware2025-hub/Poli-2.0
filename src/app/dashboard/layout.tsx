@@ -95,7 +95,7 @@ const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
     const names = name.split(' ');
     if (names.length > 1) {
-        return `${names[0][0]}${names[1][0]}`.toUpperCase();
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
 };
@@ -203,13 +203,13 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
     }, [role]);
 
     return (
-        <nav className="flex flex-col gap-1 px-4 group-data-[collapsible=icon]:px-2">
+        <nav className="flex flex-col gap-1">
             <AnimatePresence>
                 {menuItems.map((item, index) => 
                     item.type === 'header' ? (
                         <motion.h4 
                             key={index}
-                            className="px-2 pt-4 pb-1 text-xs font-semibold text-white/50 group-data-[collapsible=icon]:hidden"
+                            className="px-3 pt-4 pb-1 text-xs font-semibold text-white/50 group-data-[collapsible=icon]:hidden"
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0, transition: { delay: index * 0.05 } }}
                         >
@@ -235,10 +235,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
                                             className={cn("absolute inset-0 rounded-lg", roleConfig[role].accentColor)} 
                                         />
                                     )}
-                                    <item.icon className={cn(
-                                        "h-5 w-5 z-10 shrink-0",
-                                        pathname === item.href && "text-accent-foreground"
-                                    )} />
+                                    <item.icon className={cn("h-5 w-5 z-10 shrink-0", pathname === item.href && "text-accent-foreground")} />
                                     <span className="z-10 group-data-[collapsible=icon]:hidden">{item.label}</span>
                                 </div>
                             </Link>
@@ -270,12 +267,12 @@ function DynamicSidebar({
         : "bg-primary";
     
     const nameParts = userName?.split(' ') || [];
-    const displayName = nameParts.length > 2 ? `${nameParts[0]} ${nameParts[2]}` : (nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1]}` : userName);
+    const displayName = nameParts.length > 2 ? `${nameParts[0]} ${nameParts[1]}` : (nameParts.length > 1 ? `${nameParts[0]} ${nameParts[1]}` : userName);
 
 
     return (
         <div className={cn("flex h-full flex-col backdrop-blur-md", gradientClass)}>
-            <SidebarHeader className="p-3">
+            <SidebarHeader>
                 <div className="flex w-full items-center gap-3">
                     <TooltipProvider>
                     <Tooltip>
@@ -286,7 +283,7 @@ function DynamicSidebar({
                             </Avatar>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="group-data-[collapsible=icon]:block hidden">
-                            <p>{userEmail}</p>
+                            <p>{userName}</p>
                         </TooltipContent>
                     </Tooltip>
                     </TooltipProvider>
@@ -302,7 +299,7 @@ function DynamicSidebar({
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-56" align="start" side="bottom">
-                                <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                                <DropdownMenuLabel>{userEmail}</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild><Link href="/dashboard/profile"><User className="mr-2 h-4 w-4" /><span>Perfil</span></Link></DropdownMenuItem>
                                 <DropdownMenuItem asChild><Link href="/dashboard/settings"><Settings className="mr-2 h-4 w-4" /><span>Configuración</span></Link></DropdownMenuItem>
@@ -332,7 +329,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [isLoadingNotifications, setIsLoadingNotifications] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
     const [isMenuOpen, setMenuOpen] = useState(false);
 
     useEffect(() => {
@@ -340,21 +337,22 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         const storedRole = localStorage.getItem("userRole") as UserRole;
         const storedUserId = localStorage.getItem("userId");
         const storedUserName = localStorage.getItem("userName");
+
         if (storedEmail && storedRole && storedUserId && storedUserName) {
             setUserEmail(storedEmail);
             setUserRole(storedRole);
             setUserId(storedUserId);
             setUserName(storedUserName);
+            setIsLoading(false); 
         } else {
             router.push("/login");
         }
     }, [router]);
-
+    
     useEffect(() => {
         if (!userRole || !userId) return;
 
         const fetchNotifications = async () => {
-            setIsLoadingNotifications(true);
             const fetchedNotifications: Notification[] = [];
             try {
                 if (userRole === 'admin' || userRole === 'gestor' || userRole === 'rector') {
@@ -398,12 +396,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 }
                 
                 fetchedNotifications.sort((a,b) => b.timestamp.getTime() - a.timestamp.getTime());
-                
                 setNotifications(fetchedNotifications);
             } catch (error) {
                 console.error("Error fetching notifications:", error);
-            } finally {
-                setIsLoadingNotifications(false);
             }
         };
         fetchNotifications();
@@ -415,77 +410,91 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         router.push("/");
     };
 
-    if (!userEmail || !userRole || !userName) {
+    if (isLoading) {
         return (
-           <div className="flex min-h-screen items-center justify-center bg-gray-100">
-            <p>Cargando...</p>
-          </div>
+            <div className="relative flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
+                <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
+                    <div className="wheel"></div>
+                    <div className="hamster">
+                        <div className="hamster__body">
+                            <div className="hamster__head">
+                                <div className="hamster__ear"></div>
+                                <div className="hamster__eye"></div>
+                                <div className="hamster__nose"></div>
+                            </div>
+                            <div className="hamster__limb hamster__limb--fr"></div>
+                            <div className="hamster__limb hamster__limb--fl"></div>
+                            <div className="hamster__limb hamster__limb--br"></div>
+                            <div className="hamster__limb hamster__limb--bl"></div>
+                            <div className="hamster__tail"></div>
+                        </div>
+                    </div>
+                    <div className="spoke"></div>
+                </div>
+            </div>
         );
     }
 
     return (
-        <>
-            <SidebarProvider>
-                <Sidebar side="left" collapsible="offcanvas">
-                    {userRole && 
-                        <DynamicSidebar 
-                            role={userRole} 
-                            pathname={pathname} 
-                            onLinkClick={() => setMenuOpen(false)}
-                            userEmail={userEmail}
-                            userName={userName}
-                            handleLogout={handleLogout} 
-                        />
-                    }
-                </Sidebar>
-                <SidebarInset>
-                    <div className="flex-1 bg-background">
-                        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 sm:px-6">
-                            <div className="flex items-center gap-4">
-                                <SidebarTrigger>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-                                </SidebarTrigger>
-                            </div>
-                            <div className="flex flex-1 items-center justify-end gap-4">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <Bell className="h-5 w-5" />
-                                            {notifications.filter(n => !n.read).length > 0 && 
-                                                <span className="absolute top-2 right-2 flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                                </span>
-                                            }
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-80" align="end">
-                                        <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+        <SidebarProvider>
+            <Sidebar side="left" collapsible="offcanvas">
+                {userRole && 
+                    <DynamicSidebar 
+                        role={userRole} 
+                        pathname={pathname} 
+                        onLinkClick={() => setMenuOpen(false)}
+                        userEmail={userEmail}
+                        userName={userName}
+                        handleLogout={handleLogout} 
+                    />
+                }
+            </Sidebar>
+            <SidebarInset>
+                <div className="flex-1 bg-background">
+                    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 sm:px-6">
+                        <div className="flex items-center gap-4">
+                            <SidebarTrigger>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+                            </SidebarTrigger>
+                        </div>
+                        <div className="flex flex-1 items-center justify-end gap-4">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <Bell className="h-5 w-5" />
+                                        {notifications.filter(n => !n.read).length > 0 && 
+                                            <span className="absolute top-2 right-2 flex h-2 w-2">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                            </span>
+                                        }
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-80" align="end">
+                                    <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
+                                    <DropdownMenuSeparator/>
+                                    {notifications.length > 0 ? notifications.slice(0, 4).map(n => (
+                                        <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1">
+                                            <p className="font-semibold">{n.title}</p>
+                                            <p className="text-xs text-muted-foreground">{n.description}</p>
+                                            <p className="text-xs text-muted-foreground self-end">{n.time}</p>
+                                        </DropdownMenuItem>
+                                    )) : <DropdownMenuItem>No tienes notificaciones nuevas.</DropdownMenuItem>}
                                         <DropdownMenuSeparator/>
-                                        {isLoadingNotifications ? <DropdownMenuItem>Cargando...</DropdownMenuItem> : 
-                                        notifications.length > 0 ? notifications.slice(0, 4).map(n => (
-                                            <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1">
-                                                <p className="font-semibold">{n.title}</p>
-                                                <p className="text-xs text-muted-foreground">{n.description}</p>
-                                                <p className="text-xs text-muted-foreground self-end">{n.time}</p>
-                                            </DropdownMenuItem>
-                                        )) : <DropdownMenuItem>No tienes notificaciones nuevas.</DropdownMenuItem>}
-                                         <DropdownMenuSeparator/>
-                                         <DropdownMenuItem asChild>
-                                             <Link href="/dashboard/notifications" className="justify-center">Ver todas</Link>
-                                         </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </header>
-                        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
-                    </div>
-                    <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
-                        © 2025 Poli 2.0. Todos los derechos reservados.
-                    </footer>
-                </SidebarInset>
-            </SidebarProvider>
-        </>
+                                        <DropdownMenuItem asChild>
+                                            <Link href="/dashboard/notifications" className="justify-center">Ver todas</Link>
+                                        </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </header>
+                    <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+                </div>
+                <footer className="bg-primary text-primary-foreground p-4 text-center text-sm">
+                    © 2025 Poli 2.0. Todos los derechos reservados.
+                </footer>
+            </SidebarInset>
+        </SidebarProvider>
     );
 }
 
@@ -496,3 +505,4 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </SidebarProvider>
     );
 }
+
