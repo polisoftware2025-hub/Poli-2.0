@@ -7,27 +7,28 @@ import { Button } from '@/components/ui/button';
 export default function NotFound() {
   return (
     <section 
-        className="flex items-center justify-center min-h-screen bg-white font-poppins"
+        className="flex items-center justify-center min-h-screen bg-white font-poppins p-4"
         style={{
             backgroundImage: "url('https://cdn.dribbble.com/users/285475/screenshots/2083086/dribbble_1.gif')",
             backgroundPosition: 'center',
+            backgroundSize: 'cover', // Changed to cover for better responsiveness
             backgroundRepeat: 'no-repeat',
         }}
     >
       <div className="w-full max-w-4xl mx-auto text-center">
-        <div className="relative h-96">
-            <h1 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-8xl font-black text-gray-800" style={{fontSize: '10rem'}}>
+        <div className="relative h-64 sm:h-96">
+            <h1 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-8xl sm:text-[10rem] font-black text-gray-800">
                 404
             </h1>
         </div>
-        <div className="mt-[-50px]">
-          <h3 className="text-4xl font-bold text-gray-800">
+        <div className="mt-[-20px] sm:mt-[-50px]">
+          <h3 className="text-2xl sm:text-4xl font-bold text-gray-800">
             Parece que estás perdido
           </h3>
-          <p className="text-lg text-gray-600 my-4">
+          <p className="text-base sm:text-lg text-gray-600 my-4">
             La página que buscas no está disponible.
           </p>
-          <Button asChild size="lg" className="rounded-full px-8 py-6 text-lg font-semibold bg-[#004aad] hover:bg-[#003a8c] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+          <Button asChild size="lg" className="rounded-full px-8 py-6 text-base sm:text-lg font-semibold bg-[#004aad] hover:bg-[#003a8c] transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
             <Link href="/">
               Volver al Inicio
             </Link>
