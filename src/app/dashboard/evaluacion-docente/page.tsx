@@ -19,7 +19,7 @@ interface Group {
   id: string;
   codigoGrupo: string;
   materia: { id: string; nombre: string };
-  docente: { id: string; nombre: string; usuarioId: string };
+  docente?: { id: string; nombre: string; usuarioId: string };
 }
 
 export default function TeacherEvaluationPage() {
@@ -50,7 +50,8 @@ export default function TeacherEvaluationPage() {
         const querySnapshot = await getDocs(gruposRef);
         querySnapshot.forEach(doc => {
             const group = doc.data();
-            if (group.estudiantes && group.estudiantes.some((est: any) => est.id === userId)) {
+            // Filter groups: student must be enrolled AND a teacher must be assigned.
+            if (group.estudiantes && group.estudiantes.some((est: any) => est.id === userId) && group.docente) {
                 studentGroups.push({ id: doc.id, ...group } as Group);
             }
         });
@@ -75,7 +76,7 @@ export default function TeacherEvaluationPage() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedGroup || !userId) return;
+    if (!selectedGroup || !userId || !selectedGroup.docente) return;
 
     if (comment.length < 10) {
         toast({ variant: "destructive", title: "Comentario muy corto", description: "El comentario debe tener al menos 10 caracteres." });
@@ -131,7 +132,7 @@ export default function TeacherEvaluationPage() {
               {groups.map((group) => (
                 <div key={group.id} className="flex items-center justify-between py-4">
                   <div>
-                    <p className="font-bold">{group.docente.nombre}</p>
+                    <p className="font-bold">{group.docente?.nombre || "Docente no asignado"}</p>
                     <p className="text-sm text-muted-foreground">{group.materia.nombre} ({group.codigoGrupo})</p>
                   </div>
                   <Button onClick={() => handleOpenDialog(group)}>Evaluar</Button>
@@ -151,7 +152,7 @@ export default function TeacherEvaluationPage() {
             {selectedGroup && (
                 <>
                 <DialogHeader>
-                    <DialogTitle>Evaluar a {selectedGroup.docente.nombre}</DialogTitle>
+                    <DialogTitle>Evaluar a {selectedGroup.docente?.nombre}</DialogTitle>
                     <DialogDescription>
                         Materia: {selectedGroup.materia.nombre}
                     </DialogDescription>
@@ -197,4 +198,3 @@ export default function TeacherEvaluationPage() {
   );
 }
 
-    
