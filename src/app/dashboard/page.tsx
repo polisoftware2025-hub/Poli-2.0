@@ -4,7 +4,6 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap } from "lucide-react";
 
 export default function DashboardRedirectPage() {
   const router = useRouter();
@@ -51,46 +50,39 @@ export default function DashboardRedirectPage() {
           className="z-10 w-full max-w-sm rounded-2xl border-cyan-300/20 bg-black/30 text-white shadow-2xl shadow-cyan-500/10 backdrop-blur-lg"
         >
           <div className="flex flex-col items-center justify-center p-8 text-center">
-            <motion.div
-              animate={{
-                y: [0, -10, 0],
-                scale: [1, 1.05, 1],
-                opacity: [0.8, 1, 0.8],
-              }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              <GraduationCap className="h-16 w-16 text-cyan-300" />
-            </motion.div>
+            
+            <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
+                <div className="wheel">
+                    <div className="spoke"></div>
+                    <div className="spoke"></div>
+                    <div className="spoke"></div>
+                    <div className="spoke"></div>
+                    <div className="spoke"></div>
+                    <div className="spoke"></div>
+                </div>
+                <div className="hamster">
+                    <div className="hamster__body">
+                        <div className="hamster__head">
+                            <div className="hamster__ear"></div>
+                            <div className="hamster__eye"></div>
+                            <div className="hamster__nose"></div>
+                        </div>
+                        <div className="hamster__limb hamster__limb--fr"></div>
+                        <div className="hamster__limb hamster__limb--fl"></div>
+                        <div className="hamster__limb hamster__limb--br"></div>
+                        <div className="hamster__limb hamster__limb--bl"></div>
+                    </div>
+                </div>
+            </div>
+
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2, duration: 0.5 }}
               className="mt-6 font-poppins text-xl font-semibold text-cyan-200"
             >
-              Cargando tu panel...
+              Redirigiendo a tu panel...
             </motion.p>
-             <div className="flex items-center justify-center gap-1 mt-2">
-                {[0, 1, 2].map(i => (
-                    <motion.div
-                        key={i}
-                        className="h-2 w-2 rounded-full bg-cyan-400"
-                        animate={{
-                            scale: [1, 1.5, 1],
-                            opacity: [0.5, 1, 0.5],
-                        }}
-                        transition={{
-                            duration: 1,
-                            repeat: Infinity,
-                            delay: i * 0.2,
-                            ease: "easeInOut",
-                        }}
-                    />
-                ))}
-             </div>
           </div>
         </motion.div>
       </div>
