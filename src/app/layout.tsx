@@ -21,12 +21,9 @@ export default function RootLayout({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate initial asset loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 2000); 
-
-    return () => clearTimeout(timer);
+    // This will run once the component mounts on the client side.
+    // It indicates that the initial client-side rendering and hydration is complete.
+    setIsLoading(false);
   }, []);
 
   return (
@@ -77,7 +74,12 @@ export default function RootLayout({
             </motion.div>
           )}
         </AnimatePresence>
-        {!isLoading && children}
+        
+        {/* We render the children behind the loader, and they will be revealed once the loader fades out */}
+        <div style={{ visibility: isLoading ? 'hidden' : 'visible' }}>
+            {children}
+        </div>
+
         <Toaster />
       </body>
     </html>
