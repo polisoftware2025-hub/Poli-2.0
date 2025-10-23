@@ -154,11 +154,14 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap },
             { href: "/dashboard/horarios", label: "Horarios", icon: Calendar },
             { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare },
-            { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
-            { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar },
             { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard },
+            { type: 'header', label: 'Comunidad y Ayuda' },
+            { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
+            { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
             { href: "/dashboard/evaluacion-docente", label: "Evaluar Docentes", icon: Star },
             { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare },
+            { type: 'header', label: 'Cuenta' },
+            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
         
         const teacherMenuItems = [
@@ -387,7 +390,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <SidebarProvider>
-            <Sidebar side="left" collapsible="icon" className="bg-card">
+            <Sidebar side="left" collapsible="icon" className="font-sans bg-[hsl(220_40%_90%)] dark:bg-card">
                  <DynamicSidebar 
                     role={userRole} 
                     pathname={pathname} 
