@@ -160,7 +160,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard },
             { type: 'header', label: 'Comunidad y Ayuda' },
             { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
-            { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
+            { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar },
             { href: "/dashboard/evaluacion-docente", label: "Evaluar Docentes", icon: Star },
             { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare },
             { type: 'header', label: 'Cuenta' },
