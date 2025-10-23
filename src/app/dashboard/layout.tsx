@@ -91,9 +91,13 @@ const roleConfig: Record<UserRole, { accentColor: string, gradient?: string }> =
     rector: { accentColor: "bg-amber-500/20" },
 };
 
-const getInitials = (email: string | null | undefined) => {
-    if (!email) return "U";
-    return email.substring(0, 2).toUpperCase();
+const getInitials = (name: string | null | undefined) => {
+    if (!name) return "U";
+    const names = name.split(' ');
+    if (names.length > 1) {
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
 };
 
 const roleNames: Record<UserRole, string> = {
@@ -235,7 +239,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
                                         "h-5 w-5 z-10 shrink-0",
                                         pathname === item.href && "text-accent-foreground"
                                     )} />
-                                    <span className="z-10">{item.label}</span>
+                                    <span className="z-10 group-data-[collapsible=icon]:hidden">{item.label}</span>
                                 </div>
                             </Link>
                         </motion.div>
@@ -251,12 +255,14 @@ function DynamicSidebar({
     pathname, 
     onLinkClick,
     userEmail,
+    userName,
     handleLogout
 }: { 
     role: UserRole, 
     pathname: string, 
     onLinkClick: () => void,
     userEmail: string | null,
+    userName: string | null,
     handleLogout: () => void
 }) {
     const config = roleConfig[role];
@@ -265,20 +271,24 @@ function DynamicSidebar({
         : role === 'admin'
         ? "from-primary to-blue-900"
         : "from-primary/95 to-blue-900/90";
+    
+    const nameParts = userName?.split(' ') || [];
+    const displayName = nameParts.length > 1 ? `${nameParts[0]} ${nameParts[2]}` : userName;
+
 
     return (
         <div className={cn("flex h-full flex-col bg-gradient-to-b backdrop-blur-md", gradientClass)}>
-            <SidebarHeader className="p-4">
+            <SidebarHeader className="p-3">
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-auto w-full justify-start p-2 hover:bg-white/10">
-                            <div className="flex items-center gap-3">
+                            <div className="flex w-full items-center gap-3">
                                 <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Avatar className="h-10 w-10 border-2 border-white/50">
-                                            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userEmail}`} />
-                                            <AvatarFallback>{getInitials(userEmail)}</AvatarFallback>
+                                            <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${userName}`} />
+                                            <AvatarFallback>{getInitials(userName)}</AvatarFallback>
                                         </Avatar>
                                     </TooltipTrigger>
                                     <TooltipContent side="right">
@@ -287,7 +297,7 @@ function DynamicSidebar({
                                 </Tooltip>
                                 </TooltipProvider>
                                 <div className="hidden flex-col items-start truncate md:flex group-data-[collapsible=icon]:hidden">
-                                    <span className="text-sm font-semibold text-white truncate">{userEmail}</span>
+                                    <span className="text-sm font-semibold text-white truncate">{displayName}</span>
                                     <span className="text-xs text-white/70">{roleNames[role]}</span>
                                 </div>
                                 <ChevronDown className="ml-auto h-4 w-4 text-white/70 group-data-[collapsible=icon]:hidden"/>
@@ -319,6 +329,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { toast } = useToast();
     const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [userName, setUserName] = useState<string | null>(null);
     const [userRole, setUserRole] = useState<UserRole | null>(null);
     const [userId, setUserId] = useState<string | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -329,10 +340,12 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         const storedEmail = localStorage.getItem("userEmail");
         const storedRole = localStorage.getItem("userRole") as UserRole;
         const storedUserId = localStorage.getItem("userId");
-        if (storedEmail && storedRole && storedUserId) {
+        const storedUserName = localStorage.getItem("userName");
+        if (storedEmail && storedRole && storedUserId && storedUserName) {
             setUserEmail(storedEmail);
             setUserRole(storedRole);
             setUserId(storedUserId);
+            setUserName(storedUserName);
         } else {
             router.push("/login");
         }
@@ -403,7 +416,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         router.push("/");
     };
 
-    if (!userEmail || !userRole) {
+    if (!userEmail || !userRole || !userName) {
         return (
            <div className="flex min-h-screen items-center justify-center bg-gray-100">
             <p>Cargando...</p>
@@ -421,6 +434,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                             pathname={pathname} 
                             onLinkClick={() => setMenuOpen(false)}
                             userEmail={userEmail}
+                            userName={userName}
                             handleLogout={handleLogout} 
                         />
                     }

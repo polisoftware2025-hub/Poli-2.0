@@ -65,6 +65,7 @@ export default function LoginPage() {
         localStorage.setItem('userEmail', data.user.correoInstitucional);
         localStorage.setItem('userRole', data.user.rol.id);
         localStorage.setItem('userId', data.userId);
+        localStorage.setItem('userName', data.user.nombreCompleto);
         router.push('/dashboard');
       } else {
         toast({
