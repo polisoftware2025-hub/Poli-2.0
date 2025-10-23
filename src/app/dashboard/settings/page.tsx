@@ -34,7 +34,7 @@ const colorPresets = [
 ];
 
 export default function SettingsPage() {
-  const { preferences, setPreferences, updatePreference, resetPreferences, isLoading } = useUserPreferences();
+  const { preferences, updatePreference, resetPreferences, isLoading, setPreferences } = useUserPreferences();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -163,15 +163,22 @@ export default function SettingsPage() {
                     <Select value={preferences.fontFamily} onValueChange={(value) => updatePreference('fontFamily', value as UserPreferences['fontFamily'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="Poppins">Poppins</SelectItem>
-                            <SelectItem value="Inter">Inter</SelectItem>
-                            <SelectItem value="Roboto">Roboto</SelectItem>
-                            <SelectItem value="Montserrat">Montserrat</SelectItem>
-                            <SelectItem value="Lato">Lato</SelectItem>
-                            <SelectItem value="Nunito">Nunito</SelectItem>
-                            <SelectItem value="Open Sans">Open Sans</SelectItem>
-                            <SelectItem value="Raleway">Raleway</SelectItem>
-                            <SelectItem value="Source Code Pro">Source Code Pro</SelectItem>
+                            <SelectItem value="Poppins">Poppins (Sans-serif)</SelectItem>
+                            <SelectItem value="Inter">Inter (Sans-serif)</SelectItem>
+                            <SelectItem value="Roboto">Roboto (Sans-serif)</SelectItem>
+                            <SelectItem value="Montserrat">Montserrat (Sans-serif)</SelectItem>
+                            <SelectItem value="Lato">Lato (Sans-serif)</SelectItem>
+                            <SelectItem value="Nunito">Nunito (Sans-serif)</SelectItem>
+                            <SelectItem value="Open Sans">Open Sans (Sans-serif)</SelectItem>
+                            <SelectItem value="Raleway">Raleway (Sans-serif)</SelectItem>
+                            <SelectItem value="Exo 2">Exo 2 (Sci-fi)</SelectItem>
+                            <SelectItem value="Orbitron">Orbitron (Sci-fi)</SelectItem>
+                            <SelectItem value="Space Grotesk">Space Grotesk (Modern)</SelectItem>
+                            <SelectItem value="Merriweather">Merriweather (Serif)</SelectItem>
+                            <SelectItem value="Playfair Display">Playfair Display (Serif)</SelectItem>
+                            <SelectItem value="Lobster">Lobster (Display)</SelectItem>
+                            <SelectItem value="Source Code Pro">Source Code Pro (Monospace)</SelectItem>
+                            <SelectItem value="Press Start 2P">Press Start 2P (Retro)</SelectItem>
                         </SelectContent>
                     </Select>
                 </SettingRow>

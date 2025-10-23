@@ -17,7 +17,7 @@ export interface UserPreferences {
     themeMode: "light" | "dark";
     primaryColor: ColorSettings;
     accentColor: ColorSettings;
-    fontFamily: "Poppins" | "Inter" | "Roboto" | "Montserrat" | "Lato" | "Nunito" | "Open Sans" | "Raleway" | "Source Code Pro";
+    fontFamily: "Poppins" | "Inter" | "Roboto" | "Montserrat" | "Lato" | "Nunito" | "Open Sans" | "Raleway" | "Source Code Pro" | "Exo 2" | "Orbitron" | "Space Grotesk" | "Merriweather" | "Playfair Display" | "Lobster" | "Press Start 2P";
     fontSize: "14px" | "16px" | "18px";
     fontWeight: "400" | "500" | "600";
     letterSpacing: "normal" | "-0.05em" | "0.05em";
