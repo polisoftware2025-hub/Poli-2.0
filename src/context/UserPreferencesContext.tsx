@@ -82,7 +82,7 @@ const preferencesReducer = (state: { preferences: UserPreferences; isLoading: bo
         case 'SET_LOADING':
             return { ...state, isLoading: action.payload };
         case 'SET_PREFERENCES':
-            return { ...state, preferences: { ...defaultPreferences, ...action.payload } };
+            return { ...state, preferences: { ...state.preferences, ...action.payload } };
         case 'UPDATE_PREFERENCE':
             return { ...state, preferences: { ...state.preferences, [action.payload.key]: action.payload.value } };
         default:
@@ -97,7 +97,6 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         isLoading: true,
     });
     
-    // --- Firestore Synchronization ---
     const saveToFirestore = useCallback(debounce(async (userId: string, prefs: UserPreferences) => {
         try {
             const userPrefsRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId, "config", "preferences");
@@ -107,8 +106,6 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         }
     }, 1500), []);
 
-    // --- Effects ---
-    // 1. Initial load from localStorage and Firestore
     useEffect(() => {
         const userId = localStorage.getItem('userId');
         
@@ -116,20 +113,23 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
             dispatch({ type: 'SET_LOADING', payload: true });
             
             const localPrefsRaw = localStorage.getItem('userPreferences');
+            let loadedPrefs = defaultPreferences;
             if (localPrefsRaw) {
                 try {
-                    dispatch({ type: 'SET_PREFERENCES', payload: JSON.parse(localPrefsRaw) });
+                    loadedPrefs = { ...defaultPreferences, ...JSON.parse(localPrefsRaw) };
                 } catch (e) { console.error("Could not parse local preferences:", e); }
             }
+            
+            dispatch({ type: 'SET_PREFERENCES', payload: loadedPrefs });
 
             if (userId) {
                 try {
                     const userPrefsRef = doc(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios", userId, "config", "preferences");
                     const docSnap = await getDoc(userPrefsRef);
                     if (docSnap.exists()) {
-                        const firestorePrefs = docSnap.data() as Partial<UserPreferences>;
+                        const firestorePrefs = { ...defaultPreferences, ...docSnap.data() };
                         dispatch({ type: 'SET_PREFERENCES', payload: firestorePrefs });
-                        localStorage.setItem('userPreferences', JSON.stringify({ ...defaultPreferences, ...firestorePrefs }));
+                        localStorage.setItem('userPreferences', JSON.stringify(firestorePrefs));
                     }
                 } catch (error) { console.error("Failed to fetch preferences from Firestore:", error); }
             }
@@ -139,7 +139,6 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         loadPreferences();
     }, []);
 
-    // 2. Apply styles and save to persistence when preferences change
     useEffect(() => {
         const { preferences } = state;
         const root = document.documentElement;
@@ -151,8 +150,14 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
 
         const setVar = (key: string, value: string) => root.style.setProperty(key, value);
 
-        setVar('--primary', `hsl(${preferences.primaryColor.hue}, ${preferences.primaryColor.saturation}%, ${preferences.primaryColor.lightness}%)`);
-        setVar('--accent', `hsl(${preferences.accentColor.hue}, ${preferences.accentColor.saturation}%, ${preferences.accentColor.lightness}%)`);
+        setVar('--primary-hue', String(preferences.primaryColor.hue));
+        setVar('--primary-saturation', `${preferences.primaryColor.saturation}%`);
+        setVar('--primary-lightness', `${preferences.primaryColor.lightness}%`);
+        
+        setVar('--accent-hue', String(preferences.accentColor.hue));
+        setVar('--accent-saturation', `${preferences.accentColor.saturation}%`);
+        setVar('--accent-lightness', `${preferences.accentColor.lightness}%`);
+
         setVar('--font-family', preferences.fontFamily);
         setVar('--global-font-size', preferences.fontSize);
         setVar('--font-weight', preferences.fontWeight);
@@ -171,7 +176,6 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         }
     }, [state.preferences, saveToFirestore]);
     
-    // --- Public API ---
     const updatePreference = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
         dispatch({ type: 'UPDATE_PREFERENCE', payload: { key, value } });
     };

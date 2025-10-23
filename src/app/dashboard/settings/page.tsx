@@ -7,8 +7,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardFooter
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,14 +22,8 @@ import { PageHeader } from "@/components/page-header";
 import { useUserPreferences, type UserPreferences } from "@/context/UserPreferencesContext";
 import { motion, AnimatePresence } from "framer-motion";
 import { Slider } from "@/components/ui/slider";
-import { HexColorPicker } from "react-colorful";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { useToast } from "@/hooks/use-toast";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 const colorPresets = [
     { name: "Azul Tecnológico", primary: { hue: 221, saturation: 83, lightness: 53 }, accent: { hue: 262, saturation: 83, lightness: 60 } },
@@ -42,12 +34,38 @@ const colorPresets = [
 ];
 
 export default function SettingsPage() {
-  const { preferences, updatePreference, resetPreferences, setPreferences } = useUserPreferences();
+  const { preferences: globalPreferences, setPreferences: setGlobalPreferences, resetPreferences: resetGlobalPreferences, isLoading: isLoadingGlobal } = useUserPreferences();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // --- Draft State for local changes ---
+  const [draftPreferences, setDraftPreferences] = useState<UserPreferences>(globalPreferences);
+  
+  // Sync local draft state when global preferences are loaded initially
+  useEffect(() => {
+    if(!isLoadingGlobal){
+        setDraftPreferences(globalPreferences);
+    }
+  }, [isLoadingGlobal, globalPreferences]);
+
+  const updateDraftPreference = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
+      setDraftPreferences(prev => ({...prev, [key]: value}));
+  };
+  
+  const handleSaveChanges = () => {
+    setGlobalPreferences(draftPreferences);
+    toast({ title: "Configuración Guardada", description: "Tu nuevo tema se ha aplicado en toda la aplicación." });
+  };
+  
+  const handleReset = () => {
+    resetGlobalPreferences();
+    // Also reset the draft to reflect the changes immediately
+    setDraftPreferences(globalPreferences);
+    toast({ title: "Configuración Restablecida", description: "Se han restaurado los valores predeterminados." });
+  };
+  
   const handleExport = () => {
-      const blob = new Blob([JSON.stringify(preferences, null, 2)], { type: "application/json" });
+      const blob = new Blob([JSON.stringify(draftPreferences, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -70,8 +88,8 @@ export default function SettingsPage() {
       reader.onload = (e) => {
         try {
           const newPrefs = JSON.parse(e.target?.result as string);
-          setPreferences(newPrefs);
-          toast({ title: "Configuración Importada", description: "Tu nuevo tema se ha aplicado correctamente." });
+          setDraftPreferences(newPrefs); // Update draft state first
+          toast({ title: "Configuración Lista para Importar", description: "Revisa los cambios y haz clic en 'Guardar mi Estilo' para aplicar." });
         } catch (error) {
           toast({ variant: "destructive", title: "Error de Importación", description: "El archivo de configuración no es válido." });
         }
@@ -79,6 +97,10 @@ export default function SettingsPage() {
       reader.readAsText(file);
     }
   };
+
+  if(isLoadingGlobal){
+      return <div>Cargando configuración...</div>
+  }
 
   return (
     <div className="flex flex-col gap-8">
@@ -90,16 +112,15 @@ export default function SettingsPage() {
 
        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-8">
-            {/* General Preferences */}
             <SettingCard icon={SettingsIcon} title="Preferencias Generales">
                 <SettingRow label="Idioma">
-                    <Select value={preferences.language} onValueChange={(value) => updatePreference('language', value as UserPreferences['language'])}>
+                    <Select value={draftPreferences.language} onValueChange={(value) => updateDraftPreference('language', value as UserPreferences['language'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="es">Español</SelectItem><SelectItem value="en">Inglés</SelectItem></SelectContent>
                     </Select>
                 </SettingRow>
                 <SettingRow label="Densidad de la Interfaz">
-                     <Select value={preferences.density} onValueChange={(value) => updatePreference('density', value as UserPreferences['density'])}>
+                     <Select value={draftPreferences.density} onValueChange={(value) => updateDraftPreference('density', value as UserPreferences['density'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="compact">Compacta</SelectItem>
@@ -109,37 +130,35 @@ export default function SettingsPage() {
                     </Select>
                 </SettingRow>
                 <SettingRow label="Activar Animaciones Globales">
-                    <Switch checked={preferences.animationsEnabled} onCheckedChange={(checked) => updatePreference('animationsEnabled', checked)} />
+                    <Switch checked={draftPreferences.animationsEnabled} onCheckedChange={(checked) => updateDraftPreference('animationsEnabled', checked)} />
                 </SettingRow>
             </SettingCard>
 
-            {/* Theme Customization */}
             <SettingCard icon={Palette} title="Personalización de Tema">
                 <SettingRow label="Modo">
                     <div className="flex items-center gap-2 p-1 rounded-full bg-muted">
-                        <Button variant={preferences.themeMode === 'light' ? 'secondary' : 'ghost'} size="sm" onClick={() => updatePreference('themeMode', 'light')} className="rounded-full"><Sun className="mr-2 h-4 w-4"/>Claro</Button>
-                        <Button variant={preferences.themeMode === 'dark' ? 'secondary' : 'ghost'} size="sm" onClick={() => updatePreference('themeMode', 'dark')} className="rounded-full"><Moon className="mr-2 h-4 w-4"/>Oscuro</Button>
+                        <Button variant={draftPreferences.themeMode === 'light' ? 'secondary' : 'ghost'} size="sm" onClick={() => updateDraftPreference('themeMode', 'light')} className="rounded-full"><Sun className="mr-2 h-4 w-4"/>Claro</Button>
+                        <Button variant={draftPreferences.themeMode === 'dark' ? 'secondary' : 'ghost'} size="sm" onClick={() => updateDraftPreference('themeMode', 'dark')} className="rounded-full"><Moon className="mr-2 h-4 w-4"/>Oscuro</Button>
                     </div>
                 </SettingRow>
                 <SettingRow label="Paleta de Colores Base">
                     <div className="flex flex-wrap gap-2">
                         {colorPresets.map(preset => (
-                            <Button key={preset.name} variant="outline" size="sm" onClick={() => { updatePreference('primaryColor', preset.primary); updatePreference('accentColor', preset.accent); }}>
+                            <Button key={preset.name} variant="outline" size="sm" onClick={() => { updateDraftPreference('primaryColor', preset.primary); updateDraftPreference('accentColor', preset.accent); }}>
                                 {preset.name}
                             </Button>
                         ))}
                     </div>
                 </SettingRow>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                     <ColorPicker settingKey="primaryColor" label="Color Primario" />
-                     <ColorPicker settingKey="accentColor" label="Color de Acento" />
+                     <ColorPicker settingKey="primaryColor" label="Color Primario" draftPreferences={draftPreferences} updateDraftPreference={updateDraftPreference} />
+                     <ColorPicker settingKey="accentColor" label="Color de Acento" draftPreferences={draftPreferences} updateDraftPreference={updateDraftPreference} />
                  </div>
             </SettingCard>
             
-            {/* Visual Appearance */}
             <SettingCard icon={Monitor} title="Apariencia Visual">
                  <SettingRow label="Estilo de Tarjetas">
-                     <Select value={preferences.cardStyle} onValueChange={(value) => updatePreference('cardStyle', value as UserPreferences['cardStyle'])}>
+                     <Select value={draftPreferences.cardStyle} onValueChange={(value) => updateDraftPreference('cardStyle', value as UserPreferences['cardStyle'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="glass">Glass UI</SelectItem>
@@ -150,25 +169,24 @@ export default function SettingsPage() {
                 </SettingRow>
                 <SettingRow label="Redondez de Bordes (rem)">
                     <div className="flex items-center gap-4 w-full max-w-sm">
-                        <Slider value={[preferences.borderRadius]} onValueChange={([val]) => updatePreference('borderRadius', val)} min={0} max={2} step={0.1} />
-                        <span className="font-mono text-sm w-12 text-center">{preferences.borderRadius.toFixed(1)}</span>
+                        <Slider value={[draftPreferences.borderRadius]} onValueChange={([val]) => updateDraftPreference('borderRadius', val)} min={0} max={2} step={0.1} />
+                        <span className="font-mono text-sm w-12 text-center">{draftPreferences.borderRadius.toFixed(1)}</span>
                     </div>
                 </SettingRow>
                  <SettingRow label="Intensidad de Desenfoque (px)">
                     <div className="flex items-center gap-4 w-full max-w-sm">
-                        <Slider value={[preferences.blurIntensity]} onValueChange={([val]) => updatePreference('blurIntensity', val)} min={0} max={40} step={1} />
-                         <span className="font-mono text-sm w-12 text-center">{preferences.blurIntensity}</span>
+                        <Slider value={[draftPreferences.blurIntensity]} onValueChange={([val]) => updateDraftPreference('blurIntensity', val)} min={0} max={40} step={1} />
+                         <span className="font-mono text-sm w-12 text-center">{draftPreferences.blurIntensity}</span>
                     </div>
                 </SettingRow>
                 <SettingRow label="Activar Sombras Flotantes">
-                    <Switch checked={preferences.showShadows} onCheckedChange={(checked) => updatePreference('showShadows', checked)} />
+                    <Switch checked={draftPreferences.showShadows} onCheckedChange={(checked) => updateDraftPreference('showShadows', checked)} />
                 </SettingRow>
             </SettingCard>
 
-            {/* Typography */}
             <SettingCard icon={Text} title="Fuentes y Tipografía">
                 <SettingRow label="Familia Tipográfica">
-                    <Select value={preferences.fontFamily} onValueChange={(value) => updatePreference('fontFamily', value as UserPreferences['fontFamily'])}>
+                    <Select value={draftPreferences.fontFamily} onValueChange={(value) => updateDraftPreference('fontFamily', value as UserPreferences['fontFamily'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="Poppins">Poppins</SelectItem>
@@ -179,7 +197,7 @@ export default function SettingsPage() {
                     </Select>
                 </SettingRow>
                 <SettingRow label="Tamaño de Fuente Global">
-                    <Select value={preferences.fontSize} onValueChange={(value) => updatePreference('fontSize', value as UserPreferences['fontSize'])}>
+                    <Select value={draftPreferences.fontSize} onValueChange={(value) => updateDraftPreference('fontSize', value as UserPreferences['fontSize'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="14px">Pequeño</SelectItem>
@@ -188,11 +206,31 @@ export default function SettingsPage() {
                         </SelectContent>
                     </Select>
                 </SettingRow>
+                 <SettingRow label="Peso de Fuente Global">
+                    <Select value={draftPreferences.fontWeight} onValueChange={(value) => updateDraftPreference('fontWeight', value as UserPreferences['fontWeight'])}>
+                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="400">Normal</SelectItem>
+                            <SelectItem value="500">Medio</SelectItem>
+                            <SelectItem value="600">Semi-Negrita</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </SettingRow>
+                <SettingRow label="Espaciado de Letras">
+                    <Select value={draftPreferences.letterSpacing} onValueChange={(value) => updateDraftPreference('letterSpacing', value as UserPreferences['letterSpacing'])}>
+                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="-0.05em">Compacto</SelectItem>
+                            <SelectItem value="0.05em">Amplio</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </SettingRow>
             </SettingCard>
 
              <SettingCard icon={Layout} title="Diseño de Interfaz">
                 <SettingRow label="Posición del Menú Lateral">
-                    <Select value={preferences.sidebarPosition} onValueChange={(value) => updatePreference('sidebarPosition', value as UserPreferences['sidebarPosition'])}>
+                    <Select value={draftPreferences.sidebarPosition} onValueChange={(value) => updateDraftPreference('sidebarPosition', value as UserPreferences['sidebarPosition'])}>
                         <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="left">Izquierda</SelectItem>
@@ -202,28 +240,28 @@ export default function SettingsPage() {
                 </SettingRow>
             </SettingCard>
             
-             <Card>
+            <Card>
                 <CardHeader>
                     <CardTitle>Gestión de Configuración</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-wrap gap-4">
+                    <Button onClick={handleSaveChanges}><Save className="mr-2 h-4 w-4"/>Guardar mi Estilo</Button>
                     <Button onClick={handleExport} variant="outline"><Download className="mr-2 h-4 w-4"/>Exportar</Button>
                     <Button onClick={handleImport} variant="outline"><Upload className="mr-2 h-4 w-4"/>Importar</Button>
                     <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".json" className="hidden" />
-                    <Button onClick={resetPreferences} variant="destructive"><RefreshCw className="mr-2 h-4 w-4"/>Restablecer</Button>
+                    <Button onClick={handleReset} variant="destructive"><RefreshCw className="mr-2 h-4 w-4"/>Restablecer</Button>
                 </CardContent>
             </Card>
 
         </div>
 
-        {/* Dynamic Preview */}
         <div className="lg:col-span-1 sticky top-24">
             <Card>
                 <CardHeader>
                     <CardTitle>Vista Previa Dinámica</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ThemePreview preferences={preferences} />
+                    <ThemePreview preferences={draftPreferences} />
                 </CardContent>
             </Card>
         </div>
@@ -255,20 +293,19 @@ const SettingRow = ({ label, children }: { label: string, children: React.ReactN
     </div>
 );
 
-const ColorPicker = ({ label, settingKey }: { label: string; settingKey: 'primaryColor' | 'accentColor' }) => {
-    const { preferences, updatePreference } = useUserPreferences();
-    const color = preferences[settingKey];
+const ColorPicker = ({ label, settingKey, draftPreferences, updateDraftPreference }: { label: string; settingKey: 'primaryColor' | 'accentColor'; draftPreferences: UserPreferences, updateDraftPreference: Function }) => {
+    const color = draftPreferences[settingKey];
 
     const handleHueChange = (newHue: number) => {
-        updatePreference(settingKey, { ...color, hue: newHue });
+        updateDraftPreference(settingKey, { ...color, hue: newHue });
     };
 
     const handleSaturationChange = (newSaturation: number) => {
-        updatePreference(settingKey, { ...color, saturation: newSaturation });
+        updateDraftPreference(settingKey, { ...color, saturation: newSaturation });
     };
 
     const handleLightnessChange = (newLightness: number) => {
-        updatePreference(settingKey, { ...color, lightness: newLightness });
+        updateDraftPreference(settingKey, { ...color, lightness: newLightness });
     };
 
     const colorString = `hsl(${color.hue}, ${color.saturation}%, ${color.lightness}%)`;
@@ -296,12 +333,17 @@ const ColorPicker = ({ label, settingKey }: { label: string; settingKey: 'primar
 };
 
 const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
-  const { themeMode, primaryColor, accentColor, fontFamily, fontSize, borderRadius, cardStyle, blurIntensity, showShadows, sidebarPosition } = preferences;
+  const { themeMode, primaryColor, accentColor, fontFamily, fontSize, fontWeight, letterSpacing, borderRadius, cardStyle, blurIntensity, showShadows, sidebarPosition } = preferences;
 
   const primary = `hsl(${primaryColor.hue}, ${primaryColor.saturation}%, ${primaryColor.lightness}%)`;
   const accent = `hsl(${accentColor.hue}, ${accentColor.saturation}%, ${accentColor.lightness}%)`;
-  const background = themeMode === 'dark' ? 'hsl(224 71% 4%)' : 'hsl(220 20% 97%)';
-  const card = themeMode === 'dark' ? 'hsl(224 71% 4% / 0.6)' : 'hsl(0 0% 100% / 0.9)';
+  
+  const background = themeMode === 'dark' 
+    ? `hsl(220, 90%, 4%)`
+    : `hsl(220, 20%, 97%)`;
+  const card = themeMode === 'dark' 
+    ? 'hsla(224, 71%, 4%, 0.6)' 
+    : 'hsla(0, 0%, 100%, 0.9)';
   const cardBorder = themeMode === 'dark' ? 'hsl(217 33% 25%)' : 'hsl(214 32% 91%)';
   const textForeground = themeMode === 'dark' ? 'hsl(210 40% 98%)' : 'hsl(220 90% 4%)';
   const textMuted = themeMode === 'dark' ? 'hsl(215 20% 65%)' : 'hsl(215 28% 44%)';
@@ -330,11 +372,12 @@ const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
         background: background,
         fontFamily: fontFamily,
         fontSize: fontSize,
+        fontWeight: fontWeight,
+        letterSpacing: letterSpacing,
         color: textForeground
       }}
     >
       <div className={`flex h-full ${sidebarContainerClass}`}>
-        {/* Mini Sidebar */}
         <div 
             className="w-16 h-full flex flex-col items-center py-4 space-y-4"
             style={{
@@ -349,7 +392,6 @@ const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
             <div className="w-6 h-6 rounded" style={{backgroundColor: textMuted, opacity: 0.3}}></div>
           </div>
         </div>
-        {/* Mini Content */}
         <div className={`flex-1 h-full flex flex-col p-4 space-y-4 ${sidebarPosition === 'left' ? 'rounded-r-md' : 'rounded-l-md'}`} style={{background: 'transparent'}}>
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold" style={{color: textForeground}}>Panel</h3>

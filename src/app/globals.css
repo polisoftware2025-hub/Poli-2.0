@@ -1,58 +1,72 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 90% 4%;
+    /* Base Colors for Light Mode (Default) */
+    --background: 220 20% 97%; /* Soft blue-gray */
+    --foreground: 220 90% 4%; /* Deep blue-black */
     --card: 0 0% 100%;
     --card-foreground: 220 90% 4%;
     --popover: 0 0% 100%;
     --popover-foreground: 220 90% 4%;
-    --primary: 221 83% 53%;
-    --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96%;
     --secondary-foreground: 222 47% 11%;
     --muted: 210 40% 96%;
     --muted-foreground: 215 28% 44%;
-    --accent: 262 83% 60%;
-    --accent-foreground: 210 40% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    
+    /* Dynamic Primary Color (HSL components) */
+    --primary-hue: 217;
+    --primary-saturation: 91%;
+    --primary-lightness: 60%;
+    --primary: var(--primary-hue) var(--primary-saturation) var(--primary-lightness);
+    --primary-foreground: 210 40% 98%;
+    
+    /* Dynamic Accent Color */
+    --accent-hue: 262;
+    --accent-saturation: 83%;
+    --accent-lightness: 60%;
+    --accent: var(--accent-hue) var(--accent-saturation) var(--accent-lightness);
+    --accent-foreground: 210 40% 98%;
 
-    /* Custom Properties */
+    --ring: var(--primary);
+
+    /* Custom Properties from Preferences */
     --radius: 1rem;
     --font-family: "Poppins", sans-serif;
     --global-font-size: 16px;
-    --font-weight: 500;
+    --font-weight: 400;
     --letter-spacing: normal;
     --blur-intensity: 10px;
   }
 
   .dark {
-    --background: 224 71% 4%;
+    /* Base Colors for Dark Mode */
+    --background: 220 90% 4%;
     --foreground: 210 40% 98%;
     --card: 224 71% 4% / 0.6;
     --card-foreground: 210 40% 98%;
     --popover: 224 71% 4%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
     --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    --accent: 262 83% 60%;
-    --accent-foreground: 210 40% 98%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 25%;
     --input: 217 33% 25%;
-    --ring: 217 91% 60%;
+    
+    /* Primary color is already dynamic via HSL vars */
+    /* Accent color is already dynamic */
+
+    --ring: var(--primary);
   }
 }
 
