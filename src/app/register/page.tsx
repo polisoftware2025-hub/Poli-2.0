@@ -228,14 +228,12 @@ export default function RegisterPage() {
       <div className="relative flex min-h-screen flex-col items-center justify-center p-4 pt-16 polygon-bg sm:p-6">
         <div className="absolute top-4 left-4 z-10">
            <Button
-            asChild
             variant="ghost"
+            onClick={handleGoBack}
             className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 text-white shadow-sm transition-all hover:bg-black/40 hover:text-white active:scale-95 sm:px-4"
           >
-            <Link href="/">
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Volver</span>
-            </Link>
           </Button>
         </div>
         <Card className="z-10 w-full max-w-2xl rounded-2xl border-cyan-300/20 bg-black/30 text-white shadow-2xl shadow-cyan-500/10 backdrop-blur-lg">

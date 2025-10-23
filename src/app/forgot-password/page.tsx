@@ -46,8 +46,7 @@ export default function ForgotPasswordPage() {
   const onSubmit = async (values: z.infer<typeof forgotPasswordSchema>) => {
     setIsLoading(true);
     try {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-      const response = await fetch(`${'\'\'\''}{appUrl}/api/request-reset-password`, {
+      const response = await fetch(`/api/request-reset-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
