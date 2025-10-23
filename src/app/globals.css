@@ -128,10 +128,14 @@
   [data-card-style="glass"] .bg-card\/60 {
       backdrop-filter: blur(var(--blur-intensity));
   }
+
+  body {
+    @apply scrollbar-thin scrollbar-track-transparent hover:scrollbar-thumb-primary/80 scrollbar-thumb-primary;
+  }
 }
 
 @layer components {
-  /* Hamster Loader Styles - CORRECTED */
+  /* Hamster Loader Styles */
   .wheel-and-hamster {
     --dur: 1.5s;
     position: relative;
@@ -148,6 +152,7 @@
   }
 
   .wheel {
+    animation: wheel var(--dur) linear infinite;
     border-radius: 50%;
     top: 0;
     left: 0;
@@ -166,20 +171,6 @@
     z-index: 1;
   }
 
-  .wheel,
-  .spoke {
-    animation: wheel var(--dur) linear infinite;
-  }
-
-  .spoke {
-    background: hsl(var(--primary));
-    width: 4px;
-    height: 100%;
-    left: 50%;
-    top: 0;
-    transform-origin: 50% 50%;
-  }
-
   .wheel::before {
       content: "";
       position: absolute;
@@ -192,12 +183,21 @@
       box-sizing: border-box;
   }
 
+  .spoke {
+    animation: wheel var(--dur) linear infinite;
+    background: hsl(var(--primary));
+    width: 4px;
+    height: 100%;
+    left: 50%;
+    top: 0;
+    transform-origin: 50% 50%;
+  }
+
   .spoke:nth-child(2) { transform: rotate(30deg); }
   .spoke:nth-child(3) { transform: rotate(60deg); }
   .spoke:nth-child(4) { transform: rotate(90deg); }
   .spoke:nth-child(5) { transform: rotate(120deg); }
   .spoke:nth-child(6) { transform: rotate(150deg); }
-  
 
   .hamster__head {
     animation: hamsterHead var(--dur) ease-in-out infinite;
