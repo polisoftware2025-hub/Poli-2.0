@@ -18,53 +18,21 @@ const metadata: Metadata = {
 const themeLoaderScript = `
   (function() {
     try {
+      // We only apply the dark class here. All other variables are scoped to the dashboard.
       const savedPrefs = localStorage.getItem('userPreferences');
       if (savedPrefs) {
         const prefs = JSON.parse(savedPrefs);
-        
-        const root = document.documentElement;
-
         if (prefs.themeMode === 'dark') {
-          root.classList.add('dark');
-        } else {
-          root.classList.remove('dark');
+          document.documentElement.classList.add('dark');
         }
-        
-        if (prefs.density) {
-            document.body.classList.remove('density-compact', 'density-normal', 'density-spacious');
-            document.body.classList.add('density-' + prefs.density);
-        }
-
-        const setVar = (key, value) => root.style.setProperty(key, value);
-        
-        if (prefs.primaryColor) {
-            setVar('--primary-hue', prefs.primaryColor.hue);
-            setVar('--primary-saturation', prefs.primaryColor.saturation + '%');
-            setVar('--primary-lightness', prefs.primaryColor.lightness + '%');
-        }
-        if (prefs.accentColor) {
-             setVar('--accent-hue', prefs.accentColor.hue);
-             setVar('--accent-saturation', prefs.accentColor.saturation + '%');
-             setVar('--accent-lightness', prefs.accentColor.lightness + '%');
-        }
-        if(prefs.fontFamily) setVar('--font-family', prefs.fontFamily);
-        if(prefs.fontSize) setVar('--global-font-size', prefs.fontSize);
-        if(prefs.fontWeight) setVar('--font-weight', prefs.fontWeight);
-        if(prefs.letterSpacing) setVar('--letter-spacing', prefs.letterSpacing);
-        if(prefs.borderRadius) setVar('--radius', prefs.borderRadius + 'rem');
-        if(prefs.blurIntensity) setVar('--blur-intensity', prefs.blurIntensity + 'px');
-        
-        root.setAttribute('data-card-style', prefs.cardStyle || 'glass');
-        root.setAttribute('data-animations-enabled', String(prefs.animationsEnabled));
-        root.setAttribute('data-show-shadows', String(prefs.showShadows));
-
       } else {
+        // Fallback for first-time users
         if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
           document.documentElement.classList.add('dark');
         }
       }
     } catch (e) {
-      console.error('Failed to load user preferences:', e);
+      console.error('Failed to load theme mode preference:', e);
     }
   })();
 `;

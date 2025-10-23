@@ -141,34 +141,6 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
 
     useEffect(() => {
         const { preferences } = state;
-        const root = document.documentElement;
-
-        root.classList.toggle('dark', preferences.themeMode === 'dark');
-        
-        document.body.classList.remove('density-compact', 'density-normal', 'density-spacious');
-        document.body.classList.add(`density-${preferences.density}`);
-
-        const setVar = (key: string, value: string) => root.style.setProperty(key, value);
-
-        setVar('--primary-hue', String(preferences.primaryColor.hue));
-        setVar('--primary-saturation', `${preferences.primaryColor.saturation}%`);
-        setVar('--primary-lightness', `${preferences.primaryColor.lightness}%`);
-        
-        setVar('--accent-hue', String(preferences.accentColor.hue));
-        setVar('--accent-saturation', `${preferences.accentColor.saturation}%`);
-        setVar('--accent-lightness', `${preferences.accentColor.lightness}%`);
-
-        setVar('--font-family', preferences.fontFamily);
-        setVar('--global-font-size', preferences.fontSize);
-        setVar('--font-weight', preferences.fontWeight);
-        setVar('--letter-spacing', preferences.letterSpacing);
-        setVar('--radius', `${preferences.borderRadius}rem`);
-        setVar('--blur-intensity', `${preferences.blurIntensity}px`);
-        
-        root.setAttribute('data-card-style', preferences.cardStyle);
-        root.setAttribute('data-animations-enabled', String(preferences.animationsEnabled));
-        root.setAttribute('data-show-shadows', String(preferences.showShadows));
-
         const userId = localStorage.getItem('userId');
         localStorage.setItem('userPreferences', JSON.stringify(preferences));
         if (userId) {
