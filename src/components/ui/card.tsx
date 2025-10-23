@@ -4,25 +4,29 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
+import { useUserPreferences } from "@/context/UserPreferencesContext";
 
 const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-    const cardStyle = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-card-style') : 'glass';
-    const showShadows = typeof document !== 'undefined' ? document.documentElement.getAttribute('data-show-shadows') === 'true' : true;
+    const { preferences } = useUserPreferences();
 
     return (
       <div
         ref={ref}
+        style={{
+            '--card-border-radius': `${preferences.borderRadius}rem`,
+            '--card-blur': preferences.cardStyle === 'glass' ? `${preferences.blurIntensity}px` : '0px',
+        } as React.CSSProperties}
         className={cn(
-          "rounded-[var(--radius)] border",
+          "rounded-[var(--card-border-radius)] border",
           {
-            'bg-card/60 backdrop-blur-[var(--blur-intensity)]': cardStyle === 'glass',
-            'bg-card': cardStyle === 'flat',
-            'bg-card border-border': cardStyle === 'bordered',
-            'shadow-lg': showShadows,
-            'dark:bg-card/80 dark:backdrop-blur-[var(--blur-intensity)]': cardStyle === 'glass'
+            'bg-card/60 backdrop-blur-[var(--card-blur)]': preferences.cardStyle === 'glass',
+            'bg-card': preferences.cardStyle === 'flat',
+            'bg-card border-border': preferences.cardStyle === 'bordered',
+            'shadow-lg': preferences.showShadows,
+            'dark:bg-card/80 dark:backdrop-blur-[var(--card-blur)]': preferences.cardStyle === 'glass'
           },
           className
         )}
