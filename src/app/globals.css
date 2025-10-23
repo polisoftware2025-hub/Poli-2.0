@@ -133,7 +133,7 @@
 @layer components {
   /* Hamster Loader Styles */
   .wheel-and-hamster {
-    --dur: 2s;
+    --dur: 1.5s;
     position: relative;
     width: 12em;
     height: 12em;
@@ -147,8 +147,8 @@
     position: absolute;
   }
 
-  .wheel,
-  .spoke {
+  .wheel {
+    animation: wheel var(--dur) linear infinite;
     border-radius: 50%;
     top: 0;
     left: 0;
@@ -156,9 +156,16 @@
     height: 100%;
   }
 
-  .wheel {
+  .wheel::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
     border: 4px solid hsl(var(--primary));
-    animation: wheel var(--dur) linear infinite;
+    box-sizing: border-box;
   }
 
   .spoke {
@@ -166,6 +173,8 @@
     width: 4px;
     height: 100%;
     left: calc(50% - 2px);
+    top: 0;
+    transform-origin: 50% 50%;
   }
 
   .spoke:nth-child(2) { transform: rotate(30deg); }
@@ -262,21 +271,38 @@
     top: 2em;
     left: 0.5em;
     transform: rotate(15deg) translateZ(-1px);
+    animation-name: hamsterLimbFl;
   }
   .hamster__limb--fr {
     top: 2em;
     left: 2.5em;
     transform: rotate(5deg);
+     animation-name: hamsterLimbFr;
   }
   .hamster__limb--bl {
     top: 1em;
     left: 3.5em;
     transform: rotate(-25deg);
+     animation-name: hamsterLimbBl;
   }
   .hamster__limb--br {
     top: 1em;
     left: 5em;
     transform: rotate(-35deg);
+    animation-name: hamsterLimbBr;
+  }
+  
+  .hamster__tail {
+    animation: hamsterTail var(--dur) ease-in-out infinite;
+    background: hsl(30,90%,80%);
+    border-radius: 0.25em 50% 50% 0.25em;
+    box-shadow: 0 -0.1em 0 hsl(30,90%,55%) inset;
+    top: 0.5em;
+    right: 0;
+    width: 0.5em;
+    height: 0.4em;
+    transform: rotate(30deg) translateZ(-1px);
+    transform-origin: 0.25em 0.25em;
   }
 
   @keyframes wheel {
@@ -285,8 +311,8 @@
   }
 
   @keyframes hamster {
-    from, to { transform: rotate(4deg) translate(-0.8em, 1.85em); }
-    50% { transform: rotate(0) translate(-0.8em, 1.85em); }
+    from, to { transform: translateY(0) rotate(4deg) translate(-0.8em, 1.85em); }
+    50% { transform: translateY(-0.1em) rotate(0) translate(-0.8em, 1.85em); }
   }
 
   @keyframes hamsterHead {
@@ -303,21 +329,34 @@
     from, 25%, 50%, 75%, to { transform: rotate(0); }
     12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(-2deg); }
   }
-
-  @keyframes hamsterLimb {
-    from, 50%, to { transform: rotate(0); }
-    25%, 75% { transform: rotate(30deg); }
+  
+  @keyframes hamsterLimbFr {
+    from, 25%, 50%, 75%, to { transform: rotate(5deg); }
+    12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(-40deg); }
+  }
+  
+  @keyframes hamsterLimbFl {
+    from, 25%, 50%, 75%, to { transform: rotate(15deg) translateZ(-1px); }
+    12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(-30deg) translateZ(-1px); }
+  }
+  
+  @keyframes hamsterLimbBr {
+    from, 25%, 50%, 75%, to { transform: rotate(-35deg); }
+    12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(10deg); }
+  }
+  
+  @keyframes hamsterLimbBl {
+    from, 25%, 50%, 75%, to { transform: rotate(-25deg); }
+    12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(20deg); }
   }
 
-  .hamster__limb--fr { animation-name: hamsterLimb; animation-delay: 0.05s; }
-  .hamster__limb--fl { animation-name: hamsterLimb; }
-  .hamster__limb--br { animation-name: hamsterLimb; animation-delay: 0.1s; }
-  .hamster__limb--bl { animation-name: hamsterLimb; animation-delay: 0.15s; }
+  @keyframes hamsterTail {
+    from, 25%, 50%, 75%, to { transform: rotate(30deg) translateZ(-1px); }
+    12.5%, 37.5%, 62.5%, 87.5% { transform: rotate(10deg) translateZ(-1px); }
+  }
 
   @keyframes blink {
-    from, to { background-color: #000; }
-    5%, 10% { background-color: transparent; }
+    from, 5%, 10%, to { background-color: #000; }
+    5.1%, 9.9% { background-color: transparent; }
   }
 }
-
-    
