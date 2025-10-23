@@ -137,16 +137,18 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/admin/reports", label: "Reportes", icon: FileText },
             { type: 'header', label: 'Configuración' },
             { href: "/dashboard/admin/media", label: "Gestión de Media", icon: ImageIcon },
+            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
 
         const rectorMenuItems = [
             { href: "/dashboard/rector", label: "Panel Rectoría", icon: LayoutDashboard },
              { type: 'header', label: 'Supervisión' },
             { href: "/dashboard/admin/users", label: "Gestión de Usuarios", icon: ShieldCheck },
-            ...adminMenuItems.filter(item => !['/dashboard/admin', '/dashboard/admin/users'].includes(item.href || '')),
+            ...adminMenuItems.filter(item => !['/dashboard/admin', '/dashboard/admin/users', '/dashboard/profile'].includes(item.href || '')),
             { type: 'header', label: 'Auditoría' },
             { href: "/dashboard/rector/audit", label: "Auditoría de Cambios", icon: ShieldAlert },
             { href: "/dashboard/rector/settings", label: "Configuración Global", icon: SlidersHorizontal },
+            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
 
         const studentMenuItems = [
@@ -170,9 +172,9 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/docente/cursos", label: "Mis Cursos", icon: BookCopy },
             { href: "/dashboard/horarios", label: "Horario", icon: Calendar },
             { href: "/dashboard/docente/disponibilidad", label: "Mi Disponibilidad", icon: Clock },
-            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
             { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
             { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
+            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
 
         const managerMenuItems = [
@@ -312,10 +314,10 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const { preferences } = useUserPreferences();
 
     const userStyle: React.CSSProperties = {
-        '--primary-hue': preferences.primaryColor.hue,
+        '--primary-hue': String(preferences.primaryColor.hue),
         '--primary-saturation': `${preferences.primaryColor.saturation}%`,
         '--primary-lightness': `${preferences.primaryColor.lightness}%`,
-        '--accent-hue': preferences.accentColor.hue,
+        '--accent-hue': String(preferences.accentColor.hue),
         '--accent-saturation': `${preferences.accentColor.saturation}%`,
         '--accent-lightness': `${preferences.accentColor.lightness}%`,
         '--font-family': preferences.fontFamily,
@@ -409,7 +411,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div style={userStyle} className={cn(preferences.themeMode === 'dark' && 'dark')}>
+        <div style={userStyle}>
             <SidebarProvider>
                 <Sidebar side="left" collapsible="icon" className="font-sans bg-[hsl(220_40%_90%)] dark:bg-card">
                     <DynamicSidebar 
