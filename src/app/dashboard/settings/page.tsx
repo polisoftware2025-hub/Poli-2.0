@@ -167,6 +167,11 @@ export default function SettingsPage() {
                             <SelectItem value="Inter">Inter</SelectItem>
                             <SelectItem value="Roboto">Roboto</SelectItem>
                             <SelectItem value="Montserrat">Montserrat</SelectItem>
+                            <SelectItem value="Lato">Lato</SelectItem>
+                            <SelectItem value="Nunito">Nunito</SelectItem>
+                            <SelectItem value="Open Sans">Open Sans</SelectItem>
+                            <SelectItem value="Raleway">Raleway</SelectItem>
+                            <SelectItem value="Source Code Pro">Source Code Pro</SelectItem>
                         </SelectContent>
                     </Select>
                 </SettingRow>

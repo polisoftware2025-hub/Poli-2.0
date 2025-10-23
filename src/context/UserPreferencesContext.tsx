@@ -17,7 +17,7 @@ export interface UserPreferences {
     themeMode: "light" | "dark";
     primaryColor: ColorSettings;
     accentColor: ColorSettings;
-    fontFamily: "Poppins" | "Inter" | "Roboto" | "Montserrat";
+    fontFamily: "Poppins" | "Inter" | "Roboto" | "Montserrat" | "Lato" | "Nunito" | "Open Sans" | "Raleway" | "Source Code Pro";
     fontSize: "14px" | "16px" | "18px";
     fontWeight: "400" | "500" | "600";
     letterSpacing: "normal" | "-0.05em" | "0.05em";
