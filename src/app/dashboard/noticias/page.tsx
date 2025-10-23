@@ -1,3 +1,4 @@
+
 "use client";
 
 import { PageHeader } from "@/components/page-header";
@@ -58,7 +59,7 @@ export default function NewsPage() {
                         </p>
                     </CardContent>
                     <CardFooter>
-                         <Button variant="link" className="p-0 h-auto">Ver más</Button>
+                         <Button variant="link" className="p-0 h-auto text-primary">Ver más</Button>
                     </CardFooter>
                 </Card>
             ))}
