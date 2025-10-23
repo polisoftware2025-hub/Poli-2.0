@@ -4,9 +4,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
+import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
 
 const metadata: Metadata = {
   title: "Politécnico Internacional",
@@ -76,9 +76,7 @@ export default function RootLayout({
                 </motion.div>
             )}
         </AnimatePresence>
-        <UserPreferencesProvider>
-            {!isLoading && children}
-        </UserPreferencesProvider>
+        {!isLoading && children}
         <Toaster />
       </body>
     </html>
