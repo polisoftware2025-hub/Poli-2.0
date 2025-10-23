@@ -83,14 +83,6 @@ interface Notification {
     timestamp: Date;
 }
 
-const roleConfig: Record<UserRole, { accentColor: string, gradient?: string }> = {
-    estudiante: { accentColor: "bg-blue-500/20" },
-    docente: { accentColor: "bg-green-500/20" },
-    gestor: { accentColor: "bg-purple-500/20" },
-    admin: { accentColor: "bg-primary/20" },
-    rector: { accentColor: "bg-amber-500/20" },
-};
-
 const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
     const names = name.split(' ');
@@ -407,7 +399,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
             </Sidebar>
             <SidebarInset>
                 <div className="flex-1 bg-background">
-                    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card px-4 sm:px-6">
+                    <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card/80 backdrop-blur-lg px-4 sm:px-6">
                         <div className="flex items-center gap-4">
                             <SidebarTrigger>
                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
@@ -460,14 +452,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     setIsClient(true);
-    const timer = setTimeout(() => {
-        setIsLoading(false);
-    }, 1500);
-
-    return () => clearTimeout(timer);
   }, []);
 
-  if (!isClient || isLoading) {
+  useEffect(() => {
+    // This effect runs on the client after hydration
+    if (isClient) {
+        setIsLoading(false);
+    }
+  }, [isClient]);
+
+  if (isLoading && isClient) { // Only show loader on the client during initial load
      return (
         <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
           <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
@@ -493,6 +487,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       );
   }
 
+  // On the server or after client-side load, render the actual layout.
+  // The 'suppressHydrationWarning' on the body in the root layout helps manage mismatches.
   return (
     <SidebarProvider>
         <MainLayout>{children}</MainLayout>

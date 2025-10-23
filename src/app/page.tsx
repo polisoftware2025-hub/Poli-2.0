@@ -119,19 +119,19 @@ export default function HomePage() {
   }, []);
   
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 font-roboto">
+    <div className="flex min-h-screen flex-col bg-background font-roboto">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full bg-white shadow-md">
+      <header className="sticky top-0 z-50 w-full bg-card shadow-md">
         <div className="container mx-auto flex items-center justify-between p-4">
           <Link href="#inicio" className="flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-[#002147]" />
-            <span className="font-poppins text-xl font-bold text-[#002147]">
+            <GraduationCap className="h-8 w-8 text-primary" />
+            <span className="font-poppins text-xl font-bold text-foreground">
               Poli 2.0
             </span>
           </Link>
           <nav className="hidden items-center space-x-6 md:flex">
             {navLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="font-poppins text-sm font-medium text-gray-600 transition-colors hover:text-[#004aad]">
+              <Link key={link.href} href={link.href} className="font-poppins text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
                 {link.label}
               </Link>
             ))}
@@ -142,7 +142,7 @@ export default function HomePage() {
               <SheetContent side="left" className="w-64 bg-background p-4 text-foreground">
                 <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2"><GraduationCap className="h-6 w-6 text-[#002147]" /><span className="font-poppins text-lg font-bold text-[#002147]">Poli 2.0</span></div>
+                    <div className="flex items-center gap-2"><GraduationCap className="h-6 w-6 text-primary" /><span className="font-poppins text-lg font-bold text-foreground">Poli 2.0</span></div>
                 </div>
                 <nav className="flex flex-col items-start space-y-4">
                   {navLinks.map((link) => (
@@ -160,12 +160,12 @@ export default function HomePage() {
       <main className="flex-1">
         <section id="inicio" className="relative flex h-screen w-full items-center justify-center text-center text-white bg-cover bg-center">
           <Image src={heroImageUrl} alt="Campus universitario" fill style={{objectFit: 'cover'}} priority data-ai-hint="university campus building" />
-          <div className="absolute inset-0 z-0 bg-[#002147]/60" />
+          <div className="absolute inset-0 z-0 bg-primary/60 dark:bg-primary/80" />
           <div className="relative z-20 flex flex-col items-center p-6" data-aos="fade-up">
             <h1 className="font-poppins text-5xl font-bold md:text-7xl">Forjamos el Futuro, Hoy</h1>
             <p className="mt-4 max-w-2xl text-lg md:text-xl">Una educación de calidad que te prepara para los retos de un mundo en constante cambio.</p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-              <Button asChild style={{ backgroundColor: "#004aad" }} className="rounded-full px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700">
+              <Button asChild className="rounded-full px-8 py-6 text-lg font-semibold text-primary-foreground shadow-lg transition-transform hover:scale-105 hover:bg-primary/90">
                 <Link href="/register">Inscríbete Ahora</Link>
               </Button>
               <Button asChild variant="outline" className="bg-transparent rounded-full border-2 border-white px-8 py-6 text-lg font-semibold text-white shadow-lg transition-transform hover:scale-105 hover:bg-white/10">
@@ -175,13 +175,13 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="bienvenida" className="py-20 bg-white">
+        <section id="bienvenida" className="py-20 bg-background">
           <div className="container mx-auto px-6 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div data-aos="fade-right">
               <Image src="https://picsum.photos/seed/welcome/600/400" alt="Estudiantes colaborando" width={600} height={400} className="rounded-xl shadow-2xl" data-ai-hint="students collaborating"/>
             </div>
             <div data-aos="fade-left">
-              <h2 className="text-3xl font-bold text-gray-800 font-poppins">Una Comunidad de Aprendizaje para el Siglo XXI</h2>
+              <h2 className="text-3xl font-bold text-foreground font-poppins">Una Comunidad de Aprendizaje para el Siglo XXI</h2>
               <p className="mt-4 text-muted-foreground leading-relaxed">Te damos la bienvenida al Politécnico 2.0, donde la innovación y la excelencia académica se encuentran. Somos más que una institución; somos una plataforma de lanzamiento para los líderes del mañana, comprometidos con una educación que inspira, reta y transforma.</p>
               <Button asChild className="mt-6">
                 <Link href="#nosotros">Conoce más sobre nosotros &rarr;</Link>
@@ -190,21 +190,21 @@ export default function HomePage() {
           </div>
         </section>
         
-        <section id="stats" className="py-20 bg-gray-50">
+        <section id="stats" className="py-20 bg-muted/50">
           <div className="container mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {stats.map((stat, index) => (
               <div key={index} data-aos="fade-up" data-aos-delay={index * 100}>
                 <stat.icon className="h-12 w-12 mx-auto text-primary"/>
-                <p className="text-4xl font-bold text-gray-800 mt-4">{stat.value}</p>
+                <p className="text-4xl font-bold text-foreground mt-4">{stat.value}</p>
                 <p className="text-muted-foreground mt-2">{stat.label}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <section id="programas" className="bg-white py-20">
+        <section id="programas" className="bg-background py-20">
           <div className="container mx-auto px-6" data-aos="fade-up">
-            <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-4">Explora Nuestros Programas</h2>
+            <h2 className="text-center font-poppins text-3xl font-bold text-foreground mb-4">Explora Nuestros Programas</h2>
             <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-12">Ofrecemos programas académicos diseñados para las industrias del futuro, combinando teoría sólida con práctica intensiva.</p>
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"><Skeleton className="h-80 w-full rounded-lg" /><Skeleton className="h-80 w-full rounded-lg" /><Skeleton className="h-80 w-full rounded-lg" /></div>
@@ -213,7 +213,7 @@ export default function HomePage() {
                   <CarouselContent className="-ml-4">
                     {programs.map((program, index) => (
                       <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                        <Card className="group flex h-full flex-col overflow-hidden rounded-xl shadow-lg transition-shadow hover:shadow-2xl">
+                        <Card className="group flex h-full flex-col overflow-hidden rounded-xl shadow-lg transition-shadow hover:shadow-2xl bg-card">
                            <div className="relative h-48 w-full overflow-hidden"><Image src={program.image} alt={`Imagen de ${program.title}`} fill style={{objectFit: 'cover'}} className="transition-transform duration-500 group-hover:scale-105" data-ai-hint={program.imageHint} /></div>
                            <CardHeader><CardTitle className="font-poppins text-xl">{program.title}</CardTitle></CardHeader>
                            <CardContent className="flex-grow"><p className="text-sm text-muted-foreground line-clamp-3">{program.description}</p></CardContent>
@@ -229,22 +229,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section id="nosotros" className="bg-gray-50 py-20">
+        <section id="nosotros" className="bg-muted/50 py-20">
           <div className="container mx-auto px-6">
             <div className="text-center mb-12" data-aos="fade-up">
-                <h2 className="font-poppins text-3xl font-bold text-gray-800">Nuestro Propósito</h2>
+                <h2 className="font-poppins text-3xl font-bold text-foreground">Nuestro Propósito</h2>
                 <p className="text-muted-foreground max-w-2xl mx-auto mt-4">Estamos comprometidos con la formación de líderes que no solo se adapten al cambio, sino que lo impulsen.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
                 <div data-aos="fade-right" data-aos-delay="100">
-                    <Card className="rounded-xl border-none bg-white p-8 shadow-xl h-full flex flex-col items-center text-center">
+                    <Card className="rounded-xl border-none bg-card p-8 shadow-xl h-full flex flex-col items-center text-center">
                         <div className="rounded-full bg-primary/10 p-4 text-primary mb-4"><Rocket className="h-8 w-8" /></div>
                         <CardHeader className="p-0"><CardTitle className="font-poppins text-2xl font-bold">Nuestra Misión</CardTitle></CardHeader>
                         <CardContent className="p-0 pt-4"><p className="text-muted-foreground">Empoderar a nuestros estudiantes a través de una educación innovadora y práctica, equipándolos con el conocimiento y las habilidades para prosperar en un mundo digital y globalizado, y para convertirse en agentes de cambio positivo en sus comunidades.</p></CardContent>
                     </Card>
                 </div>
                 <div data-aos="fade-left" data-aos-delay="200">
-                    <Card className="rounded-xl border-none bg-white p-8 shadow-xl h-full flex flex-col items-center text-center">
+                    <Card className="rounded-xl border-none bg-card p-8 shadow-xl h-full flex flex-col items-center text-center">
                         <div className="rounded-full bg-primary/10 p-4 text-primary mb-4"><Eye className="h-8 w-8" /></div>
                         <CardHeader className="p-0"><CardTitle className="font-poppins text-2xl font-bold">Nuestra Visión</CardTitle></CardHeader>
                         <CardContent className="p-0 pt-4"><p className="text-muted-foreground">Ser un referente global de educación superior, reconocido por nuestra excelencia académica, agilidad para adaptarnos a las nuevas tecnologías y por el impacto tangible de nuestros egresados en la industria y la sociedad.</p></CardContent>
@@ -254,17 +254,17 @@ export default function HomePage() {
           </div>
         </section>
         
-        <section id="testimonials" className="py-20 bg-white">
+        <section id="testimonials" className="py-20 bg-background">
           <div className="container mx-auto px-6" data-aos="fade-up">
-              <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-4">Lo que dicen nuestros estudiantes</h2>
+              <h2 className="text-center font-poppins text-3xl font-bold text-foreground mb-4">Lo que dicen nuestros estudiantes</h2>
               <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-12">Historias de éxito que nacieron en nuestras aulas.</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {testimonials.map((testimonial, index) => (
-                  <Card key={index} className="rounded-xl border-none bg-gray-50/70 p-8 shadow-lg text-center">
+                  <Card key={index} className="rounded-xl border-none bg-card p-8 shadow-lg text-center">
                     <Avatar className="w-20 h-20 mx-auto mb-4 border-4 border-white shadow-md"><AvatarImage src={testimonial.avatar} alt={testimonial.name}/><AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback></Avatar>
                     <CardContent className="p-0">
                       <p className="text-muted-foreground italic">&quot;{testimonial.quote}&quot;</p>
-                      <p className="font-bold text-gray-800 mt-4">{testimonial.name}</p>
+                      <p className="font-bold text-foreground mt-4">{testimonial.name}</p>
                       <p className="text-sm text-primary font-medium">{testimonial.program}</p>
                     </CardContent>
                   </Card>
@@ -273,13 +273,13 @@ export default function HomePage() {
           </div>
         </section>
         
-         <section id="noticias" className="py-20 bg-gray-50">
+         <section id="noticias" className="py-20 bg-muted/50">
           <div className="container mx-auto px-6" data-aos="fade-up">
-            <h2 className="text-center font-poppins text-3xl font-bold text-gray-800 mb-4">Últimas Noticias y Eventos</h2>
+            <h2 className="text-center font-poppins text-3xl font-bold text-foreground mb-4">Últimas Noticias y Eventos</h2>
             <p className="text-center text-muted-foreground max-w-2xl mx-auto mb-12">Mantente al día con las novedades y actividades de nuestra comunidad.</p>
              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {news.map((item, index) => (
-                    <Card key={index} className="group overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
+                    <Card key={index} className="group overflow-hidden rounded-xl shadow-lg transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 bg-card">
                         <div className="relative h-56 w-full"><Image src={item.image} alt={item.title} fill style={{objectFit:'cover'}} className="transition-transform duration-500 group-hover:scale-105"/></div>
                         <CardContent className="p-6">
                             <p className="text-xs text-primary font-semibold uppercase">{item.date}</p>
@@ -303,7 +303,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer id="contacto" style={{ backgroundColor: "#0A0A23" }} className="text-white">
+      <footer id="contacto" className="bg-[#0A0A23] dark:bg-[#0A0A23] text-white">
             <div className="container mx-auto px-6 py-16">
                 <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left">
                     <div className="space-y-4">
@@ -350,4 +350,3 @@ export default function HomePage() {
     </div>
   );
 }
-
