@@ -55,7 +55,7 @@ const FontSelector = () => {
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-48 justify-between"
+                    className="w-full sm:w-48 justify-between"
                 >
                     <span className="truncate">{preferences.fontFamily}</span>
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -147,18 +147,18 @@ export default function SettingsPage() {
         icon={<SettingsIcon className="h-8 w-8 text-primary" />}
       />
 
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2 space-y-8">
+       <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
+        <div className="md:col-span-3 space-y-8">
             <SettingCard icon={SettingsIcon} title="Preferencias Generales">
                 <SettingRow label="Idioma">
                     <Select value={preferences.language} onValueChange={(value) => updatePreference('language', value as UserPreferences['language'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                         <SelectContent><SelectItem value="es">Español</SelectItem><SelectItem value="en">Inglés</SelectItem></SelectContent>
                     </Select>
                 </SettingRow>
                 <SettingRow label="Densidad de la Interfaz">
                      <Select value={preferences.density} onValueChange={(value) => updatePreference('density', value as UserPreferences['density'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="compact">Compacta</SelectItem>
                             <SelectItem value="normal">Normal</SelectItem>
@@ -196,7 +196,7 @@ export default function SettingsPage() {
             <SettingCard icon={Monitor} title="Apariencia Visual">
                  <SettingRow label="Estilo de Tarjetas">
                      <Select value={preferences.cardStyle} onValueChange={(value) => updatePreference('cardStyle', value as UserPreferences['cardStyle'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="glass">Glass UI</SelectItem>
                             <SelectItem value="flat">Plano</SelectItem>
@@ -227,7 +227,7 @@ export default function SettingsPage() {
                 </SettingRow>
                 <SettingRow label="Tamaño de Fuente Global">
                     <Select value={preferences.fontSize} onValueChange={(value) => updatePreference('fontSize', value as UserPreferences['fontSize'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="14px">Pequeño</SelectItem>
                             <SelectItem value="16px">Normal</SelectItem>
@@ -237,7 +237,7 @@ export default function SettingsPage() {
                 </SettingRow>
                  <SettingRow label="Peso de Fuente Global">
                     <Select value={preferences.fontWeight} onValueChange={(value) => updatePreference('fontWeight', value as UserPreferences['fontWeight'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="400">Normal</SelectItem>
                             <SelectItem value="500">Medio</SelectItem>
@@ -247,7 +247,7 @@ export default function SettingsPage() {
                 </SettingRow>
                 <SettingRow label="Espaciado de Letras">
                     <Select value={preferences.letterSpacing} onValueChange={(value) => updatePreference('letterSpacing', value as UserPreferences['letterSpacing'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="normal">Normal</SelectItem>
                             <SelectItem value="-0.05em">Compacto</SelectItem>
@@ -260,7 +260,7 @@ export default function SettingsPage() {
              <SettingCard icon={Layout} title="Diseño de Interfaz">
                 <SettingRow label="Posición del Menú Lateral">
                     <Select value={preferences.sidebarPosition} onValueChange={(value) => updatePreference('sidebarPosition', value as UserPreferences['sidebarPosition'])}>
-                        <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="left">Izquierda</SelectItem>
                             <SelectItem value="right">Derecha</SelectItem>
@@ -283,7 +283,7 @@ export default function SettingsPage() {
 
         </div>
 
-        <div className="lg:col-span-1 sticky top-24">
+        <div className="md:col-span-2 md:sticky md:top-24">
             <Card>
                 <CardHeader>
                     <CardTitle>Vista Previa Dinámica</CardTitle>
@@ -306,16 +306,16 @@ const SettingCard = ({ icon: Icon, title, children }: { icon: React.ElementType,
                 <CardTitle>{title}</CardTitle>
             </div>
         </CardHeader>
-        <CardContent className="space-y-6 pt-2 pl-6">
+        <CardContent className="space-y-6 pt-2 md:pl-6">
             {children}
         </CardContent>
     </Card>
 );
 
 const SettingRow = ({ label, children }: { label: string, children: React.ReactNode }) => (
-    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
         <Label className="font-medium shrink-0">{label}</Label>
-        <div className="w-full sm:w-auto flex justify-end">
+        <div className="w-full md:w-auto flex justify-start md:justify-end">
             {children}
         </div>
     </div>
