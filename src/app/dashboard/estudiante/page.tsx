@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ArrowRight, GraduationCap, Calendar as CalendarIcon, User, CheckSquare, BookCopy, Star, TrendingUp, AlertTriangle } from "lucide-react";
+import { ArrowRight, GraduationCap, Calendar as CalendarIcon, User, CheckSquare, BookCopy, Star, TrendingUp, AlertTriangle, Activity, CheckCircle } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Calendar } from "@/components/ui/calendar";
@@ -18,6 +18,8 @@ import { motion } from "framer-motion";
 import { format, formatDistanceToNow } from "date-fns";
 import { es } from "date-fns/locale";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+
 
 interface Course {
     id: string;
@@ -25,6 +27,9 @@ interface Course {
     progress: number;
     image: string;
     imageHint: string;
+    pendingActivities: number;
+    currentGrade: number;
+    attendance: number;
 }
 
 const calendarEvents = [
@@ -38,27 +43,6 @@ const getSeedFromString = (str: string): string => {
     if (!str) return 'default-seed';
     return createHash('md5').update(str).digest('hex');
 };
-
-const StatCard = ({ title, value, icon: Icon, link, isLoading }: { title: string, value: string, icon: React.ElementType, link?: string, isLoading: boolean }) => (
-    <Card className="hover:shadow-md transition-shadow">
-        <CardHeader className="pb-2">
-            <CardDescription className="flex items-center justify-between">
-                <span>{title}</span>
-                <Icon className="h-5 w-5 text-muted-foreground" />
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            {isLoading ? <Skeleton className="h-8 w-1/2" /> : <div className="text-3xl font-bold text-primary">{value}</div>}
-        </CardContent>
-        {link && (
-            <CardFooter className="pt-0">
-                <Button variant="link" asChild className="p-0 h-auto text-xs">
-                    <Link href={link}>Ver detalle <ArrowRight className="ml-1 h-3 w-3" /></Link>
-                </Button>
-            </CardFooter>
-        )}
-    </Card>
-);
 
 const EventIcon = ({ type }: { type: string }) => {
     switch(type) {
@@ -152,6 +136,9 @@ export default function StudentDashboardPage() {
                         progress: Math.floor(Math.random() * 100),
                         image: imageUrl,
                         imageHint: imageHint,
+                        pendingActivities: Math.floor(Math.random() * 5),
+                        currentGrade: Math.random() * (4.8 - 3.2) + 3.2,
+                        attendance: Math.floor(Math.random() * (100 - 85) + 85),
                     };
                 });
                 setCourses(fetchedCourses);
@@ -168,12 +155,6 @@ export default function StudentDashboardPage() {
     fetchDashboardData();
   }, [userId]);
 
-
-  const eventsForSelectedDay = selectedDate
-    ? calendarEvents.filter(
-        (event) => event.date.toDateString() === selectedDate.toDateString()
-      )
-    : [];
 
   const nextDeadline = calendarEvents
       .filter(e => e.date > new Date() && e.type !== 'class')
@@ -226,35 +207,54 @@ export default function StudentDashboardPage() {
                 </div>
                  {isLoading.courses ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Skeleton className="h-48 w-full rounded-2xl" />
-                        <Skeleton className="h-48 w-full rounded-2xl" />
+                        <Skeleton className="h-80 rounded-2xl" />
+                        <Skeleton className="h-80 rounded-2xl" />
                     </div>
                 ) : courses.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {courses.slice(0, 4).map((course, index) => (
-                            <Link href={`/dashboard/materias/${course.id}`} key={index}>
-                                <Card className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
-                                <CardContent className="p-0">
-                                    <div className="relative h-40 w-full">
-                                        <Image
+                        {courses.slice(0, 4).map((course) => (
+                           <Link href={`/dashboard/materias/${course.id}`} key={course.id}>
+                            <Card className="group flex flex-col rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-full bg-gradient-to-br from-white to-gray-50/50">
+                                <div className="relative h-40 w-full overflow-hidden">
+                                    <Image 
                                         src={course.image}
                                         alt={`Imagen de ${course.title}`}
                                         fill
                                         style={{objectFit: 'cover'}}
-                                        className="group-hover:scale-105 transition-transform duration-500"
+                                        className="transition-transform duration-500 group-hover:scale-105"
                                         data-ai-hint={course.imageHint}
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                                        <div className="absolute bottom-2 left-4 text-white">
-                                            <span className="text-sm font-semibold">{course.progress}% completado</span>
-                                        </div>
+                                    />
+                                     {course.pendingActivities > 0 && (
+                                         <div className="absolute top-3 right-3 h-5 w-5 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold animate-pulse">
+                                            {course.pendingActivities}
+                                         </div>
+                                    )}
+                                </div>
+                               <CardHeader>
+                                   <CardTitle className="text-xl font-bold text-gray-800 leading-tight" title={course.title}>
+                                       {course.title}
+                                   </CardTitle>
+                               </CardHeader>
+                               <CardContent className="flex-grow flex flex-col justify-end">
+                                    <div className="space-y-4">
+                                         <div className="space-y-2">
+                                            <div className="flex justify-between text-xs font-medium text-muted-foreground"><span>Progreso</span><span>{course.progress}%</span></div>
+                                            <Progress value={course.progress} className="h-2"/>
+                                         </div>
+                                         <div className="flex justify-between items-center gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <CheckCircle className="h-4 w-4 text-green-500" />
+                                                <span className="text-xs font-medium">Asistencia: {course.attendance}%</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Activity className="h-4 w-4 text-blue-500" />
+                                                <span className="text-xs font-medium">Nota: {course.currentGrade.toFixed(1)}</span>
+                                            </div>
+                                         </div>
                                     </div>
-                                    <div className="p-4">
-                                        <h3 className="font-semibold truncate" title={course.title}>{course.title}</h3>
-                                    </div>
-                                </CardContent>
-                                </Card>
-                            </Link>
+                               </CardContent>
+                            </Card>
+                         </Link>
                         ))}
                     </div>
                  ) : (
@@ -270,15 +270,15 @@ export default function StudentDashboardPage() {
                  <Card>
                     <CardContent className="pt-6 space-y-6">
                         <div className="space-y-2">
-                            <div className="flex justify-between text-sm font-medium"><span>Promedio General</span><span>4.2 / 5.0</span></div>
+                            <div className="flex justify-between text-sm font-medium"><span>Promedio General</span><span className="text-primary font-bold">4.2 / 5.0</span></div>
                             <Progress value={(4.2 / 5) * 100} />
                         </div>
                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm font-medium"><span>Créditos Aprobados</span><span>18 / 120</span></div>
+                            <div className="flex justify-between text-sm font-medium"><span>Créditos Aprobados</span><span className="text-primary font-bold">18 / 120</span></div>
                             <Progress value={(18 / 120) * 100} />
                         </div>
                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm font-medium"><span>Materias del Ciclo</span><span>{courses.length} / 6</span></div>
+                            <div className="flex justify-between text-sm font-medium"><span>Materias del Ciclo</span><span className="text-primary font-bold">{courses.length} / 6</span></div>
                             <Progress value={(courses.length / 6) * 100} />
                         </div>
                     </CardContent>
@@ -289,43 +289,6 @@ export default function StudentDashboardPage() {
                     </CardFooter>
                 </Card>
             </motion.div>
-
-             <motion.div variants={itemVariants}>
-                 <h2 className="text-2xl font-bold text-gray-800 font-poppins mb-4">Agenda</h2>
-                 <Card className="shadow-lg">
-                    <CardContent className="p-2">
-                        <Calendar
-                            mode="single"
-                            selected={selectedDate}
-                            onSelect={setSelectedDate}
-                            className="p-0 w-full"
-                            markedDays={calendarEvents.map(e => e.date)}
-                        />
-                        <div className="border-t p-4 mt-2">
-                            <h3 className="font-semibold mb-3">
-                                Actividades para {selectedDate ? format(selectedDate, "PPP", { locale: es }) : 'hoy'}
-                            </h3>
-                            {eventsForSelectedDay.length > 0 ? (
-                                <ul className="space-y-4">
-                                    {eventsForSelectedDay.map((event, index) => (
-                                        <li key={index} className="flex items-start gap-3">
-                                            <div className="mt-1"><EventIcon type={event.type} /></div>
-                                            <div>
-                                                <p className="font-medium text-sm">{event.title}</p>
-                                                <p className="text-xs text-muted-foreground">{event.course}</p>
-                                            </div>
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <div className="text-center text-sm text-muted-foreground py-4">
-                                    <p>No hay actividades programadas para este día.</p>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
-             </motion.div>
         </div>
       </motion.div>
     </motion.div>
