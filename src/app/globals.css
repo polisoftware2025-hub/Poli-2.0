@@ -4,6 +4,29 @@
 
 @layer base {
   :root {
+    --background: 0 0% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    --radius: 0.8rem;
+  }
+
+  .dark {
     --background: 220 90% 4%; /* Deep Space Blue */
     --foreground: 210 40% 98%; /* Soft White */
     --card: 220 40% 15% / 0.6; /* Glassmorphism Base */
@@ -21,30 +44,6 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --border: 217 33% 25%; /* Brighter border for glass effect */
-    --input: 217 33% 20%;
-    --ring: 220 80% 60%;
-    --radius: 0.8rem;
-  }
-
-  .dark {
-    /* The dark theme is now the default */
-    --background: 220 90% 4%;
-    --foreground: 210 40% 98%;
-    --card: 220 40% 15% / 0.6;
-    --card-foreground: 210 40% 98%;
-    --popover: 220 90% 4%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 220 80% 60%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 190 95% 50%;
-    --secondary-foreground: 220 90% 4%;
-    --muted: 220 40% 15% / 0.4;
-    --muted-foreground: 215 20% 65%;
-    --accent: 260 90% 70%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 25%;
     --input: 217 33% 20%;
     --ring: 220 80% 60%;
   }

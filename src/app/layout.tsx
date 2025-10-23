@@ -6,6 +6,7 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Script from "next/script";
 
 const metadata: Metadata = {
   title: "Politécnico Internacional",
@@ -41,6 +42,15 @@ export default function RootLayout({
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
+        <Script id="theme-switcher" strategy="beforeInteractive">
+          {`
+            if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+              document.documentElement.classList.add('dark')
+            } else {
+              document.documentElement.classList.remove('dark')
+            }
+          `}
+        </Script>
       </head>
       <body className="font-roboto antialiased" suppressHydrationWarning>
         <AnimatePresence>

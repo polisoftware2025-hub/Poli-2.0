@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import {
@@ -19,8 +20,28 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Bell, Palette, Settings as SettingsIcon } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { useEffect, useState } from "react";
 
 export default function SettingsPage() {
+  const [theme, setTheme] = useState("light");
+
+  useEffect(() => {
+    // On mount, read the theme from localStorage and update the state
+    const savedTheme = localStorage.getItem("theme") || "light";
+    setTheme(savedTheme);
+  }, []);
+
+  const handleThemeChange = (isDarkMode: boolean) => {
+    const newTheme = isDarkMode ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    if (isDarkMode) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8">
        <PageHeader
@@ -61,18 +82,13 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="theme">Tema</Label>
-              <Select defaultValue="light">
-                <SelectTrigger id="theme">
-                  <SelectValue placeholder="Selecciona un tema" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Claro</SelectItem>
-                  <SelectItem value="dark">Oscuro</SelectItem>
-                  <SelectItem value="system">Sistema</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="theme">Modo Oscuro</Label>
+              <Switch
+                id="theme"
+                checked={theme === "dark"}
+                onCheckedChange={handleThemeChange}
+              />
             </div>
              <div>
               <Label htmlFor="language">Idioma</Label>

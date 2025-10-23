@@ -144,7 +144,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/admin/reports", label: "Reportes", icon: FileText },
             { type: 'header', label: 'Configuración' },
             { href: "/dashboard/admin/media", label: "Gestión de Media", icon: ImageIcon },
-            { href: "/dashboard/admin/notifications", label: "Notificaciones", icon: Bell },
+            { href: "/dashboard/settings", label: "Configuración", icon: Settings },
         ];
 
         const rectorMenuItems = [
@@ -247,20 +247,13 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
     );
 };
 
-interface DynamicSidebarProps extends SidebarItemsProps {
-    userEmail: string | null;
-    userName: string | null;
-    handleLogout: () => void;
-}
-
-const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, handleLogout }: DynamicSidebarProps) => {
-    
+const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, handleLogout }: any) => {
     const getDisplayName = () => {
         if (!userName) return "";
         const parts = userName.split(" ");
         if (parts.length > 2) {
-            // Check if the second part is a common middle name connector
-            if (['de', 'del', 'la', 'los', 'las'].includes(parts[1].toLowerCase())) {
+             const connectors = ['de', 'del', 'la', 'los', 'las'];
+            if (connectors.includes(parts[1].toLowerCase())) {
                 return `${parts[0]} ${parts[2]}`;
             }
             return `${parts[0]} ${parts[1]}`;
@@ -292,7 +285,13 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
             <SidebarContent>
                  <SidebarItems role={role} pathname={pathname} onItemClick={onItemClick} />
             </SidebarContent>
-            <SidebarFooter>
+            <SidebarFooter className="mt-auto">
+                 <Link href="/dashboard/settings" onClick={onItemClick}>
+                    <div className={cn("relative flex items-center gap-3 rounded-lg px-3 py-2 text-white/80 transition-colors hover:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2")}>
+                        <Settings className={cn("h-5 w-5 z-10 shrink-0")} />
+                        <span className="z-10 group-data-[collapsible=icon]:hidden">Configuración</span>
+                    </div>
+                </Link>
                 <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-red-500/20 hover:text-white" onClick={handleLogout}>
                     <LogOut />
                     <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
@@ -461,10 +460,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     // This effect runs once the component mounts on the client side.
-    // It's a reliable way to know client-side rendering has begun.
     const timer = setTimeout(() => {
         setIsLoading(false);
-    }, 2000); // Simulate loading time
+    }, 1500); // A bit longer to ensure content is ready
 
     return () => clearTimeout(timer);
   }, []);
