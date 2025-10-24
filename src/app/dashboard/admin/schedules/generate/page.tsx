@@ -554,7 +554,7 @@ export default function GenerateSchedulePage() {
                         </div>
                     </StepperItem>
                 </Stepper>
-                <CardFooter className="flex justify-between p-6 bg-gray-50 border-t">
+                <CardFooter className="flex justify-between p-6 bg-muted border-t">
                     <Button variant="outline" onClick={handlePrevStep} disabled={activeStep === 0}>
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Anterior
@@ -573,5 +573,3 @@ export default function GenerateSchedulePage() {
         </div>
     );
 }
-
-    
