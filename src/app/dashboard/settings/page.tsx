@@ -178,7 +178,8 @@ export default function SettingsPage() {
                         <Button variant={preferences.themeMode === 'dark' ? 'secondary' : 'ghost'} size="sm" onClick={() => updatePreference('themeMode', 'dark')} className="rounded-full"><Moon className="mr-2 h-4 w-4"/>Oscuro</Button>
                     </div>
                 </SettingRow>
-                <SettingRow label="Paleta de Colores Base">
+                <div className="space-y-3">
+                    <Label className="font-medium">Paleta de Colores Base</Label>
                     <div className="flex flex-wrap gap-2">
                         {colorPresets.map(preset => (
                             <Button key={preset.name} variant="outline" size="sm" onClick={() => { updatePreference('primaryColor', preset.primary); updatePreference('accentColor', preset.accent); }}>
@@ -186,7 +187,7 @@ export default function SettingsPage() {
                             </Button>
                         ))}
                     </div>
-                </SettingRow>
+                </div>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                      <ColorPicker settingKey="primaryColor" label="Color Primario" preferences={preferences} updatePreference={updatePreference} />
                      <ColorPicker settingKey="accentColor" label="Color de Acento" preferences={preferences} updatePreference={updatePreference} />
