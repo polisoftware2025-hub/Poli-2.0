@@ -164,13 +164,13 @@ export default function CareerAdminPage() {
       />
 
        {groupedAuditFindings.size > 0 && (
-            <Card className="border-yellow-400 bg-yellow-50">
+            <Card className="border-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 dark:border-yellow-700">
                 <CardHeader>
                     <div className="flex items-center gap-3">
-                        <AlertTriangle className="h-6 w-6 text-yellow-600" />
-                        <CardTitle className="text-yellow-800">Auditoría de Créditos por Ciclo</CardTitle>
+                        <AlertTriangle className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                        <CardTitle className="text-yellow-800 dark:text-yellow-300">Auditoría de Créditos por Ciclo</CardTitle>
                     </div>
-                    <CardDescription className="text-yellow-700">
+                    <CardDescription className="text-yellow-700 dark:text-yellow-500">
                         Se encontraron carreras con ciclos que no cumplen con la regla de 10 créditos exactos.
                     </CardDescription>
                 </CardHeader>
@@ -272,10 +272,7 @@ export default function CareerAdminPage() {
                     <Card key={career.id} className="flex flex-col">
                         <CardHeader>
                             <div className="flex justify-between items-start">
-                                <div>
-                                    <CardTitle className="text-lg">{career.nombre}</CardTitle>
-                                    <CardDescription>ID: {career.id}</CardDescription>
-                                </div>
+                                <CardTitle className="text-lg">{career.nombre}</CardTitle>
                                 <AlertDialog>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
@@ -320,6 +317,7 @@ export default function CareerAdminPage() {
                                     </AlertDialogContent>
                                  </AlertDialog>
                             </div>
+                            <CardDescription>ID: {career.id}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow space-y-4">
                             <div className="flex justify-between text-sm">
