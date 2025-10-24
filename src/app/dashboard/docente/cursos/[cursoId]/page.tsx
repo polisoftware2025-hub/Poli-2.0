@@ -324,15 +324,15 @@ export default function CourseDetailPage() {
                       </div>
                   </div>
                   <div className="md:col-span-1 grid grid-cols-3 md:grid-cols-1 gap-4">
-                       <div className="p-4 bg-white rounded-lg text-center shadow-sm">
+                       <div className="p-4 bg-card rounded-lg text-center shadow-sm">
                            <p className="text-2xl font-bold">{courseDetails.studentCount}</p>
                            <p className="text-xs text-muted-foreground">Estudiantes</p>
                        </div>
-                       <div className="p-4 bg-white rounded-lg text-center shadow-sm">
+                       <div className="p-4 bg-card rounded-lg text-center shadow-sm">
                            <p className="text-2xl font-bold">{courseDetails.activityCount}</p>
                            <p className="text-xs text-muted-foreground">Actividades</p>
                        </div>
-                       <div className="p-4 bg-white rounded-lg text-center shadow-sm">
+                       <div className="p-4 bg-card rounded-lg text-center shadow-sm">
                            <p className="text-2xl font-bold text-primary">{courseDetails.averageGrade}</p>
                            <p className="text-xs text-muted-foreground">Promedio</p>
                        </div>
