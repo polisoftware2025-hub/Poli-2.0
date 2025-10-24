@@ -36,7 +36,7 @@ interface User {
 const getInitials = (name: string = "") => {
   const names = name.split(' ');
   if (names.length > 1) {
-    return `${'\'\'\''}{names[0][0]}${'\'\'\''}{names[names.length - 1][0]}`.toUpperCase();
+    return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
   }
   return name ? name.substring(0, 2).toUpperCase() : 'U';
 }
@@ -246,7 +246,7 @@ export default function UsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                            <DropdownMenuItem asChild>
-                                <Link href={`/dashboard/admin/edit-user/${'\'\'\''}{user.id}`}>
+                                <Link href={`/dashboard/admin/edit-user/${user.id}`}>
                                     <FilePenLine className="mr-2 h-4 w-4" />
                                     Editar
                                 </Link>

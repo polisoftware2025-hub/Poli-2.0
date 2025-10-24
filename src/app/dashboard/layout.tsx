@@ -88,7 +88,7 @@ const getInitials = (name: string | null | undefined) => {
     if (!name) return "U";
     const names = name.split(' ');
     if (names.length > 1) {
-        return `${'\'\'\''}{names[0][0]}${'\'\'\''}{names[names.length - 1][0]}`.toUpperCase();
+        return `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
 };
@@ -247,9 +247,9 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
         if (parts.length > 2) {
              const connectors = ['de', 'del', 'la', 'los', 'las'];
             if (connectors.includes(parts[1].toLowerCase())) {
-                return `${'\'\'\''}{parts[0]} ${'\'\'\''}{parts[2]}`;
+                return `${parts[0]} ${parts[2]}`;
             }
-            return `${'\'\'\''}{parts[0]} ${'\'\'\''}{parts[1]}`;
+            return `${parts[0]} ${parts[1]}`;
         }
         return userName;
     };
@@ -301,7 +301,7 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
     );
 };
 
-function MainLayout({ children, userStyle }: { children: React.ReactNode, userStyle: React.CSSProperties }) {
+function MainLayout({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const pathname = usePathname();
     const { toast } = useToast();
@@ -311,6 +311,22 @@ function MainLayout({ children, userStyle }: { children: React.ReactNode, userSt
     const [userId, setUserId] = useState<string | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isMenuOpen, setMenuOpen] = useState(false);
+    const { preferences } = useUserPreferences();
+
+    const userStyle: React.CSSProperties = {
+        '--primary-hue': String(preferences.primaryColor.hue),
+        '--primary-saturation': `${preferences.primaryColor.saturation}%`,
+        '--primary-lightness': `${preferences.primaryColor.lightness}%`,
+        '--accent-hue': String(preferences.accentColor.hue),
+        '--accent-saturation': `${preferences.accentColor.saturation}%`,
+        '--accent-lightness': `${preferences.accentColor.lightness}%`,
+        '--font-family': preferences.fontFamily,
+        '--global-font-size': preferences.fontSize,
+        '--font-weight': preferences.fontWeight,
+        '--letter-spacing': preferences.letterSpacing,
+        '--radius': `${preferences.borderRadius}rem`,
+        '--blur-intensity': `${preferences.blurIntensity}px`,
+    } as React.CSSProperties;
     
     useEffect(() => {
         const storedEmail = localStorage.getItem("userEmail");
@@ -345,7 +361,7 @@ function MainLayout({ children, userStyle }: { children: React.ReactNode, userSt
                         fetchedNotifications.push({
                             id: doc.id,
                             title: "Nueva solicitud de preinscripción",
-                            description: `${'\'\'\''}{data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
+                            description: `${data.nombreCompleto || 'Un aspirante'} ha enviado una solicitud.`,
                             time: formatDistanceToNow(fechaRegistro, { addSuffix: true, locale: es }),
                             read: false,
                             timestamp: fechaRegistro
@@ -366,7 +382,7 @@ function MainLayout({ children, userStyle }: { children: React.ReactNode, userSt
                          fetchedNotifications.push({
                              id: noteDoc.id,
                              title: "Nueva Calificación Disponible",
-                             description: `Se ha publicado tu nota para ${'\'\'\''}{subjectName}.`,
+                             description: `Se ha publicado tu nota para ${subjectName}.`,
                              time: formatDistanceToNow(fechaNota, { addSuffix: true, locale: es }),
                              read: false,
                              timestamp: fechaNota
@@ -479,27 +495,9 @@ function MainLayout({ children, userStyle }: { children: React.ReactNode, userSt
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-    const { preferences } = useUserPreferences();
-
-    const userStyle: React.CSSProperties = {
-        '--primary-hue': String(preferences.primaryColor.hue),
-        '--primary-saturation': `${'\'\'\''}{preferences.primaryColor.saturation}%`,
-        '--primary-lightness': `${'\'\'\''}{preferences.primaryColor.lightness}%`,
-        '--accent-hue': String(preferences.accentColor.hue),
-        '--accent-saturation': `${'\'\'\''}{preferences.accentColor.saturation}%`,
-        '--accent-lightness': `${'\'\'\''}{preferences.accentColor.lightness}%`,
-        '--font-family': preferences.fontFamily,
-        '--global-font-size': preferences.fontSize,
-        '--font-weight': preferences.fontWeight,
-        '--letter-spacing': preferences.letterSpacing,
-        '--radius': `${'\'\'\''}{preferences.borderRadius}rem`,
-        '--blur-intensity': `${'\'\'\''}{preferences.blurIntensity}px`,
-    } as React.CSSProperties;
-
-  return (
-    <UserPreferencesProvider>
-      <MainLayout userStyle={userStyle}>{children}</MainLayout>
-    </UserPreferencesProvider>
-  );
+    return (
+        <UserPreferencesProvider>
+            <MainLayout>{children}</MainLayout>
+        </UserPreferencesProvider>
+    );
 }
-
