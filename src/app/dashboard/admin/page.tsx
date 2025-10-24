@@ -113,7 +113,7 @@ export default function AdminDashboardPage() {
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle className="font-poppins text-2xl font-bold text-gray-800">
+          <CardTitle className="font-poppins text-2xl font-bold">
             Panel de Administración
           </CardTitle>
           <CardDescription className="font-poppins text-gray-600">
