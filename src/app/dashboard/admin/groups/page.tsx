@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { Users, Plus, Edit, Trash2, MoreVertical, Filter, Sparkles } from "lucide-react";
+import { Users, Plus, Edit, Trash2, MoreVertical, Filter, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,6 +72,10 @@ export default function GroupsAdminPage() {
   const [filterCarrera, setFilterCarrera] = useState("all");
   const { toast } = useToast();
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   const fetchSedesAndCarreras = async () => {
     try {
       const sedesSnapshot = await getDocs(collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/sedes"));
@@ -130,10 +134,18 @@ export default function GroupsAdminPage() {
     }
   };
   
-  const filteredGroups = groups.filter(group => 
-    (filterSede === 'all' || group.idSede === filterSede) &&
-    (filterCarrera === 'all' || group.idCarrera === filterCarrera)
-  );
+  const filteredGroups = useMemo(() => {
+    return groups.filter(group => 
+      (filterSede === 'all' || group.idSede === filterSede) &&
+      (filterCarrera === 'all' || group.idCarrera === filterCarrera)
+    );
+  }, [groups, filterSede, filterCarrera]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredGroups.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredGroups.length);
+  const paginatedGroups = useMemo(() => filteredGroups.slice(startIndex, endIndex), [filteredGroups, startIndex, endIndex]);
 
 
   return (
@@ -150,11 +162,11 @@ export default function GroupsAdminPage() {
           <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mt-2 flex-wrap">
             <CardDescription className="flex-1">Visualiza, crea, edita y elimina los grupos académicos.</CardDescription>
             <div className="flex gap-2 flex-wrap">
-                <Button variant="outline" onClick={() => setIsAutoGenerateOpen(true)}>
+                <Button variant="outline" onClick={() => setIsAutoGenerateOpen(true)} className="rounded-full">
                     <Sparkles className="mr-2 h-4 w-4" />
                     Generación Automática
                 </Button>
-                <Button onClick={() => handleOpenDialog()}>
+                <Button onClick={() => handleOpenDialog()} className="rounded-full">
                     <Plus className="mr-2 h-4 w-4" />
                     Crear Grupo
                 </Button>
@@ -164,7 +176,7 @@ export default function GroupsAdminPage() {
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
              <Select value={filterSede} onValueChange={setFilterSede}>
-              <SelectTrigger className="w-full sm:w-56">
+              <SelectTrigger className="w-full sm:w-56 rounded-full">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filtrar por sede" />
               </SelectTrigger>
@@ -176,7 +188,7 @@ export default function GroupsAdminPage() {
               </SelectContent>
             </Select>
              <Select value={filterCarrera} onValueChange={setFilterCarrera}>
-              <SelectTrigger className="w-full sm:w-56">
+              <SelectTrigger className="w-full sm:w-56 rounded-full">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filtrar por carrera" />
               </SelectTrigger>
@@ -202,7 +214,7 @@ export default function GroupsAdminPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
+                  Array.from({ length: rowsPerPage }).map((_, i) => (
                     <TableRow key={i}>
                       <TableCell><Skeleton className="h-5 w-24" /></TableCell>
                       <TableCell><Skeleton className="h-5 w-48" /></TableCell>
@@ -212,7 +224,7 @@ export default function GroupsAdminPage() {
                       <TableCell className="text-right"><Skeleton className="h-8 w-8 rounded-full" /></TableCell>
                     </TableRow>
                   ))
-                ) : filteredGroups.map((group) => (
+                ) : paginatedGroups.map((group) => (
                   <TableRow key={group.id}>
                     <TableCell className="font-medium">{group.codigoGrupo}</TableCell>
                     <TableCell>{group.carreraNombre}</TableCell>
@@ -263,6 +275,35 @@ export default function GroupsAdminPage() {
                 <p className="text-center text-muted-foreground py-10">No se encontraron grupos para los filtros seleccionados.</p>
             )}
           </div>
+          <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                    Mostrando {startIndex + 1}-{endIndex} de {filteredGroups.length} grupos.
+                </div>
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Filas:</span>
+                        <Select value={String(rowsPerPage)} onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-20 h-8 rounded-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="20">20</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <span className="text-sm font-medium">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                             <ChevronLeft className="h-4 w-4" />
+                         </Button>
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                             <ChevronRight className="h-4 w-4" />
+                         </Button>
+                    </div>
+                </div>
+            </div>
         </CardContent>
       </Card>
       
@@ -505,3 +546,5 @@ function AutoGenerateDialog({ isOpen, onOpenChange, carreras, onSuccess }: AutoG
         </Dialog>
     );
 }
+
+    
