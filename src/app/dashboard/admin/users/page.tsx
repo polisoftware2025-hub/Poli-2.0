@@ -289,10 +289,10 @@ export default function UsersPage() {
                     </div>
                     <span className="text-sm font-medium">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
                     <div className="flex items-center gap-2">
-                         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
                              <ChevronLeft className="h-4 w-4" />
                          </Button>
-                         <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
                              <ChevronRight className="h-4 w-4" />
                          </Button>
                     </div>
@@ -302,4 +302,5 @@ export default function UsersPage() {
       </Card>
     </div>
   );
-}
+
+    
