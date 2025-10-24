@@ -40,7 +40,7 @@ const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(
     return (
       <div ref={ref} className={cn("stepper__main-container flex flex-col w-full", className)} {...rest}>
         <div className={cn("stepper__header-container", stepperVariants({ orientation }))}>
-          <div className="flex flex-col md:flex-row w-full items-center justify-center p-4 border-b gap-4 md:gap-0">
+          <div className="flex flex-col lg:flex-row w-full items-center justify-center p-4 border-b gap-4 lg:gap-0">
             {steps.map((step, index) => (
               <Step
                 key={step.props.title}
@@ -75,7 +75,7 @@ const StepperItem = React.forwardRef<HTMLDivElement, StepperItemProps>(
 )
 StepperItem.displayName = "StepperItem"
 
-const stepVariants = cva("flex items-center w-full md:w-auto", {
+const stepVariants = cva("flex items-center w-full lg:w-auto", {
   variants: {
     isLast: {
       true: "flex-[0_0_auto]",
@@ -113,7 +113,7 @@ const Step = React.forwardRef<
           <div className="stepper__step-label text-sm font-medium">{label}</div>
         </div>
       </div>
-      {!isLast && <div className="flex-1 w-full h-0.5 bg-border mx-4 hidden md:block" />}
+      {!isLast && <div className="flex-1 w-full h-0.5 bg-border mx-4 hidden lg:block" />}
     </div>
   )
 })
