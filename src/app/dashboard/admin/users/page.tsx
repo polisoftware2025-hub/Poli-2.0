@@ -152,7 +152,7 @@ export default function UsersPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
               <Input 
                 placeholder="Buscar por nombre o correo..." 
-                className="pl-9"
+                className="pl-9 rounded-full"
                 value={searchTerm}
                 onChange={(e) => {
                     setSearchTerm(e.target.value);
@@ -161,7 +161,7 @@ export default function UsersPage() {
               />
             </div>
             <Select value={roleFilter} onValueChange={(value) => { setRoleFilter(value); setCurrentPage(1); }}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-full sm:w-48 rounded-full">
                 <SelectValue placeholder="Filtrar por rol" />
               </SelectTrigger>
               <SelectContent>
@@ -174,7 +174,7 @@ export default function UsersPage() {
                 <SelectItem value="aspirante">Aspirante</SelectItem>
               </SelectContent>
             </Select>
-             <Button asChild>
+             <Button asChild className="rounded-full">
                 <Link href="/dashboard/admin/add-user">Agregar Usuario</Link>
              </Button>
           </div>
