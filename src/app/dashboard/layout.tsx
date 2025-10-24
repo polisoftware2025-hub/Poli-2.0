@@ -19,6 +19,7 @@ import {
   SidebarInset,
   SidebarProvider,
   SidebarTrigger,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -63,7 +64,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, limit, orderBy, doc, getDoc, Timestamp } from "firebase/firestore";
 import { formatDistanceToNow } from "date-fns";
@@ -137,18 +137,16 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/admin/reports", label: "Reportes", icon: FileText },
             { type: 'header', label: 'Configuración' },
             { href: "/dashboard/admin/media", label: "Gestión de Media", icon: ImageIcon },
-            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
 
         const rectorMenuItems = [
             { href: "/dashboard/rector", label: "Panel Rectoría", icon: LayoutDashboard },
              { type: 'header', label: 'Supervisión' },
             { href: "/dashboard/admin/users", label: "Gestión de Usuarios", icon: ShieldCheck },
-            ...adminMenuItems.filter(item => !['/dashboard/admin', '/dashboard/admin/users', '/dashboard/profile'].includes(item.href || '')),
+            ...adminMenuItems.filter(item => !['/dashboard/admin', '/dashboard/admin/users'].includes(item.href || '')),
             { type: 'header', label: 'Auditoría' },
             { href: "/dashboard/rector/audit", label: "Auditoría de Cambios", icon: ShieldAlert },
             { href: "/dashboard/rector/settings", label: "Configuración Global", icon: SlidersHorizontal },
-            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
 
         const studentMenuItems = [
@@ -163,8 +161,6 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar },
             { href: "/dashboard/evaluacion-docente", label: "Evaluar Docentes", icon: Star },
             { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare },
-            { type: 'header', label: 'Cuenta' },
-            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
         
         const teacherMenuItems = [
@@ -174,7 +170,6 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/docente/disponibilidad", label: "Mi Disponibilidad", icon: Clock },
             { href: "/dashboard/calendario", label: "Calendario", icon: Calendar },
             { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
-            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
 
         const managerMenuItems = [
@@ -187,7 +182,6 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             { href: "/dashboard/gestor/reports", label: "Reportes", icon: FileText },
             { href: "/dashboard/gestor/announcements", label: "Anuncios", icon: Send },
             { href: "/dashboard/gestor/notifications", label: "Notificaciones", icon: Bell },
-            { href: "/dashboard/profile", label: "Mi Perfil", icon: User },
         ];
         
         switch (role) {
@@ -285,10 +279,17 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
                  <SidebarItems role={role} pathname={pathname} onItemClick={onItemClick} />
             </SidebarContent>
             <SidebarFooter className="mt-auto">
+                 <SidebarSeparator className="my-2" />
                  <Link href="/dashboard/settings" onClick={onItemClick}>
                     <div className={cn("relative flex items-center gap-3 rounded-lg px-3 py-2 text-foreground/80 transition-colors hover:text-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2")}>
                         <Settings className={cn("h-5 w-5 z-10 shrink-0")} />
                         <span className="z-10 group-data-[collapsible=icon]:hidden">Configuración</span>
+                    </div>
+                </Link>
+                <Link href="/dashboard/profile" onClick={onItemClick}>
+                    <div className={cn("relative flex items-center gap-3 rounded-lg px-3 py-2 text-foreground/80 transition-colors hover:text-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2")}>
+                        <User className={cn("h-5 w-5 z-10 shrink-0")} />
+                        <span className="z-10 group-data-[collapsible=icon]:hidden">Mi Perfil</span>
                     </div>
                 </Link>
                 <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
@@ -300,7 +301,7 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
     );
 };
 
-function MainLayout({ children }: { children: React.ReactNode }) {
+function MainLayout({ children, userStyle }: { children: React.ReactNode, userStyle: React.CSSProperties }) {
     const router = useRouter();
     const pathname = usePathname();
     const { toast } = useToast();
@@ -311,24 +312,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isMenuOpen, setMenuOpen] = useState(false);
     
-    const { preferences } = useUserPreferences();
-
-    const userStyle: React.CSSProperties = {
-        '--primary-hue': String(preferences.primaryColor.hue),
-        '--primary-saturation': `${'\'\'\''}{preferences.primaryColor.saturation}%`,
-        '--primary-lightness': `${'\'\'\''}{preferences.primaryColor.lightness}%`,
-        '--accent-hue': String(preferences.accentColor.hue),
-        '--accent-saturation': `${'\'\'\''}{preferences.accentColor.saturation}%`,
-        '--accent-lightness': `${'\'\'\''}{preferences.accentColor.lightness}%`,
-        '--font-family': preferences.fontFamily,
-        '--global-font-size': preferences.fontSize,
-        '--font-weight': preferences.fontWeight,
-        '--letter-spacing': preferences.letterSpacing,
-        '--radius': `${'\'\'\''}{preferences.borderRadius}rem`,
-        '--blur-intensity': `${'\'\'\''}{preferences.blurIntensity}px`,
-    } as React.CSSProperties;
-
-
     useEffect(() => {
         const storedEmail = localStorage.getItem("userEmail");
         const storedRole = localStorage.getItem("userRole") as UserRole;
@@ -431,11 +414,11 @@ function MainLayout({ children }: { children: React.ReactNode }) {
             </div>
         );
     }
-
+    
     return (
         <div style={userStyle} className="font-sans">
             <SidebarProvider>
-                <Sidebar side={preferences.sidebarPosition} collapsible="icon" className="bg-[hsl(var(--background))] dark:bg-card">
+                <Sidebar side="left" collapsible="icon" className="bg-[hsl(var(--background))] dark:bg-card">
                     <DynamicSidebar 
                         role={userRole} 
                         pathname={pathname} 
@@ -496,9 +479,27 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+    const { preferences } = useUserPreferences();
+
+    const userStyle: React.CSSProperties = {
+        '--primary-hue': String(preferences.primaryColor.hue),
+        '--primary-saturation': `${'\'\'\''}{preferences.primaryColor.saturation}%`,
+        '--primary-lightness': `${'\'\'\''}{preferences.primaryColor.lightness}%`,
+        '--accent-hue': String(preferences.accentColor.hue),
+        '--accent-saturation': `${'\'\'\''}{preferences.accentColor.saturation}%`,
+        '--accent-lightness': `${'\'\'\''}{preferences.accentColor.lightness}%`,
+        '--font-family': preferences.fontFamily,
+        '--global-font-size': preferences.fontSize,
+        '--font-weight': preferences.fontWeight,
+        '--letter-spacing': preferences.letterSpacing,
+        '--radius': `${'\'\'\''}{preferences.borderRadius}rem`,
+        '--blur-intensity': `${'\'\'\''}{preferences.blurIntensity}px`,
+    } as React.CSSProperties;
+
   return (
     <UserPreferencesProvider>
-      <MainLayout>{children}</MainLayout>
+      <MainLayout userStyle={userStyle}>{children}</MainLayout>
     </UserPreferencesProvider>
   );
 }
+
