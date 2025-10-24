@@ -51,10 +51,10 @@ export default function TeacherDashboardPage() {
     <div className="flex flex-col gap-8">
       <Card>
         <CardHeader>
-          <CardTitle className="font-poppins text-2xl font-bold text-gray-800">
+          <CardTitle className="font-poppins text-2xl font-bold">
             Panel de Docente
           </CardTitle>
-          <CardDescription className="font-poppins text-gray-600">
+          <CardDescription className="font-poppins text-muted-foreground">
             Gestión de cursos, notas y asistencia de sus estudiantes.
           </CardDescription>
         </CardHeader>

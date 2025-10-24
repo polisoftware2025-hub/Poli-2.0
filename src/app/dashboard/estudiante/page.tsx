@@ -168,7 +168,7 @@ export default function StudentDashboardPage() {
         animate="visible"
     >
         <motion.div variants={itemVariants}>
-            <h1 className="text-3xl font-bold text-gray-800 font-poppins">¡Hola de nuevo, {userName || 'estudiante'}!</h1>
+            <h1 className="text-3xl font-bold font-poppins">¡Hola de nuevo, {userName || 'estudiante'}!</h1>
             <p className="text-muted-foreground">Aquí tienes un resumen de tu actividad académica.</p>
         </motion.div>
         
@@ -197,7 +197,7 @@ export default function StudentDashboardPage() {
         <div className="lg:col-span-2 space-y-8">
             <motion.div variants={itemVariants}>
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-2xl font-bold text-gray-800 font-poppins">Mis Materias</h2>
+                    <h2 className="text-2xl font-bold font-poppins">Mis Materias</h2>
                     <Button variant="ghost" asChild>
                         <Link href="/dashboard/materias">
                             Ver todas
@@ -231,7 +231,7 @@ export default function StudentDashboardPage() {
                                     )}
                                 </div>
                                <CardHeader>
-                                   <CardTitle className="text-xl font-bold text-gray-800 leading-tight" title={course.title}>
+                                   <CardTitle className="text-xl font-bold leading-tight" title={course.title}>
                                        {course.title}
                                    </CardTitle>
                                </CardHeader>
@@ -266,7 +266,7 @@ export default function StudentDashboardPage() {
         {/* Side Column */}
         <div className="lg:col-span-1 space-y-8">
             <motion.div variants={itemVariants}>
-                <h2 className="text-2xl font-bold text-gray-800 font-poppins mb-4">Tu Progreso Académico</h2>
+                <h2 className="text-2xl font-bold font-poppins mb-4">Tu Progreso Académico</h2>
                  <Card>
                     <CardContent className="pt-6 space-y-6">
                         <div className="space-y-2">

@@ -112,10 +112,10 @@ export default function RectorDashboardPage() {
     return (
         <div className="flex flex-col gap-8">
              <div className="flex flex-col gap-2">
-                <h1 className="font-poppins text-3xl font-bold text-gray-800">
+                <h1 className="font-poppins text-3xl font-bold">
                     Panel de Rectoría
                 </h1>
-                <p className="font-poppins text-gray-600">
+                <p className="font-poppins text-muted-foreground">
                     Supervisión y control total del sistema académico y administrativo.
                 </p>
             </div>
