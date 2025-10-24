@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { DollarSign, Search, Filter, TrendingUp, AlertCircle, Bell, FileText, Download } from "lucide-react";
+import { DollarSign, Search, Filter, TrendingUp, AlertCircle, Bell, FileText, Download, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -78,6 +78,10 @@ export default function PaymentsAdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isDownloading, setIsDownloading] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   useEffect(() => {
     const fetchInvoices = async () => {
@@ -160,6 +164,12 @@ export default function PaymentsAdminPage() {
         return studentName.includes(term) || studentId.includes(term) || invoice.id.toLowerCase().includes(term);
     })
   }, [invoices, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredInvoices.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedInvoices = useMemo(() => filteredInvoices.slice(startIndex, startIndex + rowsPerPage), [filteredInvoices, startIndex, rowsPerPage]);
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredInvoices.length);
 
   const totalRecaudado = invoices.filter(i => i.estado === 'pagado').reduce((sum, i) => sum + i.monto, 0);
   const totalPendiente = invoices.filter(i => i.estado === 'pendiente' || i.estado === 'incompleta').reduce((sum, i) => sum + i.monto, 0);
@@ -256,13 +266,13 @@ export default function PaymentsAdminPage() {
               </TableHeader>
               <TableBody>
                 {isLoading ? (
-                    Array.from({length: 4}).map((_, i) => (
+                    Array.from({length: rowsPerPage}).map((_, i) => (
                         <TableRow key={i}>
                             <TableCell colSpan={8}><Skeleton className="h-10 w-full" /></TableCell>
                         </TableRow>
                     ))
-                ) : filteredInvoices.length > 0 ? (
-                    filteredInvoices.map((invoice) => (
+                ) : paginatedInvoices.length > 0 ? (
+                    paginatedInvoices.map((invoice) => (
                     <TableRow key={invoice.id}>
                         <TableCell>
                         <div className="flex items-center gap-3">
@@ -308,6 +318,35 @@ export default function PaymentsAdminPage() {
               </TableBody>
             </Table>
           </div>
+           <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                    Mostrando {startIndex + 1}-{endIndex} de {filteredInvoices.length} facturas.
+                </div>
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Filas:</span>
+                        <Select value={String(rowsPerPage)} onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-20 h-8 rounded-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="10">10</SelectItem>
+                                <SelectItem value="20">20</SelectItem>
+                                <SelectItem value="50">50</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <span className="text-sm font-medium">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                             <ChevronLeft className="h-4 w-4" />
+                         </Button>
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                             <ChevronRight className="h-4 w-4" />
+                         </Button>
+                    </div>
+                </div>
+            </div>
         </CardContent>
       </Card>
     </div>
