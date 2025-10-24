@@ -1,50 +1,195 @@
 
 "use client";
 
+import { useState, useEffect } from "react";
+import { useParams, notFound, useRouter } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useToast } from "@/hooks/use-toast";
+import { db } from "@/lib/firebase";
+import { collection, doc, getDoc, getDocs, query, where, addDoc, serverTimestamp } from "firebase/firestore";
 import { 
     BookCopy, 
-    CalendarCheck, 
-    ClipboardList, 
-    MessageCircle, 
-    User, 
-    Mail, 
-    Clock, 
     Users, 
-    Laptop, 
-    Video, 
+    ClipboardCheck, 
+    UserCheck, 
+    Plus, 
     FileText, 
+    Search, 
+    Upload,
+    Video,
     Link as LinkIcon,
-    AlertCircle,
-    CheckCircle,
-    MoreVertical,
+    Calendar,
+    Star,
+    BarChart,
     Filter,
-    ChevronRight,
-    Star
+    FileDown
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import Image from "next/image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Separator } from "@/components/ui/separator";
+import { AlertCircle, CheckCircle, Clock, ChevronRight } from "lucide-react";
+
 
 // --- Mock Data ---
-
 const courseDetails = {
-    name: "Bases de Datos Avanzadas",
-    code: "BD-401",
-    teacher: {
-        name: "Carlos Rivas",
-        email: "carlos.rivas@pi.edu.co"
-    },
-    cycle: "Cuarto Ciclo",
-    group: "BD-C4-001",
-    modality: "Presencial"
+    subjectName: "Bases de Datos Avanzadas",
+    groupCode: "BD-C4-001",
+    cycle: 4,
+    modality: "Presencial",
+    sede: "Sede Norte",
+    studentCount: 28,
+    activityCount: 5,
+    averageGrade: 3.8
 };
+
+const students = [
+    { id: "st001", name: "Laura Gómez", code: "2021102001", status: "activo", attendance: 95, average: 4.2 },
+    { id: "st002", name: "David Martínez", code: "2021102002", status: "activo", attendance: 88, average: 3.5 },
+    { id: "st003", name: "Ana Pérez", code: "2021102003", status: "inactivo", attendance: 75, average: 2.8 },
+];
+
+const activities = [
+    { id: 'act01', title: 'Taller de Normalización', dueDate: '2024-09-15', status: 'Cerrada', submissions: 27 },
+    { id: 'act02', title: 'Parcial 1', dueDate: '2024-09-22', status: 'Cerrada', submissions: 28 },
+    { id: 'act03', title: 'Proyecto: Modelo E-R', dueDate: '2024-10-10', status: 'Activa', submissions: 15 },
+];
+
+const materials = [
+    { id: 'mat01', title: 'Guía de Normalización', type: 'pdf', uploadDate: '2024-08-10' },
+    { id: 'mat02', title: 'Vídeo: Índices en SQL', type: 'video', uploadDate: '2024-08-15' },
+    { id: 'mat03', title: 'Artículo: ACID vs BASE', type: 'link', uploadDate: '2024-08-20' },
+];
+
+const resourceIcons: { [key: string]: React.ElementType } = {
+    pdf: FileText,
+    video: Video,
+    link: LinkIcon
+};
+
+// --- Sub-components for each Tab ---
+
+const StudentsTab = () => (
+    <Card>
+        <CardHeader>
+            <CardTitle>Estudiantes Inscritos</CardTitle>
+            <div className="flex justify-between items-center">
+                <CardDescription>{students.length} estudiantes en este grupo.</CardDescription>
+                <div className="flex gap-2">
+                    <Input placeholder="Buscar estudiante..." className="w-64"/>
+                    <Button variant="outline"><FileDown className="mr-2 h-4 w-4"/>Exportar Lista</Button>
+                </div>
+            </div>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Código</TableHead>
+                        <TableHead>Estado</TableHead>
+                        <TableHead>% Asistencia</TableHead>
+                        <TableHead>Promedio</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {students.map(student => (
+                        <TableRow key={student.id}>
+                            <TableCell className="font-medium flex items-center gap-3">
+                                <Avatar><AvatarFallback>{student.name.substring(0,2)}</AvatarFallback></Avatar>
+                                {student.name}
+                            </TableCell>
+                            <TableCell>{student.code}</TableCell>
+                            <TableCell>
+                                <Badge variant={student.status === 'activo' ? 'secondary' : 'destructive'} className={student.status === 'activo' ? 'bg-green-100 text-green-800' : ''}>
+                                    {student.status.charAt(0).toUpperCase() + student.status.slice(1)}
+                                </Badge>
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                    <Progress value={student.attendance} className="w-24 h-2"/>
+                                    <span>{student.attendance}%</span>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                               <Badge className={student.average >= 3.0 ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800'}>
+                                   {student.average.toFixed(1)}
+                                </Badge>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </CardContent>
+    </Card>
+);
+
+const ActivitiesTab = () => (
+    <div className="space-y-6">
+        <div className="flex justify-end">
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button><Plus className="mr-2 h-4 w-4" /> Crear Nueva Actividad</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Nueva Actividad/Evaluación</DialogTitle>
+                        <DialogDescription>Completa los detalles de la nueva actividad.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        {/* Form fields for new activity */}
+                        <div className="space-y-2"><Label>Título</Label><Input placeholder="Ej: Parcial Final"/></div>
+                        <div className="space-y-2"><Label>Descripción</Label><Textarea placeholder="Detalles sobre la actividad..."/></div>
+                        <div className="space-y-2"><Label>Fecha de Entrega</Label><Input type="date"/></div>
+                        <div className="space-y-2"><Label>Tipo</Label><Select><SelectTrigger><SelectValue placeholder="Seleccionar tipo..."/></SelectTrigger><SelectContent><SelectItem value="tarea">Tarea</SelectItem><SelectItem value="examen">Examen</SelectItem><SelectItem value="proyecto">Proyecto</SelectItem></SelectContent></Select></div>
+                        <div className="space-y-2"><Label>Valor (%)</Label><Input type="number" placeholder="Ej: 25"/></div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline">Cancelar</Button>
+                        <Button>Crear Actividad</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {activities.map(activity => (
+                <Card key={activity.id} className="hover:shadow-xl transition-shadow">
+                    <CardHeader>
+                        <CardTitle>{activity.title}</CardTitle>
+                        <CardDescription>Entrega: {activity.dueDate}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex justify-between items-center">
+                            <Badge variant={activity.status === 'Activa' ? 'default' : 'secondary'}>{activity.status}</Badge>
+                            <div className="text-right">
+                                <p className="font-bold text-lg">{activity.submissions}</p>
+                                <p className="text-xs text-muted-foreground">Entregas</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    </div>
+);
 
 const attendanceData = {
     totalClasses: 16,
@@ -58,23 +203,6 @@ const attendanceData = {
     ]
 };
 
-const activitiesData = [
-    { id: "1", type: "Examen", title: "Primer Parcial", dueDate: "2024-08-20", status: "Calificada", grade: "4.5" },
-    { id: "2", type: "Taller", title: "Taller de Normalización", dueDate: "2024-08-28", status: "Entregada" },
-    { id: "3", type: "Tarea", title: "Investigación NoSQL", dueDate: "2024-09-05", status: "Pendiente" },
-];
-
-const contentData = [
-    { id: "u1", title: "Unidad 1: Normalización y Modelado", description: "Conceptos avanzados de normalización, formas normales (FNBC, 4FN).", resources: [{type: "pdf", title: "Guía de Normalización"}, {type: "video", title: "Videotutorial: 3ra Forma Normal"}] },
-    { id: "u2", title: "Unidad 2: Transacciones y Concurrencia", description: "Propiedades ACID, niveles de aislamiento, control de concurrencia.", resources: [{type: "link", title: "Artículo: ACID vs BASE"}] },
-];
-
-const communityData = [
-    { id: "c1", user: "Laura Gómez", avatar: "LG", message: "¿Alguien tiene un buen recurso para entender la diferencia entre 4FN y 5FN?", time: "hace 2 horas" },
-    { id: "c2", user: "Carlos Rivas", avatar: "CR", message: "Hola Laura, te recomiendo el capítulo 7 del libro guía. La sección 7.3 lo explica muy bien. ¡Avísame si tienes más dudas!", time: "hace 1 hora", isTeacher: true },
-];
-
-// --- Sub-components for each Tab ---
 
 const AttendanceTab = () => {
     const attendancePercentage = (attendanceData.attended / attendanceData.totalClasses) * 100;
@@ -94,7 +222,7 @@ const AttendanceTab = () => {
                 <Progress value={attendancePercentage} className="mb-6 h-3" />
                 <div className="space-y-3">
                     {attendanceData.history.map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div key={index} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                             <span className="font-medium text-gray-700">Clase del {new Date(item.date).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'short' })}</span>
                             <div className="flex items-center gap-2 text-sm">
                                 {statusIcons[item.status as keyof typeof statusIcons]}
@@ -110,83 +238,68 @@ const AttendanceTab = () => {
     );
 };
 
-const ActivitiesTab = () => {
-    const statusStyles: {[key: string]: string} = {
-        "Calificada": "bg-blue-100 text-blue-800",
-        "Entregada": "bg-green-100 text-green-800",
-        "Pendiente": "bg-yellow-100 text-yellow-800",
-    }
-    return (
-        <Card className="shadow-md">
-            <CardHeader>
-                <CardTitle>Actividades y Evaluaciones</CardTitle>
-                <CardDescription>Aquí encontrarás todas tus tareas, talleres y exámenes.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center gap-4 mb-6">
-                    <div className="relative flex-grow">
-                        <Input placeholder="Buscar actividad..." className="pl-8"/>
-                    </div>
-                    <Button variant="outline"><Filter className="mr-2 h-4 w-4"/>Filtrar</Button>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {activitiesData.map(activity => (
-                        <Card key={activity.id} className="hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                    <CardTitle className="text-base">{activity.title}</CardTitle>
-                                    <Badge className={statusStyles[activity.status]}>{activity.status}</Badge>
-                                </div>
-                                <CardDescription>Fecha de Entrega: {activity.dueDate}</CardDescription>
-                            </CardHeader>
-                             <CardFooter className="flex justify-between">
-                                {activity.status === 'Calificada' && <span className="font-bold text-lg text-primary">Nota: {activity.grade}</span>}
-                                <Button variant="ghost" size="sm" className="ml-auto">Ver detalles <ChevronRight className="h-4 w-4 ml-1"/></Button>
-                            </CardFooter>
-                        </Card>
+const GradesTab = () => (
+     <Card>
+        <CardHeader>
+            <CardTitle>Registro de Notas</CardTitle>
+            <div className="flex justify-between items-center">
+                <CardDescription>Ingresa y modifica las notas de las actividades evaluativas.</CardDescription>
+                <Button>💾 Guardar Notas</Button>
+            </div>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+            <Table className="min-w-[800px]">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="w-[250px] sticky left-0 bg-card z-10">Estudiante</TableHead>
+                        {activities.map(a => <TableHead key={a.id} className="text-center">{a.title}</TableHead>)}
+                        <TableHead className="text-center font-bold">Promedio Final</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {students.map(student => (
+                        <TableRow key={student.id}>
+                            <TableCell className="font-medium sticky left-0 bg-card z-10">{student.name}</TableCell>
+                            {activities.map(a => (
+                                <TableCell key={`${student.id}-${a.id}`} className="text-center">
+                                    <Input type="number" defaultValue={(Math.random() * 4 + 1).toFixed(1)} className="w-20 mx-auto text-center"/>
+                                </TableCell>
+                            ))}
+                            <TableCell className="text-center font-bold">{student.average.toFixed(1)}</TableCell>
+                        </TableRow>
                     ))}
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
+                </TableBody>
+            </Table>
+        </CardContent>
+    </Card>
+);
 
-const ContentTab = () => {
-    const resourceIcons = {
-        pdf: <FileText className="h-5 w-5 text-red-500" />,
-        video: <Video className="h-5 w-5 text-blue-500" />,
-        link: <LinkIcon className="h-5 w-5 text-green-500" />,
-    }
-    return (
-         <Card className="shadow-md">
-            <CardHeader>
-                <CardTitle>Contenidos Temáticos</CardTitle>
-                <CardDescription>Material de estudio, guías y recursos para cada unidad.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {contentData.map(unit => (
-                    <Card key={unit.id} className="bg-gray-50/50">
-                        <CardHeader>
-                            <CardTitle className="text-lg">{unit.title}</CardTitle>
-                            <CardDescription>{unit.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <h4 className="font-semibold mb-2 text-sm">Recursos:</h4>
-                            <div className="space-y-2">
-                                {unit.resources.map((resource, i) => (
-                                    <Button key={i} variant="outline" className="w-full justify-start gap-3">
-                                        {resourceIcons[resource.type as keyof typeof resourceIcons]}
-                                        {resource.title}
-                                    </Button>
-                                ))}
+const MaterialsTab = () => (
+     <div className="space-y-6">
+        <div className="flex justify-end">
+            <Button><Upload className="mr-2 h-4 w-4" /> Subir Nuevo Material</Button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {materials.map(material => {
+                 const Icon = resourceIcons[material.type];
+                 return (
+                    <Card key={material.id}>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <div className="p-3 bg-muted rounded-lg">
+                                <Icon className="h-6 w-6 text-primary"/>
                             </div>
+                            <div className="flex-1">
+                                <p className="font-semibold">{material.title}</p>
+                                <p className="text-xs text-muted-foreground">Subido: {material.uploadDate}</p>
+                            </div>
+                            <Button variant="ghost" size="icon"><FileText className="h-4 w-4"/></Button>
                         </CardContent>
                     </Card>
-                ))}
-            </CardContent>
-        </Card>
-    );
-};
+                 )
+            })}
+        </div>
+    </div>
+);
 
 const CommunityTab = () => {
   return (
@@ -231,55 +344,77 @@ const CommunityTab = () => {
 };
 
 
-export default function SubjectDetailPage() {
+export default function CourseDetailPage() {
+  const params = useParams();
+  const cursoId = params.cursoId as string;
+  const breadcrumbs = [{ name: "Mis Cursos", href: "/dashboard/docente/cursos" }, { name: courseDetails.subjectName }];
+
   return (
     <div className="flex flex-col gap-8">
-      {/* Header */}
-      <Card className="rounded-2xl overflow-hidden shadow-lg border-primary/20 bg-gradient-to-br from-primary to-blue-800 text-primary-foreground">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-6 items-start">
-            <div className="p-4 bg-white/20 rounded-xl">
-              <BookCopy className="h-10 w-10" />
-            </div>
-            <div className="flex-1">
-              <Badge variant="secondary" className="mb-2">{courseDetails.code}</Badge>
-              <h1 className="text-3xl font-bold">{courseDetails.name}</h1>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm opacity-90">
-                <div className="flex items-center gap-2"><User className="h-4 w-4"/><span>{courseDetails.teacher.name} ({courseDetails.teacher.email})</span></div>
-                <div className="flex items-center gap-2"><Clock className="h-4 w-4"/><span>{courseDetails.cycle}</span></div>
-                <div className="flex items-center gap-2"><Users className="h-4 w-4"/><span>Grupo: {courseDetails.group}</span></div>
-                <div className="flex items-center gap-2"><Laptop className="h-4 w-4"/><span>Modalidad: {courseDetails.modality}</span></div>
+      <PageHeader
+        title={courseDetails.subjectName}
+        description={`Gestión del grupo ${courseDetails.groupCode}`}
+        icon={<BookCopy className="h-8 w-8 text-primary" />}
+        breadcrumbs={breadcrumbs}
+      />
+      
+      <Card className="rounded-2xl overflow-hidden shadow-lg">
+          <CardContent className="p-6 bg-muted/30">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-2 space-y-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16"><AvatarFallback>CR</AvatarFallback></Avatar>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Docente a cargo</p>
+                            <h3 className="text-xl font-bold">Carlos Rivas</h3>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+                        <div><p className="text-muted-foreground">Código</p><p className="font-semibold">{courseDetails.groupCode}</p></div>
+                        <div><p className="text-muted-foreground">Ciclo</p><p className="font-semibold">{courseDetails.cycle}</p></div>
+                        <div><p className="text-muted-foreground">Modalidad</p><p className="font-semibold">{courseDetails.modality}</p></div>
+                        <div><p className="text-muted-foreground">Sede</p><p className="font-semibold">{courseDetails.sede}</p></div>
+                      </div>
+                  </div>
+                  <div className="md:col-span-1 grid grid-cols-3 md:grid-cols-1 gap-4">
+                       <div className="p-4 bg-white rounded-lg text-center shadow-sm">
+                           <p className="text-2xl font-bold">{courseDetails.studentCount}</p>
+                           <p className="text-xs text-muted-foreground">Estudiantes</p>
+                       </div>
+                       <div className="p-4 bg-white rounded-lg text-center shadow-sm">
+                           <p className="text-2xl font-bold">{courseDetails.activityCount}</p>
+                           <p className="text-xs text-muted-foreground">Actividades</p>
+                       </div>
+                       <div className="p-4 bg-white rounded-lg text-center shadow-sm">
+                           <p className="text-2xl font-bold text-primary">{courseDetails.averageGrade}</p>
+                           <p className="text-xs text-muted-foreground">Promedio</p>
+                       </div>
+                  </div>
               </div>
-            </div>
-            <Button variant="secondary" size="lg" className="shrink-0 mt-4 md:mt-0">
-                {courseDetails.modality === 'Virtual' ? "Asistir a Clase Virtual" : "Ver Horario de Clase"}
-            </Button>
-          </div>
-        </CardContent>
+          </CardContent>
+          <CardFooter className="p-2 bg-muted/50">
+             <div className="flex gap-2">
+                <Button size="sm"><Plus className="mr-2 h-4 w-4"/>Crear Actividad</Button>
+                <Button size="sm" variant="outline"><UserCheck className="mr-2 h-4 w-4"/>Tomar Asistencia</Button>
+                <Button size="sm" variant="outline"><BarChart className="mr-2 h-4 w-4"/>Reportes</Button>
+             </div>
+          </CardFooter>
       </Card>
       
-      {/* Tabs */}
-       <Tabs defaultValue="asistencia" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto p-1.5 bg-muted rounded-xl">
-                <TabsTrigger value="asistencia" className="py-2.5 flex items-center gap-2"><CalendarCheck className="h-5 w-5"/>Asistencia</TabsTrigger>
-                <TabsTrigger value="actividades" className="py-2.5 flex items-center gap-2"><ClipboardList className="h-5 w-5"/>Actividades</TabsTrigger>
-                <TabsTrigger value="contenidos" className="py-2.5 flex items-center gap-2"><BookCopy className="h-5 w-5"/>Contenidos</TabsTrigger>
-                <TabsTrigger value="comunidad" className="py-2.5 flex items-center gap-2"><MessageCircle className="h-5 w-5"/>Comunidad</TabsTrigger>
-            </TabsList>
-            <TabsContent value="asistencia" className="mt-6">
-                <AttendanceTab />
-            </TabsContent>
-            <TabsContent value="actividades" className="mt-6">
-                <ActivitiesTab />
-            </TabsContent>
-            <TabsContent value="contenidos" className="mt-6">
-                <ContentTab/>
-            </TabsContent>
-            <TabsContent value="comunidad" className="mt-6">
-                <CommunityTab />
-            </TabsContent>
-        </Tabs>
-
+       <Tabs defaultValue="students" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto p-1.5 bg-muted rounded-xl">
+              <TabsTrigger value="students" className="py-2.5 flex items-center gap-2"><Users className="h-5 w-5"/>Estudiantes</TabsTrigger>
+              <TabsTrigger value="activities" className="py-2.5 flex items-center gap-2"><ClipboardCheck className="h-5 w-5"/>Actividades</TabsTrigger>
+              <TabsTrigger value="attendance" className="py-2.5 flex items-center gap-2"><UserCheck className="h-5 w-5"/>Asistencia</TabsTrigger>
+              <TabsTrigger value="grades" className="py-2.5 flex items-center gap-2"><Star className="h-5 w-5"/>Notas</TabsTrigger>
+              <TabsTrigger value="materials" className="py-2.5 flex items-center gap-2"><BookCopy className="h-5 w-5"/>Materiales</TabsTrigger>
+          </TabsList>
+          <TabsContent value="students" className="mt-6"><StudentsTab /></TabsContent>
+          <TabsContent value="activities" className="mt-6"><ActivitiesTab /></TabsContent>
+          <TabsContent value="attendance" className="mt-6"><AttendanceTab /></TabsContent>
+          <TabsContent value="grades" className="mt-6"><GradesTab /></TabsContent>
+          <TabsContent value="materials" className="mt-6"><MaterialsTab /></TabsContent>
+       </Tabs>
     </div>
   );
 }
