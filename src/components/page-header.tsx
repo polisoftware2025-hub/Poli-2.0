@@ -1,3 +1,4 @@
+
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
@@ -177,7 +178,7 @@ export const PageHeader = ({ title, description, icon, backPath, breadcrumbs }: 
             <div className="flex items-center gap-4">
               {icon}
               <div>
-                <CardTitle className="font-poppins text-3xl font-bold text-gray-800">
+                <CardTitle className="font-poppins text-3xl font-bold">
                   {title}
                 </CardTitle>
                 {description && (
