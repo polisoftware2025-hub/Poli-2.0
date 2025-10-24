@@ -60,7 +60,7 @@ export default function UsersPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   useEffect(() => {
       const role = localStorage.getItem('userRole');
@@ -281,6 +281,7 @@ export default function UsersPage() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="5">5</SelectItem>
                                 <SelectItem value="10">10</SelectItem>
                                 <SelectItem value="20">20</SelectItem>
                                 <SelectItem value="50">50</SelectItem>
@@ -306,3 +307,5 @@ export default function UsersPage() {
     
 
 }
+
+    
