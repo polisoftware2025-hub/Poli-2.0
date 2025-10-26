@@ -137,8 +137,23 @@
 @layer utilities {
     .auth-bg {
         background-color: #ffffff;
-        background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0);
+        background-image:  radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0);
         background-size: 2rem 2rem;
+    }
+    .dark .auth-bg {
+         background-color: #020617; /* slate-950 */
+         background-image:  radial-gradient(circle at 1px 1px, #1E293B 1px, transparent 0); /* slate-800 */
+    }
+
+    .animated-gradient {
+      background-size: 200% 200%;
+      animation: gradient-animation 15s ease infinite;
+    }
+
+    @keyframes gradient-animation {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 }
 
