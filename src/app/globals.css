@@ -141,8 +141,8 @@
         background-size: 2rem 2rem;
     }
     .dark .auth-bg {
-         background-color: #020617; /* slate-950 */
-         background-image:  radial-gradient(circle at 1px 1px, #1E293B 1px, transparent 0); /* slate-800 */
+         background-color: hsl(var(--background)); /* slate-950 */
+         background-image:  radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0); /* slate-800 */
     }
 
     .animated-gradient {
