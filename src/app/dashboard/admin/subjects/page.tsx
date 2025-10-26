@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookMarked, Plus, Search, Filter, MoreVertical, Edit, Trash2, BookCopy } from "lucide-react";
+import { BookMarked, Plus, Search, Filter, MoreVertical, Edit, Trash2, BookCopy, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,9 @@ export default function SubjectsAdminPage() {
   const [cycleFilter, setCycleFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
 
   useEffect(() => {
     const fetchSubjectsAndCareers = async () => {
@@ -101,7 +104,18 @@ export default function SubjectsAdminPage() {
 
   const handleCareerFilterChange = (value: string) => {
     setCareerFilter(value);
-    setCycleFilter("all"); 
+    setCycleFilter("all");
+    setCurrentPage(1);
+  };
+  
+  const handleCycleFilterChange = (value: string) => {
+    setCycleFilter(value);
+    setCurrentPage(1);
+  };
+  
+  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(event.target.value);
+    setCurrentPage(1);
   };
 
   const filteredSubjects = useMemo(() => {
@@ -122,6 +136,12 @@ export default function SubjectsAdminPage() {
         );
       });
   }, [subjects, careerFilter, cycleFilter, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredSubjects.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredSubjects.length);
+  const paginatedSubjects = useMemo(() => filteredSubjects.slice(startIndex, endIndex), [filteredSubjects, startIndex, endIndex]);
 
 
   return (
@@ -147,7 +167,7 @@ export default function SubjectsAdminPage() {
                 placeholder="Buscar por nombre o código..." 
                 className="pl-9"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchChange}
               />
             </div>
             <Select value={careerFilter} onValueChange={handleCareerFilterChange}>
@@ -162,7 +182,7 @@ export default function SubjectsAdminPage() {
                 ))}
               </SelectContent>
             </Select>
-             <Select value={cycleFilter} onValueChange={setCycleFilter} disabled={careerFilter === 'all'}>
+             <Select value={cycleFilter} onValueChange={handleCycleFilterChange} disabled={careerFilter === 'all'}>
               <SelectTrigger className="w-full">
                 <Filter className="h-4 w-4 mr-2" />
                 <SelectValue placeholder="Filtrar por ciclo" />
@@ -178,9 +198,9 @@ export default function SubjectsAdminPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoading ? (
-                Array.from({length: 6}).map((_, i) => <Skeleton key={i} className="h-48" />)
-            ) : (
-                filteredSubjects.map((subject) => (
+                Array.from({length: rowsPerPage}).map((_, i) => <Skeleton key={i} className="h-48" />)
+            ) : paginatedSubjects.length > 0 ? (
+                paginatedSubjects.map((subject) => (
                     <Card key={`${subject.id}-${subject.careerId}-${subject.cycleNumber}`} className="flex flex-col">
                         <CardHeader>
                             <div className="flex justify-between items-start">
@@ -195,7 +215,7 @@ export default function SubjectsAdminPage() {
                                         <DropdownMenuItem asChild>
                                             <Link href={`/dashboard/admin/career/edit/${subject.careerId}`}>
                                                 <BookCopy className="mr-2 h-4 w-4" />
-                                                Gestionar Materia
+                                                Gestionar en Carrera
                                             </Link>
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -225,11 +245,44 @@ export default function SubjectsAdminPage() {
                         </CardFooter>
                     </Card>
                 ))
+            ) : (
+                 <div className="col-span-full text-center text-muted-foreground py-10">
+                    <p>No se encontraron materias para los filtros seleccionados.</p>
+                </div>
             )}
           </div>
-          {filteredSubjects.length === 0 && !isLoading && (
-              <p className="text-center text-muted-foreground py-10">No se encontraron materias para los filtros seleccionados.</p>
-          )}
+          
+           <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                    Mostrando {endIndex > 0 ? startIndex + 1 : 0}-{endIndex} de {filteredSubjects.length} materias.
+                </div>
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Filas:</span>
+                        <Select value={String(rowsPerPage)} onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-20 h-8 rounded-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="6">6</SelectItem>
+                                <SelectItem value="12">12</SelectItem>
+                                <SelectItem value="24">24</SelectItem>
+                                <SelectItem value="48">48</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <span className="text-sm font-medium">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                             <ChevronLeft className="h-4 w-4" />
+                         </Button>
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                             <ChevronRight className="h-4 w-4" />
+                         </Button>
+                    </div>
+                </div>
+            </div>
+
         </CardContent>
       </Card>
     </div>
