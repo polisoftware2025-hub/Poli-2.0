@@ -298,7 +298,7 @@ export default function EditUserPage() {
 
                 </div>
             </CardContent>
-            <CardFooter className="p-6 bg-gray-50 rounded-b-xl border-t">
+            <CardFooter className="p-6 bg-muted rounded-b-xl border-t">
                 <div className="flex justify-end w-full gap-4">
                     <Button type="button" variant="outline" asChild>
                       <Link href="/dashboard/admin/users">Cancelar</Link>
