@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Eye, EyeOff, GraduationCap, ArrowLeft, Mail, Lock } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
   Form,
@@ -24,6 +24,7 @@ import Image from "next/image";
 type LoginFormValues = {
   email: string;
   password: string;
+  rememberMe: boolean;
 }
 
 export default function LoginPage() {
@@ -34,8 +35,16 @@ export default function LoginPage() {
 
   const form = useForm<LoginFormValues>({
     mode: "onTouched",
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", rememberMe: false },
   });
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      form.setValue('email', rememberedEmail);
+      form.setValue('rememberMe', true);
+    }
+  }, [form]);
 
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
@@ -52,6 +61,13 @@ export default function LoginPage() {
         localStorage.setItem('userRole', data.user.rol.id);
         localStorage.setItem('userId', data.userId);
         localStorage.setItem('userName', data.user.nombreCompleto);
+
+        if (values.rememberMe) {
+            localStorage.setItem('rememberedEmail', values.email);
+        } else {
+            localStorage.removeItem('rememberedEmail');
+        }
+
         router.push('/dashboard');
       } else {
         toast({ variant: "destructive", title: "Error de inicio de sesión", description: data.message || "Credenciales incorrectas." });
@@ -145,10 +161,25 @@ export default function LoginPage() {
                         </div>
 
                         <div className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                                <Checkbox id="remember-me" />
-                                <label htmlFor="remember-me" className="select-none text-gray-500">Recordarme</label>
-                            </div>
+                            <FormField
+                                control={form.control}
+                                name="rememberMe"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel className="font-normal text-gray-500">
+                                                Recordarme
+                                            </FormLabel>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
                             <Link href="/forgot-password" className="font-sans text-sm text-blue-600 hover:underline">
                                 ¿Olvidaste tu contraseña?
                             </Link>
