@@ -76,6 +76,8 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-family);
+    font-size: var(--global-font-size);
   }
 
   .density-compact {

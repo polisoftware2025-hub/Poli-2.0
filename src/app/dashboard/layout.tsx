@@ -298,31 +298,36 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isMenuOpen, setMenuOpen] = useState(false);
     
-    // This is the key change: get preferences from context
     const context = useUserPreferences();
     if (!context) {
-        // This can happen briefly on load or if provider is missing.
-        // Render a loader or nothing to prevent errors.
         return <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden"><p>Cargando sesión...</p></div>;
     }
     const { preferences } = context;
 
-    // Construct the dynamic style object
-    const userStyle: React.CSSProperties = {
-        '--primary-hue': String(preferences.primaryColor.hue),
-        '--primary-saturation': `${preferences.primaryColor.saturation}%`,
-        '--primary-lightness': `${preferences.primaryColor.lightness}%`,
-        '--accent-hue': String(preferences.accentColor.hue),
-        '--accent-saturation': `${preferences.accentColor.saturation}%`,
-        '--accent-lightness': `${preferences.accentColor.lightness}%`,
-        '--font-family': preferences.fontFamily,
-        '--global-font-size': preferences.fontSize,
-        '--font-weight': preferences.fontWeight,
-        '--letter-spacing': preferences.letterSpacing,
-        '--radius': `${preferences.borderRadius}rem`,
-        '--blur-intensity': `${preferences.blurIntensity}px`,
-    } as React.CSSProperties;
-    
+    useEffect(() => {
+        const root = document.documentElement;
+        const body = document.body;
+
+        // Apply theme mode
+        body.classList.remove('light', 'dark');
+        body.classList.add(preferences.themeMode);
+
+        // Apply dynamic styles as CSS variables to the root element
+        root.style.setProperty('--primary-hue', String(preferences.primaryColor.hue));
+        root.style.setProperty('--primary-saturation', `${preferences.primaryColor.saturation}%`);
+        root.style.setProperty('--primary-lightness', `${preferences.primaryColor.lightness}%`);
+        root.style.setProperty('--accent-hue', String(preferences.accentColor.hue));
+        root.style.setProperty('--accent-saturation', `${preferences.accentColor.saturation}%`);
+        root.style.setProperty('--accent-lightness', `${preferences.accentColor.lightness}%`);
+        root.style.setProperty('--font-family', preferences.fontFamily);
+        root.style.setProperty('--global-font-size', preferences.fontSize);
+        root.style.setProperty('--font-weight', preferences.fontWeight);
+        root.style.setProperty('--letter-spacing', preferences.letterSpacing);
+        root.style.setProperty('--radius', `${preferences.borderRadius}rem`);
+        root.style.setProperty('--blur-intensity', `${preferences.blurIntensity}px`);
+        
+    }, [preferences]);
+
     useEffect(() => {
         const storedEmail = localStorage.getItem("userEmail");
         const storedRole = localStorage.getItem("userRole") as UserRole;
@@ -355,7 +360,22 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         return (
             <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
                 <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
-                    {/* ... hamster loader svg/divs ... */}
+                    <div className="wheel"></div>
+                    <div className="hamster">
+                        <div className="hamster__body">
+                            <div className="hamster__head">
+                                <div className="hamster__ear"></div>
+                                <div className="hamster__eye"></div>
+                                <div className="hamster__nose"></div>
+                            </div>
+                            <div className="hamster__limb hamster__limb--fr"></div>
+                            <div className="hamster__limb hamster__limb--fl"></div>
+                            <div className="hamster__limb hamster__limb--br"></div>
+                            <div className="hamster__limb hamster__limb--bl"></div>
+                            <div className="hamster__tail"></div>
+                        </div>
+                    </div>
+                    <div className="spoke"></div>
                 </div>
                 <p className="font-poppins text-lg font-semibold text-foreground mt-4">Cargando sesión...</p>
             </div>
@@ -363,9 +383,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     }
     
     return (
-        <div style={userStyle} className={cn("font-sans", preferences.themeMode)}>
+        <div className="font-sans">
             <SidebarProvider>
-                <Sidebar side="left" collapsible="icon" className="bg-[hsl(var(--background))] dark:bg-card">
+                <Sidebar side={preferences.sidebarPosition} collapsible="icon" className="bg-card">
                     <DynamicSidebar 
                         role={userRole} 
                         pathname={pathname} 
@@ -375,7 +395,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                         handleLogout={handleLogout} 
                     />
                 </Sidebar>
-                <SidebarInset className="bg-background dark:bg-[hsl(var(--background))]">
+                <SidebarInset className="bg-background">
                     <div className="flex-1 flex flex-col">
                         <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card/80 px-4 backdrop-blur-lg sm:px-6">
                             <div className="flex items-center gap-4">
