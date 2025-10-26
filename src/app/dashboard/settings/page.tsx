@@ -45,7 +45,7 @@ const availableFonts = [
 ];
 
 const FontSelector = () => {
-    const { preferences, updatePreference } = useUserPreferences();
+    const { preferences, updatePreference } = useUserPreferences()!;
     const [open, setOpen] = useState(false);
 
     return (
@@ -97,9 +97,15 @@ const FontSelector = () => {
 
 
 export default function SettingsPage() {
-  const { preferences, updatePreference, resetPreferences, isLoading, setPreferences } = useUserPreferences();
+  const context = useUserPreferences();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!context) {
+    return <div>Cargando preferencias...</div>;
+  }
+  
+  const { preferences, updatePreference, resetPreferences, isLoading, setPreferences } = context;
   
   const handleExport = () => {
       const blob = new Blob([JSON.stringify(preferences, null, 2)], { type: "application/json" });

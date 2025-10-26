@@ -7,6 +7,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 
+// This metadata is now static and won't be exported because this is a Client Component.
+// For dynamic metadata, you'd use the `generateMetadata` function in a Server Component.
 const metadata: Metadata = {
   title: "Politécnico Internacional",
   description:
@@ -21,10 +23,9 @@ export default function RootLayout({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // This effect runs only once on the client after hydration
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 1500); // Simulate loading time
+    }, 1500); 
     return () => clearTimeout(timer);
   }, []);
 
@@ -40,7 +41,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat&family=Exo+2:wght@400;600;700&family=IBM+Plex+Mono&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Lobster&family=Lora&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=Orbitron:wght@400;700&family=Oswald&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;500;600;700&family=Press+Start+2P&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Source+Code+Pro:wght@400;600&family=Space+Grotesk:wght@400;500;700&family=Teko&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat&family=Exo+2:wght@400;600;700&family=IBM+Plex+Mono&family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&family=Lobster&family=Lora&family=Merriweather:wght@400;700&family=Montserrat:wght@400;500;600;700&family=Nunito:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=Orbitron:wght@400;700&family=Oswald&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;500;600;700&family=Press+Start+2P&family=Raleway:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Source+Code+Pro:wght@400;600&family=Teko&display=swap"
           rel="stylesheet"
         />
       </head>

@@ -136,13 +136,13 @@
 
 @layer utilities {
     .auth-bg {
-        background-color: hsl(220 20% 97%); /* slate-50 */
-        background-image:  radial-gradient(hsl(220 13% 91%) 1px, transparent 0); /* slate-200 */
+        background-color: #f8fafc; /* slate-50 */
+        background-image:  radial-gradient(#e2e8f0 1px, transparent 0); /* slate-200 */
         background-size: 2rem 2rem;
     }
     .dark .auth-bg {
-         background-color: hsl(220 40% 5%); /* slate-950 */
-         background-image:  radial-gradient(hsl(220 23% 11%) 1px, transparent 0); /* slate-800 */
+         background-color: #020617; /* slate-950 */
+         background-image:  radial-gradient(#1e293b 1px, transparent 0); /* slate-800 */
     }
 
     .animated-gradient {
@@ -329,7 +329,7 @@
     transform: rotate(-35deg);
     z-index: 1;
   }
-
+  
   .hamster__limb--bl {
     animation-name: hamsterLimbBl;
     top: 1em;
