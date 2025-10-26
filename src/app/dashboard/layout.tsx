@@ -311,7 +311,12 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const [userId, setUserId] = useState<string | null>(null);
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [isMenuOpen, setMenuOpen] = useState(false);
-    const { preferences } = useUserPreferences();
+    const context = useUserPreferences();
+    
+    // Fallback while context is loading.
+    if (!context) return null; 
+    
+    const { preferences } = context;
 
     const userStyle: React.CSSProperties = {
         '--primary-hue': String(preferences.primaryColor.hue),
@@ -432,7 +437,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     }
     
     return (
-        <div style={userStyle} className="font-sans">
+        <div style={userStyle} className={cn("font-sans", preferences.themeMode)}>
             <SidebarProvider>
                 <Sidebar side="left" collapsible="icon" className="bg-[hsl(var(--background))] dark:bg-card">
                     <DynamicSidebar 

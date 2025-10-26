@@ -27,6 +27,7 @@ import { db } from "@/lib/firebase";
 import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PublicThemeToggle } from "@/components/ui/public-theme-toggle";
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -136,23 +137,26 @@ export default function HomePage() {
               </Link>
             ))}
           </nav>
-          <div className="md:hidden">
-            <Sheet open={isMenuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Toggle Menu"><Menu className="h-6 w-6" /></Button></SheetTrigger>
-              <SheetContent side="left" className="w-64 bg-background p-4 text-foreground">
-                <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
-                 <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2"><GraduationCap className="h-6 w-6 text-primary" /><span className="font-poppins text-lg font-bold text-foreground">Poli 2.0</span></div>
-                </div>
-                <nav className="flex flex-col items-start space-y-4">
-                  {navLinks.map((link) => (
-                    <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="font-poppins text-lg font-medium transition-colors hover:text-primary">
-                      {link.label}
-                    </Link>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
+          <div className="flex items-center gap-2">
+            <PublicThemeToggle />
+            <div className="md:hidden">
+              <Sheet open={isMenuOpen} onOpenChange={setMenuOpen}>
+                <SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Toggle Menu"><Menu className="h-6 w-6" /></Button></SheetTrigger>
+                <SheetContent side="left" className="w-64 bg-background p-4 text-foreground">
+                  <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
+                   <div className="mb-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2"><GraduationCap className="h-6 w-6 text-primary" /><span className="font-poppins text-lg font-bold text-foreground">Poli 2.0</span></div>
+                  </div>
+                  <nav className="flex flex-col items-start space-y-4">
+                    {navLinks.map((link) => (
+                      <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="font-poppins text-lg font-medium transition-colors hover:text-primary">
+                        {link.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </header>
@@ -303,17 +307,17 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer id="contacto" className="bg-[#0A0A23] dark:bg-[#0A0A23] text-white">
+      <footer id="contacto" className="bg-foreground text-background">
             <div className="container mx-auto px-6 py-16">
                 <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left">
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Enlaces rápidos</h3>
                         <ul className="space-y-3">
-                            <li><Link href="#inicio" className="text-gray-300 hover:text-white transition-colors">Inicio</Link></li>
-                            <li><Link href="/programas" className="text-gray-300 hover:text-white transition-colors">Programas académicos</Link></li>
-                            <li><Link href="#noticias" className="text-gray-300 hover:text-white transition-colors">Noticias y anuncios</Link></li>
-                            <li><Link href="/dashboard/calendario" className="text-gray-300 hover:text-white transition-colors">Calendario académico</Link></li>
-                            <li><Link href="#contacto" className="text-gray-300 hover:text-white transition-colors">Contacto</Link></li>
+                            <li><Link href="#inicio" className="text-muted-foreground hover:text-background transition-colors">Inicio</Link></li>
+                            <li><Link href="/programas" className="text-muted-foreground hover:text-background transition-colors">Programas académicos</Link></li>
+                            <li><Link href="#noticias" className="text-muted-foreground hover:text-background transition-colors">Noticias y anuncios</Link></li>
+                            <li><Link href="/dashboard/calendario" className="text-muted-foreground hover:text-background transition-colors">Calendario académico</Link></li>
+                            <li><Link href="#contacto" className="text-muted-foreground hover:text-background transition-colors">Contacto</Link></li>
                         </ul>
                     </div>
                     <div className="space-y-4">
@@ -321,30 +325,30 @@ export default function HomePage() {
                          <ul className="space-y-3">
                             <li className="flex items-center justify-center gap-3 md:justify-start">
                                 <MapPin className="h-5 w-5 shrink-0" />
-                                <span className="text-gray-300 text-sm">Calle 123 #45-67, Bogotá, Colombia</span>
+                                <span className="text-muted-foreground text-sm">Calle 123 #45-67, Bogotá, Colombia</span>
                             </li>
                             <li className="flex items-center justify-center gap-3 md:justify-start">
                                 <Phone className="h-5 w-5 shrink-0" />
-                                <span className="text-gray-300 text-sm">+57 310 456 7890</span>
+                                <span className="text-muted-foreground text-sm">+57 310 456 7890</span>
                             </li>
                              <li className="flex items-center justify-center gap-3 md:justify-start">
                                 <Mail className="h-5 w-5 shrink-0" />
-                                <span className="text-gray-300 text-sm">info@politecnico20.edu.co</span>
+                                <span className="text-muted-foreground text-sm">info@politecnico20.edu.co</span>
                             </li>
                         </ul>
                     </div>
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
                         <div className="flex justify-center md:justify-start items-center space-x-4">
-                           <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook"><FacebookIcon className="h-7 w-7" /></a>
-                            <a href="#" className="text-white hover:text-[#E1306C] transition-colors" aria-label="Instagram"><Instagram className="h-7 w-7" /></a>
-                            <a href="#" className="text-white hover:text-[#0A66C2] transition-colors" aria-label="LinkedIn"><Linkedin className="h-7 w-7" /></a>
+                           <a href="#" className="text-muted-foreground hover:text-[#1877F2] transition-colors" aria-label="Facebook"><FacebookIcon className="h-7 w-7" /></a>
+                            <a href="#" className="text-muted-foreground hover:text-[#E1306C] transition-colors" aria-label="Instagram"><Instagram className="h-7 w-7" /></a>
+                            <a href="#" className="text-muted-foreground hover:text-[#0A66C2] transition-colors" aria-label="LinkedIn"><Linkedin className="h-7 w-7" /></a>
                         </div>
                     </div>
                 </div>
             </div>
-            <div className="border-t border-gray-700 py-6">
-                <div className="container mx-auto text-center text-sm text-gray-400">&copy; {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.</div>
+            <div className="border-t border-border py-6">
+                <div className="container mx-auto text-center text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.</div>
             </div>
         </footer>
     </div>

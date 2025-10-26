@@ -61,15 +61,17 @@ export const defaultPreferences: UserPreferences = {
 };
 
 // --- Context ---
-const UserPreferencesContext = createContext<UserPreferencesContextType>({
-    preferences: defaultPreferences,
-    isLoading: true,
-    updatePreference: () => {},
-    setPreferences: () => {},
-    resetPreferences: () => {},
-});
+const UserPreferencesContext = createContext<UserPreferencesContextType | null>(null);
 
-export const useUserPreferences = () => useContext(UserPreferencesContext);
+export const useUserPreferences = () => {
+    const context = useContext(UserPreferencesContext);
+    if (!context) {
+        // This can happen in public pages that don't have the provider.
+        // Return a default/non-functional value.
+        return null;
+    }
+    return context;
+};
 
 // --- Reducer ---
 type Action = 
@@ -150,7 +152,7 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         loadPreferences();
     }, []);
 
-    // Effect for saving preferences and applying theme to DOM
+    // Effect for saving preferences
     useEffect(() => {
         const { preferences } = state;
         const userId = localStorage.getItem('userId');
@@ -160,11 +162,6 @@ export const UserPreferencesProvider = ({ children }: { children: React.ReactNod
         if (userId) {
             saveToFirestore(userId, preferences);
         }
-
-        // Apply theme mode class to the html element for global dark/light mode
-        const root = window.document.documentElement;
-        root.classList.remove('light', 'dark');
-        root.classList.add(preferences.themeMode);
         
     }, [state.preferences, saveToFirestore]);
     

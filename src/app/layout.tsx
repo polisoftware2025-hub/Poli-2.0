@@ -6,7 +6,6 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
-import { UserPreferencesProvider } from "@/context/UserPreferencesContext";
 
 const metadata: Metadata = {
   title: "Politécnico Internacional",

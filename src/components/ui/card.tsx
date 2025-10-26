@@ -10,11 +10,10 @@ const Card = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => {
-    const { preferences } = useUserPreferences();
+    const context = useUserPreferences();
+    const preferences = context?.preferences;
 
-    // Use inline styles to apply dynamic values from context
-    // This ensures reactivity when the context state changes.
-    const cardStyle: React.CSSProperties = {
+    const cardStyle: React.CSSProperties = preferences ? {
         '--card-border-radius': `${preferences.borderRadius}rem`,
         '--card-blur': preferences.cardStyle === 'glass' ? `${preferences.blurIntensity}px` : '0px',
         backgroundColor: preferences.cardStyle === 'glass' ? 'hsla(var(--card) / 0.6)' : 'hsl(var(--card))',
@@ -22,16 +21,19 @@ const Card = React.forwardRef<
         WebkitBackdropFilter: preferences.cardStyle === 'glass' ? `blur(var(--card-blur))` : 'none',
         boxShadow: preferences.showShadows ? '0 4px 15px rgba(0, 0, 0, 0.1)' : 'none',
         borderWidth: preferences.cardStyle === 'bordered' ? '1px' : '0',
-    };
+    } : {};
+
+    const finalClassName = context ? 
+        cn("rounded-[var(--card-border-radius)] border bg-card text-card-foreground", className) :
+        cn("rounded-lg border bg-card text-card-foreground shadow-sm", className);
+
+    const finalStyle = context ? cardStyle : {};
 
     return (
       <div
         ref={ref}
-        style={cardStyle}
-        className={cn(
-          "rounded-[var(--card-border-radius)] border bg-card text-card-foreground",
-          className
-        )}
+        style={finalStyle}
+        className={finalClassName}
         {...props}
       />
     )
