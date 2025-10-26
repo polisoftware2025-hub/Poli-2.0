@@ -119,12 +119,12 @@ export default function VerifyCodePage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 polygon-bg">
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 auth-bg">
        <div className="absolute top-4 left-4 z-10">
         <Button
           asChild
-          variant="ghost"
-          className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 text-white shadow-sm transition-all hover:bg-black/40 hover:text-white active:scale-95 sm:px-4"
+          variant="outline"
+          className="flex items-center gap-2 rounded-full"
         >
           <Link href="/forgot-password">
             <ArrowLeft className="h-4 w-4" />
@@ -132,15 +132,15 @@ export default function VerifyCodePage() {
           </Link>
         </Button>
       </div>
-      <Card className="z-10 w-full max-w-md rounded-2xl border-cyan-300/20 bg-black/30 text-white shadow-2xl shadow-cyan-500/10 backdrop-blur-lg">
+      <Card className="z-10 w-full max-w-md rounded-2xl shadow-2xl">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-cyan-400/50 bg-black/40 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
-            <GraduationCap className="h-8 w-8 text-cyan-400" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <GraduationCap className="h-8 w-8" />
           </div>
-          <CardTitle className="font-poppins text-3xl font-bold text-cyan-300">
+          <CardTitle className="font-poppins text-3xl font-bold text-foreground">
             Verificación de Código
           </CardTitle>
-          <CardDescription className="font-poppins text-cyan-100/70">
+          <CardDescription className="font-poppins text-muted-foreground">
             {verificationEmail 
               ? <>Revisa tu correo <span className="font-semibold">{verificationEmail}</span>, hemos enviado un código de 6 dígitos.</>
               : "Cargando..."
@@ -155,14 +155,14 @@ export default function VerifyCodePage() {
                 name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-cyan-100/80">Código de Verificación</FormLabel>
+                    <FormLabel>Código de Verificación</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-cyan-400/50" />
+                        <KeyRound className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
                         <Input
                           type="text"
                           placeholder="000000"
-                          className="rounded-lg border-cyan-300/30 bg-black/40 py-6 pl-12 text-center text-lg tracking-[0.5em] text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400"
+                          className="py-6 pl-12 text-center text-lg tracking-[0.5em] placeholder:text-gray-400"
                           maxLength={6}
                           {...field}
                         />
@@ -175,7 +175,7 @@ export default function VerifyCodePage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full rounded-full border border-cyan-400 bg-cyan-400/20 py-6 text-base font-semibold text-white shadow-lg shadow-cyan-500/10 transition-all hover:scale-105 hover:bg-cyan-400/30 hover:border-cyan-300"
+                className="w-full rounded-full py-6 text-base font-semibold"
               >
                 {isLoading ? "Validando..." : "Validar Código"}
               </Button>

@@ -225,34 +225,34 @@ export default function RegisterPage() {
 
   return (
     <FormProvider {...methods}>
-      <div className="relative flex min-h-screen flex-col items-center justify-center p-4 pt-16 polygon-bg sm:p-6">
+      <div className="relative flex min-h-screen flex-col items-center justify-center p-4 pt-16 auth-bg sm:p-6">
         <div className="absolute top-4 left-4 z-10">
            <Button
-            variant="ghost"
+            variant="outline"
             onClick={handleGoBack}
-            className="flex items-center gap-2 rounded-full border border-white/20 bg-black/20 text-white shadow-sm transition-all hover:bg-black/40 hover:text-white active:scale-95 sm:px-4"
+            className="flex items-center gap-2 rounded-full"
           >
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Volver</span>
           </Button>
         </div>
-        <Card className="z-10 w-full max-w-2xl rounded-2xl border-cyan-300/20 bg-black/30 text-white shadow-2xl shadow-cyan-500/10 backdrop-blur-lg">
+        <Card className="z-10 w-full max-w-2xl rounded-2xl shadow-2xl">
           <CardHeader className="text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-cyan-400/50 bg-black/40 shadow-[0_0_20px_rgba(0,255,255,0.2)]">
-                  <GraduationCap className="h-8 w-8 text-cyan-400" />
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <GraduationCap className="h-8 w-8" />
               </div>
-              <CardTitle className="font-poppins text-3xl font-bold text-cyan-300">
+              <CardTitle className="font-poppins text-3xl font-bold text-foreground">
                   Formulario de Registro
               </CardTitle>
-              <CardDescription className="font-poppins text-cyan-100/70">
+              <CardDescription className="font-poppins text-muted-foreground">
                   Sigue los pasos para completar tu inscripción.
               </CardDescription>
           </CardHeader>
             <form onSubmit={handleSubmit(processSubmit)}>
                 <CardContent className="p-6">
                   <div className="mb-6 space-y-4">
-                      <Progress value={progress} className="w-full h-2 bg-gray-700 [&>div]:bg-cyan-400" />
-                      <div className="flex items-center justify-center gap-2 text-lg font-semibold text-cyan-300">
+                      <Progress value={progress} className="w-full h-2" />
+                      <div className="flex items-center justify-center gap-2 text-lg font-semibold text-primary">
                           <CurrentStepIcon className="h-6 w-6"/>
                           <span>Paso {currentStep}: {steps[currentStep - 1].title}</span>
                       </div>
@@ -264,13 +264,13 @@ export default function RegisterPage() {
                     {currentStep === 4 && <Step4_Access />}
                     {currentStep === 5 && <Step5_Confirm />}
                 </CardContent>
-                <CardFooter className="flex justify-between p-6 bg-black/20 rounded-b-xl mt-4">
+                <CardFooter className="flex justify-between p-6 bg-muted rounded-b-xl mt-4">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={prevStep}
                     disabled={currentStep === 1}
-                    className="rounded-full px-6 py-3 border-cyan-300/50 bg-black/30 text-white hover:bg-black/50"
+                    className="rounded-full px-6 py-3"
                   >
                     Anterior
                   </Button>
@@ -278,12 +278,12 @@ export default function RegisterPage() {
                     <Button
                       type="button"
                       onClick={nextStep}
-                      className="rounded-full border border-cyan-400 bg-cyan-400/20 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/10 transition-all hover:scale-105 hover:bg-cyan-400/30 hover:border-cyan-300"
+                      className="rounded-full px-6 py-3"
                     >
                       Siguiente
                     </Button>
                   ) : (
-                    <Button type="submit" disabled={isSubmitting} className="rounded-full border border-green-400 bg-green-500/20 px-6 py-3 text-base font-semibold text-white shadow-lg shadow-green-500/10 transition-all hover:scale-105 hover:bg-green-500/30 hover:border-green-300">
+                    <Button type="submit" disabled={isSubmitting} className="rounded-full px-6 py-3">
                       {isSubmitting ? "Finalizando..." : "Finalizar Registro"}
                     </Button>
                   )}
@@ -300,12 +300,12 @@ const Step1 = () => {
   const { control } = useFormContext();
   
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 text-cyan-100/80">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="firstName" rules={{ validate: validateName }} render={({ field }) => (
           <FormItem>
             <FormLabel>Primer Nombre <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="John" {...field} className="form-input-dark" />
+              <Input placeholder="John" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -315,7 +315,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Nombre (Opcional)</FormLabel>
             <FormControl>
-              <Input placeholder="Fitzgerald" {...field} className="form-input-dark" />
+              <Input placeholder="Fitzgerald" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -325,7 +325,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Primer Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Doe" {...field} className="form-input-dark" />
+              <Input placeholder="Doe" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -335,7 +335,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Segundo Apellido <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="Smith" {...field} className="form-input-dark" />
+              <Input placeholder="Smith" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -346,7 +346,7 @@ const Step1 = () => {
             <FormLabel>Tipo de Identificación <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
               <FormControl>
-                <SelectTrigger className="form-input-dark"><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger>
               </FormControl>
               <SelectContent><SelectItem value="cc">Cédula de Ciudadanía</SelectItem><SelectItem value="ti">Tarjeta de Identidad</SelectItem><SelectItem value="ce">Cédula de Extranjería</SelectItem><SelectItem value="passport">Pasaporte</SelectItem></SelectContent>
             </Select>
@@ -358,7 +358,7 @@ const Step1 = () => {
           <FormItem>
             <FormLabel>Número de Identificación <span className="text-destructive">*</span></FormLabel>
             <FormControl>
-              <Input placeholder="123456789" {...field} className="form-input-dark" />
+              <Input placeholder="123456789" {...field} />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -370,7 +370,7 @@ const Step1 = () => {
             <Popover>
               <PopoverTrigger asChild>
                 <FormControl>
-                  <Button variant={"outline"} className={cn("form-input-dark justify-start text-left font-normal", !field.value && "text-gray-400")}>
+                  <Button variant={"outline"} className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
                     {field.value ? format(field.value, "PPP", { locale: es }) : <span>Selecciona una fecha</span>}
                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                   </Button>
@@ -386,7 +386,7 @@ const Step1 = () => {
           <FormItem className="flex flex-col justify-end">
             <FormLabel>Género <span className="text-destructive">*</span></FormLabel>
             <Select onValueChange={field.onChange} defaultValue={field.value}>
-              <FormControl><SelectTrigger className="form-input-dark"><SelectValue placeholder="Selecciona tu género" /></SelectTrigger></FormControl>
+              <FormControl><SelectTrigger><SelectValue placeholder="Selecciona tu género" /></SelectTrigger></FormControl>
               <SelectContent><SelectItem value="M">Masculino</SelectItem><SelectItem value="F">Femenino</SelectItem><SelectItem value="Otro">Otro</SelectItem></SelectContent>
             </Select>
             <FormMessage />
@@ -411,11 +411,11 @@ const Step2 = () => {
   const cities = selectedCountry ? locations[selectedCountry as keyof typeof locations] : [];
   
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 text-cyan-100/80">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="phone" rules={{ validate: validatePhoneNumber }} render={({ field }) => (
           <FormItem>
             <FormLabel>Teléfono / Celular <span className="text-destructive">*</span></FormLabel>
-            <FormControl><Input placeholder="3001234567" {...field} className="form-input-dark" /></FormControl>
+            <FormControl><Input placeholder="3001234567" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -423,7 +423,7 @@ const Step2 = () => {
       <FormField control={control} name="address" rules={{ validate: validateRequired }} render={({ field }) => (
           <FormItem>
             <FormLabel>Dirección de Residencia <span className="text-destructive">*</span></FormLabel>
-            <FormControl><Input placeholder="Calle 123 #45-67, Apto 101" {...field} className="form-input-dark" /></FormControl>
+            <FormControl><Input placeholder="Calle 123 #45-67, Apto 101" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -432,7 +432,7 @@ const Step2 = () => {
         <FormItem>
           <FormLabel>País <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={(value) => { field.onChange(value); setValue("city", "", { shouldValidate: true }); }} defaultValue={field.value}>
-            <FormControl><SelectTrigger className="form-input-dark"><SelectValue placeholder="Selecciona un país" /></SelectTrigger></FormControl>
+            <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un país" /></SelectTrigger></FormControl>
             <SelectContent>{countries.map(country => <SelectItem key={country} value={country}>{country}</SelectItem>)}</SelectContent>
           </Select>
           <FormMessage />
@@ -442,7 +442,7 @@ const Step2 = () => {
         <FormItem>
           <FormLabel>Ciudad <span className="text-destructive">*</span></FormLabel>
           <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!selectedCountry}>
-            <FormControl><SelectTrigger className="form-input-dark"><SelectValue placeholder={selectedCountry ? "Selecciona una ciudad" : "Selecciona un país primero"} /></SelectTrigger></FormControl>
+            <FormControl><SelectTrigger><SelectValue placeholder={selectedCountry ? "Selecciona una ciudad" : "Selecciona un país primero"} /></SelectTrigger></FormControl>
             <SelectContent>{cities.map(city => <SelectItem key={city} value={city}>{city}</SelectItem>)}</SelectContent>
           </Select>
           <FormMessage />
@@ -451,7 +451,7 @@ const Step2 = () => {
       <FormField control={control} name="correoPersonal" rules={{ validate: validateEmail }} render={({ field }) => (
           <FormItem className="md:col-span-2">
             <FormLabel>Correo Personal <span className="text-destructive">*</span></FormLabel>
-            <FormControl><Input type="email" placeholder="tu.correo@example.com" {...field} className="form-input-dark" /></FormControl>
+            <FormControl><Input type="email" placeholder="tu.correo@example.com" {...field} /></FormControl>
             <FormMessage />
           </FormItem>
         )}
@@ -504,13 +504,13 @@ const Step3 = () => {
     }, [selectedSede, selectedCarrera]);
 
   return (
-    <div className="space-y-6 text-cyan-100/80">
+    <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField control={control} name="sedeId" rules={{ validate: validateSelection }} render={({ field }) => (
             <FormItem>
                 <FormLabel>Sede de Interés <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={(value) => { field.onChange(value); setValue("carreraId", "", { shouldValidate: true }); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.sedes}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><School className="h-4 w-4" /><SelectValue placeholder={isLoading.sedes ? "Cargando..." : "Selecciona una sede"} /></div></SelectTrigger></FormControl>
                 <SelectContent>{sedes.map(sede => <SelectItem key={sede.id} value={sede.id}>{sede.nombre}</SelectItem>)}</SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -520,7 +520,7 @@ const Step3 = () => {
             <FormItem>
                 <FormLabel>Carrera <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={(value) => { field.onChange(value); setValue("grupo", "", { shouldValidate: true }); }} defaultValue={field.value} disabled={isLoading.carreras || !selectedSede}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><BookOpen className="h-4 w-4" /><SelectValue placeholder={!selectedSede ? "Elige sede" : (isLoading.carreras ? "Cargando..." : "Selecciona una carrera")} /></div></SelectTrigger></FormControl>
                 <SelectContent>{carreras.map(c => <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>)}</SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -530,7 +530,7 @@ const Step3 = () => {
             <FormItem>
                 <FormLabel>Modalidad <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={"Selecciona modalidad"} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><Laptop className="h-4 w-4" /><SelectValue placeholder={"Selecciona modalidad"} /></div></SelectTrigger></FormControl>
                 <SelectContent><SelectItem value="Virtual">Virtual</SelectItem><SelectItem value="Presencial">Presencial</SelectItem></SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -540,7 +540,7 @@ const Step3 = () => {
             <FormItem>
                 <FormLabel>Jornada <span className="text-destructive">*</span></FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={"Selecciona jornada"} /></div></SelectTrigger></FormControl>
+                <FormControl><SelectTrigger><div className="flex items-center gap-2"><Clock className="h-4 w-4" /><SelectValue placeholder={"Selecciona jornada"} /></div></SelectTrigger></FormControl>
                 <SelectContent><SelectItem value="Diurna">Diurna</SelectItem><SelectItem value="Nocturna">Nocturna</SelectItem><SelectItem value="Especial">Especial</SelectItem></SelectContent>
                 </Select><FormMessage />
             </FormItem>
@@ -550,7 +550,7 @@ const Step3 = () => {
             <FormItem className="md:col-span-2">
                 <FormLabel>Grupo <span className="text-destructive">*</span></FormLabel>
                  <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading.grupos || !selectedCarrera}>
-                    <FormControl><SelectTrigger className="form-input-dark"><div className="flex items-center gap-2"><UsersIcon className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} /></div></SelectTrigger></FormControl>
+                    <FormControl><SelectTrigger><div className="flex items-center gap-2"><UsersIcon className="h-4 w-4" /><SelectValue placeholder={!selectedCarrera ? "Elige carrera" : (isLoading.grupos ? "Cargando..." : "Selecciona un grupo")} /></div></SelectTrigger></FormControl>
                     <SelectContent>{grupos.length > 0 ? (grupos.map(g => <SelectItem key={g.id} value={g.id}>{g.codigoGrupo}</SelectItem>)) : (<SelectItem value="no-groups" disabled>No hay grupos disponibles</SelectItem>)}</SelectContent>
                  </Select><FormMessage />
             </FormItem>
@@ -566,13 +566,13 @@ const Step4_Access = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 text-cyan-100/80">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
       <FormField control={control} name="password" rules={{ validate: validatePassword }} render={({ field }) => (
           <FormItem>
             <FormLabel>Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
-              <FormControl><Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="form-input-dark pr-10" /></FormControl>
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
+              <FormControl><Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pr-10" /></FormControl>
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground">{showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
             </div>
             <FormMessage />
           </FormItem>
@@ -582,8 +582,8 @@ const Step4_Access = () => {
           <FormItem>
             <FormLabel>Confirmar Contraseña <span className="text-destructive">*</span></FormLabel>
             <div className="relative">
-              <FormControl><Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} className="form-input-dark pr-10" /></FormControl>
-              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-cyan-400/60 hover:text-cyan-400">{showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
+              <FormControl><Input type={showConfirmPassword ? "text" : "password"} placeholder="••••••••" {...field} className="pr-10" /></FormControl>
+              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground">{showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}</button>
             </div>
             <FormMessage />
           </FormItem>
@@ -595,9 +595,9 @@ const Step4_Access = () => {
 
 const Step5_Confirm = () => (
     <div className="text-center flex flex-col items-center gap-4 py-8">
-        <CheckCircle className="h-16 w-16 text-green-400" />
-        <h3 className="text-2xl font-bold font-poppins text-cyan-200">¡Todo listo!</h3>
-        <p className="text-cyan-100/70">Revisa que toda tu información sea correcta antes de finalizar.</p>
-        <p className="text-sm text-cyan-100/50">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
+        <CheckCircle className="h-16 w-16 text-green-500" />
+        <h3 className="text-2xl font-bold font-poppins text-foreground">¡Todo listo!</h3>
+        <p className="text-muted-foreground">Revisa que toda tu información sea correcta antes de finalizar.</p>
+        <p className="text-sm text-muted-foreground/80">Al hacer clic en "Finalizar Registro", tus datos serán enviados para revisión.</p>
     </div>
 );

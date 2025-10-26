@@ -8,8 +8,8 @@ import Link from "next/link";
 
 export default function PendingApprovalPage() {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 font-roboto">
-            <Card className="w-full max-w-lg rounded-xl shadow-[0_8px_30px_rgba(0,0,0,0.1)] text-center">
+        <div className="flex min-h-screen flex-col items-center justify-center auth-bg p-4 font-roboto">
+            <Card className="w-full max-w-lg rounded-xl shadow-2xl text-center">
                 <CardHeader>
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
                         <MailCheck className="h-8 w-8 text-green-600" />

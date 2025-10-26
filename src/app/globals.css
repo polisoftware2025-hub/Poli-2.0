@@ -135,19 +135,11 @@
 }
 
 @layer utilities {
-  .polygon-bg {
-    background-color: hsl(220 90% 4%);
-    background-image:
-      radial-gradient(at 27% 37%, hsla(217, 91%, 60%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 97% 21%, hsla(262, 83%, 60%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 52% 99%, hsla(0, 84%, 60%, 0.1) 0px, transparent 50%);
-    position: relative;
-    overflow: hidden;
-  }
-
-  .form-input-dark {
-    @apply rounded-lg border-cyan-300/30 bg-black/40 py-6 text-white placeholder:text-gray-400 focus:border-cyan-400 focus:ring-cyan-400;
-  }
+    .auth-bg {
+        background-color: #ffffff;
+        background-image: radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0);
+        background-size: 2rem 2rem;
+    }
 }
 
 @layer components {
