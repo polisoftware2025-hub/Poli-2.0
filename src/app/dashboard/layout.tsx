@@ -305,21 +305,23 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const { preferences } = context;
 
     useEffect(() => {
-        const root = document.documentElement;
         const body = document.body;
 
         // Apply theme mode
         body.classList.remove('light', 'dark');
         body.classList.add(preferences.themeMode);
+        
+        // Apply font family directly to the body
+        body.style.fontFamily = preferences.fontFamily;
 
         // Apply dynamic styles as CSS variables to the root element
+        const root = document.documentElement;
         root.style.setProperty('--primary-hue', String(preferences.primaryColor.hue));
         root.style.setProperty('--primary-saturation', `${preferences.primaryColor.saturation}%`);
         root.style.setProperty('--primary-lightness', `${preferences.primaryColor.lightness}%`);
         root.style.setProperty('--accent-hue', String(preferences.accentColor.hue));
         root.style.setProperty('--accent-saturation', `${preferences.accentColor.saturation}%`);
         root.style.setProperty('--accent-lightness', `${preferences.accentColor.lightness}%`);
-        root.style.setProperty('--font-family', preferences.fontFamily);
         root.style.setProperty('--global-font-size', preferences.fontSize);
         root.style.setProperty('--font-weight', preferences.fontWeight);
         root.style.setProperty('--letter-spacing', preferences.letterSpacing);
@@ -352,6 +354,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
     const handleLogout = async () => {
         localStorage.clear();
+        document.body.style.fontFamily = ''; // Reset font on logout
         toast({ title: "Cierre de sesión exitoso" });
         router.push("/");
     };
