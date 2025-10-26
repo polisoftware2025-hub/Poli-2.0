@@ -136,13 +136,13 @@
 
 @layer utilities {
     .auth-bg {
-        background-color: #ffffff;
-        background-image:  radial-gradient(circle at 1px 1px, #E2E8F0 1px, transparent 0);
+        background-color: #f8fafc; /* slate-50 */
+        background-image:  radial-gradient(#e2e8f0 1px, transparent 0); /* slate-200 */
         background-size: 2rem 2rem;
     }
     .dark .auth-bg {
-         background-color: hsl(var(--background)); /* slate-950 */
-         background-image:  radial-gradient(circle at 1px 1px, hsl(var(--border)) 1px, transparent 0); /* slate-800 */
+         background-color: #020617; /* slate-950 */
+         background-image:  radial-gradient(#1e293b 1px, transparent 0); /* slate-800 */
     }
 
     .animated-gradient {
