@@ -305,17 +305,13 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const { preferences } = context;
 
      useEffect(() => {
-        const body = document.body;
-
-        // Apply theme mode
-        body.classList.remove('light', 'dark');
-        body.classList.add(preferences.themeMode);
-        
-        // Apply font family directly to the body
-        body.style.fontFamily = preferences.fontFamily;
-
-        // Apply dynamic styles as CSS variables to the root element
         const root = document.documentElement;
+        
+        // Apply theme mode
+        root.classList.remove('light', 'dark');
+        root.classList.add(preferences.themeMode);
+        
+        // Apply dynamic styles as CSS variables to the root element
         root.style.setProperty('--primary-hue', String(preferences.primaryColor.hue));
         root.style.setProperty('--primary-saturation', `${preferences.primaryColor.saturation}%`);
         root.style.setProperty('--primary-lightness', `${preferences.primaryColor.lightness}%`);
@@ -328,10 +324,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--radius', `${preferences.borderRadius}rem`);
         root.style.setProperty('--blur-intensity', `${preferences.blurIntensity}px`);
         
-        // Cleanup function
-        return () => {
-             body.style.fontFamily = '';
-        };
+        // Font family is now handled in tailwind.config.ts via CSS variable
+        root.style.setProperty('--font-family', preferences.fontFamily);
+
     }, [preferences]);
 
     useEffect(() => {
@@ -358,7 +353,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
     const handleLogout = async () => {
         localStorage.clear();
-        document.body.style.fontFamily = ''; // Reset font on logout
+        document.documentElement.style.removeProperty('--font-family');
         toast({ title: "Cierre de sesión exitoso" });
         router.push("/");
     };
