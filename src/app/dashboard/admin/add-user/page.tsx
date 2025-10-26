@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { useForm, FormProvider, useWatch, useFormContext } from "react-hook-form";
 import { PageHeader } from "@/components/page-header";
-import { UserPlus, User, Phone, BookOpen, KeyRound } from "lucide-react";
+import { UserPlus, User, Phone, BookOpen, KeyRound, Eye, EyeOff } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -49,6 +49,7 @@ interface Sede { id: string; nombre: string; }
 
 export default function AddUserPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -235,7 +236,22 @@ export default function AddUserPage() {
                               </FormItem>
                           )} />
                           <FormField name="contrasena" rules={{ validate: validatePassword }} render={({ field }) => (
-                              <FormItem><FormLabel>Contraseña Provisional</FormLabel><FormControl><Input type="password" {...field} /></FormControl><FormMessage /></FormItem>
+                              <FormItem>
+                                <FormLabel>Contraseña Provisional</FormLabel>
+                                <div className="relative">
+                                    <FormControl>
+                                        <Input type={showPassword ? "text" : "password"} {...field} className="pr-10" />
+                                    </FormControl>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                                    >
+                                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                                    </button>
+                                </div>
+                                <FormMessage />
+                              </FormItem>
                           )} />
                       </div>
                   </section>
