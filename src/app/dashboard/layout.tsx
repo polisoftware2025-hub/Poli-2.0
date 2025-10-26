@@ -304,7 +304,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     }
     const { preferences } = context;
 
-    useEffect(() => {
+     useEffect(() => {
         const body = document.body;
 
         // Apply theme mode
@@ -328,6 +328,10 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--radius', `${preferences.borderRadius}rem`);
         root.style.setProperty('--blur-intensity', `${preferences.blurIntensity}px`);
         
+        // Cleanup function
+        return () => {
+             body.style.fontFamily = '';
+        };
     }, [preferences]);
 
     useEffect(() => {
