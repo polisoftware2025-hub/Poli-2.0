@@ -76,7 +76,7 @@ export default function RootLayout({
                 </motion.div>
             )}
         </AnimatePresence>
-        {!isLoading && <UserPreferencesProvider>{children}</UserPreferencesProvider>}
+        {!isLoading && <>{children}</>}
         <Toaster />
       </body>
     </html>
