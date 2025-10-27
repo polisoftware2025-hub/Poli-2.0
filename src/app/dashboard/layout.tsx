@@ -399,7 +399,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                 </Sidebar>
                 <SidebarInset className="bg-background">
                     <div className="flex-1 flex flex-col">
-                        <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b bg-card/80 px-4 backdrop-blur-lg sm:px-6">
+                        <header className="fixed top-0 z-20 flex h-16 w-full items-center justify-between gap-4 border-b bg-card/80 px-4 backdrop-blur-lg sm:px-6">
                             <div className="flex items-center gap-4">
                                 <SidebarTrigger>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
@@ -436,7 +436,7 @@ function MainLayout({ children }: { children: React.ReactNode }) {
                                 </DropdownMenu>
                             </div>
                         </header>
-                        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+                        <main className="flex-1 p-4 sm:p-6 lg:p-8 pt-16">{children}</main>
                     </div>
                     <footer className="bg-card text-center text-sm p-4 border-t">
                         © {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
