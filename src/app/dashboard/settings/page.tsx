@@ -290,7 +290,7 @@ export default function SettingsPage() {
 
         </div>
 
-        <div className="md:col-span-2 md:sticky md:top-24">
+        <div className="md:col-span-2">
             <Card>
                 <CardHeader>
                     <CardTitle>Vista Previa Dinámica</CardTitle>
