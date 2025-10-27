@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { createContext, useContext, useReducer, useCallback, useEffect } from "react";
@@ -14,7 +15,7 @@ export interface ColorSettings {
 }
 
 export interface UserPreferences {
-    themeMode: "light" | "dark";
+    themeMode: "light" | "dark" | "system";
     primaryColor: ColorSettings;
     accentColor: ColorSettings;
     fontFamily: string;
@@ -42,7 +43,7 @@ interface UserPreferencesContextType {
 
 // --- Default State ---
 export const defaultPreferences: UserPreferences = {
-    themeMode: "light",
+    themeMode: "system",
     primaryColor: { hue: 221, saturation: 83, lightness: 53 },
     accentColor: { hue: 262, saturation: 83, lightness: 60 },
     fontFamily: "Poppins",

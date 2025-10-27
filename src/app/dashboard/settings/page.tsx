@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Settings as SettingsIcon, Palette, Text, Layout, Monitor, Sun, Moon, Save, RefreshCw, Upload, Download, Check, ChevronsUpDown } from "lucide-react";
+import { Settings as SettingsIcon, Palette, Text, Layout, Monitor, Sun, Moon, Save, RefreshCw, Upload, Download, Check, ChevronsUpDown, Laptop } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { useUserPreferences, type UserPreferences } from "@/context/UserPreferencesContext";
 import { motion } from "framer-motion";
@@ -182,6 +183,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-2 p-1 rounded-full bg-muted">
                         <Button variant={preferences.themeMode === 'light' ? 'secondary' : 'ghost'} size="sm" onClick={() => updatePreference('themeMode', 'light')} className="rounded-full"><Sun className="mr-2 h-4 w-4"/>Claro</Button>
                         <Button variant={preferences.themeMode === 'dark' ? 'secondary' : 'ghost'} size="sm" onClick={() => updatePreference('themeMode', 'dark')} className="rounded-full"><Moon className="mr-2 h-4 w-4"/>Oscuro</Button>
+                        <Button variant={preferences.themeMode === 'system' ? 'secondary' : 'ghost'} size="sm" onClick={() => updatePreference('themeMode', 'system')} className="rounded-full"><Laptop className="mr-2 h-4 w-4"/>Sistema</Button>
                     </div>
                 </SettingRow>
                 <div className="space-y-3">
@@ -290,7 +292,7 @@ export default function SettingsPage() {
 
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 md:sticky md:top-24 md:max-h-[calc(100vh-8rem)] md:overflow-y-auto">
             <Card>
                 <CardHeader>
                     <CardTitle>Vista Previa Dinámica</CardTitle>
@@ -397,7 +399,7 @@ const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
 
   return (
     <div 
-      className="w-full h-[450px] rounded-lg p-4 border overflow-hidden scale-100 origin-top transition-all"
+      className="w-full h-full rounded-lg p-4 border overflow-hidden transition-all"
       style={{ 
         background: background,
         fontFamily: fontFamily,
