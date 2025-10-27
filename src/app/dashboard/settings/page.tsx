@@ -24,7 +24,7 @@ import { useUserPreferences, type UserPreferences } from "@/context/UserPreferen
 import { motion } from "framer-motion";
 import { Slider } from "@/components/ui/slider";
 import { useToast } from "@/hooks/use-toast";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
@@ -46,7 +46,9 @@ const availableFonts = [
 ];
 
 const FontSelector = () => {
-    const { preferences, updatePreference } = useUserPreferences()!;
+    const context = useUserPreferences();
+    if (!context) return null;
+    const { preferences, updatePreference } = context;
     const [open, setOpen] = useState(false);
 
     return (
@@ -372,18 +374,30 @@ const ColorPicker = ({ label, settingKey, preferences, updatePreference }: { lab
 const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
   const { themeMode, primaryColor, accentColor, fontFamily, fontSize, fontWeight, letterSpacing, borderRadius, cardStyle, blurIntensity, showShadows, sidebarPosition } = preferences;
 
+  const [isSystemDark, setIsSystemDark] = useState(false);
+  
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    setIsSystemDark(mediaQuery.matches);
+    const handler = (e: MediaQueryListEvent) => setIsSystemDark(e.matches);
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, []);
+
+  const effectiveTheme = themeMode === 'system' ? (isSystemDark ? 'dark' : 'light') : themeMode;
+
   const primary = `hsl(${primaryColor.hue}, ${primaryColor.saturation}%, ${primaryColor.lightness}%)`;
   const accent = `hsl(${accentColor.hue}, ${accentColor.saturation}%, ${accentColor.lightness}%)`;
   
-  const background = themeMode === 'dark' 
+  const background = effectiveTheme === 'dark' 
     ? `hsl(220, 20%, 7%)`
     : `hsl(220, 20%, 97%)`;
-  const card = themeMode === 'dark' 
+  const card = effectiveTheme === 'dark' 
     ? (cardStyle === 'glass' ? 'hsla(224, 71%, 4%, 0.6)' : 'hsl(224, 71%, 4%)')
     : (cardStyle === 'glass' ? 'hsla(0, 0%, 100%, 0.8)' : 'hsl(0, 0%, 100%)');
-  const cardBorder = themeMode === 'dark' ? 'hsl(217, 33%, 25%)' : 'hsl(214, 32%, 91%)';
-  const textForeground = themeMode === 'dark' ? 'hsl(210, 40%, 98%)' : 'hsl(220, 90%, 4%)';
-  const textMuted = themeMode === 'dark' ? 'hsl(215, 20%, 65%)' : 'hsl(215, 28%, 44%)';
+  const cardBorder = effectiveTheme === 'dark' ? 'hsl(217, 33%, 25%)' : 'hsl(214, 32%, 91%)';
+  const textForeground = effectiveTheme === 'dark' ? 'hsl(210, 40%, 98%)' : 'hsl(220, 90%, 4%)';
+  const textMuted = effectiveTheme === 'dark' ? 'hsl(215, 20%, 65%)' : 'hsl(215, 28%, 44%)';
   
   const cardDynamicStyle: React.CSSProperties = {
       backgroundColor: card,
@@ -399,7 +413,7 @@ const ThemePreview = ({ preferences }: { preferences: UserPreferences }) => {
 
   return (
     <div 
-      className="w-full h-full rounded-lg p-4 border overflow-hidden transition-all"
+      className="w-full h-[450px] rounded-lg p-4 border overflow-hidden transition-all"
       style={{ 
         background: background,
         fontFamily: fontFamily,
