@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -321,11 +320,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
 
         applyTheme();
         
-        // Listen for OS theme changes
         const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
         mediaQuery.addEventListener('change', applyTheme);
         
-        // Apply dynamic styles as CSS variables to the root element
         root.style.setProperty('--primary-hue', String(preferences.primaryColor.hue));
         root.style.setProperty('--primary-saturation', `${preferences.primaryColor.saturation}%`);
         root.style.setProperty('--primary-lightness', `${preferences.primaryColor.lightness}%`);
@@ -338,7 +335,6 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         root.style.setProperty('--radius', `${preferences.borderRadius}rem`);
         root.style.setProperty('--blur-intensity', `${preferences.blurIntensity}px`);
         
-        // Font family is now handled in tailwind.config.ts via CSS variable
         root.style.setProperty('--font-family', preferences.fontFamily);
 
         return () => {
