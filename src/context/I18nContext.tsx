@@ -26,12 +26,12 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
 
   const loadTranslations = useCallback(async () => {
     try {
-      const module = await import(`../locales/${language}.json`);
+      const module = await import(`@/locales/${language}.json`);
       setTranslations(module.default);
     } catch (error) {
       console.error(`Could not load translations for ${language}`, error);
       // Fallback to Spanish if the selected language file is not found
-      const fallbackModule = await import(`../locales/es.json`);
+      const fallbackModule = await import(`@/locales/es.json`);
       setTranslations(fallbackModule.default);
     }
   }, [language]);
