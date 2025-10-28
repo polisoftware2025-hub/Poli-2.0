@@ -307,17 +307,17 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer id="contacto" className="bg-foreground text-background">
+      <footer id="contacto" className="bg-background text-foreground">
             <div className="container mx-auto px-6 py-16">
                 <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left">
                     <div className="space-y-4">
                         <h3 className="font-poppins text-xl font-bold">Enlaces rápidos</h3>
                         <ul className="space-y-3">
-                            <li><Link href="#inicio" className="text-muted-foreground hover:text-background transition-colors">Inicio</Link></li>
-                            <li><Link href="/programas" className="text-muted-foreground hover:text-background transition-colors">Programas académicos</Link></li>
-                            <li><Link href="#noticias" className="text-muted-foreground hover:text-background transition-colors">Noticias y anuncios</Link></li>
-                            <li><Link href="/dashboard/calendario" className="text-muted-foreground hover:text-background transition-colors">Calendario académico</Link></li>
-                            <li><Link href="#contacto" className="text-muted-foreground hover:text-background transition-colors">Contacto</Link></li>
+                            <li><Link href="#inicio" className="text-muted-foreground hover:text-foreground transition-colors">Inicio</Link></li>
+                            <li><Link href="/programas" className="text-muted-foreground hover:text-foreground transition-colors">Programas académicos</Link></li>
+                            <li><Link href="#noticias" className="text-muted-foreground hover:text-foreground transition-colors">Noticias y anuncios</Link></li>
+                            <li><Link href="/dashboard/calendario" className="text-muted-foreground hover:text-foreground transition-colors">Calendario académico</Link></li>
+                            <li><Link href="#contacto" className="text-muted-foreground hover:text-foreground transition-colors">Contacto</Link></li>
                         </ul>
                     </div>
                     <div className="space-y-4">
