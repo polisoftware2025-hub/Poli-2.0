@@ -28,15 +28,10 @@ const isDynamicSegment = (segment: string) => {
     return segment.length > 15 && /[a-zA-Z]/.test(segment) && /[0-9]/.test(segment);
 }
 
+const userRoles = ['admin', 'gestor', 'docente', 'estudiante', 'rector'];
 
 const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart[] }) => {
   const pathname = usePathname();
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    const role = localStorage.getItem("userRole");
-    setUserRole(role);
-  }, []);
 
   const getDashboardHomePath = () => {
       const role = localStorage.getItem("userRole");
@@ -79,13 +74,12 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     return null; // Don't render breadcrumbs if not in a dashboard context
   }
 
-  const breadcrumbParts = pathSegments.slice(dashboardBaseIndex + 1).filter(p => p !== userRole);
+  const breadcrumbParts = pathSegments.slice(dashboardBaseIndex + 1).filter(p => !userRoles.includes(p));
 
   const getBreadcrumbName = (segment: string) => {
     const names: { [key: string]: string } = {
       'dashboard': 'Panel', 'materias': 'Materias', 'notifications': 'Notificaciones',
-      'profile': 'Mi Perfil', 'settings': 'Configuración', 'admin': 'Admin',
-      'docente': 'Docente', 'estudiante': 'Estudiante', 'gestor': 'Gestor',
+      'profile': 'Mi Perfil', 'settings': 'Configuración',
       'users': 'Usuarios', 'add-user': 'Agregar Usuario', 'edit-user': 'Editar Usuario',
       'pre-register': 'Pre-Inscripción', 'subjects': 'Materias',
       'payments': 'Pagos', 'schedules': 'Horarios', 'analytics': 'Analíticas',
