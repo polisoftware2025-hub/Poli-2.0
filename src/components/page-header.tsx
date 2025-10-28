@@ -107,7 +107,7 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
     return segment.charAt(0).toUpperCase() + segment.slice(1);
   };
   
-  const leafSegments = ['add-user', 'edit-user', 'details', 'new-career', 'edit'];
+  const leafSegments = ['add-user', 'edit-user', 'details', 'new-career', 'edit', 'generate'];
 
   return (
     <nav className="flex items-center text-sm text-muted-foreground">
@@ -120,10 +120,7 @@ const Breadcrumbs = ({ customBreadcrumbs }: { customBreadcrumbs?: BreadcrumbPart
         const isLast = index === breadcrumbParts.length - 1 || isDynamicSegment(breadcrumbParts[index + 1]);
         const isLeafNode = leafSegments.includes(segment);
         
-        let path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index)].filter(p => !isDynamicSegment(p)).join('/')}`;
-        if(!isLeafNode) {
-           path = `/dashboard/${[userRole, ...breadcrumbParts.slice(0, index + 1)].filter(p => !isDynamicSegment(p)).join('/')}`;
-        }
+        let path = `/dashboard/${breadcrumbParts.slice(0, index + 1).filter(p => !isDynamicSegment(p)).join('/')}`;
         
         return (
           <React.Fragment key={segment + index}>
