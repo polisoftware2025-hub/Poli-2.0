@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useTransition } from "react";
 import { PageHeader } from "@/components/page-header";
-import { User, Phone, BookOpen, Check, X, ClipboardList } from "lucide-react";
+import { User, Phone, BookOpen, Check, X, ClipboardList, Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -13,6 +13,7 @@ import { doc, getDoc, writeBatch, Timestamp, collection, query, where, getDocs }
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { processStudentEnrollment } from "@/ai/flows/enroll-student-flow";
+import { generateApplicantPdf } from "@/lib/applicant-pdf-generator";
 
 interface ApplicantData {
   id: string;
@@ -175,6 +176,14 @@ export default function PreRegisterDetailPage() {
       });
   }
   
+  const handleDownload = () => {
+      if (applicantData) {
+          generateApplicantPdf(applicantData);
+      } else {
+          toast({ variant: "destructive", title: "Error", description: "No hay datos del aspirante para generar el PDF." });
+      }
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
@@ -210,7 +219,10 @@ export default function PreRegisterDetailPage() {
                           Solicitud recibida el {applicantData.fechaRegistro.toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </CardDescription>
                   </div>
-                  <Button>Descargar Documentos</Button>
+                  <Button onClick={handleDownload} disabled={isProcessing}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Descargar Documentos
+                  </Button>
               </div>
           </CardHeader>
           <CardContent className="space-y-8">
