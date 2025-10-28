@@ -117,7 +117,7 @@ export default function CareerDetailsPage() {
         </div>
         <CardContent className="p-6 space-y-2">
             <h2 className="text-2xl font-bold text-primary">{program.nombre}</h2>
-            <p className="text-gray-700 leading-relaxed">{program.descripcionGeneral}</p>
+            <p className="text-muted-foreground leading-relaxed">{program.descripcionGeneral}</p>
         </CardContent>
          <CardFooter>
              <Button asChild>
@@ -138,7 +138,7 @@ export default function CareerDetailsPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-600">{program.perfilProfesional}</p>
+            <p className="text-muted-foreground">{program.perfilProfesional}</p>
           </CardContent>
         </Card>
 
@@ -151,25 +151,25 @@ export default function CareerDetailsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between border-b pb-2">
-                <div className="flex items-center gap-2 font-semibold text-gray-700">
+                <div className="flex items-center gap-2 font-semibold text-card-foreground">
                     <Clock className="h-5 w-5 text-blue-600" />
                     <span>Duración:</span>
                 </div>
-                <span className="text-gray-800 font-bold">{program.duracionCiclo}</span>
+                <span className="text-foreground font-bold">{program.duracionCiclo}</span>
             </div>
              <div className="flex items-center justify-between border-b pb-2">
-                <div className="flex items-center gap-2 font-semibold text-gray-700">
+                <div className="flex items-center gap-2 font-semibold text-card-foreground">
                     <Award className="h-5 w-5 text-yellow-600" />
                     <span>Título Otorgado:</span>
                 </div>
-                <span className="text-gray-800 font-bold">{program.titulo}</span>
+                <span className="text-foreground font-bold">{program.titulo}</span>
             </div>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-semibold text-gray-700">
+              <div className="flex items-center gap-2 font-semibold text-card-foreground">
                   <GraduationCap className="h-5 w-5 text-purple-600" />
                   <span>Créditos Totales:</span>
               </div>
-              <span className="text-gray-800 font-bold">
+              <span className="text-foreground font-bold">
                 {totalCredits}
               </span>
             </div>
@@ -199,7 +199,7 @@ export default function CareerDetailsPage() {
                 <AccordionContent>
                   <ul className="space-y-3 pt-2">
                     {ciclo.materias.map((materia: any, index: number) => (
-                      <li key={materia.id || index} className="flex justify-between items-center text-gray-700 p-3 rounded-md bg-gray-50 border">
+                      <li key={materia.id || index} className="flex justify-between items-center text-card-foreground p-3 rounded-md bg-muted border">
                         <span>{materia.nombre}</span>
                         <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full">{materia.creditos} créditos</span>
                       </li>
