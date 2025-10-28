@@ -90,7 +90,7 @@ export default function PreRegisterGestorPage() {
                 const userData = usersMap.get(studentDoc.id);
 
                 if (userData) {
-                    const fechaRegistro = userData.fechaRegistro?.toDate ? userData.fechaRegistro.toDate() : null;
+                    const fechaRegistro = studentData.fechaRegistro?.toDate ? studentData.fechaRegistro.toDate() : null;
                     fetchedUsers.push({
                         id: studentDoc.id,
                         nombreCompleto: userData.nombreCompleto,

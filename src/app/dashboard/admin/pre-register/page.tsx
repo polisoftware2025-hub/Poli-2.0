@@ -80,6 +80,7 @@ export default function PreRegisterPage() {
 
         if (userIds.length > 0) {
             const usersRef = collection(db, "Politecnico/mzIX7rzezDezczAV6pQ7/usuarios");
+            // Firestore 'in' query can take up to 30 values. We might need to chunk this for larger sets.
             const usersQuery = query(usersRef, where("__name__", "in", userIds));
             const usersSnapshot = await getDocs(usersQuery);
             const usersMap = new Map<string, DocumentData>();
@@ -90,7 +91,7 @@ export default function PreRegisterPage() {
                 const userData = usersMap.get(studentDoc.id);
 
                 if (userData) {
-                    const fechaRegistro = userData.fechaRegistro?.toDate ? userData.fechaRegistro.toDate() : null;
+                    const fechaRegistro = studentData.fechaRegistro?.toDate ? studentData.fechaRegistro.toDate() : null;
                     fetchedUsers.push({
                         id: studentDoc.id,
                         nombreCompleto: userData.nombreCompleto,
