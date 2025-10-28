@@ -3,6 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { UniversityLoaderFull } from "@/components/ui/university-loader";
 
 export default function DashboardRedirectPage() {
   const router = useRouter();
@@ -33,7 +34,6 @@ export default function DashboardRedirectPage() {
   }, [router]);
 
 
-  // This page just handles redirection, so it doesn't need to render anything itself.
-  // The loader is now in the main dashboard layout.
-  return null;
+  // Show a loader while redirecting. The main layout will handle the fuller loading experience.
+  return <UniversityLoaderFull isLoading={true} text="Redirigiendo..." />;
 }

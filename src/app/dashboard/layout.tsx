@@ -63,7 +63,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserPreferencesProvider, useUserPreferences } from "@/context/UserPreferencesContext";
-import { I18nProvider } from "@/context/I18nContext";
+import { I18nProvider, useI18n } from "@/context/I18nContext";
+import { UniversityLoaderFull } from "@/components/ui/university-loader";
 
 type UserRole = "admin" | "gestor" | "docente" | "estudiante" | "rector";
 
@@ -103,6 +104,7 @@ interface SidebarItemsProps {
 
 const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+    const { t } = useI18n();
 
     const menuItems = useMemo(() => {
         const adminMenuItems = [
@@ -137,17 +139,17 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
         ];
 
         const studentMenuItems = [
-            { href: "/dashboard/estudiante", label: "Panel", icon: Home },
-            { href: "/dashboard/materias", label: "Materias", icon: Library },
-            { href: "/dashboard/calificaciones", label: "Calificaciones", icon: GraduationCap },
-            { href: "/dashboard/horarios", label: "Horarios", icon: Calendar },
-            { href: "/dashboard/asistencias", label: "Asistencias", icon: CheckSquare },
-            { href: "/dashboard/pagos", label: "Ver mis Pagos", icon: CreditCard },
-            { type: 'header', label: 'Comunidad y Ayuda' },
-            { href: "/dashboard/notifications", label: "Notificaciones", icon: Bell },
-            { href: "/dashboard/calendario", label: "Calendario Académico", icon: Calendar },
-            { href: "/dashboard/evaluacion-docente", label: "Evaluar Docentes", icon: Star },
-            { href: "/dashboard/empleo", label: "Bolsa de Empleo", icon: BotMessageSquare },
+            { href: "/dashboard/estudiante", label: t("Panel"), icon: Home },
+            { href: "/dashboard/materias", label: t("Materias"), icon: Library },
+            { href: "/dashboard/calificaciones", label: t("Calificaciones"), icon: GraduationCap },
+            { href: "/dashboard/horarios", label: t("Horarios"), icon: Calendar },
+            { href: "/dashboard/asistencias", label: t("Asistencias"), icon: CheckSquare },
+            { href: "/dashboard/pagos", label: t("Ver mis Pagos"), icon: CreditCard },
+            { type: 'header', label: t("Comunidad y Ayuda") },
+            { href: "/dashboard/notifications", label: t("Notificaciones"), icon: Bell },
+            { href: "/dashboard/calendario", label: t("Calendario Académico"), icon: Calendar },
+            { href: "/dashboard/evaluacion-docente", label: t("Evaluar Docentes"), icon: Star },
+            { href: "/dashboard/empleo", label: t("Bolsa de Empleo"), icon: BotMessageSquare },
         ];
         
         const teacherMenuItems = [
@@ -179,7 +181,7 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
             case 'gestor': return managerMenuItems;
             default: return [];
         }
-    }, [role]);
+    }, [role, t]);
 
     return (
         <nav className="flex flex-col gap-1">
@@ -228,6 +230,8 @@ const SidebarItems = ({ role, pathname, onItemClick }: SidebarItemsProps) => {
 
 
 const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, handleLogout }: any) => {
+    const { t } = useI18n();
+
     const getDisplayName = () => {
         if (!userName) return "";
         const parts = userName.split(" ");
@@ -270,18 +274,18 @@ const DynamicSidebar = ({ role, pathname, onItemClick, userEmail, userName, hand
                  <Link href="/dashboard/settings" onClick={onItemClick}>
                     <div className={cn("relative flex items-center gap-3 rounded-lg px-3 py-2 text-foreground/80 transition-colors hover:text-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2")}>
                         <Settings className={cn("h-5 w-5 z-10 shrink-0")} />
-                        <span className="z-10 group-data-[collapsible=icon]:hidden">Configuración</span>
+                        <span className="z-10 group-data-[collapsible=icon]:hidden">{t("Configuración")}</span>
                     </div>
                 </Link>
                 <Link href="/dashboard/profile" onClick={onItemClick}>
                     <div className={cn("relative flex items-center gap-3 rounded-lg px-3 py-2 text-foreground/80 transition-colors hover:text-foreground group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-2")}>
                         <User className={cn("h-5 w-5 z-10 shrink-0")} />
-                        <span className="z-10 group-data-[collapsible=icon]:hidden">Mi Perfil</span>
+                        <span className="z-10 group-data-[collapsible=icon]:hidden">{t("Mi Perfil")}</span>
                     </div>
                 </Link>
                 <Button variant="ghost" className="w-full justify-start gap-3 hover:bg-destructive/10 hover:text-destructive" onClick={handleLogout}>
                     <LogOut />
-                    <span className="group-data-[collapsible=icon]:hidden">Cerrar Sesión</span>
+                    <span className="group-data-[collapsible=icon]:hidden">{t("Cerrar Sesión")}</span>
                 </Button>
             </SidebarFooter>
         </>
@@ -300,10 +304,11 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     const [isMenuOpen, setMenuOpen] = useState(false);
     
     const context = useUserPreferences();
+    
     if (!context) {
-        return <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden"><p>Cargando sesión...</p></div>;
+        return <UniversityLoaderFull isLoading={true} text="Cargando sesión..." />;
     }
-    const { preferences } = context;
+    const { preferences, isLoading: isLoadingPreferences } = context;
 
      useEffect(() => {
         const root = document.documentElement;
@@ -373,29 +378,9 @@ function MainLayout({ children }: { children: React.ReactNode }) {
         router.push("/");
     };
 
-    if (!userRole) {
+    if (isLoadingPreferences || !userRole) {
         return (
-            <div className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden">
-                <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
-                    <div className="wheel"></div>
-                    <div className="hamster">
-                        <div className="hamster__body">
-                            <div className="hamster__head">
-                                <div className="hamster__ear"></div>
-                                <div className="hamster__eye"></div>
-                                <div className="hamster__nose"></div>
-                            </div>
-                            <div className="hamster__limb hamster__limb--fr"></div>
-                            <div className="hamster__limb hamster__limb--fl"></div>
-                            <div className="hamster__limb hamster__limb--br"></div>
-                            <div className="hamster__limb hamster__limb--bl"></div>
-                            <div className="hamster__tail"></div>
-                        </div>
-                    </div>
-                    <div className="spoke"></div>
-                </div>
-                <p className="font-poppins text-lg font-semibold text-foreground mt-4">Cargando sesión...</p>
-            </div>
+           <UniversityLoaderFull isLoading={true} text="Cargando preferencias..." />
         );
     }
     
