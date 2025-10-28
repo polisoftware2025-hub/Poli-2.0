@@ -82,7 +82,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 auth-bg">
+    <div className="relative flex min-h-screen flex-col items-center justify-center p-4 auth-bg font-poppins">
        <div className="absolute top-4 left-4 z-10">
         <Button asChild variant="outline" className="flex items-center gap-2 rounded-full">
           <Link href="/login">
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
           <CardTitle className="font-poppins text-3xl font-bold text-foreground">
             ¿Olvidaste tu Contraseña?
           </CardTitle>
-          <CardDescription className="font-poppins text-muted-foreground">
+          <CardDescription className="text-muted-foreground">
             No te preocupes, te enviaremos un enlace para que puedas restablecerla.
           </CardDescription>
         </CardHeader>

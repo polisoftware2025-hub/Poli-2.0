@@ -225,7 +225,7 @@ export default function RegisterPage() {
 
   return (
     <FormProvider {...methods}>
-      <div className="relative flex min-h-screen flex-col items-center justify-center p-4 pt-16 auth-bg sm:p-6">
+      <div className="relative flex min-h-screen flex-col items-center justify-center p-4 pt-16 auth-bg sm:p-6 font-poppins">
         <div className="absolute top-4 left-4 z-10">
            <Button
             variant="outline"
@@ -244,7 +244,7 @@ export default function RegisterPage() {
               <CardTitle className="font-poppins text-3xl font-bold text-foreground">
                   Formulario de Registro
               </CardTitle>
-              <CardDescription className="font-poppins text-muted-foreground">
+              <CardDescription className="text-muted-foreground">
                   Sigue los pasos para completar tu inscripción.
               </CardDescription>
           </CardHeader>

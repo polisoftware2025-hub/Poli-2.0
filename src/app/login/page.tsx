@@ -80,7 +80,7 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="flex h-screen w-full items-center justify-center font-sans overflow-hidden auth-bg">
+    <main className="flex h-screen w-full items-center justify-center font-poppins overflow-hidden auth-bg">
       <div className="container grid grid-cols-1 md:grid-cols-2 items-center justify-center gap-12 p-4">
         
         {/* Left Side: Institutional Image */}
@@ -111,7 +111,7 @@ export default function LoginPage() {
                     <h1 className="font-poppins text-3xl font-bold text-gray-800">
                         Sistema Académico
                     </h1>
-                    <p className="font-sans text-gray-500">
+                    <p className="text-gray-500">
                         Accede a tu portal académico.
                     </p>
                 </div>
@@ -180,7 +180,7 @@ export default function LoginPage() {
                                     </FormItem>
                                 )}
                             />
-                            <Link href="/forgot-password" className="font-sans text-sm text-blue-600 hover:underline">
+                            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
                                 ¿Olvidaste tu contraseña?
                             </Link>
                         </div>

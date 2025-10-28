@@ -120,7 +120,7 @@ export default function HomePage() {
   }, []);
   
   return (
-    <div className="flex min-h-screen flex-col bg-background font-roboto">
+    <div className="flex min-h-screen flex-col bg-background font-poppins">
       {/* Header */}
       <header className="sticky top-0 z-50 w-full bg-card shadow-md">
         <div className="container mx-auto flex items-center justify-between p-4">
