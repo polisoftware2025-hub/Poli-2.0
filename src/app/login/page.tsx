@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -112,7 +113,7 @@ export default function LoginPage() {
                     <h1 className="font-poppins text-3xl font-bold text-gray-800 dark:text-white">
                         Sistema Académico
                     </h1>
-                    <p className="text-gray-500">
+                    <p className="text-gray-500 dark:text-gray-400">
                         Accede a tu portal académico.
                     </p>
                 </div>
@@ -174,7 +175,7 @@ export default function LoginPage() {
                                             />
                                         </FormControl>
                                         <div className="space-y-1 leading-none">
-                                            <FormLabel className="font-normal text-gray-500">
+                                            <FormLabel className="font-normal text-gray-500 dark:text-gray-400">
                                                 Recordarme
                                             </FormLabel>
                                         </div>
@@ -194,9 +195,9 @@ export default function LoginPage() {
                     </form>
                 </Form>
                  <div className="mt-6 text-center text-sm">
-                    <p className="text-gray-500">¿No tienes una cuenta?</p>
+                    <p className="text-gray-500 dark:text-gray-400">¿Aún no eres parte de la comunidad?</p>
                     <Link href="/register" className="font-semibold text-blue-600 hover:underline">
-                        Crea una aquí
+                        Inscríbete aquí
                     </Link>
                 </div>
             </div>
