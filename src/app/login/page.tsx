@@ -107,7 +107,7 @@ export default function LoginPage() {
         <div className="relative w-full max-w-md mx-auto">
             <div className="relative w-full rounded-3xl border bg-card p-8 shadow-lg">
                 <div className="flex flex-col items-center text-center mb-8">
-                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                         <GraduationCap className="h-8 w-8" />
                     </div>
                     <h1 className="font-poppins text-3xl font-bold text-gray-800 dark:text-white">
@@ -162,19 +162,19 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        <div className="space-y-2 sm:flex sm:items-center sm:justify-between text-sm">
+                        <div className="flex items-center justify-between text-sm">
                             <FormField
                                 control={form.control}
                                 name="rememberMe"
                                 render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
                                         <FormControl>
                                             <Checkbox
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
                                             />
                                         </FormControl>
-                                        <div className="space-y-1 leading-none">
+                                        <div className="leading-none">
                                             <FormLabel className="font-normal text-gray-500 dark:text-gray-400">
                                                 Recordarme
                                             </FormLabel>
@@ -182,7 +182,7 @@ export default function LoginPage() {
                                     </FormItem>
                                 )}
                             />
-                            <div className="text-right">
+                            <div>
                                 <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
                                     ¿Olvidaste tu contraseña?
                                 </Link>
