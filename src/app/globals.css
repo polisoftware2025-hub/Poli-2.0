@@ -43,6 +43,12 @@
     --font-weight: 400;
     --letter-spacing: normal;
     --blur-intensity: 10px;
+
+    /* University Loader Vars */
+    --loader-bg: #E8F0FF;
+    --loader-primary: #2563EB;
+    --loader-accent-1: #22D3EE;
+    --loader-accent-2: #3B82F6;
   }
 
   .dark {
@@ -66,6 +72,12 @@
     /* Accent color is already dynamic */
 
     --ring: var(--primary);
+
+    /* University Loader Vars */
+    --loader-bg: #0B2447;
+    --loader-primary: #06B6D4;
+    --loader-accent-1: #7C3AED;
+    --loader-accent-2: #3B82F6;
   }
 }
 
@@ -169,4 +181,197 @@
             linear-gradient(hsl(var(--primary) / 0.05) 1px, transparent 1px),
             linear-gradient(to right, hsl(var(--primary) / 0.05) 1px, hsl(var(--background)) 1px);
     }
+}
+
+/* University Loader Styles */
+.university-loader {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  transform: scale(1.2);
+}
+
+.loader-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Nucleus */
+.nucleus {
+  fill: var(--loader-primary);
+  animation: nucleus-pulse 2s infinite ease-in-out;
+}
+
+@keyframes nucleus-pulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+  }
+}
+
+/* Orbits and Electrons */
+.orbit {
+  transform-origin: center center;
+  animation: orbit-rotate 10s linear infinite;
+}
+
+.orbit ellipse {
+  fill: none;
+  stroke: var(--loader-primary);
+  stroke-width: 0.5px;
+  stroke-opacity: 0.3;
+}
+
+.electron {
+  fill: var(--loader-accent-1);
+  animation: electron-move 3s ease-in-out infinite, electron-glow 3s ease-in-out infinite;
+  transform-origin: center center;
+}
+
+.orbit-1 { animation-duration: 8s; }
+.orbit-2 { animation-name: orbit-rotate-alt; animation-duration: 12s; }
+.orbit-3 { animation-duration: 15s; }
+
+.orbit-2 .electron { animation-delay: -1.5s; animation-duration: 4s; fill: var(--loader-accent-2); }
+.orbit-3 .electron { animation-delay: -0.5s; animation-duration: 3.5s; fill: var(--loader-primary); }
+
+
+@keyframes orbit-rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes orbit-rotate-alt {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
+@keyframes electron-move {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+}
+
+@keyframes electron-glow {
+    0%, 100% { filter: drop-shadow(0 0 1px var(--loader-accent-1)); }
+    50% { filter: drop-shadow(0 0 4px var(--loader-accent-1)); }
+}
+
+/* Connecting lines */
+.connections line {
+  stroke: var(--loader-accent-2);
+  stroke-width: 0.75px;
+  stroke-linecap: round;
+  stroke-dasharray: 50;
+  stroke-dashoffset: 50;
+  animation: draw-line 4s infinite ease-in-out;
+}
+
+.connections line:nth-child(2) { animation-delay: -1s; }
+.connections line:nth-child(3) { animation-delay: -2s; }
+
+@keyframes draw-line {
+  0% { stroke-dashoffset: 50; }
+  50% { stroke-dashoffset: 0; stroke-opacity: 1;}
+  100% { stroke-dashoffset: -50; stroke-opacity: 0;}
+}
+
+/* Bubbles */
+.bubbles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.bubble {
+  position: absolute;
+  bottom: -20px;
+  background-color: var(--loader-primary);
+  border-radius: 50%;
+  opacity: 0;
+  animation: bubble-rise 5s infinite ease-in;
+}
+
+@keyframes bubble-rise {
+  0% {
+    transform: translateY(0) scale(0.1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.3;
+  }
+  90% {
+    opacity: 0.1;
+  }
+  100% {
+    transform: translateY(-120px) scale(0.5);
+    opacity: 0;
+  }
+}
+
+.bubble:nth-child(1) { left: 10%; width: 5px; height: 5px; animation-duration: 4s; animation-delay: 0s; }
+.bubble:nth-child(2) { left: 80%; width: 3px; height: 3px; animation-duration: 6s; animation-delay: 1s; }
+.bubble:nth-child(3) { left: 50%; width: 6px; height: 6px; animation-duration: 3.5s; animation-delay: 2s; }
+.bubble:nth-child(4) { left: 25%; width: 4px; height: 4px; animation-duration: 5s; animation-delay: 0.5s; }
+.bubble:nth-child(5) { left: 90%; width: 2px; height: 2px; animation-duration: 7s; animation-delay: 3s; }
+.bubble:nth-child(6) { left: 5%; width: 5px; height: 5px; animation-duration: 4.5s; animation-delay: 1.5s; }
+.bubble:nth-child(7) { left: 70%; width: 3px; height: 3px; animation-duration: 5.5s; animation-delay: 2.5s; }
+
+
+/* Logo Loader */
+.logo-pulse-bg {
+    background-color: var(--loader-primary);
+    opacity: 0.1;
+    animation: logo-pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+@keyframes logo-pulse {
+    0%, 100% {
+        transform: scale(0.8);
+        opacity: 0.1;
+    }
+    50% {
+        transform: scale(1);
+        opacity: 0.2;
+    }
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .orbit, .electron, .connections line, .bubble, .logo-pulse-bg {
+    animation: none;
+  }
+
+  /* Simple fallback pulse for reduced motion */
+  .nucleus {
+    animation: nucleus-pulse 2.5s infinite ease-in-out;
+  }
+
+  .connections line {
+      stroke-dasharray: none;
+      stroke-dashoffset: 0;
+      stroke-opacity: 0.5;
+  }
+}
+
+/* For inline loader */
+.university-loader.inline-loader {
+    width: 24px;
+    height: 24px;
+}
+
+.inline-loader .loader-svg {
+    transform: scale(1);
+}
+
+.inline-loader .electron {
+    r: 6; /* Make electrons slightly bigger relative to the size */
 }

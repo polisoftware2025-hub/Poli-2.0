@@ -1,12 +1,12 @@
-
 "use client";
 
 import type { Metadata } from "next";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import "@/styles/loader.css";
+import { UniversityLoaderFull } from "@/components/ui/university-loader";
+
 
 // This metadata is now static and won't be exported because this is a Client Component.
 const metadata: Metadata = {
@@ -48,28 +48,9 @@ export default function RootLayout({
       </head>
       <body>
         <AnimatePresence>
-            {isLoading && (
-                <motion.div
-                    key="loader"
-                    className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden"
-                    initial={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.5 }}
-                >
-                    <div className="dot-spinner">
-                        <div className="dot-spinner__dot"></div>
-                        <div className="dot-spinner__dot"></div>
-                        <div className="dot-spinner__dot"></div>
-                        <div className="dot-spinner__dot"></div>
-                        <div className="dot-spinner__dot"></div>
-                        <div className="dot-spinner__dot"></div>
-                        <div className="dot-spinner__dot"></div>
-                        <div className="dot-spinner__dot"></div>
-                    </div>
-                    <p className="mt-4 font-semibold text-foreground">Cargando...</p>
-                </motion.div>
-            )}
+          {isLoading && <UniversityLoaderFull isLoading={isLoading} text="Cargando entorno..." />}
         </AnimatePresence>
+        
         {!isLoading && <>{children}</>}
         <Toaster />
       </body>
