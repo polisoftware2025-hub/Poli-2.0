@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -410,7 +411,7 @@ export default function EditCareerPage() {
                       <h4 className="font-semibold mb-2">Materias</h4>
                       <ul className="space-y-3">
                         {ciclo.materias.map((materia, materiaIndex) => (
-                          <li key={materia.id || materiaIndex} className="flex justify-between items-center text-gray-700 p-3 rounded-md bg-gray-50 border">
+                          <li key={materia.id || materiaIndex} className="flex justify-between items-center text-card-foreground p-3 rounded-md bg-muted border">
                             <div>
                                 <span className="font-medium">{materia.nombre}</span>
                                 <span className="text-sm text-muted-foreground ml-2">({materia.codigo || 'N/A'})</span>
@@ -461,7 +462,7 @@ export default function EditCareerPage() {
         </Card>
         
         <Card className="mt-8">
-          <CardFooter className="p-6 bg-gray-50 rounded-b-xl border-t flex justify-end gap-4">
+          <CardFooter className="p-6 bg-muted rounded-b-xl border-t flex justify-end gap-4">
               <Button asChild type="button" variant="outline">
                   <Link href="/dashboard/admin/career">Cancelar</Link>
               </Button>
