@@ -6,9 +6,9 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
+import "@/styles/loader.css";
 
 // This metadata is now static and won't be exported because this is a Client Component.
-// For dynamic metadata, you'd use the `generateMetadata` function in a Server Component.
 const metadata: Metadata = {
   title: "Politécnico Internacional",
   description:
@@ -46,34 +46,27 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body suppressHydrationWarning={true}>
+      <body>
         <AnimatePresence>
             {isLoading && (
-                 <motion.div
+                <motion.div
                     key="loader"
                     className="fixed inset-0 z-[200] flex min-h-screen flex-col items-center justify-center p-4 polygon-bg overflow-hidden"
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.5 }}
                 >
-                    <div aria-label="Orange and tan hamster running in a metal wheel" role="img" className="wheel-and-hamster">
-                        <div className="wheel"></div>
-                        <div className="hamster">
-                            <div className="hamster__body">
-                                <div className="hamster__head">
-                                    <div className="hamster__ear"></div>
-                                    <div className="hamster__eye"></div>
-                                    <div className="hamster__nose"></div>
-                                </div>
-                                <div className="hamster__limb hamster__limb--fr"></div>
-                                <div className="hamster__limb hamster__limb--fl"></div>
-                                <div className="hamster__limb hamster__limb--br"></div>
-                                <div className="hamster__limb hamster__limb--bl"></div>
-                                <div className="hamster__tail"></div>
-                            </div>
-                        </div>
-                        <div className="spoke"></div>
+                    <div className="dot-spinner">
+                        <div className="dot-spinner__dot"></div>
+                        <div className="dot-spinner__dot"></div>
+                        <div className="dot-spinner__dot"></div>
+                        <div className="dot-spinner__dot"></div>
+                        <div className="dot-spinner__dot"></div>
+                        <div className="dot-spinner__dot"></div>
+                        <div className="dot-spinner__dot"></div>
+                        <div className="dot-spinner__dot"></div>
                     </div>
+                    <p className="mt-4 font-semibold text-foreground">Cargando...</p>
                 </motion.div>
             )}
         </AnimatePresence>

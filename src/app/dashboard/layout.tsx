@@ -63,6 +63,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { UserPreferencesProvider, useUserPreferences } from "@/context/UserPreferencesContext";
+import { I18nProvider } from "@/context/I18nContext";
 
 type UserRole = "admin" | "gestor" | "docente" | "estudiante" | "rector";
 
@@ -399,65 +400,67 @@ function MainLayout({ children }: { children: React.ReactNode }) {
     }
     
     return (
-        <div className="font-sans">
-            <SidebarProvider>
-                <Sidebar side={preferences.sidebarPosition} collapsible="icon" className="bg-card">
-                    <DynamicSidebar 
-                        role={userRole} 
-                        pathname={pathname} 
-                        onItemClick={() => setMenuOpen(false)}
-                        userEmail={userEmail}
-                        userName={userName}
-                        handleLogout={handleLogout} 
-                    />
-                </Sidebar>
-                <SidebarInset className="bg-background">
-                    <div className="flex-1 flex flex-col pt-16">
-                        <header className="fixed top-0 z-20 flex h-16 w-full items-center justify-between gap-4 border-b bg-card/80 px-4 backdrop-blur-lg sm:px-6">
-                            <div className="flex items-center gap-4">
-                                <SidebarTrigger>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
-                                </SidebarTrigger>
-                            </div>
-                            <div className="flex flex-1 items-center justify-end gap-4">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon">
-                                            <Bell className="h-5 w-5" />
-                                            {notifications.filter(n => !n.read).length > 0 && 
-                                                <span className="absolute top-2 right-2 flex h-2 w-2">
-                                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-                                                </span>
-                                            }
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent className="w-80" align="end">
-                                        <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
-                                        <DropdownMenuSeparator/>
-                                        {notifications.length > 0 ? notifications.slice(0, 4).map(n => (
-                                            <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1">
-                                                <p className="font-semibold">{n.title}</p>
-                                                <p className="text-xs text-muted-foreground">{n.description}</p>
-                                                <p className="text-xs text-muted-foreground self-end">{n.time}</p>
-                                            </DropdownMenuItem>
-                                        )) : <DropdownMenuItem>No tienes notificaciones nuevas.</DropdownMenuItem>}
+        <I18nProvider>
+            <div className="font-sans">
+                <SidebarProvider>
+                    <Sidebar side={preferences.sidebarPosition} collapsible="icon" className="bg-card">
+                        <DynamicSidebar 
+                            role={userRole} 
+                            pathname={pathname} 
+                            onItemClick={() => setMenuOpen(false)}
+                            userEmail={userEmail}
+                            userName={userName}
+                            handleLogout={handleLogout} 
+                        />
+                    </Sidebar>
+                    <SidebarInset className="bg-background">
+                        <div className="flex-1 flex flex-col pt-16">
+                            <header className="fixed top-0 z-20 flex h-16 w-full items-center justify-between gap-4 border-b bg-card/80 px-4 backdrop-blur-lg sm:px-6">
+                                <div className="flex items-center gap-4">
+                                    <SidebarTrigger>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-left"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></svg>
+                                    </SidebarTrigger>
+                                </div>
+                                <div className="flex flex-1 items-center justify-end gap-4">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon">
+                                                <Bell className="h-5 w-5" />
+                                                {notifications.filter(n => !n.read).length > 0 && 
+                                                    <span className="absolute top-2 right-2 flex h-2 w-2">
+                                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                    </span>
+                                                }
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent className="w-80" align="end">
+                                            <DropdownMenuLabel>Notificaciones</DropdownMenuLabel>
                                             <DropdownMenuSeparator/>
-                                            <DropdownMenuItem asChild>
-                                                <Link href="/dashboard/notifications" className="justify-center">Ver todas</Link>
-                                            </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        </header>
-                        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
-                    </div>
-                    <footer className="bg-card text-center text-sm p-4 border-t">
-                        © {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
-                    </footer>
-                </SidebarInset>
-            </SidebarProvider>
-        </div>
+                                            {notifications.length > 0 ? notifications.slice(0, 4).map(n => (
+                                                <DropdownMenuItem key={n.id} className="flex flex-col items-start gap-1">
+                                                    <p className="font-semibold">{n.title}</p>
+                                                    <p className="text-xs text-muted-foreground">{n.description}</p>
+                                                    <p className="text-xs text-muted-foreground self-end">{n.time}</p>
+                                                </DropdownMenuItem>
+                                            )) : <DropdownMenuItem>No tienes notificaciones nuevas.</DropdownMenuItem>}
+                                                <DropdownMenuSeparator/>
+                                                <DropdownMenuItem asChild>
+                                                    <Link href="/dashboard/notifications" className="justify-center">Ver todas</Link>
+                                                </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </header>
+                            <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+                        </div>
+                        <footer className="bg-card text-center text-sm p-4 border-t">
+                            © {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
+                        </footer>
+                    </SidebarInset>
+                </SidebarProvider>
+            </div>
+        </I18nProvider>
     );
 }
 
