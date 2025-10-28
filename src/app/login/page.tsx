@@ -162,7 +162,7 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="space-y-2 sm:flex sm:items-center sm:justify-between text-sm">
                             <FormField
                                 control={form.control}
                                 name="rememberMe"
@@ -182,9 +182,11 @@ export default function LoginPage() {
                                     </FormItem>
                                 )}
                             />
-                            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
-                                ¿Olvidaste tu contraseña?
-                            </Link>
+                            <div className="text-right">
+                                <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+                                    ¿Olvidaste tu contraseña?
+                                </Link>
+                            </div>
                         </div>
                         
                         <div>
