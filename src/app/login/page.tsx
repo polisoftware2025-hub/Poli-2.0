@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { validateEmail, validateRequired } from "@/lib/validators";
 import Image from "next/image";
+import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
 
 type LoginFormValues = {
   email: string;
@@ -81,6 +82,7 @@ export default function LoginPage() {
 
   return (
     <main className="flex h-screen w-full items-center justify-center font-poppins overflow-hidden auth-bg">
+      <PublicThemeHandler />
       <div className="container grid grid-cols-1 md:grid-cols-2 items-center justify-center gap-12 p-4">
         
         {/* Left Side: Institutional Image */}

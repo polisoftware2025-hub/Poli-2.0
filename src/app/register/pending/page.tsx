@@ -5,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { MailCheck } from "lucide-react";
 import Link from "next/link";
+import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
 
 export default function PendingApprovalPage() {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center auth-bg p-4 font-poppins">
+            <PublicThemeHandler />
             <Card className="w-full max-w-lg rounded-xl shadow-2xl text-center">
                 <CardHeader>
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">

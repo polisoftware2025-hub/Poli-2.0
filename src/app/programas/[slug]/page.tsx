@@ -15,6 +15,7 @@ import { notFound } from 'next/navigation';
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
 
 interface Materia {
   nombre: string;
@@ -121,6 +122,7 @@ export default function ProgramDetailPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen flex flex-col font-poppins">
+      <PublicThemeHandler />
       <header className="sticky top-0 z-50 w-full bg-white shadow-md">
         <div className="container mx-auto flex items-center justify-between p-4">
           <Link href="/" className="flex items-center gap-2">

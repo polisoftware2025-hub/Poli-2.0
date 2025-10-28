@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { validatePassword } from "@/lib/validators";
+import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
 
 type ResetPasswordFormValues = {
   password: string;
@@ -195,6 +196,7 @@ function ResetPasswordComponent() {
 export default function ResetPasswordPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 auth-bg font-poppins">
+       <PublicThemeHandler />
        <div className="absolute top-4 left-4 z-10">
          <Button asChild variant="outline" className="flex items-center gap-2 rounded-full">
           <Link href="/login">

@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({ message: "Por favor, introduce un correo electrónico válido." }),
@@ -83,6 +84,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center p-4 auth-bg font-poppins">
+       <PublicThemeHandler />
        <div className="absolute top-4 left-4 z-10">
         <Button asChild variant="outline" className="flex items-center gap-2 rounded-full">
           <Link href="/login">

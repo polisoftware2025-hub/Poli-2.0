@@ -55,6 +55,7 @@ import { es } from "date-fns/locale";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { validateEmail, validateIdNumber, validateName, validatePassword, validatePhoneNumber, validateRequired, validateSelection, validateConfirmPassword } from "@/lib/validators";
+import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
 
 type AllStepsData = {
     firstName: string;
@@ -226,6 +227,7 @@ export default function RegisterPage() {
   return (
     <FormProvider {...methods}>
       <div className="relative flex min-h-screen flex-col items-center justify-center p-4 pt-16 auth-bg sm:p-6 font-poppins">
+        <PublicThemeHandler />
         <div className="absolute top-4 left-4 z-10">
            <Button
             variant="outline"
