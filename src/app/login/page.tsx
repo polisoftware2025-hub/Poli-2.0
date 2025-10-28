@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -110,7 +109,7 @@ export default function LoginPage() {
                     <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-blue-600">
                         <GraduationCap className="h-8 w-8" />
                     </div>
-                    <h1 className="font-poppins text-3xl font-bold text-gray-800">
+                    <h1 className="font-poppins text-3xl font-bold text-gray-800 dark:text-white">
                         Sistema Académico
                     </h1>
                     <p className="text-gray-500">
