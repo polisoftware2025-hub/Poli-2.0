@@ -284,7 +284,7 @@ export default function ProgramDetailPage() {
                     <AccordionContent>
                       <ul className="space-y-3 pt-2">
                         {ciclo.materias.map((materia: any) => (
-                          <li key={materia.codigo || materia.nombre} className="flex justify-between items-center text-gray-700 p-2 rounded-md hover:bg-gray-100">
+                          <li key={materia.codigo || materia.nombre} className="flex justify-between items-center text-card-foreground p-3 rounded-md bg-muted border">
                             <span>{materia.nombre}</span>
                             <span className="text-sm font-medium text-white bg-primary px-2 py-1 rounded-full">{materia.creditos} créditos</span>
                           </li>
