@@ -256,7 +256,7 @@ export default function PreRegisterDetailPage() {
           </CardContent>
           
           {applicantData.estado === 'pendiente' && (
-              <CardFooter className="p-6 bg-gray-50 rounded-b-xl border-t">
+              <CardFooter className="p-6 bg-muted rounded-b-xl border-t">
                 <div className="flex w-full justify-end gap-4">
                   <Button variant="destructive" onClick={handleReject} disabled={isProcessing}>
                     <X className="mr-2 h-4 w-4" />
