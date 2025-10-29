@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -188,7 +189,7 @@ export default function CoursesPage() {
               {courses.map((course) => (
                   <motion.div key={course.id} variants={cardVariants} whileHover={{ y: -5, scale: 1.03 }} transition={{ type: "spring", stiffness: 300 }}>
                      <Link href={`/dashboard/materias/${course.id}`}>
-                        <Card className="group flex flex-col rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-full bg-gradient-to-br from-white to-gray-50/50">
+                        <Card className="group flex flex-col rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-full bg-gradient-to-br from-white to-gray-50/50 dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-800/80">
                            <div className="relative h-40 w-full overflow-hidden">
                                 <Image 
                                     src={course.image}
