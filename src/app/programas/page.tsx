@@ -69,13 +69,13 @@ export default function ProgramsListPage() {
   }, []);
 
   return (
-    <div className="bg-gray-50 min-h-screen flex flex-col font-poppins">
+    <div className="bg-muted min-h-screen flex flex-col font-poppins">
       <PublicThemeHandler />
-       <header className="sticky top-0 z-50 w-full bg-white shadow-md">
+       <header className="sticky top-0 z-50 w-full bg-background shadow-md">
         <div className="container mx-auto flex items-center justify-between p-4">
           <Link href="/" className="flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-[#002147]" />
-            <span className="font-poppins text-xl font-bold text-[#002147]">
+            <GraduationCap className="h-8 w-8 text-primary" />
+            <span className="font-poppins text-xl font-bold text-foreground">
               Poli 2.0
             </span>
           </Link>
@@ -85,7 +85,7 @@ export default function ProgramsListPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="font-poppins text-sm font-medium text-gray-600 transition-colors hover:text-[#004aad]"
+                className="font-poppins text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
               >
                 {link.label}
               </Link>
@@ -109,8 +109,8 @@ export default function ProgramsListPage() {
                     <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
                     <div className="mb-4 flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <GraduationCap className="h-6 w-6 text-[#002147]" />
-                            <span className="font-poppins text-lg font-bold text-[#002147]">Poli 2.0</span>
+                            <GraduationCap className="h-6 w-6 text-primary" />
+                            <span className="font-poppins text-lg font-bold text-foreground">Poli 2.0</span>
                         </div>
                     </div>
                     <nav className="flex flex-col items-start space-y-4">
@@ -193,58 +193,50 @@ export default function ProgramsListPage() {
         </div>
       </main>
 
-       <footer id="contacto" style={{ backgroundColor: "#0A0A23" }} className="text-white">
-            <div className="container mx-auto px-6 py-16">
-                <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left">
-                    <div className="space-y-4">
-                        <h3 className="font-poppins text-xl font-bold">Enlaces rápidos</h3>
-                        <ul className="space-y-3">
-                            <li><Link href="/" className="text-gray-300 hover:text-white transition-colors">Inicio</Link></li>
-                            <li><Link href="/programas" className="text-gray-300 hover:text-white transition-colors">Programas académicos</Link></li>
-                            <li><Link href="#" className="text-gray-300 hover:text-white transition-colors">Noticias y anuncios</Link></li>
-                            <li><Link href="#" className="text-gray-300 hover:text-white transition-colors">Calendario académico</Link></li>
-                            <li><Link href="/#contacto" className="text-gray-300 hover:text-white transition-colors">Contacto</Link></li>
-                        </ul>
-                    </div>
-                    <div className="space-y-4">
-                        <h3 className="font-poppins text-xl font-bold">Contáctanos</h3>
-                         <ul className="space-y-3">
-                            <li className="flex items-center justify-center gap-3 md:justify-start">
-                                <MapPin className="h-5 w-5 shrink-0" />
-                                <span className="text-gray-300 text-sm">Calle 123 #45-67, Bogotá, Colombia</span>
-                            </li>
-                            <li className="flex items-center justify-center gap-3 md:justify-start">
-                                <Phone className="h-5 w-5 shrink-0" />
-                                <span className="text-gray-300 text-sm">+57 310 456 7890</span>
-                            </li>
-                             <li className="flex items-center justify-center gap-3 md:justify-start">
-                                <Mail className="h-5 w-5 shrink-0" />
-                                <span className="text-gray-300 text-sm">info@politecnico20.edu.co</span>
-                            </li>
-                        </ul>
-                    </div>
-                    <div className="space-y-4">
-                        <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
-                        <div className="flex justify-center md:justify-start items-center space-x-4">
-                           <a href="#" className="text-white hover:text-[#1877F2] transition-colors" aria-label="Facebook">
-                                <FacebookIcon className="h-7 w-7" />
-                            </a>
-                            <a href="#" className="text-white hover:text-[#E1306C] transition-colors" aria-label="Instagram">
-                                <Instagram className="h-7 w-7" />
-                            </a>
-                            <a href="#" className="text-white hover:text-[#0A66C2] transition-colors" aria-label="LinkedIn">
-                                <Linkedin className="h-7 w-7" />
-                            </a>
-                        </div>
+      <footer id="contacto" className="bg-foreground text-background">
+        <div className="container mx-auto px-6 py-16">
+            <div className="grid grid-cols-1 gap-10 text-center sm:grid-cols-2 md:grid-cols-3 md:text-left">
+                <div className="space-y-4">
+                    <h3 className="font-poppins text-xl font-bold">Enlaces rápidos</h3>
+                    <ul className="space-y-3">
+                        <li><Link href="/" className="text-muted-foreground hover:text-background transition-colors">Inicio</Link></li>
+                        <li><Link href="/programas" className="text-muted-foreground hover:text-background transition-colors">Programas académicos</Link></li>
+                        <li><Link href="#" className="text-muted-foreground hover:text-background transition-colors">Noticias y anuncios</Link></li>
+                        <li><Link href="#" className="text-muted-foreground hover:text-background transition-colors">Calendario académico</Link></li>
+                        <li><Link href="/#contacto" className="text-muted-foreground hover:text-background transition-colors">Contacto</Link></li>
+                    </ul>
+                </div>
+                <div className="space-y-4">
+                    <h3 className="font-poppins text-xl font-bold">Contáctanos</h3>
+                     <ul className="space-y-3">
+                        <li className="flex items-center justify-center gap-3 md:justify-start">
+                            <MapPin className="h-5 w-5 shrink-0" />
+                            <span className="text-muted-foreground text-sm">Calle 123 #45-67, Bogotá, Colombia</span>
+                        </li>
+                        <li className="flex items-center justify-center gap-3 md:justify-start">
+                            <Phone className="h-5 w-5 shrink-0" />
+                            <span className="text-muted-foreground text-sm">+57 310 456 7890</span>
+                        </li>
+                         <li className="flex items-center justify-center gap-3 md:justify-start">
+                            <Mail className="h-5 w-5 shrink-0" />
+                            <span className="text-muted-foreground text-sm">info@politecnico20.edu.co</span>
+                        </li>
+                    </ul>
+                </div>
+                <div className="space-y-4">
+                    <h3 className="font-poppins text-xl font-bold">Síguenos</h3>
+                    <div className="flex justify-center md:justify-start items-center space-x-4">
+                       <a href="#" className="text-background hover:text-[#1877F2] transition-colors" aria-label="Facebook"><FacebookIcon className="h-7 w-7" /></a>
+                        <a href="#" className="text-background hover:text-[#E1306C] transition-colors" aria-label="Instagram"><Instagram className="h-7 w-7" /></a>
+                        <a href="#" className="text-background hover:text-[#0A66C2] transition-colors" aria-label="LinkedIn"><Linkedin className="h-7 w-7" /></a>
                     </div>
                 </div>
             </div>
-            <div className="border-t border-gray-700 py-6">
-                <div className="container mx-auto text-center text-sm text-gray-400">
-                    &copy; {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.
-                </div>
-            </div>
-        </footer>
+        </div>
+        <div className="border-t border-border py-6">
+            <div className="container mx-auto text-center text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Poli 2.0. Todos los derechos reservados.</div>
+        </div>
+    </footer>
     </div>
   );
 }
