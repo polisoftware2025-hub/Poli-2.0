@@ -28,6 +28,8 @@ import { collection, getDocs, doc, getDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
+import { PublicThemeToggle } from "@/components/ui/public-theme-toggle";
+
 
 const FacebookIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -139,6 +141,7 @@ export default function HomePage() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
+            <PublicThemeToggle />
             <div className="md:hidden">
               <Sheet open={isMenuOpen} onOpenChange={setMenuOpen}>
                 <SheetTrigger asChild><Button variant="ghost" size="icon" aria-label="Toggle Menu"><Menu className="h-6 w-6" /></Button></SheetTrigger>

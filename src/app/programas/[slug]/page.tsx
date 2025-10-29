@@ -16,6 +16,7 @@ import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, DocumentData } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
+import { PublicThemeToggle } from "@/components/ui/public-theme-toggle";
 
 interface Materia {
   nombre: string;
@@ -144,39 +145,42 @@ export default function ProgramDetailPage() {
             ))}
           </nav>
 
-          <div className="md:hidden">
-            <Sheet open={isMenuOpen} onOpenChange={setMenuOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Toggle Menu"
-                >
-                  <Menu className="h-6 w-6" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-64 bg-background p-4 text-foreground">
-                <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
-                 <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <GraduationCap className="h-6 w-6 text-primary" />
-                        <span className="font-poppins text-lg font-bold text-foreground">Poli 2.0</span>
-                    </div>
-                </div>
-                <nav className="flex flex-col items-start space-y-4">
-                  {navLinks.map((link) => (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      onClick={() => setMenuOpen(false)}
-                      className="font-poppins text-lg font-medium transition-colors hover:text-primary"
-                    >
-                      {link.label}
-                    </Link>
-                  ))}
-                </nav>
-              </SheetContent>
-            </Sheet>
+          <div className="flex items-center gap-2">
+            <PublicThemeToggle />
+            <div className="md:hidden">
+              <Sheet open={isMenuOpen} onOpenChange={setMenuOpen}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Toggle Menu"
+                  >
+                    <Menu className="h-6 w-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-64 bg-background p-4 text-foreground">
+                  <SheetTitle className="sr-only">Navegación Móvil</SheetTitle>
+                   <div className="mb-4 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                          <GraduationCap className="h-6 w-6 text-primary" />
+                          <span className="font-poppins text-lg font-bold text-foreground">Poli 2.0</span>
+                      </div>
+                  </div>
+                  <nav className="flex flex-col items-start space-y-4">
+                    {navLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMenuOpen(false)}
+                        className="font-poppins text-lg font-medium transition-colors hover:text-primary"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            </div>
           </div>
         </div>
       </header>
