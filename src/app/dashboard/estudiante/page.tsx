@@ -231,7 +231,7 @@ export default function StudentDashboardPage() {
                                     )}
                                 </div>
                                <CardHeader>
-                                   <CardTitle className="text-xl font-bold leading-tight" title={course.title}>
+                                   <CardTitle className="text-xl font-bold text-foreground leading-tight" title={course.title}>
                                        {course.title}
                                    </CardTitle>
                                </CardHeader>
@@ -295,4 +295,3 @@ export default function StudentDashboardPage() {
   );
 }
 
-    
