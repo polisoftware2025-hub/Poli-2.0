@@ -16,7 +16,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin, Instagram, Rocket, Eye, Clock, Star, Briefcase } from "lucide-react";
+import { GraduationCap, Menu, Phone, MapPin, Mail, Linkedin, Instagram, Rocket, Eye, Clock, Star, Briefcase, ArrowRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -233,6 +233,13 @@ export default function HomePage() {
                   <CarouselNext className="absolute right-4 top-1/2 -translate-y-1/2 transform text-white bg-black/30 hover:bg-black/50 border-none" />
                 </Carousel>
             ) : <p className="text-center text-muted-foreground">No hay programas disponibles en este momento.</p>}
+             <div className="mt-12 flex justify-center">
+              <Button asChild size="lg" className="rounded-full px-8 py-6 text-lg transition-transform hover:scale-105">
+                <Link href="/programas">
+                  Ver Todos los Programas <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </section>
 
