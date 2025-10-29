@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
-import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye, AlertTriangle, Check } from "lucide-react";
+import { BookCopy, Plus, Search, MoreVertical, Edit, FileText, Trash2, Eye, AlertTriangle, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 interface Career {
@@ -64,6 +65,9 @@ export default function CareerAdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
 
   const fetchCareersAndAudit = async () => {
     setIsLoading(true);
@@ -154,6 +158,13 @@ export default function CareerAdminPage() {
       career.nombre.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [careers, searchTerm]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredCareers.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedCareers = useMemo(() => filteredCareers.slice(startIndex, startIndex + rowsPerPage), [filteredCareers, startIndex, rowsPerPage]);
+  const endIndex = Math.min(startIndex + rowsPerPage, filteredCareers.length);
+
 
   return (
     <div className="flex flex-col gap-8">
@@ -252,7 +263,7 @@ export default function CareerAdminPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {isLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
+                Array.from({ length: rowsPerPage }).map((_, i) => (
                     <Card key={i} className="h-56">
                         <CardHeader>
                             <Skeleton className="h-5 w-3/4"/>
@@ -268,7 +279,7 @@ export default function CareerAdminPage() {
                     </Card>
                 ))
             ) : (
-                filteredCareers.map((career) => (
+                paginatedCareers.map((career) => (
                     <Card key={career.id} className="flex flex-col">
                         <CardHeader>
                             <div className="flex justify-between items-start">
@@ -348,6 +359,38 @@ export default function CareerAdminPage() {
            {filteredCareers.length === 0 && !isLoading && (
               <p className="text-center text-muted-foreground py-10">No se encontraron carreras para los filtros seleccionados.</p>
           )}
+
+           <div className="flex items-center justify-between mt-6">
+                <div className="text-sm text-muted-foreground">
+                    Mostrando {endIndex > 0 ? startIndex + 1 : 0}-{endIndex} de {filteredCareers.length} carreras.
+                </div>
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Filas:</span>
+                        <Select value={String(rowsPerPage)} onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-20 h-8 rounded-full">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="6">6</SelectItem>
+                                <SelectItem value="12">12</SelectItem>
+                                <SelectItem value="18">18</SelectItem>
+                                <SelectItem value="24">24</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <span className="text-sm font-medium">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
+                    <div className="flex items-center gap-2">
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                             <ChevronLeft className="h-4 w-4" />
+                         </Button>
+                         <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                             <ChevronRight className="h-4 w-4" />
+                         </Button>
+                    </div>
+                </div>
+            </div>
+
         </CardContent>
       </Card>
     </div>
