@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { forwardRef, useMemo } from 'react';
@@ -83,7 +84,7 @@ const MolecularOrbitLoader = forwardRef<HTMLDivElement, LoaderProps>(
           </svg>
         </div>
         {text && (
-          <p className="text-sm font-medium text-foreground opacity-80" role="status" aria-live="polite">
+          <p className="text-sm font-medium text-foreground opacity-80 font-poppins" role="status" aria-live="polite">
             {text}
           </p>
         )}
@@ -170,7 +171,7 @@ export const UniversityLoaderLogo = forwardRef<HTMLDivElement, UniversityLoaderL
                 />
             </div>
              {text && (
-                <p className="text-sm font-medium text-foreground opacity-80">{text}</p>
+                <p className="text-sm font-medium text-foreground opacity-80 font-poppins">{text}</p>
             )}
         </div>
     );
