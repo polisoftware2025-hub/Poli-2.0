@@ -4,16 +4,18 @@
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { BookCopy, GraduationCap, Menu, Phone, Mail, MapPin, Linkedin, Instagram } from "lucide-react";
+import { BookCopy, GraduationCap, Menu, Phone, Mail, MapPin, Linkedin, Instagram, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { db } from "@/lib/firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PublicThemeHandler } from "@/components/ui/public-theme-handler";
 import { PublicThemeToggle } from "@/components/ui/public-theme-toggle";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
 
 interface Program {
   slug: string;
@@ -34,6 +36,9 @@ export default function ProgramsListPage() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
 
   const navLinks = [
     { href: "/", label: "Inicio" },
@@ -67,6 +72,12 @@ export default function ProgramsListPage() {
     };
     fetchPrograms();
   }, []);
+
+  // Pagination logic
+  const totalPages = Math.ceil(programs.length / rowsPerPage);
+  const startIndex = (currentPage - 1) * rowsPerPage;
+  const paginatedPrograms = useMemo(() => programs.slice(startIndex, startIndex + rowsPerPage), [programs, startIndex, rowsPerPage]);
+  const endIndex = Math.min(startIndex + rowsPerPage, programs.length);
 
   return (
     <div className="bg-muted min-h-screen flex flex-col font-poppins">
@@ -160,8 +171,8 @@ export default function ProgramsListPage() {
                            <CardFooter><Skeleton className="h-10 w-full"/></CardFooter>
                        </Card>
                     ))
-                ) : (
-                    programs.map((program) => (
+                ) : paginatedPrograms.length > 0 ? (
+                    paginatedPrograms.map((program) => (
                         <Card key={program.slug} className="overflow-hidden group transition-all duration-300 hover:shadow-xl hover:-translate-y-1.5 flex flex-col">
                             <div className="relative h-48 w-full">
                                 <Image
@@ -177,7 +188,7 @@ export default function ProgramsListPage() {
                                 <CardTitle className="text-xl">{program.title}</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-grow">
-                                <p className="text-sm text-muted-foreground">{program.description}</p>
+                                <p className="text-sm text-muted-foreground line-clamp-3">{program.description}</p>
                             </CardContent>
                             <CardFooter>
                                 <Button asChild className="w-full">
@@ -188,8 +199,42 @@ export default function ProgramsListPage() {
                             </CardFooter>
                         </Card>
                     ))
+                ) : (
+                    <p className="col-span-full text-center text-muted-foreground">No hay programas disponibles en este momento.</p>
                 )}
             </div>
+
+            {programs.length > 0 && (
+                <div className="flex items-center justify-between mt-6">
+                    <div className="text-sm text-muted-foreground">
+                        Mostrando {endIndex > 0 ? startIndex + 1 : 0}-{endIndex} de {programs.length} carreras.
+                    </div>
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">Filas:</span>
+                            <Select value={String(rowsPerPage)} onValueChange={(value) => { setRowsPerPage(Number(value)); setCurrentPage(1); }}>
+                                <SelectTrigger className="w-20 h-8 rounded-full">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="6">6</SelectItem>
+                                    <SelectItem value="9">9</SelectItem>
+                                    <SelectItem value="12">12</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <span className="text-sm font-medium">Página {currentPage} de {totalPages > 0 ? totalPages : 1}</span>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="icon" className="h-8 w-8 rounded-full" onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages || totalPages === 0}>
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
       </main>
 
