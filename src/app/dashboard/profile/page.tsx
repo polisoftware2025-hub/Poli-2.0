@@ -72,7 +72,7 @@ const timeSlots = Array.from({ length: 16 }, (_, i) => `${(i + 7).toString().pad
 
 interface AvailabilityData {
     dias: string[];
-    franjas: { [key: string]: { inicio: string; fin: string; }; };
+    franjas: { [key: string]: { inicio: string; fin: string }; };
     modalidad: "Presencial" | "Virtual" | "Ambas";
     fechasBloqueadas: Date[];
 }
@@ -387,15 +387,15 @@ export default function ProfilePage() {
                             )} />
                             
                              <FormField control={profileForm.control} name="correo" rules={{validate: validateEmail}} render={({ field }) => (
-                                <FormItem><FormLabel>Correo Electrónico Personal</FormLabel><FormControl><Input type="email" {...field} disabled={userRole !== 'rector'} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Correo Electrónico Personal</FormLabel><FormControl><Input type="email" {...field} /></FormControl><FormMessage /></FormItem>
                             )} />
                              <FormField control={profileForm.control} name="correoInstitucional" rules={{validate: validateEmail}} render={({ field }) => (
-                                <FormItem><FormLabel>Correo Institucional</FormLabel><FormControl><Input type="email" {...field} disabled={userRole !== 'rector'} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Correo Institucional</FormLabel><FormControl><Input type="email" {...field} disabled /></FormControl><FormMessage /></FormItem>
                             )} />
                              <FormField control={profileForm.control} name="tipoIdentificacion" rules={{validate: validateSelection}} render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Tipo de Identificación</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={userRole !== 'rector'}>
+                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled>
                                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             <SelectItem value="cc">Cédula de Ciudadanía</SelectItem>
@@ -406,7 +406,7 @@ export default function ProfilePage() {
                                 </FormItem>
                             )} />
                              <FormField control={profileForm.control} name="identificacion" rules={{validate: validateIdNumber}} render={({ field }) => (
-                                <FormItem><FormLabel>Número de Identificación</FormLabel><FormControl><Input {...field} disabled={userRole !== 'rector'} /></FormControl><FormMessage /></FormItem>
+                                <FormItem><FormLabel>Número de Identificación</FormLabel><FormControl><Input {...field} disabled /></FormControl><FormMessage /></FormItem>
                             )} />
                         </div>
                         <div className="flex justify-end gap-2 pt-4">
