@@ -207,7 +207,7 @@ export default function CoursesPage() {
                            </div>
                            <CardHeader>
                                <Badge variant="outline" className="w-fit mb-2">{course.modalidad}</Badge>
-                               <CardTitle className="text-xl font-bold text-gray-800 leading-tight" title={course.title}>
+                               <CardTitle className="text-xl font-bold text-foreground leading-tight" title={course.title}>
                                    {course.title}
                                </CardTitle>
                                <CardDescription className="flex items-center gap-2 pt-1 text-sm">
