@@ -214,7 +214,7 @@ export default function StudentDashboardPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {courses.slice(0, 4).map((course) => (
                            <Link href={`/dashboard/materias/${course.id}`} key={course.id}>
-                            <Card className="group flex flex-col rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-full bg-gradient-to-br from-white to-gray-50/50 dark:from-card dark:to-muted/30">
+                            <Card className="group flex flex-col rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300 h-full bg-gradient-to-br from-white to-gray-50/50 dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-800/80">
                                 <div className="relative h-40 w-full overflow-hidden">
                                     <Image 
                                         src={course.image}
@@ -294,3 +294,5 @@ export default function StudentDashboardPage() {
     </motion.div>
   );
 }
+
+    
