@@ -194,7 +194,7 @@ export default function HorariosPage() {
     <div className={cn("flex flex-col gap-6", isFullScreen && "fixed inset-0 bg-background z-50 p-4 sm:p-8")}>
       <div className="flex items-center gap-4">
         <div className="hidden h-8 w-1 bg-primary rounded-full md:block"></div>
-        <h1 className="text-3xl font-bold text-gray-800">Mi horario</h1>
+        <h1 className="text-3xl font-bold text-foreground">Mi horario</h1>
       </div>
       
        {schedule.length === 0 ? (
@@ -422,3 +422,5 @@ function DayView({ schedule, week, userRole }: any) {
         </div>
     );
 }
+
+    
