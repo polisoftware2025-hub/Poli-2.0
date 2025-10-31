@@ -159,12 +159,6 @@ export default function SettingsPage() {
        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
         <div className="md:col-span-3 space-y-8">
             <SettingCard icon={SettingsIcon} title="Preferencias Generales">
-                <SettingRow label="Idioma">
-                    <Select value={preferences.language} onValueChange={(value) => updatePreference('language', value as UserPreferences['language'])}>
-                        <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
-                        <SelectContent><SelectItem value="es">Español</SelectItem><SelectItem value="en">Inglés</SelectItem></SelectContent>
-                    </Select>
-                </SettingRow>
                 <SettingRow label="Densidad de la Interfaz">
                      <Select value={preferences.density} onValueChange={(value) => updatePreference('density', value as UserPreferences['density'])}>
                         <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>

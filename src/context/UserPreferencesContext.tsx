@@ -28,7 +28,6 @@ export interface UserPreferences {
     borderRadius: number;
     animationsEnabled: boolean;
     density: "compact" | "normal" | "spacious";
-    language: "es" | "en";
     customBackground: string;
     showShadows: boolean;
 }
@@ -56,7 +55,6 @@ export const defaultPreferences: UserPreferences = {
     borderRadius: 1,
     animationsEnabled: true,
     density: "normal",
-    language: "es",
     customBackground: "",
     showShadows: true,
 };
