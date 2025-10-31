@@ -24,12 +24,12 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
   const language = userPreferencesContext?.preferences.language || 'es';
   const [translations, setTranslations] = useState({});
 
-  const loadTranslations = useCallback(async () => {
+  const loadTranslations = useCallback(async (lang: string) => {
     try {
-      const module = await import(`@/locales/${language}.json`);
+      const module = await import(`@/locales/${lang}.json`);
       setTranslations(module.default);
     } catch (error) {
-      console.error(`Could not load translations for ${language}`, error);
+      console.error(`Could not load translations for ${lang}`, error);
       // Fallback to Spanish if the selected language file is not found
       try {
         const fallbackModule = await import(`@/locales/es.json`);
@@ -38,10 +38,12 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
         console.error(`Could not load fallback translations for Spanish`, fallbackError);
       }
     }
-  }, [language]);
+  }, []);
 
   useEffect(() => {
-    loadTranslations();
+    if (language) {
+      loadTranslations(language);
+    }
   }, [language, loadTranslations]);
 
   const t = useCallback((key: string): string => {
