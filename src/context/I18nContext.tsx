@@ -21,6 +21,7 @@ export const useI18n = () => {
 
 export const I18nProvider = ({ children }: { children: ReactNode }) => {
   const userPreferencesContext = useUserPreferences();
+  // Ensure a default language ('es') if context or preferences are not yet available.
   const language = userPreferencesContext?.preferences.language || 'es';
   const [translations, setTranslations] = useState({});
 
@@ -41,7 +42,8 @@ export const I18nProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    if (language) {
+    // Only attempt to load translations if the language is one of the valid, expected values.
+    if (language && ['es', 'en'].includes(language)) {
       loadTranslations(language);
     }
   }, [language, loadTranslations]);
